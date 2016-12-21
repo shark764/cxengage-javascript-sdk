@@ -8,6 +8,7 @@
                  [org.clojure/clojurescript "1.9.229"]
                  [org.clojure/core.async "0.2.391"
                   :exclusions [org.clojure/tools.reader]]
+                 [org.serenova/client-sdk-utils "0.1.0-SNAPSHOT"]
                  [org.serenova/auth-sdk "0.1.0-SNAPSHOT"]
                  [org.serenova/presence-sdk "0.1.0-SNAPSHOT"]]
   :plugins [[lein-figwheel "0.5.8"]
@@ -17,7 +18,7 @@
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src"]
-                :figwheel {:open-urls ["http://localhost:3449/index.html"]}
+                :figwheel {}
                 :compiler {:main client-sdk.core
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/client_sdk.js"

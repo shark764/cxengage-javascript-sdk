@@ -1,20 +1,19 @@
 (ns client-sdk.core
   (:require-macros [cljs.core.async.macros :refer [go-loop go]])
   (:require [cljs.core.async :as a]
+            [clojure.string :as str]
+            [client-sdk.shim :as shim]
+            [client-sdk.state :as state]
+            [client-sdk.api :as api]
             [auth-sdk.core :as auth]
             [presence-sdk.core :as pres]))
 
 (enable-console-print!)
 
-(defonce sdk-state
-  (atom {}))
-
-(defn init-module [sdk-state module-name module-state]
-  (assoc sdk-state module-name module-state))
+(defn register-module [sdk-state module-name module]
+  (swap! sdk-state assoc-in [:module-channels module-name] module))
 
 (defn ^:export init []
-  (-> @sdk-state
-      (init-module :auth (auth/init))))
-
-(defn login)
-(defn change-presence-state)
+  (-> (state/get-state)
+      (register-module :auth (auth/init)))
+  api/api)
