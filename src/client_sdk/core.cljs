@@ -2,7 +2,6 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop go]])
   (:require [cljs.core.async :as a]
             [clojure.string :as str]
-            [client-sdk.shim :as shim]
             [client-sdk.state :as state]
             [client-sdk.api :as api]
             [auth-sdk.core :as auth]
