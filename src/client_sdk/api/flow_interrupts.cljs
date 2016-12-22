@@ -9,7 +9,7 @@
          interrupt-msg {:resp-chan interrupt-result-chan
                         :token (state/get-token)
                         :tenant-id (state/get-active-tenant)
-                        :interaction-id (state/get-interaction-id);;TODO - store interaction details in state
+                        :interaction-id (state/get-interaction-id)
                         :interrupt-details interrupt
                         :interrupt-type interruptType}
          interrupt-chan (state/get-module-chan :flow :interrupt)]
