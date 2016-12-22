@@ -1,6 +1,6 @@
 # client-sdk
 
-FIXME: Write a one-line description of your library/project.
+<img src="https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif" width="700">
 
 ## Overview
 
