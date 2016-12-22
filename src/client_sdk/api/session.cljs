@@ -22,19 +22,21 @@
                 session-chan (state/get-module-chan :presence :start-session)]
             (a/put! session-chan session-msg)
             (go (let [{:keys [result]} (a/<! session-result-chan)]
-                 (state/set-session-details! result)
-                 (callback))))))))
+                  (log :debug "Got result from setting session from presence module")
+                  (state/set-session-details! result)
+                  (callback))))))))
 
 (defn set-direction-handler [direction callback]
-   (let [direction-result-chan (a/promise-chan)
-         direction-msg {:resp-chan direction-result-chan
-                        :token (state/get-token)
-                        :session-id (state/get-session-id)}
-         direction-chan (state/get-module-chan :presence :set-direction)]
-      (a/put! direction-chan direction-msg)
-      (go (let [{:keys [result]} (a/<! direction-result-chan)]
-           (state/set-direction! result)
-           (callback)))))
+  (let [direction-result-chan (a/promise-chan)
+        direction-msg {:resp-chan direction-result-chan
+                       :token (state/get-token)
+                       :session-id (state/get-session-id)}
+        direction-chan (state/get-module-chan :presence :set-direction)]
+    (a/put! direction-chan direction-msg)
+    (go (let [{:keys [result]} (a/<! direction-result-chan)]
+          (state/set-direction! result)
+          (callback)))))
+
 
 (defn check-capacity-handler [callback]
   (let [capacity-result-chan (a/promise-chan)
@@ -43,10 +45,10 @@
                       :tenant-id (state/get-active-tenant)
                       :user-id (state/get-active-user-id)}
         capacity-chan (state/get-module-chan :presence :check-capacity)]
-      (a/put! capacity-chan capacity-msg)
-      (go (let [{keys [result]} (a/<! capacity-result-chan)]
-            (state/set-capacity! result)
-            (callback)))))
+    (a/put! capacity-chan capacity-msg)
+    (go (let [{keys [result]} (a/<! capacity-result-chan)]
+          (state/set-capacity! result)
+          (callback)))))
 
 (defn change-state-handler [state reason-details callback]
   (let [state-result-chan (a/promise-chan)
@@ -60,10 +62,10 @@
                    :reason-id reasonId
                    :reason-list-id reasonListId}
         state-chan (state/get-module-chan :presence :change-state)]
-      (a/put! state-chan state-msg)
-      (go (let [{keys [result]} (a/<! state-result-chan)]
-            (state/set-user-state! result)
-            (callback)))))
+    (a/put! state-chan state-msg)
+    (go (let [{keys [result]} (a/<! state-result-chan)]
+          (state/set-user-state! result)
+          (callback)))))
 
 (def api {:setActiveTenant set-active-tenant-handler
           :changeState change-state-handler
