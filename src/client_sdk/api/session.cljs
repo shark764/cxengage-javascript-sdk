@@ -14,6 +14,29 @@
     (a/put! config-chan config-msg)
     (go (let [{:keys [result]} (a/<! config-result-chan)]
           (state/set-config! result)
-          (callback)))))
+          (let [session-result-chan (a/promise-chan)
+                session-msg {:resp-chan session-result-chan
+                             :token (state/get-token)
+                             :tenant-id (state/get-active-tenant)
+                             :user-id (state/get-active-user)}
+                session-chan (state/get-module-chan :presence :start-session)]
+            (a/put! session-chan session-msg)
+            (go (let [{:keys [result]} (a/<! session-result-chan)]
+                 (state/set-session-details! result)
+                 (callback))))))))
+
+
+(defn set-direction-handler [direction callback]
+   (state/set-direction! direction)
+   (let [direction-result-chan (a/promise-chan)
+         direction-msg {:resp-chan direction-result-chan
+                        :token (state/get-token)
+                        :session-id (state/get-session-id)}
+         direction-chan (state/get-module-chan :presence :set-direction)]
+      (a/put! direction-chan direction-msg)
+      (go (let [{:keys [result]} (a/<! direction-result-chan)]
+           (state/set-direction! result)
+           (callback)))))
+
 
 (def api {:setActiveTenant set-active-tenant-handler})

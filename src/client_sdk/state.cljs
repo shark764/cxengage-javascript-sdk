@@ -50,6 +50,17 @@
   []
   (get-in @sdk-state [:session :tenant-id]))
 
+(defn set-direction!
+  [direction]
+  (swap! sdk-state assoc-in [:session :direction] direction))
+
+(defn set-session-details!
+  [session]
+  (swap! sdk-state merge session (get @sdk-state :session)))
+
+(defn get-session-id
+  []
+  (get-in @sdk-state [:session :session-id]))
 
 ;;;;;;;;;;;
 ;; Chans
