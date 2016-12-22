@@ -30,7 +30,7 @@
   [identity]
   (swap! sdk-state assoc :user identity))
 
-(defn get-active-user
+(defn get-active-user-id
   []
   (get-in @sdk-state [:user :userId]))
 
@@ -61,6 +61,14 @@
 (defn get-session-id
   []
   (get-in @sdk-state [:session :session-id]))
+
+(defn set-capacity!
+  [capacity]
+  (swap! sdk-state assoc-in [:session :capacity] capacity))
+
+(defn set-user-state
+  [state]
+  (swap! sdk-state assoc-in [:session :state] state))
 
 ;;;;;;;;;;;
 ;; Chans
