@@ -6,7 +6,8 @@
             [client-sdk.state :as state]
             [client-sdk.api :as api]
             [auth-sdk.core :as auth]
-            [presence-sdk.core :as presence]))
+            [presence-sdk.core :as presence]
+            [client-sdk.flow-interrupts :as flow]))
 
 (enable-console-print!)
 
@@ -19,5 +20,6 @@
   (-> (state/get-state)
       (register-module :logging (logging/init))
       (register-module :auth (auth/init))
-      (register-module :presence (presence/init)))
+      (register-module :presence (presence/init))
+      (register-module :flow (flow/init)))
   api/api)

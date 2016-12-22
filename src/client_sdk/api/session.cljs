@@ -44,11 +44,11 @@
                       :token (state/get-token)
                       :tenant-id (state/get-active-tenant)
                       :user-id (state/get-active-user-id)}
-        capacity-chan (state/get-module-chan :presence :check-capacity)]
+        capacity-chan (state/get-module-chan :presence :check-capacity)]))
     (a/put! capacity-chan capacity-msg)
     (go (let [{:keys [result]} (a/<! capacity-result-chan)]
           (state/set-capacity! result)
-          (callback)))))
+          (callback)))
 
 (defn change-state-handler [state reason-details callback]
   (let [state-result-chan (a/promise-chan)
@@ -61,11 +61,11 @@
                    :reason reason
                    :reason-id reasonId
                    :reason-list-id reasonListId}
-        state-chan (state/get-module-chan :presence :change-state)]
+        state-chan (state/get-module-chan :presence :change-state)]))
     (a/put! state-chan state-msg)
     (go (let [{:keys [result]} (a/<! state-result-chan)]
           (state/set-user-state! result)
-          (callback)))))
+          (callback)))
 
 (def api {:setActiveTenant set-active-tenant-handler
           :changeState change-state-handler
