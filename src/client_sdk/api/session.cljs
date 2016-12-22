@@ -1,6 +1,7 @@
 (ns client-sdk.api.session
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
+            [lumbajack.core :refer [log]]
             [client-sdk.state :as state]))
 
 (defn set-active-tenant-handler [tenant-id callback]
@@ -21,9 +22,8 @@
                              :user-id (state/get-active-user-id)}
                 session-chan (state/get-module-chan :presence :start-session)]
             (a/put! session-chan session-msg)
-            (go (let [{:keys [result]} (a/<! session-result-chan)]
-                  (log :debug "Got result from setting session from presence module")
-                  (state/set-session-details! result)
+            (go (let [session-result (a/<! session-result-chan)]
+                  (state/set-session-details! session-result)
                   (callback))))))))
 
 (defn set-direction-handler [direction callback]
@@ -46,7 +46,7 @@
                       :user-id (state/get-active-user-id)}
         capacity-chan (state/get-module-chan :presence :check-capacity)]
     (a/put! capacity-chan capacity-msg)
-    (go (let [{keys [result]} (a/<! capacity-result-chan)]
+    (go (let [{:keys [result]} (a/<! capacity-result-chan)]
           (state/set-capacity! result)
           (callback)))))
 
@@ -63,7 +63,7 @@
                    :reason-list-id reasonListId}
         state-chan (state/get-module-chan :presence :change-state)]
     (a/put! state-chan state-msg)
-    (go (let [{keys [result]} (a/<! state-result-chan)]
+    (go (let [{:keys [result]} (a/<! state-result-chan)]
           (state/set-user-state! result)
           (callback)))))
 

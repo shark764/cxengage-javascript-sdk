@@ -66,7 +66,7 @@
   [capacity]
   (swap! sdk-state assoc-in [:session :capacity] capacity))
 
-(defn set-user-state
+(defn set-user-state!
   [state]
   (swap! sdk-state assoc-in [:session :state] state))
 
