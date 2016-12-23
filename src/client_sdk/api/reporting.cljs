@@ -3,15 +3,19 @@
   (:require [cljs.core.async :as a]
             [client-sdk.state :as state]))
 
-(defn start-polling-handler [module-chan result-chan callback interval]
-   (let [reporting-msg {:resp-chan result-chan
-                        :type :REPORTING/START_POLLING
-                        :interval interval
-                        :token (state/get-token)
-                        :tenant-id (state/get-active-tenant-id)}]
+(defn start-polling-handler
+  ([module-chan result-chan callback]
+   (start-polling-handler module-chan result-chan {} callback))
+  ([module-chan result-chan params callback]
+   (let [{:keys [interval]} params
+         reporting-msg {:resp-chan result-chan
+                            :type :REPORTING/START_POLLING
+                            :interval interval
+                            :token (state/get-token)
+                            :tenant-id (state/get-active-tenant-id)}]
       (a/put! module-chan reporting-msg)
       (go (let [{:keys [result]} (a/<! result-chan)]
-           (callback)))))
+           (callback))))))
 
 (defn api []
   (let [module-chan (state/get-module-chan :reporting)]
