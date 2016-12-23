@@ -1,4 +1,5 @@
-(ns client-sdk.state)
+(ns client-sdk.state
+  (:require [lumbajack.core :refer [log]]))
 
 (defonce sdk-state
   (atom {:module-channels {}
@@ -46,7 +47,7 @@
   [tenant-id]
   (swap! sdk-state assoc-in [:session :tenant-id] tenant-id))
 
-(defn get-active-tenant
+(defn get-active-tenant-id
   []
   (get-in @sdk-state [:session :tenant-id]))
 
@@ -56,11 +57,11 @@
 
 (defn set-session-details!
   [session]
-  (swap! sdk-state merge session (get @sdk-state :session)))
+  (swap! sdk-state assoc-in [:session :active-session] session))
 
 (defn get-session-id
   []
-  (get-in @sdk-state [:session :session-id]))
+  (get-in @sdk-state [:session :active-session :sessionId]))
 
 (defn set-capacity!
   [capacity]
@@ -74,5 +75,5 @@
 ;; Chans
 ;;;;;;;;;;;
 
-(defn get-module-chan [module topic]
-  (get-in @sdk-state [:module-channels module topic]))
+(defn get-module-chan [module]
+  (get-in @sdk-state [:module-channels module]))

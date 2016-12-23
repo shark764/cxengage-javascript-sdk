@@ -16,10 +16,9 @@
   sdk-state)
 
 (defn ^:export init []
-  (logging/init)
   (-> (state/get-state)
-      (register-module :logging (logging/init))
+      (register-module :logging (logging/init {:terse? false :level :debug}))
       (register-module :auth (auth/init))
-      (register-module :presence (presence/init))
-      (register-module :flow (flow/init)))
-  api/api)
+      (register-module :flow (flow/init))
+      (register-module :presence (presence/init)))
+  (api/assemble-api))
