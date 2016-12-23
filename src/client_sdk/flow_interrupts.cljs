@@ -10,7 +10,7 @@
   [result-chan message]
   (let [{:keys [token resp-chan tenant-id interaction-id interrupt-details interrupt-type]} message
         request-map {:method :post
-                     :url "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/interactions/" interaction-id "interrupts"
+                     :url "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/interactions/" interaction-id "/interrupts"
                      :body {:interrupt interrupt-details
                             :source "client"
                             :interrupt-type interrupt-type}
