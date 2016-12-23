@@ -7,7 +7,7 @@
 (enable-console-print!)
 
 (defn flow-interrupt
-  [message]
+  [result-chan message]
   (let [{:keys [token resp-chan tenant-id interaction-id interrupt-details interrupt-type]} message
         request-map {:method :post
                      :url "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/interactions/" interaction-id "interrupts"
@@ -18,8 +18,15 @@
                      :resp-chan resp-chan}]
     (u/api-request request-map)))
 
+(defn module-router [message]
+  (let [handling-fn (case (:type message)
+                      :FLOW/INTERRUPT (partial flow-interrupt (a/promise-chan))
+                      nil)]
+    (if handling-fn
+      (handling-fn message)
+      (log :error "No appropriate handler found in Flow Interrupt SDK module." (:type message)))))
+
 (defn init []
-  (let [flow-interrupt-chan (a/chan 1024)
-        module-topics {:interrupt flow-interrupt-chan}]
-    (u/start-simple-consumer! flow-interrupt-chan flow-interrupt)
-    module-topics))
+  (let [module-inputs< (a/chan 2014)]
+    (u/start-simple-consumer! module-inputs< module-router)
+    module-inputs<))
