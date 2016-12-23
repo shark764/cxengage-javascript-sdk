@@ -8,13 +8,13 @@
          interrupt-result-chan (a/promise-chan)
          interrupt-msg {:resp-chan interrupt-result-chan
                         :token (state/get-token)
-                        :tenant-id (state/get-active-tenant)
-                        :interaction-id (state/get-interaction-id)
+                        :tenant-id (state/get-active-tenant-id)
+                        :interaction-id nil #_(state/get-interaction-id)
                         :interrupt-details interrupt
                         :interrupt-type interruptType}
-         interrupt-chan (state/get-module-chan :flow :interrupt)]
+         interrupt-chan (state/get-module-chan :flow)]
       (a/put! interrupt-chan interrupt-msg)
       (go (let [{:keys [result]} (a/<! interrupt-result-chan)]
            (callback)))))
 
-(def api {:sendInterrupt login-handler})
+(def api {:sendInterrupt nil #_login-handler})

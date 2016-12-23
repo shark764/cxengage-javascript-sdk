@@ -44,7 +44,7 @@
     (a/put! module-chan direction-msg)
     (go (let [{:keys [result]} (a/<! direction-result-chan)]
           (state/set-direction! direction)
-          (callback)
+          (callback)))))
 
 (defn change-state-handler [module-chan params callback]
   (let [state-change-chan (a/promise-chan)
@@ -60,7 +60,7 @@
     (a/put! module-chan state-msg)
     (go (let [{:keys [result]} (a/<! state-change-chan)]
           (state/set-user-state! result)
-          (callback)))
+          (callback)))))
 
 (defn api []
   (let [module-chan (state/get-module-chan :presence)]
