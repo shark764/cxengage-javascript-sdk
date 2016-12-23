@@ -7,7 +7,8 @@
             [client-sdk.api :as api]
             [auth-sdk.core :as auth]
             [presence-sdk.core :as presence]
-            [client-sdk.flow-interrupts :as flow]))
+            [client-sdk.flow-interrupts :as flow]
+            [client-sdk.reporting :as reporting]))
 
 (enable-console-print!)
 
@@ -20,5 +21,6 @@
       (register-module :logging (logging/init {:terse? false :level :debug}))
       (register-module :auth (auth/init))
       (register-module :flow (flow/init))
-      (register-module :presence (presence/init)))
+      (register-module :presence (presence/init))
+      (register-module :reporting (reporting/init)))
   (api/assemble-api))
