@@ -9,7 +9,7 @@
   ([module-chan result-chan params callback]
    (let [{:keys [interval]} params
          reporting-msg {:resp-chan result-chan
-                                :type :REPORTING/START_POLLING
+                        :type :REPORTING/START_POLLING
                         :interval interval
                         :token (state/get-token)
                         :tenant-id (state/get-active-tenant-id)}]
@@ -28,7 +28,17 @@
        (go (let [{:keys [results]} (a/<! result-chan)]
             (callback (clj->js results))))))
 
+(defn available-stats-handler
+  [module-chan result-chan callback]
+  (let [reporting-msg {:resp-chan result-chan
+                       :type :REPORTING/AVAILABLE_STATS
+                       :token (state/get-token)
+                       :tenant-id (state/get-active-tenant-id)}]
+       (a/put! module-chan reporting-msg)
+       (go (callback (clj->js (a/<! result-chan))))))
+
 (defn api []
   (let [module-chan (state/get-module-chan :reporting)]
     {:startPolling (partial start-polling-handler module-chan (a/promise-chan))
-     :getCapacity (partial check-capacity-handler module-chan (a/promise-chan))}))
+     :getCapacity (partial check-capacity-handler module-chan (a/promise-chan))
+     :getAvailableStats (partial available-stats-handler module-chan (a/promise-chan))}))

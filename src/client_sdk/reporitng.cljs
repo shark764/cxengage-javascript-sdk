@@ -34,10 +34,22 @@
     (go (let [result (a/<! result-chan)]
           (a/put! resp-chan result)))))
 
+(defn available-stats
+  [result-chan message]
+  (let [{:keys [token resp-chan tenant-id user-id]} message
+        request-map {:method :get
+                     :url (str "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/realtime-statistics/available")
+                     :token token
+                     :resp-chan resp-chan}]
+    (u/api-request request-map)
+    (go (let [result (a/<! result-chan)]
+          (a/put! resp-chan result)))))
+
 (defn module-router [message]
   (let [handling-fn (case (:type message)
                       :REPORTING/START_POLLING (partial start-polling (a/promise-chan))
                       :REPORTING/CHECK_CAPACITY (partial check-capacity (a/promise-chan))
+                      :REPORTING/AVAILABLE_STATS (partial available-stats (a/promise-chan))
                       nil)]
     (if handling-fn
       (handling-fn message)
