@@ -8,10 +8,12 @@
                  [org.clojure/clojurescript "1.9.229"]
                  [org.clojure/core.async "0.2.391"
                   :exclusions [org.clojure/tools.reader]]
+                 [camel-snake-kebab "0.4.0"]
                  [org.serenova/client-sdk-utils "0.1.0-SNAPSHOT"]
                  [org.serenova/auth-sdk "0.1.0-SNAPSHOT"]
                  [org.serenova/presence-sdk "0.1.0-SNAPSHOT"]
-                 [org.serenova/lumbajack "0.1.0-SNAPSHOT"]]
+                 [org.serenova/lumbajack "0.1.0-SNAPSHOT"]
+                 [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]]
   :plugins [[lein-figwheel "0.5.8"]
             [lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]]
   :source-paths ["src"]

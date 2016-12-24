@@ -1,8 +1,10 @@
 (ns client-sdk.state
-  (:require [lumbajack.core :refer [log]]))
+  (:require [lumbajack.core :refer [log]]
+            [cljs.core.async :as a]))
 
 (defonce sdk-state
-  (atom {:module-channels {}
+  (atom {:async-module-registration (a/chan 1024)
+         :module-channels {}
          :authentication {}
          :user {}
          :session {}
@@ -10,6 +12,12 @@
 
 (defn get-state []
   sdk-state)
+
+(defn get-async-module-registration []
+  (get @sdk-state :async-module-registration))
+
+(defn get-consumer-env []
+  (or :js (get @sdk-state :consumer-env)))
 
 ;;;;;;;;;;;
 ;; Auth
@@ -50,6 +58,11 @@
 (defn get-active-tenant-id
   []
   (get-in @sdk-state [:session :tenant-id]))
+
+(defn get-active-tenant-region
+  []
+  (log :debug (get :session @(get-state)))
+  (get-in @sdk-state [:session :region]))
 
 (defn set-direction!
   [direction]

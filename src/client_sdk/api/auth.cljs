@@ -2,22 +2,28 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [lumbajack.core :refer [log]]
-            [client-sdk.state :as state]))
+            [client-sdk.pubsub :refer [publish!]]
+            [client-sdk.state :as state]
+            [client-sdk.api.helpers :as h]))
 
-(defn login-handler [module-chan params callback]
-  (let [token-result-chan (a/promise-chan)
-        token-msg (-> params
-                      (js->clj :keywordize-keys true)
-                      (assoc :resp-chan token-result-chan
-                             :type :AUTH/GET_TOKEN))]
-    (a/put! module-chan token-msg)
-    (go (let [{:keys [token]} (a/<! token-result-chan)
-              login-result-chan (a/promise-chan)
-              login-chan (state/get-module-chan :auth)]
+(defn login-handler [module-chan response-chan params]
+  (let [{:keys [callback token]} (h/extract-params params)
+        msg (h/base-module-request :AUTH/LOGIN response-chan token)]
+    (a/put! module-chan msg)
+    (go (let [{:keys [result]} (a/<! response-chan)]
+          (state/set-user-identity! result)
+          (when callback (callback (h/format-response result)))))))
+
+(defn get-token-handler [module-chan response-chan params]
+  (let [{:keys [callback username password]} (h/extract-params params)
+        msg (merge (h/base-module-request :AUTH/GET_TOKEN response-chan)
+                   {:username username
+                    :password password})]
+    (a/put! module-chan msg)
+    (go (let [{:keys [token]} (a/<! response-chan)]
           (state/set-token! token)
-          (a/put! login-chan {:token token :resp-chan login-result-chan :type :AUTH/LOGIN})
-          (let [{:keys [result]} (a/<! login-result-chan)]
-            (state/set-user-identity! result)
-            (callback (clj->js result)))))))
+          (login-handler module-chan (a/promise-chan) {:callback callback :token token})))))
 
-(defn api [] {:login (partial login-handler (state/get-module-chan :auth))})
+(defn api [] {:login (partial get-token-handler
+                              (state/get-module-chan :auth)
+                              (a/promise-chan))})
