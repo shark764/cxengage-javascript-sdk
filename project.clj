@@ -9,6 +9,7 @@
                  [org.clojure/core.async "0.2.391"
                   :exclusions [org.clojure/tools.reader]]
                  [camel-snake-kebab "0.4.0"]
+                 [cljsjs/aws-sdk-js "2.2.41-3"]
                  [org.serenova/client-sdk-utils "0.1.0-SNAPSHOT"]
                  [org.serenova/auth-sdk "0.1.0-SNAPSHOT"]
                  [org.serenova/presence-sdk "0.1.0-SNAPSHOT"]

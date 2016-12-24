@@ -13,6 +13,9 @@
 (defn get-state []
   sdk-state)
 
+(defn get-env []
+  (get @sdk-state :env))
+
 (defn get-async-module-registration []
   (get @sdk-state :async-module-registration))
 

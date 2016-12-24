@@ -2,6 +2,8 @@
   (:require [lumbajack.core :refer [log]]
             [client-sdk.api.auth :as auth]
             [client-sdk.api.session :as session]
+            [client-sdk.api.logging :as logging]
+            [client-sdk.pubsub :as pubsub]
             [client-sdk.api.reporting :as reporting]))
 
 (defn assemble-api []

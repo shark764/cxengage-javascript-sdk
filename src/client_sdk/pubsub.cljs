@@ -6,6 +6,8 @@
             [cljs-uuid-utils.core :as id]
             [client-sdk.api.helpers :as h]))
 
+(def module-state (atom {}))
+
 (def topics [[:reporting [:poll-response]]
              [:flow [:interrupts]]
              [:auth [:login-response]]])
@@ -43,26 +45,27 @@
   (contains? topic-strings topic))
 
 (defn subscribe [topic handler]
-  (if (valid-topic? topic)
+  (if-not (valid-topic? topic)
+    (log :error "That is not a valid subscription topic.")
     (let [subscription-id (id/make-random-uuid)]
       (swap! subscriptions assoc-in [topic subscription-id] handler)
-      nil)
-    (log :error "That is not a valid subscription topic.")))
+      nil)))
 
 (defn publish! [message]
-  (let [{:keys [topic]} message])
-  (if (valid-topic? topic)
-    (let [all-topics (get-topic-permutations topic)]
-      (doseq [topic all-topics]
-        (let [subscribers (vals (get @subscriptions topic))]
-          (doseq [subscription-handler subscribers]
-            (subscription-handler (h/format-response message))))))
-    (log :error "That is not a valid subscription topic.")))
+  (let [{:keys [topic]} message]
+    (if-not (valid-topic? topic)
+      (log :error "That is not a valid subscription topic.")
+      (let [all-topics (get-topic-permutations topic)]
+        (doseq [topic all-topics]
+          (let [subscribers (vals (get @subscriptions topic))]
+            (doseq [subscription-handler subscribers]
+              (subscription-handler (h/format-response message)))))))))
 
 (defn api []
   {:subscribe subscribe})
 
-(defn init []
+(defn init [env]
+  (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)]
-    (u/start-simple-consumer! module-inputs< publish)
+    (u/start-simple-consumer! module-inputs< publish!)
     module-inputs<))

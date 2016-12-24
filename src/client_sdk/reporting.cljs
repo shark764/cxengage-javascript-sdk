@@ -4,7 +4,7 @@
             [lumbajack.core :refer [log]]
             [client-sdk-utils.core :as u]))
 
-(enable-console-print!)
+(def module-state (atom {}))
 
 (defn start-polling [result-chan message]
   (log :debug "Starting reporting polls...")
@@ -55,7 +55,8 @@
       (handling-fn message)
       (log :error "No appropriate handler found in Reporting SDK module." (:type message)))))
 
-(defn init []
+(defn init [env]
+  (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 2014)]
     (u/start-simple-consumer! module-inputs< module-router)
     module-inputs<))

@@ -1,11 +1,14 @@
 (ns client-sdk.sqs
   (:require-macros [cljs.core.async.macros :refer [go-loop go]])
-  (:require [lumbajack.core :refer [log]]
+  (:require cljsjs.aws-sdk-js
+            [lumbajack.core :refer [log]]
             [client-sdk-utils.core :as u]
             [client-sdk.state :as state]
             [cljs.core.async :as a]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]))
+
+(def module-state (atom {}))
 
 (defn ^:private handle-response
   [response<]
@@ -44,12 +47,7 @@
 
 (defn ^:private sqs-init
   [config on-received done-init<]
-  (js/console.log "sqs" config)
   (let [{:keys [queue credentials]} config
-        _ (log :debug config)
-        _ (log :debug queue)
-        _ (log :debug credentials)
-        _ (log :debug (state/get-active-tenant-region))
         {:keys [accessKey secretKey sessionToken]} credentials
         queue-url (:url queue)
         options (clj->js {:accessKeyId accessKey
@@ -78,7 +76,8 @@
       (log :error "No appropriate handler found in SQS SDK module." (:type message)))))
 
 (defn init
-  [done-init< config]
+  [env done-init< config]
+  (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         sqs-config (first (filter #(= (:type %) "sqs") (:integrations config)))]
     (u/start-simple-consumer! module-inputs< module-router)

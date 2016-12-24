@@ -17,11 +17,11 @@
           (when callback (callback))))))
 
 (defn set-active-tenant-handler [module-chan response-chan params]
-  (let [{:keys [tenant-id callback]} (h/extract-params params)
+  (let [{:keys [tenantId callback]} (h/extract-params params)
         msg (merge (h/base-module-request :AUTH/GET_CONFIG response-chan (state/get-token))
-                   {:tenant-id tenant-id
+                   {:tenant-id tenantId
                     :user-id (state/get-active-user-id)})]
-    (state/set-active-tenant! tenant-id)
+    (state/set-active-tenant! tenantId)
     (a/put! (state/get-module-chan :auth) msg)
     (go (let [{:keys [result]} (a/<! response-chan)]
           (a/put! (state/get-async-module-registration) {:name :sqs :config result})
