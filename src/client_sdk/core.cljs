@@ -18,7 +18,8 @@
   [module-name module]
   (swap! (state/get-state) assoc-in [:module-channels module-name] module))
 
-(defn register-module-async! [done-registry< module]
+(defn register-module-async!
+  [done-registry< module]
   (let [{:keys [name config]} module]
     (case name
       :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config)))

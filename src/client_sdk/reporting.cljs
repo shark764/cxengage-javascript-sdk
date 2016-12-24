@@ -6,43 +6,45 @@
 
 (def module-state (atom {}))
 
-(defn start-polling [result-chan message]
+(defn start-polling [response-chan message]
   (log :debug "Starting reporting polls...")
   (let [{:keys [tenant-id token interval]} message
         reporting-req-map {:method :post
                            :body {:requests {:widget {:statistic "interaction-starts-count"}}}
-                           :url (str "https://dev-api.cxengagelabs.net/v1/tenants/"
-                                     tenant-id "/realtime-statistics/batch")
+                           :url (u/api-url (:env @module-state)
+                                           (str "/tenants/" tenant-id "/realtime-statistics/batch"))
                            :token token}]
     (go-loop [next-batch-resp-chan (a/promise-chan)]
       (u/api-request (merge reporting-req-map {:resp-chan next-batch-resp-chan}))
       (log :debug "Batch request sent!")
       (let [{:keys [results]} (a/<! next-batch-resp-chan)]
-        (a/put! result-chan results)
+        (a/put! response-chan results)
         (log :debug "Reporting data received!")
         (a/<! (a/timeout (or interval 3000)))
         (recur (a/promise-chan))))))
 
 (defn check-capacity
-  [result-chan message]
+  [response-chan message]
   (let [{:keys [token resp-chan tenant-id user-id]} message
         request-map {:method :get
-                     :url (str "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/users/" user-id "/realtime-statistics/resource-capacity")
+                     :url (u/api-url (:env @module-state)
+                                     (str "/tenants/" tenant-id "/users/" user-id "/realtime-statistics/resource-capacity"))
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
-    (go (let [result (a/<! result-chan)]
+    (go (let [result (a/<! response-chan)]
           (a/put! resp-chan result)))))
 
 (defn available-stats
-  [result-chan message]
+  [response-chan message]
   (let [{:keys [token resp-chan tenant-id user-id]} message
         request-map {:method :get
-                     :url (str "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/realtime-statistics/available")
+                     :url (u/api-url (:env @module-state)
+                                     (str "/tenants/" tenant-id "/realtime-statistics/available"))
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
-    (go (let [result (a/<! result-chan)]
+    (go (let [result (a/<! response-chan)]
           (a/put! resp-chan result)))))
 
 (defn module-router [message]
