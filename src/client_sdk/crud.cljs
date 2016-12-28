@@ -1,0 +1,46 @@
+(ns client-sdk.crud
+  (:require-macros [cljs.core.async.macros :refer [go-loop go]])
+  (:require [cljs.core.async :as a]
+            [lumbajack.core :refer [log]]
+            [client-sdk-utils.core :as u]))
+
+(enable-console-print!)
+
+(def valid-entities {:users "/tenants/%s/users"})
+
+(defn get-entity
+  [result-chan message]
+  (let [{:keys [token resp-chan tenant-id entity entity-id]} message
+        request-map {:method :get
+                     :url (str "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/" entity "/" entity-id)
+                     :token token
+                     :resp-chan resp-chan}]
+    (u/api-request request-map)
+    (go (let [result (a/<! result-chan)]
+          (a/put! resp-chan result)))))
+
+(defn get-entities
+  [result-chan message]
+  (log :debug "Entities Message Check..." (clj->js message))
+  (let [{:keys [token resp-chan tenant-id entity]} message
+        request-map {:method :get
+                     :url (str "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/" entity)
+                     :token token
+                     :resp-chan resp-chan}]
+    (u/api-request request-map)
+    (go (let [result (a/<! result-chan)]
+          (a/put! resp-chan result)))))
+
+(defn module-router [message]
+  (let [handling-fn (case (:type message)
+                      :CRUD/GET_ENTITY (partial get-entity (a/promise-chan))
+                      :CRUD/GET_ENTITIES (partial get-entities (a/promise-chan))
+                      nil)]
+    (if handling-fn
+      (handling-fn message)
+      (log :error "No appropriate handler found in CRUD SDK module." (:type message)))))
+
+(defn init []
+  (let [module-inputs< (a/chan 2014)]
+    (u/start-simple-consumer! module-inputs< module-router)
+    module-inputs<))
