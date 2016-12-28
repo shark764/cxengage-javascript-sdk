@@ -16,14 +16,17 @@
 (defn get-env []
   (get @sdk-state :env))
 
+(defn set-env! [env]
+  (swap! sdk-state assoc :env env))
+
 (defn get-async-module-registration []
   (get @sdk-state :async-module-registration))
 
-(defn set-consumer-env! [env]
-  (swap! sdk-state assoc :consumer-env env))
+(defn set-consumer-type! [env]
+  (swap! sdk-state assoc :consumer-type env))
 
-(defn get-consumer-env []
-  (or (get @sdk-state :consumer-env) :js))
+(defn get-consumer-type []
+  (or (get @sdk-state :consumer-type) :js))
 
 ;;;;;;;;;;;
 ;; Auth

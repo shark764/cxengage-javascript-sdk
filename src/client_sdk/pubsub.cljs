@@ -8,9 +8,13 @@
 
 (def module-state (atom {}))
 
-(def topics [[:reporting [:poll-response]]
-             [:flow [:interrupts]]
-             [:auth [:login-response]]])
+(def topics [[:authentication [:login-successful
+                               :login-failed
+                               :config-received]]
+             [:session [:started
+                        :ended
+                        :timed-out
+                        :state-changed]]])
 
 (def topic-strings
   (let [prefix "cxengage"]

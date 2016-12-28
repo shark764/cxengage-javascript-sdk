@@ -15,6 +15,6 @@
                     :crud (crud/api)
                     :reporting (reporting/api)
                     :pubsub (pubsub/api)})]
-     (if (= (state/get-consumer-env) :cljs)
-       api
-       (clj->js api))))
+    (if (= (state/get-consumer-type) :cljs)
+      api
+      (clj->js api))))

@@ -6,12 +6,12 @@
 (defn sdk-handler [] nil)
 
 (defn format-response [response]
-  (if (= :cljs (state/get-consumer-env))
+  (if (= :cljs (state/get-consumer-type))
     response
     (clj->js response)))
 
 (defn extract-params [params]
-  (if (= :cljs (state/get-consumer-env))
+  (if (= :cljs (state/get-consumer-type))
     params
     (js->clj params :keywordize-keys true)))
 
