@@ -29,16 +29,17 @@
           (log :debug (str "Async module registration status for module `" name "`:") registration-status)))))
 
 (defn ^:export init
-  [env]
-  (let [env (keyword env)]
-    (swap! (state/get-state) assoc :env env)
-    (register-module! :pubsub (pubsub/init env))
-    (register-module! :logging (logging/init env {:terse? false :level :debug}))
-    (register-module! :auth (auth/init env))
-    (register-module! :reporting (reporting/init env))
-    (register-module! :flow (flow/init))
-    (register-module! :crud (crud/init))
-    (register-module! :presence (presence/init env))
-    (u/start-simple-consumer! (state/get-async-module-registration)
-                              (partial register-module-async! (a/promise-chan)))
-    (api/assemble-api)))
+  ([env cljs?]
+   (state/set-consumer-env! :cljs)
+   (init env))
+  ([env]
+   (let [env (keyword env)]
+     (swap! (state/get-state) assoc :env env)
+     (register-module! :sub (sub/init env))
+     (register-module! :logging (logging/init env {:terse? false :level :debug}))
+     (register-module! :auth (auth/init env))
+     (register-module! :reporting (reporting/init env))
+     (register-module! :presence (presence/init env))
+     (u/start-simple-consumer! (state/get-async-module-registration)
+                               (partial register-module-async! (a/promise-chan)))
+     (api/assemble-api))))

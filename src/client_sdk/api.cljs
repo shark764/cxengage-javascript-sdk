@@ -9,9 +9,12 @@
             [client-sdk.api.crud :as crud]))
 
 (defn assemble-api []
-  (clj->js (merge {:session (session/api)
-                   :auth (auth/api)
-                   :logging (logging/api)
-                   :crud (crud/api)
-                   :reporting (reporting/api)
-                   :pubsub (pubsub/api)})))
+  (let [api (merge {:session (session/api)
+                    :auth (auth/api)
+                    :logging (logging/api)
+                    :crud (crud/api)
+                    :reporting (reporting/api)
+                    :pubsub (pubsub/api)})]
+     (if (= (state/get-consumer-env) :cljs)
+       api
+       (clj->js api))))

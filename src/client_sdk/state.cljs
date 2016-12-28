@@ -19,8 +19,11 @@
 (defn get-async-module-registration []
   (get @sdk-state :async-module-registration))
 
+(defn set-consumer-env! [env]
+  (swap! sdk-state assoc :consumer-env env))
+
 (defn get-consumer-env []
-  (or :js (get @sdk-state :consumer-env)))
+  (or (get @sdk-state :consumer-env) :js))
 
 ;;;;;;;;;;;
 ;; Auth
