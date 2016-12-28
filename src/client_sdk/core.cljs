@@ -10,7 +10,9 @@
             [client-sdk.api :as api]
             [client-sdk.pubsub :as pubsub]
             [client-sdk.sqs :as sqs]
-            [client-sdk.reporting :as reporting]))
+            [client-sdk.reporting :as reporting]
+            [client-sdk.flow-interrupts :as flow]
+            [client-sdk.crud :as crud]))
 
 (enable-console-print!)
 
@@ -34,6 +36,8 @@
     (register-module! :logging (logging/init env {:terse? false :level :debug}))
     (register-module! :auth (auth/init env))
     (register-module! :reporting (reporting/init env))
+    (register-module! :flow (flow/init))
+    (register-module! :crud (crud/init))
     (register-module! :presence (presence/init env))
     (u/start-simple-consumer! (state/get-async-module-registration)
                               (partial register-module-async! (a/promise-chan)))
