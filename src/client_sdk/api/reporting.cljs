@@ -9,12 +9,15 @@
   ([module-chan result-chan params callback]
    (let [{:keys [interval]} params
          reporting-msg {:resp-chan result-chan
-                        :type :REPORTING/START_POLLING
+                        :type :REPORTING/POLL
                         :interval interval
                         :token (state/get-token)
                         :tenant-id (state/get-active-tenant-id)}]
-      (a/put! module-chan reporting-msg)
-      (go (let [{:keys [result]} (a/<! result-chan)]
+     (a/put! module-chan reporting-msg)
+     (go (let [response (a/<! result-chan)
+               {:keys [result]} response]
+           (a/put! (state/get-module-chan :pubsub)
+                   (merge {:msg-type :REPORTING/POLL_RESPONSE} response))
            (callback))))))
 
 (defn check-capacity-handler
@@ -24,9 +27,12 @@
                        :token (state/get-token)
                        :tenant-id (state/get-active-tenant-id)
                        :user-id (state/get-active-user-id)}]
-       (a/put! module-chan reporting-msg)
-       (go (let [{:keys [results]} (a/<! result-chan)]
-            (callback (clj->js results))))))
+    (a/put! module-chan reporting-msg)
+    (go (let [response (a/<! result-chan)
+              {:keys [results]} response]
+          (a/put! (state/get-module-chan :pubsub)
+                  (merge {:msg-type :REPORTING/CHECK_CAPACITY_RESPONSE} response))
+          (callback (clj->js results))))))
 
 (defn available-stats-handler
   [module-chan result-chan callback]
@@ -34,8 +40,11 @@
                        :type :REPORTING/AVAILABLE_STATS
                        :token (state/get-token)
                        :tenant-id (state/get-active-tenant-id)}]
-       (a/put! module-chan reporting-msg)
-       (go (callback (clj->js (a/<! result-chan))))))
+    (a/put! module-chan reporting-msg)
+    (go (let [response (a/<! result-chan)]
+          (a/put! (state/get-module-chan :pubsub)
+                  (merge {:msg-type :REPORTING/AVAILABLE_STATS_RESPONSE} response))
+          (callback (clj->js response))))))
 
 (defn api []
   (let [module-chan (state/get-module-chan :reporting)]

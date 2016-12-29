@@ -7,11 +7,12 @@
             [presence-sdk.core :as presence]
             [client-sdk-utils.core :as u]
             [client-sdk.state :as state]
+            [client-sdk.interactions :as int]
             [client-sdk.api :as api]
             [client-sdk.pubsub :as pubsub]
             [client-sdk.sqs :as sqs]
+            [client-sdk.mqtt :as mqtt]
             [client-sdk.reporting :as reporting]
-            [client-sdk.flow-interrupts :as flow]
             [client-sdk.crud :as crud]))
 
 (enable-console-print!)
@@ -22,22 +23,26 @@
 
 (defn register-module-async!
   [done-registry< module]
-  (let [{:keys [name config]} module]
-    (case name
-      :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config)))
-    (go (let [registration-status (a/<! done-registry<)]
-          (log :debug (str "Async module registration status for module `" name "`:") registration-status)))))
+  (let [{:keys [module-name config]} module]
+    (case module-name
+      :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config pubsub/sqs-msg-router))
+      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config pubsub/mqtt-msg-router)))
+    (go (a/<! done-registry<)
+        (log :info (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
 
 (defn ^:export init
   [opts]
   (let [opts (js->clj opts :keywordize-keys true)
-        {:keys [env cljs terseLogs]} opts
+        {:keys [env cljs terseLogs logLevel]} opts
+        logLevel (if logLevel (keyword logLevel) :debug)
         env (keyword env)]
     (state/set-consumer-type! (if cljs :cljs :js))
     (state/set-env! env)
-    (register-module! :logging (logging/init env {:terse? (or terseLogs false) :level :debug}))
+    (register-module! :logging (logging/init env {:terse? (or terseLogs false)
+                                                  :level logLevel}))
     (register-module! :pubsub (pubsub/init env))
-    (register-module! :auth (auth/init env))
+    (register-module! :interactions (int/init env))
+    (register-module! :authentication (auth/init env))
     (register-module! :reporting (reporting/init env))
     (register-module! :presence (presence/init env))
     (u/start-simple-consumer! (state/get-async-module-registration)

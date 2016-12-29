@@ -33,7 +33,7 @@
   [{:keys [messages]} delete-message-fn]
   (when (seq messages)
     (let [{:keys [receipt-handle body]} (first messages)]
-      (log :debug "Received message" body)
+      #_(log :debug "Received message" body)
       (delete-message-fn receipt-handle)
       body)))
 
@@ -57,6 +57,7 @@
                           :params {:QueueUrl queue-url}})
         sqs (AWS.SQS. options)
         shutdown< (a/chan)]
+    (a/put! done-init< {:status :ok})
     (go-loop []
       (let [response< (receive-message sqs queue-url)
             [v c] (alts! [response< shutdown<])]
@@ -76,10 +77,10 @@
       (log :error "No appropriate handler found in SQS SDK module." (:type message)))))
 
 (defn init
-  [env done-init< config]
+  [env done-init< config on-msg-fn]
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         sqs-config (first (filter #(= (:type %) "sqs") (:integrations config)))]
     (u/start-simple-consumer! module-inputs< module-router)
-    (sqs-init sqs-config #(log :debug %) done-init<)
+    (sqs-init sqs-config on-msg-fn done-init<)
     module-inputs<))

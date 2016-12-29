@@ -8,7 +8,9 @@
          :authentication {}
          :user {}
          :session {}
-         :interactions []}))
+         :interactions {:pending {}
+                        :active {}
+                        :past {}}}))
 
 (defn get-state []
   sdk-state)
@@ -27,6 +29,31 @@
 
 (defn get-consumer-type []
   (or (get @sdk-state :consumer-type) :js))
+
+;;;;;;;;;;;
+;; Interactions
+;;;;;;;;;;;
+
+(defn get-all-interactions []
+  (get @sdk-state :interactions))
+
+(defn get-all-pending-interactions []
+  (get-in @sdk-state [:interactions :pending]))
+
+(defn get-pending-interaction [interaction-id]
+  (get-in @sdk-state [:interactions :pending interaction-id]))
+
+(defn remove-interaction! [type message]
+  (let [{:keys [interactionId]} message
+        interaction (get-in @sdk-state [:interactions type interactionId])
+        updated-interactions-of-type (-> (get-in @sdk-state [:interactions type])
+                                         (dissoc interactionId))]
+    (swap! sdk-state assoc-in [:interactions type] updated-interactions-of-type)
+    (swap! sdk-state assoc-in [:interactions :past interactionId] interaction)))
+
+(defn add-interaction! [type interaction]
+  (let [{:keys [interactionId]} interaction]
+    (swap! sdk-state assoc-in [:interactions type interactionId] interaction)))
 
 ;;;;;;;;;;;
 ;; Auth
@@ -56,9 +83,16 @@
 ;; Sessiony Things
 ;;;;;;;;;;;;;;;;;;
 
+(defn get-session-details []
+  (get @sdk-state :session))
+
+(defn set-session-details!
+  [session]
+  (swap! sdk-state assoc :session (merge (get-session-details) session)))
+
 (defn set-config!
   [config]
-  (swap! sdk-state assoc-in [:session :config] config))
+  (swap! sdk-state assoc :session (merge (get-session-details) config)))
 
 (defn set-active-tenant!
   [tenant-id]
@@ -77,21 +111,17 @@
   [direction]
   (swap! sdk-state assoc-in [:session :direction] direction))
 
-(defn set-session-details!
-  [session]
-  (swap! sdk-state assoc-in [:session :active-session] session))
-
 (defn get-session-id
   []
-  (get-in @sdk-state [:session :active-session :sessionId]))
+  (get-in @sdk-state [:session :sessionId]))
 
 (defn set-capacity!
   [capacity]
   (swap! sdk-state assoc-in [:session :capacity] capacity))
 
-(defn set-user-state!
+(defn set-user-session-state!
   [state]
-  (swap! sdk-state assoc-in [:session :state] state))
+  (swap! sdk-state assoc :session (merge (get-session-details) state)))
 
 ;;;;;;;;;;;
 ;; Chans

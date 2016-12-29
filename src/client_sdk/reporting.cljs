@@ -49,7 +49,7 @@
 
 (defn module-router [message]
   (let [handling-fn (case (:type message)
-                      :REPORTING/START_POLLING (partial start-polling (a/promise-chan))
+                      :REPORTING/POLL (partial start-polling (a/promise-chan))
                       :REPORTING/CHECK_CAPACITY (partial check-capacity (a/promise-chan))
                       :REPORTING/AVAILABLE_STATS (partial available-stats (a/promise-chan))
                       nil)]
