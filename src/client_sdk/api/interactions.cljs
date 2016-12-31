@@ -24,7 +24,20 @@
                     :interactionId interactionId})]
     (a/put! module-chan msg)))
 
+(defn send-message-handler [params]
+  (let [module-chan (state/get-module-chan :mqtt)
+        response-chan (a/promise-chan)
+        message (h/extract-params params)
+        {:keys [callback]} message
+        msg (merge (h/base-module-request :MQTT/SEND_MESSAGE
+                                          response-chan
+                                          (state/get-token))
+                   message
+                   {:tenantId (state/get-active-tenant-id)
+                    :userId (state/get-active-user-id)})]
+    (a/put! module-chan msg)))
 
 (defn api []
   (let [module-chan (state/get-module-chan :interactions)]
-    {:acceptOffer (partial accept-offer-handler module-chan (a/promise-chan))}))
+    {:acceptOffer (partial accept-offer-handler module-chan (a/promise-chan))
+     :messaging {:sendMessage send-message-handler}}))

@@ -12,6 +12,7 @@
             [client-sdk.pubsub :as pubsub]
             [client-sdk.sqs :as sqs]
             [client-sdk.mqtt :as mqtt]
+            [client-sdk.messaging :as msg]
             [client-sdk.reporting :as reporting]
             [client-sdk.crud :as crud]))
 
@@ -40,6 +41,7 @@
     (state/set-env! env)
     (register-module! :logging (logging/init env {:terse? (or terseLogs false)
                                                   :level logLevel}))
+    (register-module! :messaging (msg/init env))
     (register-module! :pubsub (pubsub/init env))
     (register-module! :interactions (int/init env))
     (register-module! :authentication (auth/init env))

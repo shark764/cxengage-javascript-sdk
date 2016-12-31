@@ -10,12 +10,17 @@
             [cljs-time.instant]
             [goog.crypt :as c]
             [lumbajack.core :refer [log]]
-            [cljs-uuid-utils.core :as uuid]
+            [cljs-uuid-utils.core :as id]
             [client-sdk-utils.core :as u]
+            [client-sdk.state :as state]
+            [cognitect.transit :as t]
             [cljs.spec :as s])
   (:import goog.crypt))
 
 (def module-state (atom {}))
+
+(defn get-mqtt-client []
+  (get @module-state :mqtt-client))
 
 (def service-name "iotdevicegateway")
 (def algorithm "AWS4-HMAC-SHA256")
@@ -85,21 +90,23 @@
     (str "wss://" host canonical-uri "?" canonical-query-string security-token-string)))
 
 (defn subscribe
-  [client topic qos]
-  (.subscribe client topic #js {:qos 1}))
+  [topic]
+  (.subscribe (get-mqtt-client) topic #js {:qos 1})
+  (log :info (str "Subscribed to MQTT topic: " topic)))
 
 (defn unsubscribe
-  [client topic]
-  (.unsubscribe client topic))
+  [topic]
+  (.unsubscribe (get-mqtt-client) topic))
 
-(defn send-message
-  [client payload topic qos]
+(defn send-message-impl
+  [payload topic]
   (let [msg (Paho.MQTT.Message. payload)]
     (set! (.-destinationName msg) topic)
-    (set! (.-qos msg) qos)
-    (.send client msg)))
+    (set! (.-qos msg) 1)
+    (log :error "Message we're sending to MQTT:" msg)
+    (.send (get-mqtt-client) msg)))
 
-(defn on-connect [client done-init<]
+(defn on-connect [done-init<]
   (log :info "Mqtt client connected")
   (a/put! done-init< {:status :ok}))
 
@@ -116,21 +123,63 @@
                                                                           :reasonMessage reason-message})))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
-    (set! (.-onSuccess connect-options) (fn [] (on-connect mqtt done-init<)))
+    (set! (.-onSuccess connect-options) (fn [] (on-connect done-init<)))
     (set! (.-onFailure connect-options) (fn [_ _ msg] (log :error "Mqtt Client failed to connect: " msg)))
     (.connect mqtt connect-options)
     mqtt))
 
 (defn mqtt-init
   [mqtt-conf client-id on-received done-init<]
-  (connect (get-iot-url (time/now) mqtt-conf) client-id on-received done-init<))
+  (let [mqtt-client (connect (get-iot-url (time/now) mqtt-conf) client-id on-received done-init<)]
+    (swap! module-state assoc :mqtt-client mqtt-client)))
 
 (s/fdef init
         :args (s/cat :mqtt-conf ::mqtt-conf :client-id string? :on-received fn?))
 
+(defn subscribe-to-interaction [message]
+  (let [{:keys [tenantId interactionId]} message
+        topic (str (name (get @module-state :env)) "/tenants/" tenantId "/channels/" interactionId)]
+    (log :error (str "topic we're subscribing to: " topic))
+    (subscribe topic)))
+
+(defn unsubscribe-from-interaction [message])
+
+(defn gen-payload [message]
+  (let [{:keys [message userId tenantId interactionId]} message
+        metadata {:name "Agent"
+                  :first-name "Agent"
+                  :last-name "Agent"
+                  :type "agent"}
+        body {:text message}]
+    {:id (id/make-random-uuid)
+     :tenant-id tenantId
+     :type "message"
+     :to interactionId
+     :from userId
+     :metadata metadata
+     :body body
+     :timestamp (fmt/unparse (fmt/formatters :date-time) (time/now))}))
+
+(defn format-payload [message]
+  (t/write (t/writer :json-verbose) (clojure.walk/stringify-keys message)))
+
+(defn send-message [message]
+  (log :warn "got send msg request in mqtt module" message)
+  (let [{:keys [tenantId interactionId]} message
+        payload (-> message
+                    (gen-payload)
+                    (format-payload))
+        _ (log :debug "MODULE STATE ENV" (get @module-state :env))
+        _ (log :debug "BROOOOOOOOO" payload)
+        topic (str (name (get @module-state :env)) "/tenants/" tenantId "/channels/" interactionId)
+        _ (log :debug "TOPIC IN SEND MSG" topic)]
+    (send-message-impl payload topic)))
+
 (defn module-router [message]
   (let [handling-fn (case (:type message)
-                      :MQTT nil
+                      :MQTT/SUBSCRIBE_TO_INTERACTION subscribe-to-interaction
+                      :MQTT/UNSUBSCRIBE_FROM_INTERACTION unsubscribe-from-interaction
+                      :MQTT/SEND_MESSAGE send-message
                       nil)]
     (if handling-fn
       (handling-fn message)

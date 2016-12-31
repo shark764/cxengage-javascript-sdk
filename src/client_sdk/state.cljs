@@ -34,26 +34,54 @@
 ;; Interactions
 ;;;;;;;;;;;
 
+(defn find-interaction-location [interaction-id]
+  (cond
+    (not= nil (get-in @sdk-state [:interactions :pending interaction-id])) :pending
+    (not= nil (get-in @sdk-state [:interactions :active interaction-id])) :active
+    (not= nil (get-in @sdk-state [:interactions :past interaction-id])) :past
+    :else (log :error "Unable to find interaction location")))
+
 (defn get-all-interactions []
   (get @sdk-state :interactions))
 
 (defn get-all-pending-interactions []
   (get-in @sdk-state [:interactions :pending]))
 
+(defn add-messages-to-history! [interaction-id messages]
+  (let [interaction-location (find-interaction-location interaction-id)
+        old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
+        new-msg-history (reduce (fn [acc msg] (conj acc msg)) old-msg-history messages)]
+    (log :error "Before adding msg history" (get-all-interactions))
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)
+    (log :error "After adding msg history" (get-all-interactions))))
+
 (defn get-pending-interaction [interaction-id]
   (get-in @sdk-state [:interactions :pending interaction-id]))
-
-(defn remove-interaction! [type message]
-  (let [{:keys [interactionId]} message
-        interaction (get-in @sdk-state [:interactions type interactionId])
-        updated-interactions-of-type (-> (get-in @sdk-state [:interactions type])
-                                         (dissoc interactionId))]
-    (swap! sdk-state assoc-in [:interactions type] updated-interactions-of-type)
-    (swap! sdk-state assoc-in [:interactions :past interactionId] interaction)))
 
 (defn add-interaction! [type interaction]
   (let [{:keys [interactionId]} interaction]
     (swap! sdk-state assoc-in [:interactions type interactionId] interaction)))
+
+(defn add-interaction-custom-field-details! [custom-field-details interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :custom-field-details custom-field-details])))
+
+(defn add-interaction-wrapup-details! [wrapup-details interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :wrapup-details wrapup-details])))
+
+(defn add-interaction-disposition-code-details! [disposition-code-details interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :disposition-code-details disposition-code-details])))
+
+(defn transition-interaction! [from to interaction-id]
+  (let [interaction (get-in @sdk-state [:interactions from interaction-id])
+        updated-interactions-from (-> (get-in @sdk-state [:interactions from])
+                                      (dissoc interaction-id))
+        updated-interactions-to (-> (get-in @sdk-state [:interactions to])
+                                    (assoc interaction-id interaction))]
+    (swap! sdk-state assoc-in [:interactions from] updated-interactions-from)
+    (swap! sdk-state assoc-in [:interactions to] updated-interactions-to)))
 
 ;;;;;;;;;;;
 ;; Auth

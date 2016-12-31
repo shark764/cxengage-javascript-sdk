@@ -1,4 +1,5 @@
 (ns client-sdk.pubsub
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [client-sdk-utils.core :as u]
             [lumbajack.core :refer [log]]
@@ -63,54 +64,97 @@
     (log :error "That is not a valid subscription topic.")
     (let [all-topics (get-topic-permutations topic)]
       (doseq [topic all-topics]
-        (if-let [subscribers (vals (get @subscriptions topic))]
+        (when-let [subscribers (vals (get @subscriptions topic))]
           (doseq [subscription-handler subscribers]
             (subscription-handler (h/format-response message)))
-          (log :warn (str "No subscribers found for topic `" topic "`, sending to no one.")))))))
+          #_(log :warn (str "No subscribers found for topic `" topic "`, sending to no one.")))))))
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
+  (let [{:keys [channelType interactionId]} message]
+
+    (when (= channelType "sms")
+      (let [history-result-chan (a/promise-chan)
+            history-req (-> message
+                            (select-keys [:tenantId :interactionId])
+                            (merge {:token (state/get-token)
+                                    :resp-chan history-result-chan
+                                    :type :MESSAGING/GET_HISTORY}))]
+        (a/put! (state/get-module-chan :messaging) history-req)
+        (go (let [history (a/<! history-result-chan)]
+              (state/add-messages-to-history! interactionId history)))))))
+
+(defn handle-resource-state-change [message])
+
+(defn handle-work-initiated [message]
+  (log :error "work initiated message:" message)
   (publish! "cxengage/interactions/work-offer-received" message))
 
-(defn handle-work-initiated [msg]
-  (log :warn "Handling work initiated"))
-
-(defn handle-work-rejected [message]
-  (log :warn "Handling work rejected")
-  (state/remove-interaction! :pending message))
+(defn handle-work-rejected [message])
 
 (defn handle-custom-fields [message]
-  (log :warn "Handling custom fields")
-  (state/remove-interaction! :pending message))
+  (let [{:keys [interactionId]} message
+        custom-field-details (:customFields message)]
+    (state/add-interaction-custom-field-details! custom-field-details interactionId)))
 
 (defn handle-disposition-codes [message]
-  (log :warn "Handling disposition codes")
-  (state/remove-interaction! :pending message))
+  (let [{:keys [interactionId]} message
+        disposition-code-details (:dispositionCodes message)]
+    (state/add-interaction-disposition-code-details! disposition-code-details interactionId)))
+
+(defn handle-session-start [message])
+
+(defn handle-login [message])
+
+(defn handle-interaction-heartbeat [message])
+
+(defn handle-work-accepted [message]
+  (let [{:keys [interactionId tenantId]} message]
+    (state/transition-interaction! :pending :active interactionId)
+    (a/put! (state/get-module-chan :mqtt) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
+                                           :tenantId tenantId
+                                           :interactionId interactionId})))
+
+(defn handle-wrapup [message]
+  (let [wrapup-details (select-keys message [:wrapupTime :wrapupEnabled :wrapupUpdateAllowed :targetWrapupTime])
+        {:keys [interactionId]} message]
+    (state/add-interaction-wrapup-details! wrapup-details interactionId)))
 
 (defn msg-router [message]
+  #_(log :debug "MESSAGE ROUTER GOT:" message)
   (let [handling-fn (case (:msg-type message)
+                      :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
                       :INTERACTIONS/WORK_OFFER_RECEIVED handle-work-offer
                       :INTERACTIONS/WORK_REJECTED_RECEIVED handle-work-rejected
                       :INTERACTIONS/WORK_INITIATED_RECEIVED handle-work-initiated
                       :INTERACTIONS/CUSTOM_FIELDS_RECEIVED handle-custom-fields
                       :INTERACTIONS/DISPOSITION_CODES_RECEIVED handle-disposition-codes
+                      :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED handle-interaction-heartbeat
+                      :INTERACTIONS/WRAP_UP_RECEIVED handle-wrapup
+                      :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
+                      :SESSION/START_SESSION_RESPONSE handle-session-start
+                      :AUTH/LOGIN_RESPONSE handle-login
                       nil)]
     (when (and (get message :actionId)
                (not= (get message :interactionId) "00000000-0000-0000-0000-000000000000"))
-      (let [ack-msg (-> message (select-keys [:actionId :subId :resourceId :tenantId :interactionId]))]
-        (int/acknowledge-flow-action-handler (state/get-module-chan :interactions) (a/promise-chan) ack-msg)))
+      (let [ack-msg (select-keys message [:actionId :subId :resourceId :tenantId :interactionId])]
+        (log :info (str "Acknowledging receipt of flow action: " (or (:notificationType message) (:type message))))
+        (when (or (:notificationType message) (:type message))
+          (int/acknowledge-flow-action-handler (state/get-module-chan :interactions) (a/promise-chan) ack-msg))))
     (if handling-fn
       (handling-fn message)
-      (log :debug (str "Temporarily ignoring msg 'cuz handler isnt written yet: " (:msg-type message))))))
+      (log :debug (str "Temporarily ignoring msg 'cuz handler isnt written yet: " (:msg-type message)) message))))
 
 (defn infer-notification-type [message]
   (let [{:keys [notificationType]} message]
     (if-let [inferred-notification-type (case notificationType
                                           "work-rejected" (merge {:msg-type :INTERACTIONS/WORK_REJECTED_RECEIVED} message)
                                           "work-initiated" (merge {:msg-type :INTERACTIONS/WORK_INITIATED_RECEIVED} message)
+                                          "work-accepted" (merge {:msg-type :INTERACTIONS/WORK_ACCEPTED_RECEIVED} message)
                                           "disposition-codes" (merge {:msg-type :INTERACTIONS/DISPOSITION_CODES_RECEIVED} message)
                                           "custom-fields" (merge {:msg-type :INTERACTIONS/CUSTOM_FIELDS_RECEIVED} message)
-                                          "interaction-timeout" (merge {:msg-type :INTERACTIONS/INTERACTION_TIMEOUT} message)
+                                          "wrapup" (merge {:msg-type :INTERACTIONS/WRAP_UP_RECEIVED} message)
+                                          "interaction-timeout" (merge {:msg-type :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED} message)
                                           nil)]
       inferred-notification-type
       (log :warn "Unable to infer agent notification msg type - no matching clause" message))))
@@ -127,7 +171,7 @@
       (log :error "Unable to infer msg type from sqs"))))
 
 (defn mqtt-msg-router [message]
-  (log :debug "message in mqtt msg router" message))
+  (log :warn "message in mqtt msg router" message))
 
 (defn module-router [message]
   (if (:msg-type message)
