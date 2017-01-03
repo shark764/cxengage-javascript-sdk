@@ -40,7 +40,8 @@
       (handling-fn message)
       (log :error "No appropriate handler found in CRUD SDK module." (:type message)))))
 
-(defn module-shutdown-handler [message])
+(defn module-shutdown-handler [message]
+  (log :info "Received shutdown message from Core - CRUD Module shutting down...."))
 
 (defn init [env]
   (swap! module-state assoc :env env)

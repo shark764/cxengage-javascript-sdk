@@ -184,7 +184,8 @@
 (defn api []
   {:subscribe subscribe})
 
-(defn module-shutdown-handler [])
+(defn module-shutdown-handler [message]
+  (log :info "Received shutdown message from Core - PubSub Module shutting down...."))
 
 (defn init [env]
   (swap! module-state assoc :env env)

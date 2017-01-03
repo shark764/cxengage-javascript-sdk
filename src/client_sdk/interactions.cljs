@@ -39,7 +39,8 @@
       (handling-fn message)
       (log :error "No appropriate handler found in Interactions SDK module." (:type message)))))
 
-(defn module-shutdown-handler [])
+(defn module-shutdown-handler [message]
+  (log :info "Received shutdown message from Core - Interactions Module shutting down...."))
 
 (defn init [env]
   (swap! module-state assoc :env env)

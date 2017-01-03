@@ -76,7 +76,8 @@
       (handling-fn message)
       (log :error "No appropriate handler found in SQS SDK module." (:type message)))))
 
-(defn module-shutdown-handler [])
+(defn module-shutdown-handler [message]
+  (log :info "Received shutdown message from Core - SQS Module shutting down...."))
 
 (defn init
   [env done-init< config on-msg-fn]

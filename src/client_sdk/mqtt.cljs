@@ -185,7 +185,8 @@
       (handling-fn message)
       (log :error "No appropriate handler found in MQTT SDK module." (:type message)))))
 
-(defn module-shutdown-handler [])
+(defn module-shutdown-handler [message]
+  (log :info "Received shutdown message from Core - MQTT Module shutting down...."))
 
 (defn init
   [env done-init< client-id config on-msg-fn]
