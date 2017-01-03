@@ -189,6 +189,7 @@
   [env done-init< client-id config on-msg-fn]
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
+        module-shutdown< (a/chan 1024)
         mqtt-config (first (filter #(= (:type %) "messaging") (:integrations config)))
         mqtt-config (->> (merge (select-keys mqtt-config [:region :endpoint])
                                 (select-keys (:credentials mqtt-config) [:secretKey :accessKey :sessionToken]))
@@ -196,4 +197,5 @@
                          (#(rename-keys % {:region :region-name})))]
     (u/start-simple-consumer! module-inputs< module-router)
     (mqtt-init mqtt-config client-id on-msg-fn done-init<)
-    module-inputs<))
+    {:messages module-inputs<
+     :shutdown module-shutdown<}))

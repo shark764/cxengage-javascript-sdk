@@ -80,7 +80,9 @@
   [env done-init< config on-msg-fn]
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
+        module-shutdown< (a/chan 1024)
         sqs-config (first (filter #(= (:type %) "sqs") (:integrations config)))]
     (u/start-simple-consumer! module-inputs< module-router)
     (sqs-init sqs-config on-msg-fn done-init<)
-    module-inputs<))
+    {:messages module-inputs<
+     :shutdown module-shutdown<}))

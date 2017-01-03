@@ -40,7 +40,10 @@
       (handling-fn message)
       (log :error "No appropriate handler found in CRUD SDK module." (:type message)))))
 
-(defn init []
-  (let [module-inputs< (a/chan 2014)]
+(defn init [env]
+  (swap! module-state assoc :env env)
+  (let [module-inputs< (a/chan 1024)
+        module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)
-    module-inputs<))
+    {:messages module-inputs<
+     :shutdown module-shutdown<}))
