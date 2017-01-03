@@ -161,7 +161,6 @@
 
 (defn sqs-msg-router [message]
   (let [cljsd-msg (js->clj (js/JSON.parse message) :keywordize-keys true)
-        _ (log :warn "WAT IS DIS: " message)
         {:keys [sessionId]} message
         inferred-msg (case (:type cljsd-msg)
                        "resource-state-change" (merge {:msg-type :SESSION/CHANGE_STATE_RESPONSE} cljsd-msg)
