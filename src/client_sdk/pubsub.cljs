@@ -161,14 +161,18 @@
 
 (defn sqs-msg-router [message]
   (let [cljsd-msg (js->clj (js/JSON.parse message) :keywordize-keys true)
+        _ (log :warn "WAT IS DIS: " message)
+        {:keys [sessionId]} message
         inferred-msg (case (:type cljsd-msg)
                        "resource-state-change" (merge {:msg-type :SESSION/CHANGE_STATE_RESPONSE} cljsd-msg)
                        "work-offer" (merge {:msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
-    (if inferred-msg
-      (msg-router inferred-msg)
-      (log :error "Unable to infer msg type from sqs"))))
+    (if (not= (state/get-session-id) sessionId)
+      (log :warn "This message is from an older session - ignoring")
+      (if inferred-msg
+        (msg-router inferred-msg)
+        (log :error "Unable to infer msg type from sqs")))))
 
 (defn mqtt-msg-router [message]
   (log :warn "message in mqtt msg router" message))
