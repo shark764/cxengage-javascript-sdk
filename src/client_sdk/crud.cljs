@@ -4,7 +4,7 @@
             [lumbajack.core :refer [log]]
             [client-sdk-utils.core :as u]))
 
-(enable-console-print!)
+(def module-state (atom {}))
 
 (def valid-entities {:users "/tenants/%s/users"})
 
@@ -40,10 +40,13 @@
       (handling-fn message)
       (log :error "No appropriate handler found in CRUD SDK module." (:type message)))))
 
+(defn module-shutdown-handler [message])
+
 (defn init [env]
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)
+    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
     {:messages module-inputs<
      :shutdown module-shutdown<}))

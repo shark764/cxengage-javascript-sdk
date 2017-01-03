@@ -156,4 +156,7 @@
 ;;;;;;;;;;;
 
 (defn get-module-chan [module]
-  (get-in @sdk-state [:module-channels module]))
+  (get-in @sdk-state [:module-channels module :messages]))
+
+(defn get-module-shutdown-chan [module]
+  (get-in @sdk-state [:module-channels module :shutdown]))

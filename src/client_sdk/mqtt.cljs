@@ -185,6 +185,8 @@
       (handling-fn message)
       (log :error "No appropriate handler found in MQTT SDK module." (:type message)))))
 
+(defn module-shutdown-handler [])
+
 (defn init
   [env done-init< client-id config on-msg-fn]
   (swap! module-state assoc :env env)
@@ -196,6 +198,7 @@
                          (transform-keys camel/->kebab-case-keyword)
                          (#(rename-keys % {:region :region-name})))]
     (u/start-simple-consumer! module-inputs< module-router)
+    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
     (mqtt-init mqtt-config client-id on-msg-fn done-init<)
     {:messages module-inputs<
      :shutdown module-shutdown<}))
