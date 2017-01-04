@@ -43,6 +43,7 @@
   (log :info "Received shutdown message from Core - Interactions Module shutting down...."))
 
 (defn init [env]
+  (log :info "Initializing SDK module: Flow")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]

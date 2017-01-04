@@ -190,6 +190,7 @@
 
 (defn init
   [env done-init< client-id config on-msg-fn]
+  (log :info "Initializing SDK module: MQTT")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)

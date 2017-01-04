@@ -13,8 +13,6 @@
                  [cljsjs/paho "1.0.1-0"]
                  [com.cognitect/transit-cljs "0.8.239"]
                  [org.serenova/client-sdk-utils "0.1.0-SNAPSHOT"]
-                 [org.serenova/auth-sdk "0.1.0-SNAPSHOT"]
-                 [org.serenova/presence-sdk "0.1.0-SNAPSHOT"]
                  [org.serenova/lumbajack "0.1.0-SNAPSHOT"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]]
   :plugins [[lein-figwheel "0.5.8"]

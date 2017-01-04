@@ -161,14 +161,15 @@
 
 (defn sqs-msg-router [message]
   (let [cljsd-msg (js->clj (js/JSON.parse message) :keywordize-keys true)
-        {:keys [sessionId]} message
+        sessionId (or (get cljsd-msg :sessionId)
+                      (get-in cljsd-msg [:resource :sessionId]))
         inferred-msg (case (:type cljsd-msg)
                        "resource-state-change" (merge {:msg-type :SESSION/CHANGE_STATE_RESPONSE} cljsd-msg)
                        "work-offer" (merge {:msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (if (not= (state/get-session-id) sessionId)
-      (log :warn "This message is from an older session - ignoring")
+      (log :warn (str "Received a message from a different session than the current one. Current session ID: " (state/get-session-id) " - Session ID on message received:" sessionId " - Message:") cljsd-msg)
       (if inferred-msg
         (msg-router inferred-msg)
         (log :error "Unable to infer msg type from sqs")))))
@@ -188,6 +189,7 @@
   (log :info "Received shutdown message from Core - PubSub Module shutting down...."))
 
 (defn init [env]
+  (log :info "Initializing SDK module: Pub/Sub")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]

@@ -81,6 +81,7 @@
 
 (defn init
   [env done-init< config on-msg-fn]
+  (log :info "Initializing SDK module: SQS")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)

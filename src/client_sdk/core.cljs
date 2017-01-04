@@ -3,8 +3,8 @@
   (:require [cljs.core.async :as a]
             [clojure.string :as str]
             [lumbajack.core :as logging :refer [log]]
-            [auth-sdk.core :as auth]
-            [presence-sdk.core :as presence]
+            [client-sdk.auth :as auth]
+            [client-sdk.presence :as presence]
             [client-sdk-utils.core :as u]
             [client-sdk.state :as state]
             [client-sdk.interactions :as int]
@@ -18,7 +18,7 @@
 
 (enable-console-print!)
 
-(defn shutdown []
+(defn shutdown! []
   (let [channels (reduce
                   (fn [acc modules]
                     (let [module (get modules :shutdown)]
@@ -36,7 +36,8 @@
   (let [{:keys [module-name config]} module]
     (case module-name
       :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config pubsub/sqs-msg-router))
-      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config pubsub/mqtt-msg-router)))
+      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config pubsub/mqtt-msg-router))
+      (log :error "Unrecognized asynchronous module registration attempt."))
     (go (a/<! done-registry<)
         (log :info (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
 
@@ -48,8 +49,7 @@
         env (keyword env)]
     (state/set-consumer-type! (if cljs :cljs :js))
     (state/set-env! env)
-    (register-module! :logging (logging/init env {:terse? (or terseLogs false)
-                                                  :level logLevel}))
+    (register-module! :logging (logging/init env {:terse? (or terseLogs false) :level logLevel}))
     (register-module! :messaging (msg/init env))
     (register-module! :pubsub (pubsub/init env))
     (register-module! :interactions (int/init env))
