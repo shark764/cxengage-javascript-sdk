@@ -35,6 +35,7 @@
                                 (a/promise-chan)
                                 {:state "notready"
                                  :sessionId (state/get-session-id)})
+          (a/put! (state/get-async-module-registration) {:module-name :sqs :config (state/get-session-details)})
           (when callback (callback))))))
 
 (defn set-active-tenant-handler [module-chan response-chan params]
@@ -46,7 +47,6 @@
     (a/put! (state/get-module-chan :authentication) msg)
     (go (let [response (a/<! response-chan)
               {:keys [result]} response]
-          (a/put! (state/get-async-module-registration) {:module-name :sqs :config result})
           (a/put! (state/get-async-module-registration) {:module-name :mqtt :config result})
           (state/set-config! result)
           (start-session module-chan (a/promise-chan) {:callback callback})))))

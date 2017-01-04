@@ -168,8 +168,10 @@
                        "work-offer" (merge {:msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
+    (when (= nil (state/get-session-id))
+      (log :error "Local Session ID so our session hasn't started yet :("))
     (if (not= (state/get-session-id) sessionId)
-      (log :warn (str "Received a message from a different session than the current one. Current session ID: " (state/get-session-id) " - Session ID on message received:" sessionId " - Message:") cljsd-msg)
+      (log :warn (str "Received a message from a different session than the current one. Current session ID: " (state/get-session-id) " - Session ID on message received: " sessionId " - Message:") cljsd-msg)
       (if inferred-msg
         (msg-router inferred-msg)
         (log :error "Unable to infer msg type from sqs")))))

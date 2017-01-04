@@ -146,12 +146,13 @@
 
 (defn gen-payload [message]
   (let [{:keys [message userId tenantId interactionId]} message
+        uid (str (id/make-random-uuid))
         metadata {:name "Agent"
                   :first-name "Agent"
                   :last-name "Agent"
                   :type "agent"}
         body {:text message}]
-    {:id (id/make-random-uuid)
+    {:id uid
      :tenant-id tenantId
      :type "message"
      :to interactionId
@@ -169,7 +170,6 @@
         payload (-> message
                     (gen-payload)
                     (format-payload))
-        _ (log :debug "MODULE STATE ENV" (get @module-state :env))
         _ (log :debug "BROOOOOOOOO" payload)
         topic (str (name (get @module-state :env)) "/tenants/" tenantId "/channels/" interactionId)
         _ (log :debug "TOPIC IN SEND MSG" topic)]
