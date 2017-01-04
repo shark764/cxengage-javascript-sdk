@@ -18,6 +18,15 @@
 
 (enable-console-print!)
 
+(defn shutdown []
+  (let [channels (reduce
+                  (fn [acc modules]
+                    (let [module (get modules :shutdown)]
+                      (conj acc module)))
+                  []
+                  (vals (get @(state/get-state) :module-channels)))]
+    (doseq [shutdown-channel channels] (a/put! shutdown-channel :shutdown))))
+
 (defn register-module!
   [module-name module]
   (swap! (state/get-state) assoc-in [:module-channels module-name] module))

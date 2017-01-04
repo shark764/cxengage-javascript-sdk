@@ -184,8 +184,14 @@
 (defn api []
   {:subscribe subscribe})
 
+(defn module-shutdown-handler [message]
+  (log :info "Received shutdown message from Core - PubSub Module shutting down...."))
+
 (defn init [env]
   (swap! module-state assoc :env env)
-  (let [module-inputs< (a/chan 1024)]
+  (let [module-inputs< (a/chan 1024)
+        module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)
-    module-inputs<))
+    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
+    {:messages module-inputs<
+     :shutdown module-shutdown<}))
