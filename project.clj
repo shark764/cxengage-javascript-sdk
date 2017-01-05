@@ -41,4 +41,8 @@
                                   [com.cemerick/piggieback "0.2.1"]]
                    :source-paths ["src" "dev"]
                    :repl-options {:init (set! *print-length* 50)
-                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}})
+                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
+  :repositories [["releases" {:url "http://nexus.cxengagelabs.net/content/repositories/releases/"
+                              :snapshots false}]
+                 ["snapshots" {:url "http://nexus.cxengagelabs.net/content/repositories/snapshots/"
+                               :update :always}]])
