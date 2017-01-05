@@ -1,4 +1,4 @@
-(ns client-sdk.sqs
+(ns client-sdk.modules.sqs
   (:require-macros [cljs.core.async.macros :refer [go-loop go]])
   (:require cljsjs.aws-sdk-js
             [lumbajack.core :refer [log]]

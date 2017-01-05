@@ -3,18 +3,19 @@
   (:require [cljs.core.async :as a]
             [clojure.string :as str]
             [lumbajack.core :as logging :refer [log]]
-            [client-sdk.auth :as auth]
-            [client-sdk.presence :as presence]
             [client-sdk-utils.core :as u]
+            [client-sdk.modules.auth :as auth]
+            [client-sdk.modules.presence :as presence]
+            [client-sdk.modules.flow :as flow]
+            [client-sdk.modules.sqs :as sqs]
+            [client-sdk.modules.mqtt :as mqtt]
+            [client-sdk.modules.messaging :as msg]
+            [client-sdk.modules.reporting :as reporting]
+            [client-sdk.modules.crud :as crud]
             [client-sdk.state :as state]
-            [client-sdk.interactions :as int]
             [client-sdk.api :as api]
-            [client-sdk.pubsub :as pubsub]
-            [client-sdk.sqs :as sqs]
-            [client-sdk.mqtt :as mqtt]
-            [client-sdk.messaging :as msg]
-            [client-sdk.reporting :as reporting]
-            [client-sdk.crud :as crud]))
+            [client-sdk.pubsub :as pubsub]))
+
 
 (enable-console-print!)
 
@@ -46,13 +47,13 @@
   (let [opts (js->clj opts :keywordize-keys true)
         {:keys [env cljs terseLogs logLevel]} opts
         logLevel (if logLevel (keyword logLevel) :debug)
-        env (keyword env)]
+        env (or (keyword env) "production")]
     (state/set-consumer-type! (if cljs :cljs :js))
     (state/set-env! env)
     (register-module! :logging (logging/init env {:terse? (or terseLogs false) :level logLevel}))
     (register-module! :messaging (msg/init env))
     (register-module! :pubsub (pubsub/init env))
-    (register-module! :interactions (int/init env))
+    (register-module! :interactions (flow/init env))
     (register-module! :authentication (auth/init env))
     (register-module! :reporting (reporting/init env))
     (register-module! :presence (presence/init env))

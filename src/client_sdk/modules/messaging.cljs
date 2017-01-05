@@ -1,4 +1,4 @@
-(ns client-sdk.messaging
+(ns client-sdk.modules.messaging
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [lumbajack.core :refer [log]]
