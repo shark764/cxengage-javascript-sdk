@@ -50,7 +50,7 @@
 (defn add-messages-to-history! [interaction-id messages]
   (let [interaction-location (find-interaction-location interaction-id)
         old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
-        new-msg-history (reduce (fn [acc msg] (conj acc msg)) old-msg-history messages)]
+        new-msg-history (reduce conj old-msg-history messages)]
     (log :error "Before adding msg history" (get-all-interactions))
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)
     (log :error "After adding msg history" (get-all-interactions))))
@@ -76,10 +76,8 @@
 
 (defn transition-interaction! [from to interaction-id]
   (let [interaction (get-in @sdk-state [:interactions from interaction-id])
-        updated-interactions-from (-> (get-in @sdk-state [:interactions from])
-                                      (dissoc interaction-id))
-        updated-interactions-to (-> (get-in @sdk-state [:interactions to])
-                                    (assoc interaction-id interaction))]
+        updated-interactions-from (dissoc (get-in @sdk-state [:interactions from]) interaction-id)
+        updated-interactions-to (assoc (get-in @sdk-state [:interactions to]) interaction-id interaction)]
     (swap! sdk-state assoc-in [:interactions from] updated-interactions-from)
     (swap! sdk-state assoc-in [:interactions to] updated-interactions-to)))
 
