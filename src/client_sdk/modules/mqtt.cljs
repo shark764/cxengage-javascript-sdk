@@ -1,4 +1,4 @@
-(ns client-sdk.mqtt
+(ns client-sdk.modules.mqtt
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljsjs.paho]
             [camel-snake-kebab.core :as camel]

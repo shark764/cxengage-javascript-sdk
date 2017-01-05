@@ -1,6 +1,7 @@
 (ns client-sdk.api.session
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
+            [cljs.spec :as s]
             [lumbajack.core :refer [log]]
             [client-sdk.state :as state]
             [client-sdk.api.helpers :as h]))
