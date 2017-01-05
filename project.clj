@@ -16,7 +16,9 @@
                  [org.serenova/lumbajack "0.1.0-SNAPSHOT"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]]
   :plugins [[lein-figwheel "0.5.8"]
-            [lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]]
+            [lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]
+            [lein-shell "0.5.0"]
+            [lein-doo "0.1.7"]]
   :source-paths ["src"]
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
   :cljsbuild {:builds
@@ -29,6 +31,12 @@
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp true
                            :preloads [devtools.preload]}}
+               {:id "test"
+                :source-paths ["src" "test"]
+                :compiler {:main client-sdk.runner
+                           :output-dir "resources/public/js/compiled/test"
+                           :output-to "resources/public/js/compiled/test/testable.js"
+                           :optimizations :whitespace}}
                {:id "min"
                 :source-paths ["src"]
                 :compiler {:output-to "resources/public/js/compiled/client_sdk.js"
@@ -37,11 +45,17 @@
                            :pretty-print false}}]}
   :figwheel {}
   :profiles {:dev {:dependencies [[binaryage/devtools "0.8.2"]
+                                  [karma-reporter "0.3.0"]
+                                  [org.clojure/test.check "0.9.0"]
                                   [figwheel-sidecar "0.5.8"]
                                   [com.cemerick/piggieback "0.2.1"]]
                    :source-paths ["src" "dev"]
                    :repl-options {:init (set! *print-length* 50)
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
+  :aliases {"prod" ["do" "clean," "cljsbuild" "once" "prod"]
+            "test" ["doo" "phantom" "test" "once"]}
+  :doo {:build "test"
+        :alias {:default [:phantom]}}
   :repositories [["releases" {:url "http://nexus.cxengagelabs.net/content/repositories/releases/"
                               :snapshots false}]
                  ["snapshots" {:url "http://nexus.cxengagelabs.net/content/repositories/snapshots/"
