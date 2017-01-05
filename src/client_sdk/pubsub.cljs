@@ -42,12 +42,13 @@
 
 (defn get-topic-permutations [topic]
   (let [parts (s/split topic #"/")]
-    (-> (reduce (fn [{:keys [x permutations]} part]
-                  (let [permutation (s/join "/" (take x parts))]
-                    {:x (inc x) :permutations (conj permutations permutation)}))
-                {:x 1 :permutations []}
-                parts)
-        (:permutations))))
+    (:permutations
+     (reduce
+      (fn [{:keys [x permutations]} part]
+        (let [permutation (s/join "/" (take x parts))]
+          {:x (inc x), :permutations (conj permutations permutation)}))
+      {:x 1, :permutations []}
+      parts))))
 
 (defn valid-topic? [topic]
   (contains? topic-strings topic))
@@ -168,7 +169,7 @@
                        "work-offer" (merge {:msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
-    (when (= nil (state/get-session-id))
+    (when (nil? (state/get-session-id))
       (log :error "Local Session ID so our session hasn't started yet :("))
     (if (not= (state/get-session-id) sessionId)
       (log :warn (str "Received a message from a different session than the current one. Current session ID: " (state/get-session-id) " - Session ID on message received: " sessionId " - Message:") cljsd-msg)
