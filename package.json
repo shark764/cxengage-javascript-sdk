@@ -1,0 +1,23 @@
+{
+  "name": "client-sdk-core",
+  "version": "0.0.0",
+  "description": "<img src=\"https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif\" width=\"700\">",
+  "main": "release/sdk.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Samstiles/client-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Samstiles/client-sdk/issues"
+  },
+  "homepage": "https://github.com/Samstiles/client-sdk#readme",
+  "publishConfig": {
+   "registry": "http://nexus.cxengagelabs.net/content/repositories/npm-internal/"
+  }
+}

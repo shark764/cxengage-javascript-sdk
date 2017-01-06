@@ -42,7 +42,15 @@
                 :compiler {:output-to "resources/public/js/compiled/client_sdk.js"
                            :main client-sdk.core
                            :optimizations :advanced
-                           :pretty-print false}}]}
+                           :pretty-print false}}
+               {:id "prod"
+                :source-paths ["src"]
+                :compiler {:output-to "release/sdk.min.js"
+                           :optimizations :advanced
+                           :pseudo-names true
+                           :pretty-print false
+                           :output-wrapper true
+                           :externs ["externs.js"]}}]}
   :figwheel {}
   :profiles {:dev {:dependencies [[binaryage/devtools "0.8.2"]
                                   [karma-reporter "0.3.0"]
