@@ -16,7 +16,8 @@
             [client-sdk.interaction-management :as intmgmt]
             [client-sdk.state :as state]
             [client-sdk.api :as api]
-            [client-sdk.pubsub :as pubsub]))
+            [client-sdk.pubsub :as pubsub]
+            [client-sdk.modules.twilio :as twilio]))
 
 (enable-console-print!)
 
@@ -37,8 +38,9 @@
   [done-registry< module]
   (let [{:keys [module-name config]} module]
     (case module-name
-      :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config intmgmt/sqs-msg-router))
-      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config intmgmt/mqtt-msg-router))
+      :twilio (register-module! :twilio (twilio/init (state/get-env) done-registry< config pubsub/twilio-msg-router))
+      :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config pubsub/sqs-msg-router))
+      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config pubsub/mqtt-msg-router))
       (log :error "Unrecognized asynchronous module registration attempt."))
     (go (a/<! done-registry<)
         (log :info (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
