@@ -1,6 +1,7 @@
 (ns client-sdk.api.helpers
+  (:require-macros [cljs.core.async.macros :refer [go]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
-            [lumbajack.core :refer [log]]
             [client-sdk.state :as state]))
 
 (defn sdk-handler [] nil)

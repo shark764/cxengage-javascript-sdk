@@ -1,7 +1,7 @@
 (ns client-sdk.modules.auth
-  (:require-macros [cljs.core.async.macros :refer [go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go-loop]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
-            [lumbajack.core :as l :refer [log]]
             [client-sdk-utils.core :as u]))
 
 (def module-state (atom {}))

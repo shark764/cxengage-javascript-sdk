@@ -1,8 +1,9 @@
 (ns client-sdk.core
-  (:require-macros [cljs.core.async.macros :refer [go-loop go]])
+  (:require-macros [cljs.core.async.macros :refer [go-loop go]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [clojure.string :as str]
-            [lumbajack.core :as logging :refer [log]]
+            [lumbajack.core :as logging]
             [client-sdk-utils.core :as u]
             [client-sdk.modules.auth :as auth]
             [client-sdk.modules.presence :as presence]
@@ -12,10 +13,10 @@
             [client-sdk.modules.messaging :as msg]
             [client-sdk.modules.reporting :as reporting]
             [client-sdk.modules.crud :as crud]
+            [client-sdk.interaction-management :as intmgmt]
             [client-sdk.state :as state]
             [client-sdk.api :as api]
             [client-sdk.pubsub :as pubsub]))
-
 
 (enable-console-print!)
 
@@ -36,8 +37,8 @@
   [done-registry< module]
   (let [{:keys [module-name config]} module]
     (case module-name
-      :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config pubsub/sqs-msg-router))
-      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config pubsub/mqtt-msg-router))
+      :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config intmgmt/sqs-msg-router))
+      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config intmgmt/mqtt-msg-router))
       (log :error "Unrecognized asynchronous module registration attempt."))
     (go (a/<! done-registry<)
         (log :info (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
@@ -57,6 +58,8 @@
     (register-module! :authentication (auth/init env))
     (register-module! :reporting (reporting/init env))
     (register-module! :presence (presence/init env))
+
     (u/start-simple-consumer! (state/get-async-module-registration)
                               (partial register-module-async! (a/promise-chan)))
+    (log :info "Oh shit waddup!")
     (api/assemble-api)))

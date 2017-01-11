@@ -1,6 +1,6 @@
 (ns client-sdk.state
-  (:require [lumbajack.core :refer [log]]
-            [cljs.core.async :as a]))
+  (:require-macros [lumbajack.macros :refer [log]])
+  (:require [cljs.core.async :as a]))
 
 (defonce sdk-state
   (atom {:async-module-registration (a/chan 1024)

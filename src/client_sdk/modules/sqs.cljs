@@ -1,7 +1,7 @@
 (ns client-sdk.modules.sqs
-  (:require-macros [cljs.core.async.macros :refer [go-loop go]])
-  (:require cljsjs.aws-sdk-js
-            [lumbajack.core :refer [log]]
+  (:require-macros [cljs.core.async.macros :refer [go-loop go]]
+                   [lumbajack.macros :refer [log]])
+  (:require [cljsjs.aws-sdk-js]
             [client-sdk-utils.core :as u]
             [client-sdk.state :as state]
             [cljs.core.async :as a]

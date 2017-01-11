@@ -1,5 +1,6 @@
 (ns client-sdk.modules.mqtt
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljsjs.paho]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
@@ -9,7 +10,6 @@
             [cljs-time.format :as fmt]
             [cljs-time.instant]
             [goog.crypt :as c]
-            [lumbajack.core :refer [log]]
             [cljs-uuid-utils.core :as id]
             [client-sdk-utils.core :as u]
             [client-sdk.state :as state]
@@ -170,9 +170,7 @@
         payload (-> message
                     (gen-payload)
                     (format-payload))
-        _ (log :debug "BROOOOOOOOO" payload)
-        topic (str (name (get @module-state :env)) "/tenants/" tenantId "/channels/" interactionId)
-        _ (log :debug "TOPIC IN SEND MSG" topic)]
+        topic (str (name (get @module-state :env)) "/tenants/" tenantId "/channels/" interactionId)]
     (send-message-impl payload topic)))
 
 (defn module-router [message]
