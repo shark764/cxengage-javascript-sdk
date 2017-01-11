@@ -3,7 +3,9 @@
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [client-sdk.api.helpers :as h]
-            [client-sdk.state :as state]))
+            [client-sdk.state :as state]
+            [client-sdk.domain.specs :as specs]
+            [client-sdk.domain.errors :as err]))
 
 (defn acknowledge-flow-action [params]
   (let [module-chan (state/get-module-chan :interactions)
@@ -14,7 +16,12 @@
                    params)]
     (a/put! module-chan msg)))
 
+(s/def ::accept-interaction-params
+    (s/keys :req-un [::specs/message]
+            :opt-un []))
 (defn accept-interaction [params]
+  (if-not (s/valid? ::accept-interaction-params (js->clj params :keywordize-keys true))
+      (err/invalid-params-err))
   (let [module-chan (state/get-module-chan :interactions)
         response-chan (a/promise-chan)
         {:keys [interactionId]} (h/extract-params params)
@@ -40,7 +47,12 @@
                     :interactionId interactionId})]
     (a/put! module-chan msg)))
 
+(s/def ::send-message-params
+    (s/keys :req-un [::specs/message]
+            :opt-un [::specs/callback]))
 (defn send-message-handler [params]
+  (if-not (s/valid? ::send-message-params (js->clj params :keywordize-keys true))
+      (err/invalid-params-err))
   (let [module-chan (state/get-module-chan :mqtt)
         response-chan (a/promise-chan)
         message (h/extract-params params)
