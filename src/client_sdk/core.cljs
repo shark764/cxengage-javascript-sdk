@@ -38,9 +38,9 @@
   [done-registry< module]
   (let [{:keys [module-name config]} module]
     (case module-name
-      :twilio (register-module! :twilio (twilio/init (state/get-env) done-registry< config pubsub/twilio-msg-router))
-      :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config pubsub/sqs-msg-router))
-      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config pubsub/mqtt-msg-router))
+      :twilio (register-module! :twilio (twilio/init (state/get-env) done-registry< config intmgmt/twilio-msg-router))
+      :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config intmgmt/sqs-msg-router))
+      :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config intmgmt/mqtt-msg-router))
       (log :error "Unrecognized asynchronous module registration attempt."))
     (go (a/<! done-registry<)
         (log :info (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
@@ -63,5 +63,4 @@
 
     (u/start-simple-consumer! (state/get-async-module-registration)
                               (partial register-module-async! (a/promise-chan)))
-    (log :info "Oh shit waddup!")
     (api/assemble-api)))

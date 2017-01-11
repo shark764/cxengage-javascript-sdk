@@ -4,7 +4,7 @@
   (:require [cljs.core.async :as a]
             [client-sdk.state :as state]
             [client-sdk.api.interactions :as int]
-            [client-sdk.pubsub :as pubsub]) )
+            [client-sdk.pubsub :as pubsub :refer [publish!]]))
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
@@ -53,8 +53,8 @@
                                            :interactionId interactionId})))
 
 (defn handle-work-ended [message]
- (log :error "work ended message:" message)
- (publish! "cxengage/interactions/work-ended" message))
+  (log :error "work ended message:" message)
+  (publish! "cxengage/interactions/work-ended" message))
 
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapupTime :wrapupEnabled :wrapupUpdateAllowed :targetWrapupTime])
