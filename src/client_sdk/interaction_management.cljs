@@ -52,6 +52,10 @@
                                            :tenantId tenantId
                                            :interactionId interactionId})))
 
+(defn handle-work-ended [message]
+ (log :error "work ended message:" message)
+ (publish! "cxengage/interactions/work-ended" message))
+
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapupTime :wrapupEnabled :wrapupUpdateAllowed :targetWrapupTime])
         {:keys [interactionId]} message]
@@ -64,6 +68,7 @@
                       :INTERACTIONS/WORK_OFFER_RECEIVED handle-work-offer
                       :INTERACTIONS/WORK_REJECTED_RECEIVED handle-work-rejected
                       :INTERACTIONS/WORK_INITIATED_RECEIVED handle-work-initiated
+                      :INTERACTIONS/WORK_ENDED_RECEIVED handle-work-ended
                       :INTERACTIONS/CUSTOM_FIELDS_RECEIVED handle-custom-fields
                       :INTERACTIONS/DISPOSITION_CODES_RECEIVED handle-disposition-codes
                       :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED handle-interaction-heartbeat
@@ -87,6 +92,7 @@
     (if-let [inferred-notification-type (case notificationType
                                           "work-rejected" (merge {:msg-type :INTERACTIONS/WORK_REJECTED_RECEIVED} message)
                                           "work-initiated" (merge {:msg-type :INTERACTIONS/WORK_INITIATED_RECEIVED} message)
+                                          "work-ended" (merge {:msg-type :INTERACTIONS/WORK_ENDED_RECEIVED} message)
                                           "work-accepted" (merge {:msg-type :INTERACTIONS/WORK_ACCEPTED_RECEIVED} message)
                                           "disposition-codes" (merge {:msg-type :INTERACTIONS/DISPOSITION_CODES_RECEIVED} message)
                                           "custom-fields" (merge {:msg-type :INTERACTIONS/CUSTOM_FIELDS_RECEIVED} message)
@@ -115,3 +121,6 @@
 
 (defn mqtt-msg-router [message]
   (log :warn "message in mqtt msg router" message))
+
+(defn twilio-msg-router [message type]
+  (log :warn "message in twilio msg router" message))

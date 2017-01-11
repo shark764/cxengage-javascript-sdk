@@ -53,6 +53,7 @@
     (go (let [response (a/<! response-chan)
               {:keys [result]} response]
           (a/put! (state/get-async-module-registration) {:module-name :mqtt :config result})
+          (a/put! (state/get-async-module-registration) {:module-name :twilio :config result})
           (state/set-config! result)
           (start-session {:callback callback})))))
 
