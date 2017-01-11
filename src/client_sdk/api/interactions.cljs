@@ -18,7 +18,7 @@
 
 (s/def ::accept-interaction-params
     (s/keys :req-un [::specs/interactionId]
-            :opt-un []))
+            :opt-un [::specs/callback]))
 (defn accept-interaction [params]
   (if-not (s/valid? ::accept-interaction-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err))
