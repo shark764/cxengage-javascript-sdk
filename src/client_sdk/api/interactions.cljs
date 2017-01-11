@@ -28,7 +28,7 @@
                     :interactionId interactionId})]
     (a/put! module-chan msg)))
 
-(defn end-interaction-handler [module-chan response-chan params]
+(defn end-interaction [module-chan response-chan params]
   (let [{:keys [interactionId]} (h/extract-params params)
         msg (merge (h/base-module-request :INTERACTIONS/SEND_INTERRUPT
                                           response-chan
@@ -52,9 +52,3 @@
                    {:tenantId (state/get-active-tenant-id)
                     :userId (state/get-active-user-id)})]
     (a/put! module-chan msg)))
-
-(defn api []
-  (let [module-chan (state/get-module-chan :interactions)]
-    {:acceptOffer (partial accept-offer-handler module-chan (a/promise-chan))
-     :endInteraction (partial end-interaction-handler module-chan (a/promise-chan))
-     :messaging {:sendMessage send-message-handler}}))

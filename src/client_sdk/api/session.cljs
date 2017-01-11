@@ -9,21 +9,25 @@
 (defn change-state [params]
   (let [module-chan (state/get-module-chan :presence)
         response-chan (a/promise-chan)
-        {:keys [state callback]} (h/extract-params params)
+        _ (log :debug "params in change state" (h/extract-params params))
+        _ (log :debug "session id in change state:" (state/get-session-id))
+        {:keys [state callback]} nil
         msg (merge (h/base-module-request :SESSION/CHANGE_STATE response-chan (state/get-token))
                    {:tenant-id (state/get-active-tenant-id)
                     :user-id (state/get-active-user-id)
                     :sessionId (state/get-session-id)
                     :state state})]
     (a/put! module-chan msg)
-    (go (let [response (a/<! response-chan)
+    (go (log :debug "resp chan in go block:" response-chan)
+        (log :debug "module-chan in go block:" module-chan)
+        (let [response (a/<! response-chan)
               {:keys [result]} response]
           (state/set-user-session-state! result)
-          (a/put! (state/get-module-chan :pubsub)
-                  (merge {:msg-type :SESSION/CHANGE_STATE_RESPONSE} result {:sessionId (state/get-session-id)}))
           (when callback (callback))))))
 
 (defn start-session [params]
+  (log :debug "ACTIVE TID" (state/get-active-tenant-id))
+  (log :debug "ACTIVE UID" (state/get-active-user-id))
   (let [module-chan (state/get-module-chan :presence)
         response-chan (a/promise-chan)
         {:keys [callback]} (h/extract-params params)
@@ -34,8 +38,7 @@
     (go (let [session-result (a/<! response-chan)]
           (state/set-session-details! session-result)
           (log :info "Successfully initiated presence session")
-          (a/put! (state/get-module-chan :pubsub)
-                  (merge {:msg-type :SESSION/START_SESSION_RESPONSE} session-result {:sessionId (state/get-session-id)}))
+          (log :warn (state/get-session-id))
           (change-state {:state "notready"
                          :sessionId (state/get-session-id)})
           (a/put! (state/get-async-module-registration) {:module-name :sqs :config (state/get-session-details)})
