@@ -1,8 +1,15 @@
 (ns client-sdk.domain.errors)
 
+(defn error-response [code msg]
+  (clj->js {:response nil
+            :error {:code code
+                    :message msg}}))
+
 (defn invalid-params-err
   ([] (invalid-params-err nil))
   ([msg]
-   (clj->js {:response nil
-             :error {:code 15000
-                     :message (or msg "Invalid arguments passed to SDK function.")}})))
+   (let [code 1000
+         msg (or msg "Invalid arguments passed to SDK function.")
+         msg-str (str code ": " msg)]
+     (js/console.error msg-str)
+     (error-response code msg))))

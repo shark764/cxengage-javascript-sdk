@@ -1,5 +1,6 @@
 (ns client-sdk.api.reporting
-  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [client-sdk.state :as state]))
 
