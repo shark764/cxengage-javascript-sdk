@@ -159,3 +159,20 @@
 
 (defn get-module-shutdown-chan [module]
   (get-in @sdk-state [:module-channels module :shutdown]))
+
+
+;;;;;;;;;;;
+;; Predicates
+;;;;;;;;;;;
+
+(defn session-started? []
+  (get-session-id))
+
+(defn active-tenant-set? []
+  (get-active-tenant-id))
+
+(defn agent-currently-in-state? [state]
+  (true)) ;TODO
+
+(defn interaction-exists-in-state? [interaction-id interaction-state]
+  (get-in @sdk-state [:interactions interaction-state interaction-id]))

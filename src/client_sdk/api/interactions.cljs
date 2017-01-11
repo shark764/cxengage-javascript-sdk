@@ -24,6 +24,13 @@
 (defn accept-interaction [params]
   (if-not (s/valid? ::accept-interaction-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err)
+      ; (if-let [error (cond)
+      ;              (state/session-started?) (err1)
+      ;              (state/active-tenant-set?) (err2)
+      ;              (state/agent-currently-in-state? ()) (err2)
+      ;              (state/interaction-exists-in-state?) (err2)
+      ;              :else false]
+      ;   error
       (let [module-chan (state/get-module-chan :interactions)
             response-chan (a/promise-chan)
             {:keys [interactionId]} (h/extract-params params)
@@ -52,7 +59,7 @@
 (s/def ::send-message-params
     (s/keys :req-un [::specs/message]
             :opt-un [::specs/callback]))
-            
+
 (defn send-message-handler [params]
   (if-not (s/valid? ::send-message-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err))
