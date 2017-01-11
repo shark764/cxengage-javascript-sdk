@@ -3,10 +3,13 @@
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [client-sdk-utils.core :as u]
-            [clojure.string :as s]
+            [clojure.string :as string]
             [client-sdk.state :as state]
             [cljs-uuid-utils.core :as id]
-            [client-sdk.api.helpers :as h]))
+            [client-sdk.api.helpers :as h]
+            [cljs.spec :as s]
+            [client-sdk.domain.specs :as specs]
+            [client-sdk.domain.errors :as err]))
 
 (def module-state (atom {}))
 
@@ -39,11 +42,11 @@
     topic-strings)))
 
 (defn get-topic-permutations [topic]
-  (let [parts (s/split topic #"/")]
+  (let [parts (string/split topic #"/")]
     (:permutations
      (reduce
       (fn [{:keys [x permutations]} part]
-        (let [permutation (s/join "/" (take x parts))]
+        (let [permutation (string/join "/" (take x parts))]
           {:x (inc x), :permutations (conj permutations permutation)}))
       {:x 1, :permutations []}
       parts))))
@@ -51,12 +54,23 @@
 (defn valid-topic? [topic]
   (contains? topic-strings topic))
 
-(defn subscribe [topic handler]
-  (if-not (valid-topic? topic)
-    (log :error "That is not a valid subscription topic.")
-    (let [subscription-id (id/make-random-uuid)]
-      (swap! subscriptions assoc-in [topic subscription-id] handler)
-      nil)))
+(s/def ::subscribe-params
+    (s/keys :req-un [::specs/topic ::specs/callback]
+            :opt-un []))
+
+(defn subscribe
+  ([topic callback]
+   (let [params {:topic topic :callback callback}]
+     (subscribe params)))
+  ([params]
+   (if-not (s/valid? ::subscribe-params (js->clj params :keywordize-keys true))
+      (err/invalid-params-err)
+      (let [{:keys [topic callback]} params]
+        (if-not (valid-topic? topic)
+          (log :error "That is not a valid subscription topic.")
+          (let [subscription-id (id/make-random-uuid)]
+            (swap! subscriptions assoc-in [topic subscription-id] callback)
+            nil))))))
 
 (defn publish! [topic message]
   (if-not (valid-topic? topic)

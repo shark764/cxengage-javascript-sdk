@@ -20,6 +20,7 @@
 (s/def ::accept-interaction-params
     (s/keys :req-un [::specs/interactionId]
             :opt-un [::specs/callback]))
+
 (defn accept-interaction [params]
   (if-not (s/valid? ::accept-interaction-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err)
@@ -51,6 +52,7 @@
 (s/def ::send-message-params
     (s/keys :req-un [::specs/message]
             :opt-un [::specs/callback]))
+            
 (defn send-message-handler [params]
   (if-not (s/valid? ::send-message-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err))

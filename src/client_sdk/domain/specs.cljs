@@ -7,6 +7,7 @@
             [client-sdk.api.helpers :as h]))
 
 (s/def ::tenantId string?)
+(s/def ::topic string?)
 (s/def ::interactionId string?)
 (s/def ::state string?)
 (s/def ::callback fn?)
