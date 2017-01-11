@@ -28,22 +28,26 @@
               (state/set-user-session-state! result)
               (when callback (callback)))))))
 
-
+(s/def ::set-active-tenant-params
+    (s/keys :req-un []
+            :opt-un [::specs/callback]))
 (defn start-session [params]
-  (let [module-chan (state/get-module-chan :presence)
-        response-chan (a/promise-chan)
-        {:keys [callback]} (h/extract-params params)
-        msg (merge (h/base-module-request :SESSION/START_SESSION response-chan (state/get-token))
-                   {:tenant-id (state/get-active-tenant-id)
-                    :user-id (state/get-active-user-id)})]
-    (a/put! module-chan msg)
-    (go (let [session-result (a/<! response-chan)]
-          (state/set-session-details! session-result)
-          (log :info "Successfully initiated presence session")
-          (change-state {:state "notready"
-                         :sessionId (state/get-session-id)})
-          (a/put! (state/get-async-module-registration) {:module-name :sqs :config (state/get-session-details)})
-          (when callback (callback))))))
+  (if-not (s/valid? ::set-active-tenant-params (js->clj params :keywordize-keys true))
+      (err/invalid-params-err)
+      (let [module-chan (state/get-module-chan :presence)
+            response-chan (a/promise-chan)
+            {:keys [callback]} (h/extract-params params)
+            msg (merge (h/base-module-request :SESSION/START_SESSION response-chan (state/get-token))
+                       {:tenant-id (state/get-active-tenant-id)
+                        :user-id (state/get-active-user-id)})]
+        (a/put! module-chan msg)
+        (go (let [session-result (a/<! response-chan)]
+              (state/set-session-details! session-result)
+              (log :info "Successfully initiated presence session")
+              (change-state {:state "notready"
+                             :sessionId (state/get-session-id)})
+              (a/put! (state/get-async-module-registration) {:module-name :sqs :config (state/get-session-details)})
+              (when callback (callback)))))))
 
 
 (s/def ::set-active-tenant-params
