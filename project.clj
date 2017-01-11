@@ -31,18 +31,6 @@
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp true
                            :preloads [devtools.preload]}}
-               {:id "test"
-                :source-paths ["src" "test"]
-                :compiler {:main client-sdk.runner
-                           :output-dir "resources/public/js/compiled/test"
-                           :output-to "resources/public/js/compiled/test/testable.js"
-                           :optimizations :whitespace}}
-               {:id "min"
-                :source-paths ["src"]
-                :compiler {:output-to "resources/public/js/compiled/client_sdk.js"
-                           :main client-sdk.core
-                           :optimizations :advanced
-                           :pretty-print false}}
                {:id "prod"
                 :source-paths ["src"]
                 :compiler {:output-to "release/sdk.min.js"
