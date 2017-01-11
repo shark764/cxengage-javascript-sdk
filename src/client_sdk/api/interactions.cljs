@@ -21,19 +21,19 @@
             :opt-un [::specs/callback]))
 (defn accept-interaction [params]
   (if-not (s/valid? ::accept-interaction-params (js->clj params :keywordize-keys true))
-      (err/invalid-params-err))
-  (let [module-chan (state/get-module-chan :interactions)
-        response-chan (a/promise-chan)
-        {:keys [interactionId]} (h/extract-params params)
-        msg (merge (h/base-module-request :INTERACTIONS/SEND_INTERRUPT
-                                          response-chan
-                                          (state/get-token))
-                   {:tenantId (state/get-active-tenant-id)
-                    :interruptType "offer-accept"
-                    :source "client"
-                    :resourceId (state/get-active-user-id)
-                    :interactionId interactionId})]
-    (a/put! module-chan msg)))
+      (err/invalid-params-err)
+      (let [module-chan (state/get-module-chan :interactions)
+            response-chan (a/promise-chan)
+            {:keys [interactionId]} (h/extract-params params)
+            msg (merge (h/base-module-request :INTERACTIONS/SEND_INTERRUPT
+                                              response-chan
+                                              (state/get-token))
+                       {:tenantId (state/get-active-tenant-id)
+                        :interruptType "offer-accept"
+                        :source "client"
+                        :resourceId (state/get-active-user-id)
+                        :interactionId interactionId})]
+        (a/put! module-chan msg))))
 
 (defn end-interaction [module-chan response-chan params]
   (let [{:keys [interactionId]} (h/extract-params params)
