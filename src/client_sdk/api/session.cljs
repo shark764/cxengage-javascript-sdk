@@ -11,6 +11,7 @@
 (s/def ::change-state-params
     (s/keys :req-un [::specs/state]
             :opt-un [::specs/callback]))
+
 (defn change-state [params]
   (if-not (s/valid? ::change-state-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err)
@@ -31,6 +32,7 @@
 (s/def ::set-active-tenant-params
     (s/keys :req-un []
             :opt-un [::specs/callback]))
+
 (defn start-session [params]
   (if-not (s/valid? ::set-active-tenant-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err)
@@ -53,6 +55,7 @@
 (s/def ::set-active-tenant-params
     (s/keys :req-un [::specs/tenantId]
             :opt-un [::specs/callback]))
+            
 (defn set-active-tenant [params]
   (if-not (s/valid? ::set-active-tenant-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err)

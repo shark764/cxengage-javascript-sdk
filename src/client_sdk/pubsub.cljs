@@ -57,6 +57,7 @@
 (s/def ::subscribe-params
     (s/keys :req-un [::specs/topic ::specs/callback]
             :opt-un []))
+
 (defn subscribe
   ([topic callback]
    (let [params {:topic topic :callback callback}]
