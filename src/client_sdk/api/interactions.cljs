@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
+            [cljs.spec :as s]
             [client-sdk.api.helpers :as h]
             [client-sdk.state :as state]
             [client-sdk.domain.specs :as specs]
