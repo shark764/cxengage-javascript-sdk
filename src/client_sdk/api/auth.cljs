@@ -6,7 +6,8 @@
             [client-sdk.domain.errors :as err]
             [client-sdk.pubsub :refer [publish!]]
             [client-sdk.state :as state]
-            [client-sdk.api.helpers :as h]))
+            [client-sdk.api.helpers :as h]
+            [client-sdk.domain.specs :as specs]))
 
 ;; -- Private
 
@@ -26,10 +27,9 @@
 
 (s/def ::username string?)
 (s/def ::password string?)
-(s/def ::callback fn?)
 (s/def ::login-params
   (s/keys :req-un [::username ::password]
-          :opt-un [::callback]))
+          :opt-un [::specs/callback]))
 
 (defn login
   ([params callback]
