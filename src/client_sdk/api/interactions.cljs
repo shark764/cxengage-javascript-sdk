@@ -23,13 +23,14 @@
             :opt-un [::specs/callback]))
 
 (defn accept-interaction [params]
-    (let [{:keys [interactionId]} (h/extract-params params)]
+    (let [params (h/extract-params params)
+          {:keys [interactionId callback]} params]
       (if-let [error (cond
-                       (not (s/valid? ::accept-interaction-params (js->clj params :keywordize-keys true))) (err/invalid-params-err)
+                       (not (s/valid? ::accept-interaction-params params)) (err/invalid-params-err)
                        (not (state/session-started?)) (err/session-not-started-err)
                        (not (state/active-tenant-set?)) (err/active-tenant-not-set-err)
                        (not (state/presence-state-matches? "ready")) (err/invalid-presence-state-err)
-                       (not (state/interaction-exists-in-state? interactionId :pending)) (err/interaction-not-found-err)
+                       (not (state/interaction-exists-in-state? :pending interactionId)) (err/interaction-not-found-err)
                        :else false)]
        error
        (let [module-chan (state/get-module-chan :interactions)

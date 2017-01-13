@@ -177,5 +177,5 @@
 (defn presence-state-matches? [state]
   (= state (get-user-session-state)))
 
-(defn interaction-exists-in-state? [interaction-id interaction-state]
+(defn interaction-exists-in-state? [interaction-state interaction-id]
   (get-in @sdk-state [:interactions interaction-state interaction-id]))
