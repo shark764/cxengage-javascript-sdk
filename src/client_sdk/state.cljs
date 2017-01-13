@@ -150,6 +150,9 @@
   [state]
   (swap! sdk-state assoc :session (merge (get-session-details) state)))
 
+(defn get-user-session-state
+  []
+  (get-in @sdk-state [:session :state]))
 ;;;;;;;;;;;
 ;; Chans
 ;;;;;;;;;;;
@@ -159,3 +162,20 @@
 
 (defn get-module-shutdown-chan [module]
   (get-in @sdk-state [:module-channels module :shutdown]))
+
+
+;;;;;;;;;;;
+;; Predicates
+;;;;;;;;;;;
+
+(defn session-started? []
+  (get-session-id))
+
+(defn active-tenant-set? []
+  (get-active-tenant-id))
+
+(defn presence-state-matches? [state]
+  (= state (get-user-session-state)))
+
+(defn interaction-exists-in-state? [interaction-state interaction-id]
+  (get-in @sdk-state [:interactions interaction-state interaction-id]))

@@ -22,20 +22,27 @@
             :opt-un [::specs/callback]))
 
 (defn accept-interaction [params]
-  (if-not (s/valid? ::accept-interaction-params (js->clj params :keywordize-keys true))
-      (err/invalid-params-err)
-      (let [module-chan (state/get-module-chan :interactions)
-            response-chan (a/promise-chan)
-            {:keys [interactionId]} (h/extract-params params)
-            msg (merge (h/base-module-request :INTERACTIONS/SEND_INTERRUPT
-                                              response-chan
-                                              (state/get-token))
-                       {:tenantId (state/get-active-tenant-id)
-                        :interruptType "offer-accept"
-                        :source "client"
-                        :resourceId (state/get-active-user-id)
-                        :interactionId interactionId})]
-        (a/put! module-chan msg))))
+    (let [params (h/extract-params params)
+          {:keys [interactionId callback]} params]
+      (if-let [error (cond
+                       (not (s/valid? ::accept-interaction-params params)) (err/invalid-params-err "Invalid Interaction ID")
+                       (not (state/session-started?)) (err/session-not-started-err)
+                       (not (state/active-tenant-set?)) (err/active-tenant-not-set-err)
+                       (not (state/presence-state-matches? "ready")) (err/invalid-presence-state-err)
+                       (not (state/interaction-exists-in-state? :pending interactionId)) (err/interaction-not-found-err)
+                       :else false)]
+       error
+       (let [module-chan (state/get-module-chan :interactions)
+             response-chan (a/promise-chan)
+             msg (merge (h/base-module-request :INTERACTIONS/SEND_INTERRUPT
+                                               response-chan
+                                               (state/get-token))
+                        {:tenantId (state/get-active-tenant-id)
+                         :interruptType "offer-accept"
+                         :source "client"
+                         :resourceId (state/get-active-user-id)
+                         :interactionId interactionId})]
+         (a/put! module-chan msg)))))
 
 (defn end-interaction [module-chan response-chan params]
   (let [{:keys [interactionId]} (h/extract-params params)
@@ -52,7 +59,7 @@
 (s/def ::send-message-params
     (s/keys :req-un [::specs/message]
             :opt-un [::specs/callback]))
-            
+
 (defn send-message-handler [params]
   (if-not (s/valid? ::send-message-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err))

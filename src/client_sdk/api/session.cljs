@@ -29,12 +29,11 @@
               (state/set-user-session-state! result)
               (when callback (callback)))))))
 
-(s/def ::set-active-tenant-params
-    (s/keys :req-un []
-            :opt-un [::specs/callback]))
+(s/def ::start-session-params
+    (s/keys :opt-un [::specs/callback]))
 
 (defn start-session [params]
-  (if-not (s/valid? ::set-active-tenant-params (js->clj params :keywordize-keys true))
+  (if-not (s/valid? ::start-session-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err)
       (let [module-chan (state/get-module-chan :presence)
             response-chan (a/promise-chan)
@@ -51,11 +50,10 @@
               (a/put! (state/get-async-module-registration) {:module-name :sqs :config (state/get-session-details)})
               (when callback (callback)))))))
 
-
 (s/def ::set-active-tenant-params
     (s/keys :req-un [::specs/tenantId]
             :opt-un [::specs/callback]))
-            
+
 (defn set-active-tenant [params]
   (if-not (s/valid? ::set-active-tenant-params (js->clj params :keywordize-keys true))
       (err/invalid-params-err)

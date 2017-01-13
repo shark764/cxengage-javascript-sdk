@@ -1,4 +1,5 @@
 (ns client-sdk.api.interactions.messaging
+  (:require-macros [lumbajack.macros :refer [log]])
   (:require [client-sdk.state :as state]
             [cljs.core.async :as a]
             [client-sdk.api.helpers :as h]))
