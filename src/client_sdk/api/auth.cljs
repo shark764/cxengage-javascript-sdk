@@ -24,10 +24,11 @@
 
 ;; -- Public
 
-(s/def ::token string?)
+(s/def ::username string?)
+(s/def ::password string?)
 (s/def ::callback fn?)
 (s/def ::login-params
-  (s/keys :req-un [::token]
+  (s/keys :req-un [::username ::password]
           :opt-un [::callback]))
 
 (defn login

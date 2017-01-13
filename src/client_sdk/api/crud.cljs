@@ -23,7 +23,7 @@
   [params]
   (let [module-chan (state/get-module-chan :crud)
         response-chan (a/promise-chan)
-        {:keys [entity callbackx]} (js->clj params :keywordize-keys true)
+        {:keys [entity callback]} (js->clj params :keywordize-keys true)
         entity-msg {:resp-chan response-chan
                     :type :CRUD/GET_ENTITIES
                     :token (state/get-token)

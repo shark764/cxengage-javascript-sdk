@@ -150,6 +150,9 @@
   [state]
   (swap! sdk-state assoc :session (merge (get-session-details) state)))
 
+(defn get-user-session-state
+  []
+  (get-in @sdk-state [:session :state]))
 ;;;;;;;;;;;
 ;; Chans
 ;;;;;;;;;;;
@@ -171,8 +174,8 @@
 (defn active-tenant-set? []
   (get-active-tenant-id))
 
-(defn agent-currently-in-state? [state]
-  (true)) ;TODO
+(defn presence-state-matches? [state]
+  (= state (get-user-session-state)))
 
 (defn interaction-exists-in-state? [interaction-id interaction-state]
   (get-in @sdk-state [:interactions interaction-state interaction-id]))

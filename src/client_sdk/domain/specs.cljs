@@ -10,7 +10,8 @@
 (s/def ::topic string?)
 (s/def ::interactionId string?)
 (s/def ::state string?)
-(s/def ::callback fn?)
+(s/def ::callback (s/or :callback fn?
+                        :callback nil?))
 (s/def ::username string?)
 (s/def ::password string?)
 (s/def ::message string?)
