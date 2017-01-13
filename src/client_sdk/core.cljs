@@ -48,32 +48,33 @@
     (go (a/<! done-registry<)
         (log :info (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
 
-(s/def ::env string?)
+(s/def ::env #{"dev" "qe" "staging" "production"})
 (s/def ::cljs boolean?)
 (s/def ::terseLogs boolean?)
-(s/def ::logLevel string?)
+(s/def ::logLevel #{"debug" "info" "warn" "error" "fatal" "off"})
 (s/def ::init-params
   (s/keys :req-un []
           :opt-un [::env ::cljs ::terseLogs ::logLevel]))
 
 (defn ^:export init
-  [params]
-  (let [params (h/extract-params params)]
-    (if-not (s/valid? ::init-params params)
-      (err/invalid-params-err)
-      (let [{:keys [env cljs terseLogs logLevel]} params
-            logLevel (if logLevel (keyword logLevel) :debug)
-            env (or (keyword env) "production")]
-        (state/set-consumer-type! (if cljs :cljs :js))
-        (state/set-env! env)
-        (register-module! :logging (logging/init env {:terse? (or terseLogs false) :level logLevel}))
-        (register-module! :messaging (msg/init env))
-        (register-module! :pubsub (pubsub/init env))
-        (register-module! :interactions (flow/init env))
-        (register-module! :authentication (auth/init env))
-        (register-module! :reporting (reporting/init env))
-        (register-module! :presence (presence/init env))
-
-        (u/start-simple-consumer! (state/get-async-module-registration)
-                                  (partial register-module-async! (a/promise-chan)))
-        (api/assemble-api)))))
+  ([] (init {}))
+  ([params]
+   (let [params (h/extract-params params)
+         {:keys [thing1 thing2 thing3]} params]
+     (if-not (s/valid? ::init-params params)
+       (err/invalid-params-err)
+       (let [{:keys [env cljs terseLogs logLevel]} params
+             logLevel (or (keyword logLevel) :debug)
+             env (or (keyword env) :production)]
+         (state/set-consumer-type! (or cljs :js))
+         (state/set-env! env)
+         (register-module! :logging (logging/init env {:terse? (or terseLogs false) :level logLevel}))
+         (register-module! :messaging (msg/init env))
+         (register-module! :pubsub (pubsub/init env))
+         (register-module! :interactions (flow/init env))
+         (register-module! :authentication (auth/init env))
+         (register-module! :reporting (reporting/init env))
+         (register-module! :presence (presence/init env))
+         (u/start-simple-consumer! (state/get-async-module-registration)
+                                   (partial register-module-async! (a/promise-chan)))
+         (api/assemble-api))))))
