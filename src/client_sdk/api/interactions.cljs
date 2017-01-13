@@ -17,16 +17,15 @@
                    params)]
     (a/put! module-chan msg)))
 
-(s/def ::interactionId string?)
 (s/def ::accept-interaction-params
-    (s/keys :req-un [::interactionId]
+    (s/keys :req-un [::specs/interactionId]
             :opt-un [::specs/callback]))
 
 (defn accept-interaction [params]
     (let [params (h/extract-params params)
           {:keys [interactionId callback]} params]
       (if-let [error (cond
-                       (not (s/valid? ::accept-interaction-params params)) (err/invalid-params-err)
+                       (not (s/valid? ::accept-interaction-params params)) (err/invalid-params-err "Invalid Interaction ID")
                        (not (state/session-started?)) (err/session-not-started-err)
                        (not (state/active-tenant-set?)) (err/active-tenant-not-set-err)
                        (not (state/presence-state-matches? "ready")) (err/invalid-presence-state-err)
