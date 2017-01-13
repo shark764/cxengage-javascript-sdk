@@ -13,3 +13,4 @@ npm-debug.log
 .lein-plugins/
 .repl
 .nrepl-port
+.lein-env
