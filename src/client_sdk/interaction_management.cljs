@@ -1,5 +1,5 @@
 (ns client-sdk.interaction-management
-  (:require-macros [cljs.core.async.macros :refer [go]]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [client-sdk.state :as state]
@@ -65,12 +65,16 @@
   nil)
 
 (defn handle-work-accepted [message]
-  (let [{:keys [interactionId tenantId]} message]
+  (let [{:keys [interactionId tenantId]} message
+        interaction (state/get-pending-interaction interactionId)
+        channel-type (get interaction :channelType)]
     (state/transition-interaction! :pending :active interactionId)
-    (a/put! (state/get-module-chan :mqtt) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
-                                           :tenantId tenantId
-                                           :interactionId interactionId})
-    (sdk-response "cxengage/interactions/work-accepted" {:interactionId interactionId})))
+    (when (or (= channel-type "sms")
+              (= channel-type "messaging"))
+      (a/put! (state/get-module-chan :mqtt) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
+                                             :tenantId tenantId
+                                             :interactionId interactionId}))))
+    (sdk-response "cxengage/interactions/work-accepted" {:interactionId interactionId})
 
 (defn handle-work-ended [message]
   (let [{:keys [interactionId]} message]

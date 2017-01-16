@@ -9,6 +9,7 @@
             [client-sdk.api.reporting :as reporting]
             [client-sdk.api.interactions :as int]
             [client-sdk.api.interactions.messaging :as msg]
+            [client-sdk.api.interactions.voice :as voice]
             [client-sdk.api.crud :as crud]))
 
 (defn assemble-api []
@@ -17,7 +18,13 @@
                     :auth {:login auth/login}
                     :interactions {:accept int/accept-interaction
                                    :end int/end-interaction
-                                   :messaging {:sendMessage msg/send-message}}
+                                   :messaging {:sendMessage msg/send-message}
+                                   :voice {:hold (partial voice/auxiliary-features "customer-hold")
+                                           :resume (partial voice/auxiliary-features "customer-resume")
+                                           :mute (partial voice/auxiliary-features "mute-resource")
+                                           :unmute (partial voice/auxiliary-features "unmute-resource")
+                                           :startRecording (partial voice/auxiliary-features "recording-start")
+                                           :endRecording (partial voice/auxiliary-features "recording-end")}}
                     :subscribe pubsub/subscribe})]
     (if (= (state/get-consumer-type) :cljs)
       api
