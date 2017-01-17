@@ -42,7 +42,7 @@
 
 (defn init
   [env done-init< config on-msg-fn]
-  (log :info "Initializing SDK module: Twilio")
+  (log :debug "Initializing SDK module: Twilio")
   (swap! module-state assoc :env env)
   (swap! module-state assoc :config config)
   (let [module-inputs< (a/chan 1024)

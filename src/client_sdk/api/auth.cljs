@@ -3,27 +3,12 @@
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
+            [client-sdk.module-gateway :as mg]
             [client-sdk.domain.errors :as err]
-            [client-sdk.pubsub :refer [publish!]]
+            [client-sdk.pubsub :refer [sdk-response sdk-error-response]]
             [client-sdk.state :as state]
-            [client-sdk.api.helpers :as h]
+            [client-sdk.internal-utils :as iu]
             [client-sdk.domain.specs :as specs]))
-
-;; -- Private
-
-(defn login-handler [params]
-  (let [module-chan (state/get-module-chan :authentication)
-        response-chan (a/promise-chan)
-        {:keys [callback token]} (h/extract-params params)
-        msg (h/base-module-request :AUTH/LOGIN response-chan token)]
-    (a/put! module-chan msg)
-    (go (let [response (a/<! response-chan)
-              {:keys [result]} response]
-          (state/set-user-identity! result)
-          (publish! "cxengage/authentication/login-response" (h/format-response result))
-          (when callback (callback (h/format-response result)))))))
-
-;; -- Public
 
 (s/def ::username string?)
 (s/def ::password string?)
@@ -33,19 +18,24 @@
 
 (defn login
   ([params callback]
-   (login (merge params {:callback callback})))
+   (login (merge (iu/extract-params params) {:callback callback})))
   ([params]
-   (let [params (h/extract-params params)]
+   (let [pubsub-topic "cxengage/authentication/login"
+         params (iu/extract-params params)
+         {:keys [callback]} params]
      (if-not (s/valid? ::login-params params)
-       (err/invalid-params-err)
-       (let [module-chan (state/get-module-chan :authentication)
-             response-chan (a/promise-chan)
-             {:keys [callback username password]} params
-             msg (merge (h/base-module-request :AUTH/GET_TOKEN response-chan)
+       (sdk-error-response pubsub-topic (err/invalid-params-err) callback)
+       (let [{:keys [username password]} params
+             token-msg (iu/base-module-request
+                        :AUTH/GET_TOKEN
                         {:username username
                          :password password})]
-         (a/put! module-chan msg)
-         (go (let [response (a/<! response-chan)
-                   {:keys [token]} response]
-               (state/set-token! token)
-               (login-handler {:callback callback :token token}))))))))
+         (go (let [token-response (a/<! (mg/send-module-message token-msg))
+                   {:keys [token]} token-response
+                   _ (state/set-token! token)
+                   login-msg (iu/base-module-request :AUTH/LOGIN)]
+               (let [login-response (a/<! (mg/send-module-message login-msg))
+                     {:keys [result]} login-response]
+                 (state/set-user-identity! result)
+                 (sdk-response pubsub-topic result callback)
+                 nil))))))))

@@ -6,19 +6,21 @@
             [clojure.string :as string]
             [client-sdk.state :as state]
             [cljs-uuid-utils.core :as id]
-            [client-sdk.api.helpers :as h]
+            [client-sdk.internal-utils :as iu]
             [cljs.spec :as s]
             [client-sdk.domain.specs :as specs]
             [client-sdk.domain.errors :as err]))
 
 (def module-state (atom {}))
 
-(def topics [[:authentication [:login-response
-                               :config-received]]
-             [:interactions [:work-offer-received]]
-             [:session [:started
-                        :ended
-                        :timed-out
+(def topics [[:authentication [:login]]
+             [:interactions [:work-offer
+                             :work-accepted
+                             :accept-response]]
+             [:messaging [:send-message-response
+                          :history]]
+             [:session [:active-tenant-set
+                        :started
                         :state-changed]]])
 
 (def topic-strings
@@ -55,8 +57,8 @@
   (contains? topic-strings topic))
 
 (s/def ::subscribe-params
-    (s/keys :req-un [::specs/topic ::specs/callback]
-            :opt-un []))
+  (s/keys :req-un [::specs/topic ::specs/callback]
+          :opt-un []))
 
 (defn subscribe
   ([topic callback]
@@ -64,29 +66,53 @@
      (subscribe params)))
   ([params]
    (if-not (s/valid? ::subscribe-params (js->clj params :keywordize-keys true))
-      (err/invalid-params-err)
-      (let [{:keys [topic callback]} params]
-        (if-not (valid-topic? topic)
-          (log :error "That is not a valid subscription topic.")
-          (let [subscription-id (id/make-random-uuid)]
-            (swap! subscriptions assoc-in [topic subscription-id] callback)
-            nil))))))
+     (iu/format-response (err/invalid-params-err))
+     (let [{:keys [topic callback]} params]
+       (if-not (valid-topic? topic)
+         (do (log :error (str "That is not a valid subscription topic (" topic ")."))
+             (iu/format-response (err/subscription-topic-not-recognized-err)))
+         (let [subscription-id (id/make-random-uuid)]
+           (swap! subscriptions assoc-in [topic subscription-id] callback)
+           nil))))))
 
-(defn publish! [topic message]
-  (if-not (valid-topic? topic)
-    (log :error "That is not a valid subscription topic.")
-    (let [all-topics (get-topic-permutations topic)]
+(defn publish! [original-topic error response]
+  (if-not (valid-topic? original-topic)
+    (do (log :error (str "That is not a valid subscription topic (" original-topic ")."))
+        nil)
+    (let [all-topics (get-topic-permutations original-topic)]
       (doseq [topic all-topics]
         (when-let [subscribers (vals (get @subscriptions topic))]
           (doseq [subscription-handler subscribers]
-            (subscription-handler (h/format-response message)))
-          #_(log :warn (str "No subscribers found for topic `" topic "`, sending to no one.")))))))
+            (let [error (iu/format-response error)
+                  response (iu/format-response response)]
+              (subscription-handler error original-topic response))))))))
+
+(defn send-response [topic message callback]
+  (let [{:keys [error response]} message]
+    (when callback (callback error topic response))
+    (publish! topic error response)))
+
+(defn sdk-error-response
+  ([topic error]
+   (sdk-error-response topic error nil))
+  ([topic error callback]
+   (let [error-msg {:error error
+                    :response nil}]
+     (send-response topic error-msg callback))))
+
+(defn sdk-response
+  ([topic response]
+   (sdk-response topic response nil))
+  ([topic response callback]
+   (let [success-msg {:error nil
+                      :response response}]
+     (send-response topic success-msg callback))))
 
 (defn module-shutdown-handler [message]
   (log :info "Received shutdown message from Core - PubSub Module shutting down...."))
 
 (defn init [env]
-  (log :info "Initializing SDK module: Pub/Sub")
+  (log :debug "Initializing SDK module: Pub/Sub")
   (swap! module-state assoc :env env)
   (let [module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-shutdown< module-shutdown-handler)

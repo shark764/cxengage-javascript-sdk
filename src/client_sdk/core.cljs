@@ -20,7 +20,7 @@
             [client-sdk.api :as api]
             [client-sdk.pubsub :as pubsub]
             [client-sdk.modules.twilio :as twilio]
-            [client-sdk.api.helpers :as h]))
+            [client-sdk.internal-utils :as iu]))
 
 (enable-console-print!)
 
@@ -59,10 +59,9 @@
 (defn ^:export init
   ([] (init {}))
   ([params]
-   (let [params (h/extract-params params)
-         {:keys [thing1 thing2 thing3]} params]
+   (let [params (iu/extract-params params)]
      (if-not (s/valid? ::init-params params)
-       (err/invalid-params-err)
+       (iu/format-response (err/invalid-params-err))
        (let [{:keys [env cljs terseLogs logLevel]} params
              logLevel (or (keyword logLevel) :debug)
              env (or (keyword env) :production)]

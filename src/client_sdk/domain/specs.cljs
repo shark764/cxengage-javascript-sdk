@@ -3,8 +3,6 @@
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
-            [client-sdk.state :as state]
-            [client-sdk.api.helpers :as h]
             [cljs-uuid-utils.core :as id]))
 
 (s/def ::uuid id/valid-uuid?)

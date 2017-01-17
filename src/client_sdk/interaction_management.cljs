@@ -4,12 +4,13 @@
   (:require [cljs.core.async :as a]
             [client-sdk.state :as state]
             [client-sdk.api.interactions :as int]
-            [client-sdk.pubsub :as pubsub :refer [publish!]]))
+            [client-sdk.module-gateway :as mg]
+            [client-sdk.internal-utils :as iu]
+            [client-sdk.pubsub :as pubsub :refer [sdk-response sdk-error-response]]))
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
   (let [{:keys [channelType interactionId]} message]
-
     (when (= channelType "sms")
       (let [history-result-chan (a/promise-chan)
             history-req (-> message
@@ -19,15 +20,19 @@
                                     :type :MESSAGING/GET_HISTORY}))]
         (a/put! (state/get-module-chan :messaging) history-req)
         (go (let [history (a/<! history-result-chan)]
-              (state/add-messages-to-history! interactionId history)))))))
+              (sdk-response "cxengage/messaging/history" history)
+              (state/add-messages-to-history! interactionId history))))))
+  (sdk-response "cxengage/interactions/work-offer" message))
 
-(defn handle-resource-state-change [message])
+(defn handle-resource-state-change [message]
+  ;; TODO: update our internal state
+  (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates])))
 
 (defn handle-work-initiated [message]
-  (log :error "work initiated message:" message)
-  (pubsub/publish! "cxengage/interactions/work-offer-received" message))
+  nil)
 
-(defn handle-work-rejected [message])
+(defn handle-work-rejected [message]
+  nil)
 
 (defn handle-custom-fields [message]
   (let [{:keys [interactionId]} message
@@ -39,30 +44,39 @@
         disposition-code-details (:dispositionCodes message)]
     (state/add-interaction-disposition-code-details! disposition-code-details interactionId)))
 
-(defn handle-session-start [message])
+(defn handle-session-start [message]
+  nil)
 
-(defn handle-login [message])
+(defn handle-login [message]
+  nil)
 
-(defn handle-interaction-heartbeat [message])
+(defn handle-interaction-heartbeat [message]
+  nil)
 
 (defn handle-work-accepted [message]
   (let [{:keys [interactionId tenantId]} message]
     (state/transition-interaction! :pending :active interactionId)
     (a/put! (state/get-module-chan :mqtt) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
                                            :tenantId tenantId
-                                           :interactionId interactionId})))
+                                           :interactionId interactionId})
+    (sdk-response "cxengage/interactions/work-accepted" {:interactionId (:interactionId message)})))
 
 (defn handle-work-ended [message]
   (log :error "work ended message:" message)
-  (publish! "cxengage/interactions/work-ended" message))
+  nil)
 
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapupTime :wrapupEnabled :wrapupUpdateAllowed :targetWrapupTime])
         {:keys [interactionId]} message]
     (state/add-interaction-wrapup-details! wrapup-details interactionId)))
 
+(defn handle-generic [message]
+  nil)
+
+(defn handle-screen-pop [message]
+  nil)
+
 (defn msg-router [message]
-  #_(log :debug "MESSAGE ROUTER GOT:" message)
   (let [handling-fn (case (:msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
                       :INTERACTIONS/WORK_OFFER_RECEIVED handle-work-offer
@@ -73,6 +87,8 @@
                       :INTERACTIONS/DISPOSITION_CODES_RECEIVED handle-disposition-codes
                       :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED handle-interaction-heartbeat
                       :INTERACTIONS/WRAP_UP_RECEIVED handle-wrapup
+                      :INTERACTIONS/SCREEN_POP_RECEIVED handle-screen-pop
+                      :INTERACTIONS/GENERIC_AGENT_NOTIFICATION handle-generic
                       :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
                       :SESSION/START_SESSION_RESPONSE handle-session-start
                       :AUTH/LOGIN_RESPONSE handle-login
@@ -82,25 +98,28 @@
       (let [ack-msg (select-keys message [:actionId :subId :resourceId :tenantId :interactionId])]
         (log :info (str "Acknowledging receipt of flow action: " (or (:notificationType message) (:type message))))
         (when (or (:notificationType message) (:type message))
-          (int/acknowledge-flow-action ack-msg))))
+          (mg/send-module-message (iu/base-module-request
+                                   :INTERACTIONS/ACKNOWLEDGE_FLOW_ACTION
+                                   ack-msg)))))
     (if handling-fn
       (handling-fn message)
-      (log :debug (str "Temporarily ignoring msg 'cuz handler isnt written yet: " (:msg-type message)) message))))
+      (log :debug (str "Temporarily ignoring msg 'cuz handler isnt written yet: " (:msg-type message)) message))
+    nil))
 
 (defn infer-notification-type [message]
   (let [{:keys [notificationType]} message]
-    (if-let [inferred-notification-type (case notificationType
-                                          "work-rejected" (merge {:msg-type :INTERACTIONS/WORK_REJECTED_RECEIVED} message)
-                                          "work-initiated" (merge {:msg-type :INTERACTIONS/WORK_INITIATED_RECEIVED} message)
-                                          "work-ended" (merge {:msg-type :INTERACTIONS/WORK_ENDED_RECEIVED} message)
-                                          "work-accepted" (merge {:msg-type :INTERACTIONS/WORK_ACCEPTED_RECEIVED} message)
-                                          "disposition-codes" (merge {:msg-type :INTERACTIONS/DISPOSITION_CODES_RECEIVED} message)
-                                          "custom-fields" (merge {:msg-type :INTERACTIONS/CUSTOM_FIELDS_RECEIVED} message)
-                                          "wrapup" (merge {:msg-type :INTERACTIONS/WRAP_UP_RECEIVED} message)
-                                          "interaction-timeout" (merge {:msg-type :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED} message)
-                                          nil)]
-      inferred-notification-type
-      (log :warn "Unable to infer agent notification msg type - no matching clause" message))))
+    (let [inferred-notification-type (case notificationType
+                                          "work-rejected" :INTERACTIONS/WORK_REJECTED_RECEIVED
+                                          "work-initiated" :INTERACTIONS/WORK_INITIATED_RECEIVED
+                                          "work-ended" :INTERACTIONS/WORK_ENDED_RECEIVED
+                                          "work-accepted" :INTERACTIONS/WORK_ACCEPTED_RECEIVED
+                                          "disposition-codes" :INTERACTIONS/DISPOSITION_CODES_RECEIVED
+                                          "custom-fields" :INTERACTIONS/CUSTOM_FIELDS_RECEIVED
+                                          "wrapup" :INTERACTIONS/WRAP_UP_RECEIVED
+                                          "interaction-timeout" :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED
+                                          "screen-pop" :INTERACTIONS/SCREEN_POP_RECEIVED
+                                          :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
+      (merge {:msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
   (let [cljsd-msg (js->clj (js/JSON.parse message) :keywordize-keys true)
@@ -111,16 +130,19 @@
                        "work-offer" (merge {:msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
-    (when (nil? (state/get-session-id))
-      (log :error "Local Session ID so our session hasn't started yet :("))
     (if (not= (state/get-session-id) sessionId)
-      (log :warn (str "Received a message from a different session than the current one. Current session ID: " (state/get-session-id) " - Session ID on message received: " sessionId " - Message:") cljsd-msg)
+      (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
+                          (state/get-session-id) " - Session ID on message received: " sessionId " - Message:") cljsd-msg)
+          nil)
       (if inferred-msg
         (msg-router inferred-msg)
-        (log :error "Unable to infer msg type from sqs")))))
+        (do (log :warn "Unable to infer message type from sqs")
+            nil)))))
 
 (defn mqtt-msg-router [message]
-  (log :warn "message in mqtt msg router" message))
+  nil
+  #_(log :warn "message in mqtt msg router" message))
 
 (defn twilio-msg-router [message type]
-  (log :warn "message in twilio msg router" message))
+  nil
+  #_(log :warn "message in twilio msg router" message))
