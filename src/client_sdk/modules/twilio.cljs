@@ -10,6 +10,9 @@
 (defn update-twilio-connection [connection]
   (state/set-twilio-connection connection))
 
+(defn handle-twilio-error [error]
+  (log :error error.message " for " error.connection))
+
 (defn ^:private twilio-init
   [config done-init< on-msg-fn]
   (let [{:keys [jsApiUrl credentials]} config
@@ -27,7 +30,8 @@
             (js/Twilio.Device.ready update-twilio-connection)
             (js/Twilio.Device.cancel update-twilio-connection)
             (js/Twilio.Device.offline update-twilio-connection)
-            (js/Twilio.Device.disconnect update-twilio-connection))
+            (js/Twilio.Device.disconnect update-twilio-connection)
+            (js/Twilio.Device.error handle-twilio-error))
           (do (a/<! (a/timeout 250))
               (recur))))))
 
