@@ -39,3 +39,33 @@
          (go (let [accept-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
                (sdk-response pubsub-topic accept-interaction-response callback)
                nil)))))))
+
+(s/def ::end-interaction-params
+  (s/keys :req-un [::specs/interactionId]
+          :opt-un [::specs/callback]))
+
+(defn end-interaction
+  ([params callback]
+   (end-interaction (merge (iu/extract-params params) {:callback callback})))
+  ([params]
+   (let [params (iu/extract-params params)
+         pubsub-topic "cxengage/interactions/end-response"
+         {:keys [interactionId callback]} params]
+     (if-let [error (cond
+                      (not (s/valid? ::end-interaction-params params)) (err/invalid-params-err)
+                      (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
+                      (not (state/active-tenant-set?)) (err/invalid-sdk-state-err "Your active tenant isn't set yet.")
+                      (not (state/presence-state-matches? "ready")) (err/invalid-sdk-state-err "You must be in a 'ready' state.")
+                      (not (state/interaction-exists-in-state? :active interactionId)) (err/invalid-sdk-state-err "No interaction of that ID found.")
+                      :else false)]
+       (sdk-error-response error pubsub-topic callback)
+       (let [send-interrupt-msg (iu/base-module-request
+                                 :INTERACTIONS/SEND_INTERRUPT
+                                 {:tenantId (state/get-active-tenant-id)
+                                  :interruptType "resource-disconnect"
+                                  :source "client"
+                                  :resourceId (state/get-active-user-id)
+                                  :interactionId interactionId})]
+         (go (let [end-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
+               (sdk-response pubsub-topic end-interaction-response callback)
+               nil)))))))

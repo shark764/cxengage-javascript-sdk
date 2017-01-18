@@ -16,8 +16,11 @@
 (def topics [[:authentication [:login]]
              [:interactions [:work-offer
                              :work-accepted
-                             :accept-response]]
+                             :work-ended
+                             :accept-response
+                             :end-response]]
              [:messaging [:send-message-response
+                          :new-message-received
                           :history]]
              [:session [:active-tenant-set
                         :started
@@ -83,12 +86,12 @@
       (doseq [topic all-topics]
         (when-let [subscribers (vals (get @subscriptions topic))]
           (doseq [subscription-handler subscribers]
-            (let [error (iu/format-response error)
-                  response (iu/format-response response)]
-              (subscription-handler error original-topic response))))))))
+            (subscription-handler error original-topic response)))))))
 
 (defn send-response [topic message callback]
-  (let [{:keys [error response]} message]
+  (let [{:keys [error response]} message
+        error (iu/format-response error)
+        response (iu/format-response response)]
     (when callback (callback error topic response))
     (publish! topic error response)))
 

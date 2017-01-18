@@ -24,6 +24,15 @@
               (state/add-messages-to-history! interactionId history))))))
   (sdk-response "cxengage/interactions/work-offer" message))
 
+(defn handle-new-messaging-message [payload]
+  (let [payload (-> (.-payloadString payload)
+                    (js/JSON.parse)
+                    (js->clj :keywordize-keys true))
+        interactionId (:to payload)
+        channelId (:id payload)]
+    (sdk-response "cxengage/messaging/new-message-received" payload)
+    (state/add-messages-to-history! interactionId [{:payload payload}])))
+
 (defn handle-resource-state-change [message]
   ;; TODO: update our internal state
   (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates])))
@@ -59,11 +68,12 @@
     (a/put! (state/get-module-chan :mqtt) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
                                            :tenantId tenantId
                                            :interactionId interactionId})
-    (sdk-response "cxengage/interactions/work-accepted" {:interactionId (:interactionId message)})))
+    (sdk-response "cxengage/interactions/work-accepted" {:interactionId interactionId})))
 
 (defn handle-work-ended [message]
-  (log :error "work ended message:" message)
-  nil)
+  (let [{:keys [interactionId]} message]
+    (state/transition-interaction! :active :past interactionId)
+    (sdk-response "cxengage/interactions/work-ended" {:interactionId interactionId})))
 
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapupTime :wrapupEnabled :wrapupUpdateAllowed :targetWrapupTime])
@@ -109,16 +119,16 @@
 (defn infer-notification-type [message]
   (let [{:keys [notificationType]} message]
     (let [inferred-notification-type (case notificationType
-                                          "work-rejected" :INTERACTIONS/WORK_REJECTED_RECEIVED
-                                          "work-initiated" :INTERACTIONS/WORK_INITIATED_RECEIVED
-                                          "work-ended" :INTERACTIONS/WORK_ENDED_RECEIVED
-                                          "work-accepted" :INTERACTIONS/WORK_ACCEPTED_RECEIVED
-                                          "disposition-codes" :INTERACTIONS/DISPOSITION_CODES_RECEIVED
-                                          "custom-fields" :INTERACTIONS/CUSTOM_FIELDS_RECEIVED
-                                          "wrapup" :INTERACTIONS/WRAP_UP_RECEIVED
-                                          "interaction-timeout" :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED
-                                          "screen-pop" :INTERACTIONS/SCREEN_POP_RECEIVED
-                                          :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
+                                       "work-rejected" :INTERACTIONS/WORK_REJECTED_RECEIVED
+                                       "work-initiated" :INTERACTIONS/WORK_INITIATED_RECEIVED
+                                       "work-ended" :INTERACTIONS/WORK_ENDED_RECEIVED
+                                       "work-accepted" :INTERACTIONS/WORK_ACCEPTED_RECEIVED
+                                       "disposition-codes" :INTERACTIONS/DISPOSITION_CODES_RECEIVED
+                                       "custom-fields" :INTERACTIONS/CUSTOM_FIELDS_RECEIVED
+                                       "wrapup" :INTERACTIONS/WRAP_UP_RECEIVED
+                                       "interaction-timeout" :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED
+                                       "screen-pop" :INTERACTIONS/SCREEN_POP_RECEIVED
+                                       :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
@@ -140,8 +150,7 @@
             nil)))))
 
 (defn mqtt-msg-router [message]
-  nil
-  #_(log :warn "message in mqtt msg router" message))
+  (handle-new-messaging-message message))
 
 (defn twilio-msg-router [message type]
   nil

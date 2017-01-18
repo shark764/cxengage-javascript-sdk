@@ -1,5 +1,5 @@
 (ns client-sdk.modules.twilio
-  (:require-macros [cljs.core.async.macros :refer [go]]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [client-sdk-utils.core :as u]))
@@ -16,10 +16,12 @@
         {:keys [token]} credentials
         script (js/document.createElement "script")
         body (.-body js/document)]
-      (.setAttribute script "type" "text/javascript")
-      (.setAttribute script "src" jsApiUrl)
-      (.appendChild body script)
-      (go (a/<! (a/timeout 1000)) ;TODO - make this not dumb
+    (.setAttribute script "type" "text/javascript")
+    (.setAttribute script "src" jsApiUrl)
+    (.appendChild body script)
+    (go-loop []
+      (if (aget js/window "Twilio")
+        (do
           (js/Twilio.Device.setup token)
           (js/Twilio.Device.incoming (partial on-msg-fn :TWILIO/INCOMING))
           (js/Twilio.Device.ready (partial on-msg-fn :TWILIO/READY))
@@ -27,8 +29,10 @@
           (js/Twilio.Device.cancel (partial on-msg-fn :TWILIO/CANCEL))
           (js/Twilio.Device.connect (partial on-msg-fn :TWILIO/CONNECT))
           (js/Twilio.Device.disconnect (partial on-msg-fn :TWILIO/DISCONNECT))
-          (js/Twilio.Device.error (partial on-msg-fn :TWILIO/ERROR)))
-      (a/put! done-init< {:status :ok})))
+          (js/Twilio.Device.error (partial on-msg-fn :TWILIO/ERROR))
+          (a/put! done-init< {:status :ok}))
+        (do (a/<! (a/timeout 250))
+            (recur))))))
 
 (defn module-router [message]
   (let [handling-fn (case (:type message)

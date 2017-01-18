@@ -1,9 +1,9 @@
 (ns client-sdk.domain.errors)
 
 (defn error [code msg]
-  (js/console.error (str code ": " msg))
-  {:code code
-   :message msg})
+  (js/console.info (str code ": " msg))
+  (clj->js {:code code
+            :message msg}))
 
 (defn invalid-params-err
   ([] (invalid-params-err nil))
@@ -13,7 +13,7 @@
      (error code msg))))
 
 (defn invalid-sdk-state-err
-  ([] (invalid-state-err nil))
+  ([] (invalid-sdk-state-err nil))
   ([msg]
    (let [code 1100
          msg (or msg "SDK is in an invalid state to perform this action.")]
