@@ -41,7 +41,7 @@
                {:id "prod"
                 :source-paths ["src"]
                 :compiler {:main cxengage
-                           :output-to "release/sdk.min.js"
+                           :output-to "release/cxengage-js-sdk.min.js"
                            :optimizations :advanced
                            :pseudo-names true
                            :pretty-print false
