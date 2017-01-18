@@ -1,8 +1,8 @@
 {
-  "name": "client-sdk-core",
-  "version": "0.0.0",
+  "name": "cxengage-sdk",
+  "version": "1.0.0-SNAPSHOT",
   "description": "<img src=\"https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif\" width=\"700\">",
-  "main": "release/sdk.js",
+  "main": "release/sdk.min.js",
   "directories": {
     "test": "test"
   },
