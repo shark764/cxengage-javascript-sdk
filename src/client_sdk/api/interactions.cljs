@@ -1,5 +1,5 @@
 (ns client-sdk.api.interactions
-  (:require-macros [cljs.core.async.macros :refer [go]]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
