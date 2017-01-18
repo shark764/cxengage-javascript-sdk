@@ -15,6 +15,7 @@
             [client-sdk.modules.messaging :as msg]
             [client-sdk.modules.reporting :as reporting]
             [client-sdk.modules.crud :as crud]
+            [client-sdk.modules.contacts :as contacts]
             [client-sdk.interaction-management :as intmgmt]
             [client-sdk.state :as state]
             [client-sdk.api :as api]
@@ -79,3 +80,4 @@
          (u/start-simple-consumer! (state/get-async-module-registration)
                                    (partial register-module-async! (a/promise-chan)))
          (api/assemble-api))))))
+
