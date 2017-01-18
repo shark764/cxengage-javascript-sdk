@@ -20,8 +20,10 @@
             [client-sdk.api :as api]
             [client-sdk.pubsub :as pubsub]
             [client-sdk.modules.twilio :as twilio]
-            [client-sdk.internal-utils :as iu]))
+            [client-sdk.internal-utils :as iu]
+            [devtools.core :as devtools]))
 
+(devtools/install!)
 (enable-console-print!)
 
 (defn shutdown! []
@@ -46,7 +48,7 @@
       :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config intmgmt/mqtt-msg-router))
       (log :error "Unrecognized asynchronous module registration attempt."))
     (go (a/<! done-registry<)
-        (log :info (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
+        (log :debug (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
 
 (s/def ::env #{"dev" "qe" "staging" "production"})
 (s/def ::cljs boolean?)
@@ -56,7 +58,7 @@
   (s/keys :req-un []
           :opt-un [::env ::cljs ::terseLogs ::logLevel]))
 
-(defn ^:export init
+(defn init
   ([] (init {}))
   ([params]
    (let [params (iu/extract-params params)]

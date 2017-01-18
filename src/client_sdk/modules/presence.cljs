@@ -8,7 +8,7 @@
 
 (defn send-heartbeats
   [session tenant-id user-id token resp-chan]
-  (log :info "Sending heartbeats...")
+  (log :debug "Sending heartbeats...")
   (let [{:keys [sessionId]} session
         heartbeat-req-map {:method :post
                            :body {:sessionId sessionId}
@@ -20,7 +20,7 @@
       (u/api-request (merge heartbeat-req-map {:resp-chan next-heartbeat-resp-chan}))
       (let [{:keys [result]} (a/<! next-heartbeat-resp-chan)
             next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
-        (log :info "Heartbeat sent!")
+        (log :debug "Heartbeat sent!")
         (when first-heartbeat?
           (a/put! resp-chan (merge result session)))
         (a/<! (a/timeout next-heartbeat-delay))
@@ -77,7 +77,7 @@
       (log :error "No appropriate handler found in Presence SDK module." (:type message)))))
 
 (defn module-shutdown-handler [message]
-  (log :info "Received shutdown message from Core - Presence Module shutting down...."))
+  (log :debug "Received shutdown message from Core - Presence Module shutting down...."))
 
 (defn init [env]
   (log :debug "Initializing SDK module: Presence")

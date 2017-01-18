@@ -58,7 +58,7 @@
                       (not (state/presence-state-matches? "ready")) (err/invalid-sdk-state-err "You must be in a 'ready' state.")
                       (not (state/interaction-exists-in-state? :active interactionId)) (err/invalid-sdk-state-err "No interaction of that ID found.")
                       :else false)]
-       (sdk-error-response error pubsub-topic callback)
+       (sdk-error-response pubsub-topic error callback)
        (let [send-interrupt-msg (iu/base-module-request
                                  :INTERACTIONS/SEND_INTERRUPT
                                  {:tenantId (state/get-active-tenant-id)

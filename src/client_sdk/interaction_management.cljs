@@ -106,7 +106,7 @@
     (when (and (get message :actionId)
                (not= (get message :interactionId) "00000000-0000-0000-0000-000000000000"))
       (let [ack-msg (select-keys message [:actionId :subId :resourceId :tenantId :interactionId])]
-        (log :info (str "Acknowledging receipt of flow action: " (or (:notificationType message) (:type message))))
+        (log :debug (str "Acknowledging receipt of flow action: " (or (:notificationType message) (:type message))))
         (when (or (:notificationType message) (:type message))
           (mg/send-module-message (iu/base-module-request
                                    :INTERACTIONS/ACKNOWLEDGE_FLOW_ACTION

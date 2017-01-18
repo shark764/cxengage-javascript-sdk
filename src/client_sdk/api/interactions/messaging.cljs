@@ -35,4 +35,5 @@
                                  :interactionId interactionId
                                  :message message})]
          (go (let [send-message-response (a/<! (mg/send-module-message send-message-body))]
-               (sdk-response pubsub-topic send-message-response callback))))))))
+               (sdk-response pubsub-topic send-message-response callback)
+               nil)))))))
