@@ -16,6 +16,7 @@
                               :changeState session/change-presence-state}
                     :auth {:login auth/login}
                     :interactions {:accept int/accept-interaction
+                                   :end int/end-interaction
                                    :messaging {:sendMessage msg/send-message}}
                     :subscribe pubsub/subscribe})]
     (if (= (state/get-consumer-type) :cljs)

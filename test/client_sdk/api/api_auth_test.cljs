@@ -20,18 +20,19 @@
                            (is (= nil response))
                            (done)))})]
        (auth/login bad-params))))
-  (testing "Login result returns successfully (w/ api stub & proper params)"
-    (async
-     done
-     (let [good-params
-           (clj->js
-            {:username "foo"
-             :password "bar"
-             :callback (fn [error topic response]
-                         (let [response (js->clj response)]
-                           (println error)
-                           (println topic)
-                           (println response)
-                           (is (= 1 1))
-                           (done)))})]
-       (auth/login good-params)))))
+
+  #_(testing "Login result returns successfully (w/ api stub & proper params)"
+      (async
+       done
+       (let [good-params
+             (clj->js
+              {:username "foo"
+               :password "bar"
+               :callback (fn [error topic response]
+                           (let [response (js->clj response)]
+                             (println error)
+                             (println topic)
+                             (println response)
+                             (is (= 1 1))
+                             (done)))})]
+         (auth/login good-params)))))

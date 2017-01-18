@@ -16,8 +16,11 @@
 (def topics [[:authentication [:login]]
              [:interactions [:work-offer
                              :work-accepted
-                             :accept-response]]
+                             :work-ended
+                             :accept-response
+                             :end-response]]
              [:messaging [:send-message-response
+                          :new-message-received
                           :history]]
              [:session [:active-tenant-set
                         :started
