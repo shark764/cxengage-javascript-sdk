@@ -31,7 +31,7 @@
                                 :state state})]
          (go (let [change-presence-state-response (a/<! (mg/send-module-message change-presence-state-msg))
                    {:keys [result]} change-presence-state-response]
-               (log :info (str "Sucessfully changed state to " state))
+               (log :debug (str "Sucessfully changed state to " state))
                (state/set-user-session-state! result)
                nil)))))))
 
@@ -53,7 +53,7 @@
                              {:tenant-id tenantId
                               :user-id (state/get-active-user-id)})]
          (state/set-active-tenant! tenantId)
-         (log :info "Successfully set active tenant")
+         (log :debug "Successfully set active tenant")
          (sdk-response "cxengage/session/active-tenant-set" {:tenantId tenantId} callback)
          (go (let [get-config-response (a/<! (mg/send-module-message get-config-msg))
                    {:keys [result]} get-config-response
@@ -66,7 +66,7 @@
                (state/set-config! result)
                (let [start-session-response (a/<! (mg/send-module-message start-session-msg))]
                  (state/set-session-details! start-session-response)
-                 (log :info "Successfully initiated presence session")
+                 (log :debug "Successfully initiated presence session")
                  (sdk-response "cxengage/session/started" {:sessionId (:sessionId start-session-response)})
                  (change-presence-state {:state "notready"})
                  (a/put! (state/get-async-module-registration) {:module-name :sqs :config (state/get-session-details)})

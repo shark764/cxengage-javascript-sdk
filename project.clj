@@ -10,6 +10,7 @@
                   :exclusions [org.clojure/tools.reader]]
                  [camel-snake-kebab "0.4.0"]
                  [cljsjs/aws-sdk-js "2.2.41-3"]
+                 [binaryage/devtools "0.8.3"]
                  [cljsjs/paho "1.0.1-0"]
                  [com.cognitect/transit-cljs "0.8.239"]
                  [org.serenova/client-sdk-utils "0.1.0-SNAPSHOT"]
@@ -20,12 +21,12 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7"]]
   :source-paths ["src"]
-  :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
+  :clean-targets ^{:protect false} ["resources/public/js/compiled" "target" "release"]
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src"]
                 :figwheel {}
-                :compiler {:main client-sdk.core
+                :compiler {:main client_sdk.core
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/client_sdk.js"
                            :output-dir "resources/public/js/compiled/out"
@@ -39,7 +40,8 @@
                            :optimizations :whitespace}}
                {:id "prod"
                 :source-paths ["src"]
-                :compiler {:output-to "release/sdk.min.js"
+                :compiler {:main cxengage
+                           :output-to "release/sdk.min.js"
                            :optimizations :advanced
                            :pseudo-names true
                            :pretty-print false
@@ -51,7 +53,7 @@
                                   [org.clojure/test.check "0.9.0"]
                                   [figwheel-sidecar "0.5.8"]
                                   [com.cemerick/piggieback "0.2.1"]]
-                   :source-paths ["src" "dev"]
+                   :source-paths ["src" "dev" "env"]
                    :repl-options {:init (set! *print-length* 50)
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
   :aliases {"prod" ["do" "clean," "cljsbuild" "once" "prod"]

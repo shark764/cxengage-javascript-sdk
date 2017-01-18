@@ -92,7 +92,7 @@
 (defn subscribe
   [topic]
   (.subscribe (get-mqtt-client) topic #js {:qos 1})
-  (log :info (str "Subscribed to MQTT topic: " topic)))
+  (log :debug (str "Subscribed to MQTT topic: " topic)))
 
 (defn unsubscribe
   [topic]
@@ -106,11 +106,11 @@
     (.send (get-mqtt-client) msg)))
 
 (defn on-connect [done-init<]
-  (log :info "Mqtt client connected")
+  (log :debug "Mqtt client connected")
   (a/put! done-init< {:status :ok}))
 
 (defn disconnect [client]
-  (log :info "Disconnecting mqtt client")
+  (log :debug "Disconnecting mqtt client")
   (.disconnect client))
 
 (defn connect
@@ -182,7 +182,7 @@
       (log :error "No appropriate handler found in MQTT SDK module." (:type message)))))
 
 (defn module-shutdown-handler [message]
-  (log :info "Received shutdown message from Core - MQTT Module shutting down...."))
+  (log :debug "Received shutdown message from Core - MQTT Module shutting down...."))
 
 (defn init
   [env done-init< client-id config on-msg-fn]
