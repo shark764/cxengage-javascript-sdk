@@ -52,9 +52,7 @@
   (let [interaction-location (find-interaction-location interaction-id)
         old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
         new-msg-history (reduce conj old-msg-history messages)]
-    (log :error "Before adding msg history" (get-all-interactions))
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)
-    (log :error "After adding msg history" (get-all-interactions))))
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)))
 
 (defn get-pending-interaction [interaction-id]
   (get-in @sdk-state [:interactions :pending interaction-id]))

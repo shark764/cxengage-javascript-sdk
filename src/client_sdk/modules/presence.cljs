@@ -26,7 +26,7 @@
         (a/<! (a/timeout next-heartbeat-delay))
         (recur false (a/promise-chan))))))
 
-(defn change-state
+(defn change-presence-state
   [result-chan message]
   (let [{:keys [token resp-chan user-id tenant-id]} message
         body (select-keys message [:state :reasonId :reasonListId :sessionId])
@@ -69,7 +69,7 @@
 (defn module-router [message]
   (let [handling-fn (case (:type message)
                       :SESSION/START_SESSION (partial start-session (a/promise-chan))
-                      :SESSION/CHANGE_STATE (partial change-state (a/promise-chan))
+                      :SESSION/CHANGE_STATE (partial change-presence-state (a/promise-chan))
                       :SESSION/SET_DIRECTION (partial set-direction (a/promise-chan))
                       nil)]
     (if handling-fn
@@ -80,7 +80,7 @@
   (log :info "Received shutdown message from Core - Presence Module shutting down...."))
 
 (defn init [env]
-  (log :info "Initializing SDK module: Presence")
+  (log :debug "Initializing SDK module: Presence")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]

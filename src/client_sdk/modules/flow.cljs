@@ -7,7 +7,7 @@
 (def module-state (atom {}))
 
 (defn send-interrupt [message]
-  (let [{:keys [token interruptType source resourceId interactionId tenantId]} message
+  (let [{:keys [resp-chan token interruptType source resourceId interactionId tenantId]} message
         interrupt-body {:source source
                         :interruptType interruptType
                         :interrupt {:resource-id resourceId}}
@@ -15,7 +15,8 @@
                      :body interrupt-body
                      :url (u/api-url (:env @module-state)
                                      (str "/tenants/" tenantId "/interactions/" interactionId "/interrupts"))
-                     :token token}]
+                     :token token
+                     :resp-chan resp-chan}]
     (u/api-request request-map)))
 
 (defn acknowledge-flow-action [message]
@@ -43,7 +44,7 @@
   (log :info "Received shutdown message from Core - Interactions Module shutting down...."))
 
 (defn init [env]
-  (log :info "Initializing SDK module: Flow")
+  (log :debug "Initializing SDK module: Flow")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]

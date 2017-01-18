@@ -103,7 +103,6 @@
   (let [msg (Paho.MQTT.Message. payload)]
     (set! (.-destinationName msg) topic)
     (set! (.-qos msg) 1)
-    (log :error "Message we're sending to MQTT:" msg)
     (.send (get-mqtt-client) msg)))
 
 (defn on-connect [done-init<]
@@ -139,7 +138,6 @@
 (defn subscribe-to-interaction [message]
   (let [{:keys [tenantId interactionId]} message
         topic (str (name (get @module-state :env)) "/tenants/" tenantId "/channels/" interactionId)]
-    (log :error (str "topic we're subscribing to: " topic))
     (subscribe topic)))
 
 (defn unsubscribe-from-interaction [message])
@@ -165,13 +163,13 @@
   (t/write (t/writer :json-verbose) (clojure.walk/stringify-keys message)))
 
 (defn send-message [message]
-  (log :warn "got send msg request in mqtt module" message)
-  (let [{:keys [tenantId interactionId]} message
+  (let [{:keys [tenantId interactionId resp-chan]} message
         payload (-> message
                     (gen-payload)
                     (format-payload))
         topic (str (name (get @module-state :env)) "/tenants/" tenantId "/channels/" interactionId)]
-    (send-message-impl payload topic)))
+    (send-message-impl payload topic)
+    (a/put! resp-chan true)))
 
 (defn module-router [message]
   (let [handling-fn (case (:type message)
@@ -188,7 +186,7 @@
 
 (defn init
   [env done-init< client-id config on-msg-fn]
-  (log :info "Initializing SDK module: MQTT")
+  (log :debug "Initializing SDK module: MQTT")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)

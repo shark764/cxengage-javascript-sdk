@@ -13,10 +13,9 @@
 
 (defn assemble-api []
   (let [api (merge {:session {:setActiveTenant session/set-active-tenant
-                              :changeState session/change-state}
+                              :changeState session/change-presence-state}
                     :auth {:login auth/login}
-                    :interactions {:acceptInteraction int/accept-interaction
-                                   :endInteraction int/end-interaction
+                    :interactions {:accept int/accept-interaction
                                    :messaging {:sendMessage msg/send-message}}
                     :subscribe pubsub/subscribe})]
     (if (= (state/get-consumer-type) :cljs)

@@ -18,7 +18,6 @@
                      :resp-chan request-chan}]
     (u/api-request request-map)
     (go (let [{:keys [result]} (a/<! request-chan)]
-          (log :debug "messaging module got response for get history:" result)
           (a/put! resp-chan result)))))
 
 (defn module-router [message]
@@ -33,7 +32,7 @@
   (log :info "Received shutdown message from Core - Messaging Module shutting down...."))
 
 (defn init [env]
-  (log :info "Initializing SDK module: Messaging")
+  (log :debug "Initializing SDK module: Messaging")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]

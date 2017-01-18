@@ -33,7 +33,6 @@
   [{:keys [messages]} delete-message-fn]
   (when (seq messages)
     (let [{:keys [receipt-handle body]} (first messages)]
-      #_(log :debug "Received message" body)
       (delete-message-fn receipt-handle)
       body)))
 
@@ -81,7 +80,7 @@
 
 (defn init
   [env done-init< config on-msg-fn]
-  (log :info "Initializing SDK module: SQS")
+  (log :debug "Initializing SDK module: SQS")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)
