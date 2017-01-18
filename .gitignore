@@ -6,7 +6,6 @@ pom.xml
 /classes/
 /out/
 /target/
-/release/
 npm-debug.log
 .lein-deps-sum
 .lein-repl-history
