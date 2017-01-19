@@ -21,7 +21,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7"]]
   :source-paths ["src"]
-  :clean-targets ^{:protect false} ["resources/public/js/compiled" "target" "release"]
+  :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src"]
