@@ -41,7 +41,9 @@
   nil)
 
 (defn handle-work-rejected [message]
-  nil)
+  (let [{:keys [interactionId]} message]
+    (state/transition-interaction! :pending :past interactionId)
+    (sdk-response "cxengage/interactions/work-rejected" {:interactionId interactionId})))
 
 (defn handle-custom-fields [message]
   (let [{:keys [interactionId]} message

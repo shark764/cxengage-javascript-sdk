@@ -18,7 +18,8 @@
                              :work-accepted
                              :work-ended
                              :accept-response
-                             :end-response]]
+                             :end-response
+                             :work-rejected]]
              [:messaging [:send-message-response
                           :new-message-received
                           :history]]

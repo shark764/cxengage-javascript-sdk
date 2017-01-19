@@ -1,4 +1,4 @@
-(ns cxengage
+(ns cxengage.sdk
   (:require [client-sdk.core :as c]
             [client-sdk.state :as state]))
 
