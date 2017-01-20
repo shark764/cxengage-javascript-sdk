@@ -34,7 +34,7 @@
     (state/add-messages-to-history! interactionId [{:payload payload}])))
 
 (defn handle-resource-state-change [message]
-  ;; TODO: update our internal state
+  (state/set-user-session-state! message)
   (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates :direction])))
 
 (defn handle-work-initiated [message]
@@ -159,5 +159,4 @@
   (handle-new-messaging-message message))
 
 (defn twilio-msg-router [message type]
-  nil
-  #_(log :warn "message in twilio msg router" message))
+  (log :warn "message in twilio msg router" message))
