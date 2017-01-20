@@ -11,7 +11,7 @@
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
   (let [{:keys [channelType interactionId]} message]
-    (when (= channelType "sms")
+    (when (or (= channelType "messaging") (= channelType "sms"))
       (let [history-result-chan (a/promise-chan)
             history-req (-> message
                             (select-keys [:tenantId :interactionId])
