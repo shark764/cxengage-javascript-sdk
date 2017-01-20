@@ -11,7 +11,7 @@
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
   (let [{:keys [channelType interactionId]} message]
-    (when (= channelType "sms")
+    (when (or (= channelType "messaging") (= channelType "sms"))
       (let [history-result-chan (a/promise-chan)
             history-req (-> message
                             (select-keys [:tenantId :interactionId])
@@ -35,7 +35,7 @@
 
 (defn handle-resource-state-change [message]
   ;; TODO: update our internal state
-  (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates])))
+  (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates :direction])))
 
 (defn handle-work-initiated [message]
   nil)
