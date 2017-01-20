@@ -35,7 +35,7 @@
 
 (defn handle-resource-state-change [message]
   ;; TODO: update our internal state
-  (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates])))
+  (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates :direction])))
 
 (defn handle-work-initiated [message]
   nil)
