@@ -120,14 +120,6 @@
         method :put]
     (contact-request url body method token resp resp-chan)))
 
-(defn delete-attribute
-  [message]
-  (let [{:keys [token tenant-id attribute-id resp-chan]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/attributes/" attribute-id))
-        method :delete]
-    (contact-request url nil method token resp resp-chan)))
-
 (defn get-layout
   [message]
   (let [{:keys [token tenant-id layout-id resp-chan]} message
@@ -155,8 +147,8 @@
                     (map #(assoc %2 :attributes %1) attributes))
         body (cond-> {:layout layout
                       :name name}
-                     description (assoc :description description)
-                     (not (nil? active)) (assoc :active active))
+                     (not (nil? active)) (assoc :active active)
+                     description (assoc :description description))
         method :post]
     (contact-request url body method token resp resp-chan)))
 
