@@ -19,7 +19,7 @@
    (auxiliary-features interrupt-type (merge (iu/extract-params params) {:callback callback})))
   ([interrupt-type params]
    (let [params (iu/extract-params params)
-         pubsub-topic (str "cxengage/voice/" interrupt-type)
+         pubsub-topic (str "cxengage/voice/phone-controls-response")
          {:keys [interactionId callback]} params]
     (if-let [error (cond
                      (not (s/valid? ::voice-features-params params)) (err/invalid-params-err "Invalid interaction ID")

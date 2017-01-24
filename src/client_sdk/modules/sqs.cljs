@@ -62,6 +62,7 @@
             [v c] (alts! [response< shutdown<])]
         (if-not (= v :shutdown)
           (let [message (process-message v (partial delete-message sqs queue-url))]
+            (when (not= nil (js/JSON.parse message)))
             (when message (on-received message))
             (recur))
           (log :info "Shut down SQS"))))

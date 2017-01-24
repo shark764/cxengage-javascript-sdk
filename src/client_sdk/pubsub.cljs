@@ -23,6 +23,13 @@
              [:messaging [:send-message-response
                           :new-message-received
                           :history]]
+             [:voice [:hold-started
+                      :hold-ended
+                      :mute-started
+                      :mute-ended
+                      :recording-started
+                      :recording-ended
+                      :phone-controls-response]]
              [:session [:active-tenant-set
                         :started
                         :state-changed]]])

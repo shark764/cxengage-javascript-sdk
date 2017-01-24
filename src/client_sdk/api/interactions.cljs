@@ -39,13 +39,9 @@
                                   :resourceId (state/get-active-user-id)
                                   :interactionId interactionId})]
          (go (let [accept-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
-               (log :debug "Uuuuhhhhmmm")
                (sdk-response pubsub-topic accept-interaction-response callback)
-               (log :debug "After SDK response, before connection. channelType: " channelType)
                (when (= channelType "voice")
-                (log :debug "channel type is voice, attempting connection")
                 (let [connection (state/get-twilio-connection)]
-                  (log :debug "Connection details: " connection)
                   (.accept connection)))
                nil)))))))
 
@@ -59,7 +55,9 @@
   ([params]
    (let [params (iu/extract-params params)
          pubsub-topic "cxengage/interactions/end-response"
-         {:keys [interactionId callback]} params]
+         {:keys [interactionId callback]} params
+         interaction (state/get-active-interaction interactionId)
+         {:keys [channelType]} interaction]
      (if-let [error (cond
                       (not (s/valid? ::end-interaction-params params)) (err/invalid-params-err)
                       (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
@@ -77,4 +75,7 @@
                                   :interactionId interactionId})]
          (go (let [end-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
                (sdk-response pubsub-topic end-interaction-response callback)
+               (when (= channelType "voice")
+                (let [device (state/get-twilio-device)]
+                  (.disconnectAll device)))
                nil)))))))

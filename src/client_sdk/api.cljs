@@ -24,7 +24,7 @@
                                            :mute (partial voice/auxiliary-features "mute-resource")
                                            :unmute (partial voice/auxiliary-features "unmute-resource")
                                            :startRecording (partial voice/auxiliary-features "recording-start")
-                                           :endRecording (partial voice/auxiliary-features "recording-end")}}
+                                           :endRecording (partial voice/auxiliary-features "recording-stop")}}
                     :subscribe pubsub/subscribe})]
     (if (= (state/get-consumer-type) :cljs)
       api

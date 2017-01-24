@@ -57,6 +57,9 @@
 (defn get-pending-interaction [interaction-id]
   (get-in @sdk-state [:interactions :pending interaction-id]))
 
+(defn get-active-interaction [interaction-id]
+  (get-in @sdk-state [:interactions :active interaction-id]))
+
 (defn add-interaction! [type interaction]
   (let [{:keys [interactionId]} interaction]
     (swap! sdk-state assoc-in [:interactions type interactionId] interaction)))

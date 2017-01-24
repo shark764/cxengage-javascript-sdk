@@ -38,6 +38,7 @@
                  :token token}]
     (u/api-request req-map)
     (go (let [response (a/<! result-chan)]
+          (log :fatal "PRESENCE RESPONSE " response)
           (a/put! resp-chan response)))))
 
 (defn start-session
