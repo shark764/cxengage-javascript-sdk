@@ -35,7 +35,6 @@
     (state/add-messages-to-history! interactionId [{:payload payload}])))
 
 (defn handle-resource-state-change [message]
-  (log :info "MESSAGE FOR CW" message)
   (state/set-user-session-state! message)
   (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates :direction])))
 
