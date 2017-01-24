@@ -31,9 +31,6 @@
                     (into ["?"]))]
     (apply str queryv)))
 
-(defn ^:private attributes-request
-  [url body method token resp resp-chan ])
-
 (defn get-contact
   [message]
   (let [{:keys [token contact-id tenant-id resp-chan]} message

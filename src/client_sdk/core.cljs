@@ -77,6 +77,7 @@
          (register-module! :authentication (auth/init env))
          (register-module! :reporting (reporting/init env))
          (register-module! :presence (presence/init env))
+         (register-module! :contacts (contacts/init env))
          (u/start-simple-consumer! (state/get-async-module-registration)
                                    (partial register-module-async! (a/promise-chan)))
          (api/assemble-api))))))
