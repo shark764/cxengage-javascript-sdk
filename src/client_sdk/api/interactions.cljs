@@ -1,5 +1,5 @@
 (ns client-sdk.api.interactions
-  (:require-macros [cljs.core.async.macros :refer [go]]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
@@ -20,7 +20,9 @@
   ([params]
    (let [params (iu/extract-params params)
          pubsub-topic "cxengage/interactions/accept-response"
-         {:keys [interactionId callback]} params]
+         {:keys [interactionId callback]} params
+         interaction (state/get-pending-interaction interactionId)
+         {:keys [channelType]} interaction]
      (if-let [error (cond
                       (not (s/valid? ::accept-interaction-params params)) (err/invalid-params-err)
                       (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
@@ -38,6 +40,9 @@
                                   :interactionId interactionId})]
          (go (let [accept-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
                (sdk-response pubsub-topic accept-interaction-response callback)
+               (when (= channelType "voice")
+                (let [connection (state/get-twilio-connection)]
+                  (.accept connection)))
                nil)))))))
 
 (s/def ::end-interaction-params
@@ -50,7 +55,9 @@
   ([params]
    (let [params (iu/extract-params params)
          pubsub-topic "cxengage/interactions/end-response"
-         {:keys [interactionId callback]} params]
+         {:keys [interactionId callback]} params
+         interaction (state/get-active-interaction interactionId)
+         {:keys [channelType]} interaction]
      (if-let [error (cond
                       (not (s/valid? ::end-interaction-params params)) (err/invalid-params-err)
                       (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
@@ -68,4 +75,7 @@
                                   :interactionId interactionId})]
          (go (let [end-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
                (sdk-response pubsub-topic end-interaction-response callback)
+               (when (= channelType "voice")
+                (let [device (state/get-twilio-device)]
+                  (.disconnectAll device)))
                nil)))))))

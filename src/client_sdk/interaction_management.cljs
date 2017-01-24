@@ -1,5 +1,5 @@
 (ns client-sdk.interaction-management
-  (:require-macros [cljs.core.async.macros :refer [go]]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [client-sdk.state :as state]
@@ -11,7 +11,8 @@
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
   (let [{:keys [channelType interactionId]} message]
-    (when (or (= channelType "messaging") (= channelType "sms"))
+    (when (or (= channelType "sms")
+              (= channelType "messaging"))
       (let [history-result-chan (a/promise-chan)
             history-req (-> message
                             (select-keys [:tenantId :interactionId])
@@ -34,7 +35,7 @@
     (state/add-messages-to-history! interactionId [{:payload payload}])))
 
 (defn handle-resource-state-change [message]
-  ;; TODO: update our internal state
+  (state/set-user-session-state! message)
   (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates :direction])))
 
 (defn handle-work-initiated [message]
@@ -65,15 +66,24 @@
   nil)
 
 (defn handle-work-accepted [message]
-  (let [{:keys [interactionId tenantId]} message]
+  (let [{:keys [interactionId tenantId]} message
+        interaction (state/get-pending-interaction interactionId)
+        channel-type (get interaction :channelType)]
     (state/transition-interaction! :pending :active interactionId)
-    (a/put! (state/get-module-chan :mqtt) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
-                                           :tenantId tenantId
-                                           :interactionId interactionId})
-    (sdk-response "cxengage/interactions/work-accepted" {:interactionId interactionId})))
+    (when (or (= channel-type "sms")
+              (= channel-type "messaging"))
+      (a/put! (state/get-module-chan :mqtt) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
+                                             :tenantId tenantId
+                                             :interactionId interactionId}))
+    (sdk-response "cxengage/interactions/work-accepted" {:interactionId interactionId}) ))
 
 (defn handle-work-ended [message]
-  (let [{:keys [interactionId]} message]
+  (let [{:keys [interactionId]} message
+        interaction (state/get-pending-interaction interactionId)
+        channel-type (get interaction :channelType)]
+    (when (= channel-type "voice")
+      (let [connection (state/get-twilio-device)]
+        (.disconnectAll connection)))
     (state/transition-interaction! :active :past interactionId)
     (sdk-response "cxengage/interactions/work-ended" {:interactionId interactionId})))
 
@@ -81,6 +91,30 @@
   (let [wrapup-details (select-keys message [:wrapupTime :wrapupEnabled :wrapupUpdateAllowed :targetWrapupTime])
         {:keys [interactionId]} message]
     (state/add-interaction-wrapup-details! wrapup-details interactionId)))
+
+(defn handle-customer-hold [message]
+  (let [{:keys [interactionId]} message]
+    (sdk-response "cxengage/voice/hold-started" {:interactionId interactionId})))
+
+(defn handle-customer-resume [message]
+  (let [{:keys [interactionId]} message]
+    (sdk-response "cxengage/voice/hold-ended" {:interactionId interactionId})))
+
+(defn handle-resource-mute [message]
+  (let [{:keys [interactionId]} message]
+    (sdk-response "cxengage/voice/mute-started" {:interactionId interactionId})))
+
+(defn handle-resource-unmute [message]
+  (let [{:keys [interactionId]} message]
+    (sdk-response "cxengage/voice/mute-ended" {:interactionId interactionId})))
+
+(defn handle-recording-start [message]
+  (let [{:keys [interactionId]} message]
+    (sdk-response "cxengage/voice/recording-started" {:interactionId interactionId})))
+
+(defn handle-recording-stop [message]
+  (let [{:keys [interactionId]} message]
+    (sdk-response "cxengage/voice/recording-ended" {:interactionId interactionId})))
 
 (defn handle-generic [message]
   nil)
@@ -103,6 +137,12 @@
                       :INTERACTIONS/GENERIC_AGENT_NOTIFICATION handle-generic
                       :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
                       :SESSION/START_SESSION_RESPONSE handle-session-start
+                      :INTERACTIONS/CUSTOMER_HOLD_RECEIVED handle-customer-hold
+                      :INTERACTIONS/CUSTOMER_RESUME_RECEIVED handle-customer-resume
+                      :INTERACTIONS/RESOURCE_MUTE_RECEIVED handle-resource-mute
+                      :INTERACTIONS/RESOURCE_UNMUTE_RECEIVED handle-resource-unmute
+                      :INTERACTIONS/RECORDING_START_RECEIVED handle-recording-start
+                      :INTERACTIONS/RECORDING_STOP_RECEIVED handle-recording-stop
                       :AUTH/LOGIN_RESPONSE handle-login
                       nil)]
     (when (and (get message :actionId)
@@ -130,6 +170,12 @@
                                        "wrapup" :INTERACTIONS/WRAP_UP_RECEIVED
                                        "interaction-timeout" :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED
                                        "screen-pop" :INTERACTIONS/SCREEN_POP_RECEIVED
+                                       "customer-hold" :INTERACTIONS/CUSTOMER_HOLD_RECEIVED
+                                       "customer-resume" :INTERACTIONS/CUSTOMER_RESUME_RECEIVED
+                                       "resource-mute" :INTERACTIONS/RESOURCE_MUTE_RECEIVED
+                                       "resource-unmute" :INTERACTIONS/RESOURCE_UNMUTE_RECEIVED
+                                       "recording-start" :INTERACTIONS/RECORDING_START_RECEIVED
+                                       "recording-stop" :INTERACTIONS/RECORDING_STOP_RECEIVED
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:msg-type inferred-notification-type} message))))
 
@@ -155,5 +201,4 @@
   (handle-new-messaging-message message))
 
 (defn twilio-msg-router [message type]
-  nil
-  #_(log :warn "message in twilio msg router" message))
+  (log :warn "message in twilio msg router" message))

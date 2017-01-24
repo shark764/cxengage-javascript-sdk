@@ -57,6 +57,9 @@
 (defn get-pending-interaction [interaction-id]
   (get-in @sdk-state [:interactions :pending interaction-id]))
 
+(defn get-active-interaction [interaction-id]
+  (get-in @sdk-state [:interactions :active interaction-id]))
+
 (defn add-interaction! [type interaction]
   (let [{:keys [interactionId]} interaction]
     (swap! sdk-state assoc-in [:interactions type interactionId] interaction)))
@@ -151,6 +154,27 @@
 (defn get-user-session-state
   []
   (get-in @sdk-state [:session :state]))
+
+;;;;;;;;;;;
+;; twilio
+;;;;;;;;;;;
+
+(defn set-twilio-device
+  [device]
+  (swap! sdk-state assoc-in [:interal :twilio-device] device))
+
+(defn get-twilio-device
+  []
+  (get-in @sdk-state [:interal :twilio-device]))
+
+(defn set-twilio-connection
+  [connection]
+  (swap! sdk-state assoc-in [:interal :twilio-connection] connection))
+
+(defn get-twilio-connection
+  []
+  (get-in @sdk-state [:interal :twilio-connection]))
+
 ;;;;;;;;;;;
 ;; Chans
 ;;;;;;;;;;;

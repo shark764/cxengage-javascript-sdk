@@ -13,9 +13,9 @@
     <div id="login">
       <h1>Login</h1>
       <p>Username</p>
-      <input type="text" id="username" value="sstiles@serenova.com">
+      <input type="text" id="username" value="mjones@liveopscloud.com">
       <p>Password</p>
-      <input type="password" id="password" value="DevProfile1!">
+      <input type="password" id="password" value="password1!">
       <br>
       <br>
       <button onclick="login()">Log in</button>
@@ -37,8 +37,14 @@
       <button style="display: none;" id="offline" onclick="changePresenceState('offline')">Go offline</button>
 
       <h2>Voice Interaction</h2>
-      <div class="incomingCall">Incoming Call?: <span>false</span></div>
-      <button disabled="true">Answer phone</button>
+      <button id="answerPhone" onclick="answerPhone()" disabled="true">Answer phone <span></span></button>
+      <button id="hangupPhone" onclick="hangupPhone()" disabled="true">Hangup phone</button>
+      <div id="phoneControls" style="display:none;">
+        <button id="mute" onclick="toggleMute()">Mute</button>
+        <button id="hold" onclick="toggleHold()">Hold</button>
+        <button id="recording" onclick="toggleRecording()">Start Recording</button>
+      </div>
+      <div id="phoneDetails"></div>
 
       <h2>Messaging Interactions</h2>
       <div id="msgingWindows"></div>
@@ -52,6 +58,11 @@
     var activeTenant = null;
     var agentId = null;
     var sessionId = null;
+    var isMuted = false;
+    var isOnHold = false;
+    var isRecording = false;
+    var voiceInteractionId = null;
+    var voiceTimer = null;
     var currentState = 'offline';
     var availableStates = ['notready'];
 
@@ -74,6 +85,69 @@
         $('#' + s).show();
       });
       $('#' + state).hide();
+    }
+
+    function toggleMute() {
+        if(isMuted) {
+          sdk.interactions.voice.unmute({interactionId: voiceInteractionId});
+        } else {
+          sdk.interactions.voice.mute({interactionId: voiceInteractionId});
+        }
+    }
+
+    function toggleHold() {
+        if(isOnHold) {
+          sdk.interactions.voice.resume({interactionId: voiceInteractionId});
+        } else {
+          sdk.interactions.voice.hold({interactionId: voiceInteractionId});
+        }
+    }
+
+    function toggleRecording() {
+        if(isRecording) {
+          sdk.interactions.voice.endRecording({interactionId: voiceInteractionId});
+        } else {
+          sdk.interactions.voice.startRecording({interactionId: voiceInteractionId});
+        }
+    }
+
+    function answerPhone() {
+        $('#answerPhone').attr('disabled', 'disabled');
+        $('#hangupPhone').removeAttr('disabled');
+        $('#phoneControls').css('display', 'block');
+        clearInterval(voiceTimer);
+        $('#answerPhone span').text('');
+        acceptInteraction(voiceInteractionId);
+    }
+
+    function hangupPhone() {
+      $('#hangupPhone').attr('disabled', 'disabled');
+      $('#phoneControls').css('display', 'none');
+      endInteraction(voiceInteractionId);
+    }
+
+    function addVoiceInteraction(interaction) {
+      var voiceWindow = $('#voiceDetails');
+      voiceInteractionId = interaction.interactionId;
+      var timeout = Math.floor((new Date(interaction.timeout).getTime() - new Date().getTime()) / 1000);
+
+      $('#answerPhone').removeAttr('disabled');
+
+      var x = setInterval(function() {
+        var timeLeft = timeout--;
+        $('#answerPhone span').text('(' + timeLeft + 's remaining)');
+        if (timeLeft == 1) {
+          $('#answerPhone').attr('disabled','disabled');
+        }
+        if (timeLeft == 0) {
+          clearInterval(x);
+        }
+      }, 1000);
+      voiceTimer = x;
+
+      var initialMessagingHTML = 'BOOP';
+      voiceWindow.append(initialMessagingHTML);
+
     }
 
     function addMessagingInteraction(interaction) {
@@ -133,8 +207,12 @@
     }
 
     function handleWorkEnded(message) {
-      var iid = message.interactionId;
-      $('#' + iid).remove();
+      if(message.type == "sms" || message.type == "messaging") {
+        var iid = message.interactionId;
+        $('#' + iid).remove();
+      } else if (message.type == "voice"){
+        $('#answerPhone span').text('');
+      }
     }
 
     function handleWorkRejected(message) {
@@ -149,8 +227,11 @@
     function addInteraction(interaction) {
       interactions.push(interaction);
 
-      if (interaction.channelType === 'sms') {
+      if (interaction.channelType === 'sms' || interaction.channelType === 'messaging') {
         addMessagingInteraction(interaction);
+      }
+      if (interaction.channelType === 'voice') {
+        addVoiceInteraction(interaction);
       }
     }
 
@@ -230,6 +311,37 @@
         case 'cxengage/session/active-tenant-set':
           activeTenant = response.tenantId;
           break;
+
+        case 'cxengage/voice/hold-started':
+          isOnHold = true;
+          $('#hold').text('Resume');
+          break;
+
+        case 'cxengage/voice/hold-ended':
+          isOnHold = false;
+          $('#hold').text('Hold');
+          break;
+
+        case 'cxengage/voice/mute-started':
+          isMuted = true;
+          $('#mute').text('Unmute');
+          break;
+
+        case 'cxengage/voice/mute-ended':
+          isMuted = false;
+          $('#mute').text('Mute');
+          break;
+
+        case 'cxengage/voice/recording-started':
+          isRecording = true;
+          $('#recording').text('End Recording');
+          break;
+
+        case 'cxengage/voice/recording-ended':
+          isRecording = false;
+          $('#recording').text('Start Recording');
+          break;
+
 
         default:
           console.warn('No handler yet for this pubsub msg');
