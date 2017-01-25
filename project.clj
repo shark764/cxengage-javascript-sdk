@@ -42,7 +42,7 @@
                 :source-paths ["src"]
                 :compiler {:main cxengage
                            :output-to "release/cxengage-js-sdk.min.js"
-                           :optimizations :whitespace}}]}
+                           :optimizations :none}}]}
   :figwheel {}
   :profiles {:dev {:dependencies [[binaryage/devtools "0.8.2"]
                                   [karma-reporter "0.3.0"]
