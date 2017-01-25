@@ -10,6 +10,7 @@
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
+  (log :fatal "WORK OFFER" message)
   (let [{:keys [channelType interactionId]} message]
     (when (or (= channelType "sms")
               (= channelType "messaging"))
@@ -39,7 +40,7 @@
   (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates :direction])))
 
 (defn handle-work-initiated [message]
-  nil)
+  (sdk-response "cxengage/interactions/work-initiated" message))
 
 (defn handle-work-rejected [message]
   (let [{:keys [interactionId]} message]
