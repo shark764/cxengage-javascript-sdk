@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 * remove boot audio playing during build (causing jenkins builds to fail)
-
+### Changed
+* Modules no longer live in core state.
 ## [1.3.0]
 * re-did entire production build process (& fixed advanced clojurescript compilation)
 * re-did entire unit testing workflow (run once and get automatic live feedback on if you broke tests)
@@ -21,3 +22,6 @@
 
 ## [1.0.0] - 2017-01-18
 * Initial release
+
+[Unreleased]: https://github.com/liveops/client-sdk-core/tags/1.0.0...HEAD
+[1.0.0]: https://github.com/liveops/client-sdk-core/compare/1.0.0
