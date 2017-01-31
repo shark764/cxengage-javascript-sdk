@@ -29,7 +29,7 @@
                                       (conj acc x "&"))) [])
                     (pop)
                     (into ["?"]))]
-    (apply str queryv)))
+    (clojure.string/join queryv)))
 
 (defn get-contact
   [message]
