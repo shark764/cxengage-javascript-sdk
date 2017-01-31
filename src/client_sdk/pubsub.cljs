@@ -32,7 +32,12 @@
                       :phone-controls-response]]
              [:session [:active-tenant-set
                         :started
-                        :state-changed]]])
+                        :state-changed]]
+             [:contacts [:get-response
+                         :search-response
+                         :create-response
+                         :update-response
+                         :delete-response]]])
 
 (def topic-strings
   (let [prefix "cxengage"]

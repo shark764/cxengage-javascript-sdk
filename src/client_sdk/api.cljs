@@ -10,6 +10,7 @@
             [client-sdk.api.interactions :as int]
             [client-sdk.api.interactions.messaging :as msg]
             [client-sdk.api.interactions.voice :as voice]
+            [client-sdk.api.contacts :as contacts]
             [client-sdk.api.crud :as crud]))
 
 (defn assemble-api []
@@ -25,7 +26,12 @@
                                            :unmute (partial voice/auxiliary-features "unmute-resource")
                                            :startRecording (partial voice/auxiliary-features "recording-start")
                                            :endRecording (partial voice/auxiliary-features "recording-stop")}}
-                    :subscribe pubsub/subscribe})]
+                    :subscribe pubsub/subscribe
+                    :contacts {:getContact contacts/get-contact
+                               :searchContacts contacts/search-contacts
+                               :createContact contacts/create-contact
+                               :updateContact contacts/update-contact
+                               :deleteContact contacts/delete-contact}})]
     (if (= (state/get-consumer-type) :cljs)
       api
       (clj->js api))))

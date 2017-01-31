@@ -12,6 +12,7 @@
     (:SESSION/START_SESSION :SESSION/CHANGE_STATE) :presence
     (:INTERACTIONS/ACKNOWLEDGE_FLOW_ACTION :INTERACTIONS/SEND_INTERRUPT) :interactions
     (:MQTT/SEND_MESSAGE) :mqtt
+    (:CONTACTS/CREATE_CONTACT :CONTACTS/GET_CONTACT :CONTACTS/SEARCH_CONTACTS :CONTACTS/UPDATE_CONTACT :CONTACTS/DELETE_CONTACT) :contacts
     (do (log :error (str  "No matching type, unable to determine module for type" (name msg-type)))
         nil)))
 

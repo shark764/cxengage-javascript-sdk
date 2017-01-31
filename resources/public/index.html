@@ -342,6 +342,25 @@
           $('#recording').text('Start Recording');
           break;
 
+        case 'cxengage/contacts/get-response':
+          console.log("Contacts response: " + response);
+          break;
+
+        case 'cxengage/contacts/search-response':
+          console.log("Contacts response: " + response);
+          break;
+
+        case 'cxengage/contacts/create-response':
+          console.log("Contacts response: " + response);
+          break;
+
+        case 'cxengage/contacts/update-response':
+          console.log("Contacts response: " + response);
+          break;
+
+        case 'cxengage/contacts/delete-response':
+          console.log("Contacts response: " + response);
+          break;
 
         default:
           console.warn('No handler yet for this pubsub msg');
