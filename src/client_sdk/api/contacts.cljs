@@ -55,7 +55,7 @@
                      :else false)]
        (sdk-error-response pubsub-topic error callback)
        (let [search-msg (iu/base-module-request
-                         :CONTACTS/LIST_CONTACT
+                         :CONTACTS/SEARCH_CONTACTS
                          (cond-> {:tenant-id (state/get-active-tenant-id)}
                                  query (assoc :query query)))]
          (go (let [search-contact-response (a/<! (mg/send-module-message search-msg))]

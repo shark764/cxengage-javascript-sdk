@@ -44,10 +44,9 @@
   (let [{:keys [token tenant-id query resp-chan]} message
         resp (a/promise-chan)
         method :get
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts"))]
-    (when query
-      (let [query-url (str url (get-query-str query))]
-        (contact-request query-url nil method token resp resp-chan)))
+        url (if query
+              (str (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts")) (get-query-str query))
+              (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts")))]
     (contact-request url nil method token resp resp-chan)))
 
 (defn create-contact
@@ -80,7 +79,7 @@
   (let [handling-fn (case (:type message)
                       :CONTACTS/GET_CONTACT get-contact
                       :CONTACTS/CREATE_CONTACT create-contact
-                      :CONTACTS/LIST_CONTACT list-contacts
+                      :CONTACTS/SEARCH_CONTACTS list-contacts
                       :CONTACTS/UPDATE_CONTACT update-contact
                       :CONTACTS/DELETE_CONTACT delete-contact
                       nil)]
