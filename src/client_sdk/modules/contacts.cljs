@@ -76,104 +76,6 @@
         method :delete]
     (contact-request url nil method token resp resp-chan)))
 
-(defn get-attribute
-  [message]
-  (let [{:keys [token tenant-id attribute-id resp-chan]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/attributes/" attribute-id))
-        method :get]
-    (contact-request url nil method token resp resp-chan)))
-
-(defn list-attributes
-  [message]
-  (let [{:keys [token tenant-id resp-chan]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/attributes"))
-        method :get]
-    (contact-request url nil method token resp resp-chan)))
-
-(defn create-attribute
-  [message]
-  (let [{:keys [token tenant-id resp-chan label object-name type mandatory default]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/attributes"))
-        body (cond-> {:label label
-                      :objectName object-name
-                      :type type}
-                     (not (nil? mandatory)) (assoc :mandatory mandatory)
-                     default (assoc :default default))
-        method :post] 
-    (contact-request url body method token resp resp-chan)))
-
-(defn update-attribute
-  [message]
-  (let [{:keys [token tenant-id attribute-id resp-chan label mandatory default]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/attributes/" attribute-id))
-        body (cond-> {}
-                     label (assoc :label label)
-                     default (assoc :default default)
-                     (not (nil? mandatory)) (assoc :mandatory mandatory))
-        method :put]
-    (contact-request url body method token resp resp-chan)))
-
-(defn get-layout
-  [message]
-  (let [{:keys [token tenant-id layout-id resp-chan]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts/" layout-id))
-        method :get]
-    (contact-request url nil method token resp resp-chan)))
-
-(defn list-layouts
-  [message]
-  (let [{:keys [token tenant-id resp-chan]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts"))
-        method :get]
-    (contact-request url nil method token resp resp-chan)))
-
-(defn create-layout
-  [message]
-  (let [{:keys [token tenant-id resp-chan labels attributes name description active]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts"))
-        layout (->> labels
-                    (reduce-kv (fn [acc k v]
-                                 (conj acc {:label v})) [])
-                    (map #(assoc %2 :attributes %1) attributes))
-        body (cond-> {:layout layout
-                      :name name}
-                     (not (nil? active)) (assoc :active active)
-                     description (assoc :description description))
-        method :post]
-    (contact-request url body method token resp resp-chan)))
-
-(defn update-layout
-  [message]
-  (let [{:keys [token tenant-id layout-id resp-chan labels attributes name description active]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts/" layout-id))
-        layout (->> labels
-                    (reduce-kv (fn [acc k v]
-                                 (conj acc {:label v})) [])
-                    (map #(assoc %2 :attributes %1) attributes))
-        body (cond-> {}
-                     (and labels attributes) (assoc :layout layout)
-                     description (assoc :description description)
-                     name (assoc :name name)
-                     (not (nil? active)) (assoc :active active))
-        method :put]
-    (contact-request url body method token resp resp-chan)))
-
-(defn delete-layout
-  [message]
-  (let [{:keys [token tenant-id layout-id resp-chan]} message
-        resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts/" layout-id))
-        method :delete]
-    (contact-request url nil method token resp resp-chan)))
-
 (defn module-router [message]
   (let [handling-fn (case (:type message)
                       :CONTACTS/GET_CONTACT get-contact
@@ -181,15 +83,6 @@
                       :CONTACTS/LIST_CONTACT list-contacts
                       :CONTACTS/UPDATE_CONTACT update-contact
                       :CONTACTS/DELETE_CONTACT delete-contact
-                      :CONTACTS/GET_ATTRIBUTE get-attribute
-                      :CONTACTS/LIST_ATTRIBUTES list-attributes
-                      :CONTACTS/CREATE_ATTRIBUTE create-attribute
-                      :CONTACTS/UPDATE_ATTRIBUTE update-attribute
-                      :CONTACTS/GET_LAYOUT get-layout
-                      :CONTACTS/LIST_LAYOUTS list-layouts
-                      :CONTACTS/CREATE_LAYOUT create-layout
-                      :CONTACTS/UPDATE_LAYOUT update-layout
-                      :CONTACTS/DELETE_LAYOUT delete-layout
                       nil)]
     (if handling-fn
       (handling-fn message)

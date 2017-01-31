@@ -42,6 +42,8 @@
 (defn search-contacts
   ([params callback]
    (search-contacts (merge (iu/extract-params params) {:callback callback})))
+  ([]
+   (search-contacts {}))
   ([params]
    (let [params (iu/extract-params params)
          pubsub-topic "cxengage/contacts/search-response"
