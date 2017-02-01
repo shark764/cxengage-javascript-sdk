@@ -1,6 +1,6 @@
 (ns cxengage.sdk
-  (:require [client-sdk.core :as c]
-            [client-sdk.state :as state]))
+  (:require [cxengage-javascript-sdk.core :as c]
+            [cxengage-javascript-sdk.state :as state]))
 
 (enable-console-print!)
 

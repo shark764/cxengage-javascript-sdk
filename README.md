@@ -1,4 +1,4 @@
-# client-sdk
+# CxEngage Javascript SDK
 
 <img src="https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif" width="700">
 
@@ -30,7 +30,7 @@ To create a production build run:
     lein do clean, cljsbuild once min
 
 And open your browser in `resources/public/index.html`. You will not
-get live reloading, nor a REPL. 
+get live reloading, nor a REPL.
 
 ## License
 
