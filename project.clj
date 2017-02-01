@@ -1,4 +1,4 @@
-(defproject org.serenova/client-sdk-core "1.1.1-SNAPSHOT"
+(defproject org.serenova/client-sdk-core "1.1.1"
   :description "Client SDK Core"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
