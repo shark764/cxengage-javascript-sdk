@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.1.0]
+* N/A (testing jenkins release stuff)
+
 ## [1.0.3]
 * Added contacts Module.
 

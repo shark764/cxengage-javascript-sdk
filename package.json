@@ -1,6 +1,6 @@
 {
   "name": "cxengage-js-sdk",
-  "version": "1.0.4-SNAPSHOT",
+  "version": "1.1.0",
   "description": "<img src=\"https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif\" width=\"700\">",
   "main": "release/cxengage-js-sdk.min.js",
   "directories": {
