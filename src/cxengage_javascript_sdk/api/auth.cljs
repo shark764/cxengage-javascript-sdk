@@ -14,7 +14,7 @@
 (s/def ::password string?)
 (s/def ::login-params
   (s/keys :req-un [::username ::password]
-          :opt-un [::specs/callback]))
+          :opt-un [:specs/callback]))
 
 (defn login
   ([params callback]

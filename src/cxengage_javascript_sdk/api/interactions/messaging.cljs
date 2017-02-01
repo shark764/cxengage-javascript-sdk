@@ -12,9 +12,9 @@
 
 (s/def ::message string?)
 (s/def ::send-message-params
-  (s/keys :req-un [::specs/interactionId
+  (s/keys :req-un [:specs/interactionId
                    ::message]
-          :opt-un [::specs/callback]))
+          :opt-un [:specs/callback]))
 
 (defn send-message
   ([params callback]

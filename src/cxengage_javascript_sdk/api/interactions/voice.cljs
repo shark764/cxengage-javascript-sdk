@@ -11,8 +11,8 @@
             [cxengage-javascript-sdk.module-gateway :as mg]))
 
 (s/def ::voice-features-params
-    (s/keys :req-un [::specs/interactionId]
-            :opt-un [::specs/callback]))
+    (s/keys :req-un [:specs/interactionId]
+            :opt-un [:specs/callback]))
 
 (defn auxiliary-features
   ([interrupt-type params callback]

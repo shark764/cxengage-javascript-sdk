@@ -73,7 +73,7 @@
   (contains? topic-strings topic))
 
 (s/def ::subscribe-params
-  (s/keys :req-un [::specs/topic ::specs/callback]
+  (s/keys :req-un [:specs/topic :specs/callback]
           :opt-un []))
 
 (defn subscribe

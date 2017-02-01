@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.test :refer-macros [deftest is testing run-tests async use-fixtures]]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk-utils.core :as u]
+            [cxengage-cljs-utils.core :as u]
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cljs-uuid-utils.core :as uuid]))
 

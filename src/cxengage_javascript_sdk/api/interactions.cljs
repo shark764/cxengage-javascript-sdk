@@ -11,8 +11,8 @@
             [cxengage-javascript-sdk.domain.errors :as err]))
 
 (s/def ::accept-interaction-params
-  (s/keys :req-un [::specs/interactionId]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [:specs/interactionId]
+          :opt-un [:specs/callback]))
 
 (defn accept-interaction
   ([params callback]
@@ -46,8 +46,8 @@
                nil)))))))
 
 (s/def ::end-interaction-params
-  (s/keys :req-un [::specs/interactionId]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [:specs/interactionId]
+          :opt-un [:specs/callback]))
 
 (defn end-interaction
   ([params callback]

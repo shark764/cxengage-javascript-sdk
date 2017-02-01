@@ -11,8 +11,8 @@
             [cxengage-javascript-sdk.domain.errors :as err]))
 
 (s/def ::change-presence-state-params
-  (s/keys :req-un [::specs/state]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [:specs/state]
+          :opt-un [:specs/callback]))
 
 (defn change-presence-state
   ([params callback]
@@ -37,8 +37,8 @@
                nil)))))))
 
 (s/def ::set-active-tenant-params
-  (s/keys :req-un [::specs/tenantId]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [:specs/tenantId]
+          :opt-un [:specs/callback]))
 
 (defn set-active-tenant
   ([params callback]
