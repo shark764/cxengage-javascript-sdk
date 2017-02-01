@@ -1,8 +1,6 @@
-(defproject org.serenova/client-sdk-core "1.1.2-SNAPSHOT"
-  :description "Client SDK Core"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+(defproject org.serenova/cxengage-javascript-sdk "1.1.2-SNAPSHOT"
+  :description "CxEngage Javascript SDK"
+  :url "https://github.com/liveops/cxengage-javascript-sdk"
   :min-lein-version "2.7.1"
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.229"]
@@ -13,7 +11,7 @@
                  [binaryage/devtools "0.8.3"]
                  [cljsjs/paho "1.0.1-0"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.serenova/client-sdk-utils "0.1.0-SNAPSHOT"]
+                 [org.serenova/cxengage-cljs-utils "0.1.0-SNAPSHOT"]
                  [org.serenova/lumbajack "0.1.0-SNAPSHOT"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]]
   :plugins [[lein-figwheel "0.5.8"]
@@ -26,22 +24,22 @@
               [{:id "dev"
                 :source-paths ["src"]
                 :figwheel {}
-                :compiler {:main client_sdk.core
+                :compiler {:main cxengage-javascript-sdk.core
                            :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled/client_sdk.js"
+                           :output-to "resources/public/js/compiled/cxengage-javascript-sdk.js"
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp true
                            :preloads [devtools.preload]}}
                {:id "test"
                 :source-paths ["src" "test"]
-                :compiler {:main client-sdk.runner
+                :compiler {:main cxengage-javascript-sdk.runner
                            :output-dir "resources/public/js/compiled/test"
                            :output-to "resources/public/js/compiled/test/testable.js"
                            :optimizations :whitespace}}
                {:id "prod"
                 :source-paths ["src"]
                 :compiler {:main cxengage
-                           :output-to "release/cxengage-js-sdk.min.js"
+                           :output-to "release/cxengage-javascript-sdk.min.js"
                            :optimizations :none}}]}
   :figwheel {}
   :profiles {:dev {:dependencies [[binaryage/devtools "0.8.2"]
