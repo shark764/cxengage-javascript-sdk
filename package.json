@@ -1,6 +1,6 @@
 {
   "name": "cxengage-js-sdk",
-  "version": "1.0.3-SNAPSHOT",
+  "version": "1.0.3",
   "description": "<img src=\"https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif\" width=\"700\">",
   "main": "release/cxengage-js-sdk.min.js",
   "directories": {
@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/Samstiles/client-sdk#readme",
   "publishConfig": {
-   "registry": "http://nexus.cxengagelabs.net/content/repositories/npm-internal/"
+    "registry": "http://nexus.cxengagelabs.net/content/repositories/npm-internal/"
   }
 }
