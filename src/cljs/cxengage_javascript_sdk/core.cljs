@@ -21,11 +21,7 @@
             [cxengage-javascript-sdk.api :as api]
             [cxengage-javascript-sdk.pubsub :as pubsub]
             [cxengage-javascript-sdk.modules.twilio :as twilio]
-            [cxengage-javascript-sdk.internal-utils :as iu]
-            [devtools.core :as devtools]))
-
-(devtools/install!)
-(enable-console-print!)
+            [cxengage-javascript-sdk.internal-utils :as iu]))
 
 (defn shutdown! []
   (let [channels (reduce
@@ -81,4 +77,3 @@
          (u/start-simple-consumer! (state/get-async-module-registration)
                                    (partial register-module-async! (a/promise-chan)))
          (api/assemble-api))))))
-

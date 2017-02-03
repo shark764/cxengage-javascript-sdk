@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
   <body>
-    <script src="js/compiled/cxengage-javascript-sdk.js" type="text/javascript"></script>
+    <script src="main.js" type="text/javascript"></script>
     <script src="js/jquery.js" type="text/javascript"></script>
     <script src="js/lodash.js" type="text/javascript"></script>
     <script src="js/moment.js" type="text/javascript"></script>
@@ -207,10 +207,10 @@
     }
 
     function handleWorkEnded(message) {
-      if(message.type == "sms" || message.type == "messaging") {
-        var iid = message.interactionId;
+      var iid = message.interactionId;
+      if ($('#' + iid).length) {
         $('#' + iid).remove();
-      } else if (message.type == "voice"){
+      } else {
         $('#answerPhone span').text('');
       }
     }

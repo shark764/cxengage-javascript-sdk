@@ -10,7 +10,6 @@
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
-  (log :fatal "WORK OFFER" message)
   (let [{:keys [channelType interactionId]} message]
     (when (or (= channelType "sms")
               (= channelType "messaging"))

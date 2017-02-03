@@ -6,34 +6,26 @@
 
 FIXME: Write a paragraph about the library/project and highlight its goals.
 
-## Setup
+## Development
 
-To get an interactive development environment run:
+To run the project:
 
-    lein figwheel
+`boot dev`
 
-and open your browser at [localhost:3449](http://localhost:3449/).
-This will auto compile and send all changes to the browser without the
-need to reload. After the compilation process is complete, you will
-get a Browser Connected REPL. An easy way to try it is:
+Then open your browser to `http://localhost:3449/`.
 
-    (js/alert "Am I connected?")
+To connect via repl once `dev` is running:
 
-and you should see an alert in the browser window.
+`boot repl` followed by `(start-repl)`
 
-To clean all compiled files:
+To run tests once:
 
-    lein clean
+`boot test-once`
 
-To create a production build run:
+To run tests in the background and have them re-run every time you make a change:
 
-    lein do clean, cljsbuild once min
+`boot test`
 
-And open your browser in `resources/public/index.html`. You will not
-get live reloading, nor a REPL.
+To make a prod release (you shouldn't ever really have to do this; jenkins does it for us)
 
-## License
-
-Copyright © 2014 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
+`boot make-prod-release`
