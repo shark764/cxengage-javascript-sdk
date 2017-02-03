@@ -23,10 +23,7 @@
 (defn ^:private get-query-str
   [query]
   (let [queryv (->> query 
-                    (reduce (fn [acc x] 
-                                    (if (keyword? x)  
-                                      (conj acc (name x) "=") 
-                                      (conj acc x "&"))) [])
+                    (reduce-kv (fn [acc k v] (conj acc  (name k) "=" v "&")) [])
                     (pop)
                     (into ["?"]))]
     (clojure.string/join queryv)))
@@ -92,7 +89,7 @@
   (log :info "Received shutdown message form Core - Contacts Module shutting down...."))
 
 (defn init [env]
-  (log :info "Initializing SDK module: Contacts")
+  (log :debug "Initializing SDK module: Contacts")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]

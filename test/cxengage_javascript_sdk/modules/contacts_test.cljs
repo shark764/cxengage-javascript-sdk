@@ -51,10 +51,10 @@
 
 (deftest get-query-str-test
   (testing "The query string builder"
-    (let [query [:q "name"
+    (let [query {:q "name"
                  :mobile "+15554442222"
                  :limit "5"
-                 :page 0]]
+                 :page 0}]
       (is (= "?q=name&mobile=+15554442222&limit=5&page=0" (cxengage-javascript-sdk.modules.contacts/get-query-str query))))))
 
 (deftest get-contact-test
@@ -140,7 +140,7 @@
         (contacts/list-contacts {:token "wtahodxeubhtna"
                                  :tenant-id (str (uuid/make-random-squuid))
                                  :resp-chan resp2
-                                 :query [:q "name" :mobile "+15554442222" :limit "1" :page 0]})
+                                 :query {:q "name" :mobile "+15554442222" :limit "1" :page 0}})
         (async done
                (go
                  (is (= (a/<! resp) [{:id "c2260887-8231-45f3-83f2-729f5d63f313"
