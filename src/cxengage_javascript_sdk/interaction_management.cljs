@@ -181,7 +181,7 @@
       (merge {:msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
-  (let [cljsd-msg (js->clj (js/JSON.parse message) :keywordize-keys true)
+  (let [cljsd-msg (js->clj message :keywordize-keys true)
         sessionId (or (get cljsd-msg :sessionId)
                       (get-in cljsd-msg [:resource :sessionId]))
         inferred-msg (case (:type cljsd-msg)
