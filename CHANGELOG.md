@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [1.2.0]
+## [1.3.0]
 * re-did entire production build process (& fixed advanced clojurescript compilation)
 * re-did entire unit testing workflow (run once and get automatic live feedback on if you broke tests)
 * re-did entire development workflow (now boot reload + boot repl instead of figwheel)
