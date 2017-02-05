@@ -37,7 +37,10 @@
                          :search-response
                          :create-response
                          :update-response
-                         :delete-response]]])
+                         :delete-response
+                         :list-attributes-response
+                         :get-layout-response
+                         :list-layouts-response]]])
 
 (def topic-strings
   (let [prefix "cxengage"]

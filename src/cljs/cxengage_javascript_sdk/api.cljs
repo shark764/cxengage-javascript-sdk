@@ -31,7 +31,10 @@
                                :searchContacts contacts/search-contacts
                                :createContact contacts/create-contact
                                :updateContact contacts/update-contact
-                               :deleteContact contacts/delete-contact}})]
+                               :deleteContact contacts/delete-contact
+                               :listAttributes contacts/list-attributes
+                               :getLayout contacts/get-layout
+                               :listLayouts contacts/list-layouts}})]
     (if (= (state/get-consumer-type) :cljs)
       api
       (clj->js api))))

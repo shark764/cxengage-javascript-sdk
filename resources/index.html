@@ -361,6 +361,18 @@
         case 'cxengage/contacts/delete-response':
           console.log("Contacts response: " + response);
           break;
+    
+        case 'cxengage/contacts/list-attributes-response':
+          console.log("Attributes: " + response);
+          break;
+
+        case 'cxengage/contacts/get-layout-response':
+          console.log("layout: " + response);
+          break;
+
+        case 'cxengage/contacts/list-layouts-response':
+          console.log("Layouts: " + response);
+          break;
 
         default:
           console.warn('No handler yet for this pubsub msg');
