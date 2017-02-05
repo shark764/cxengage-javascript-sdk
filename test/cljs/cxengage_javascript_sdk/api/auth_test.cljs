@@ -1,6 +1,5 @@
-(ns cxengage-javascript-sdk.api-auth-test
-  (:require-macros [cljs.core.async.macros :refer [go]]
-                   [cxengage-javascript-sdk.test-macros :refer [with-reset]])
+(ns cxengage-javascript-sdk.api.auth-test
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.test :refer-macros [deftest is testing async]]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.module-gateway :as mg]

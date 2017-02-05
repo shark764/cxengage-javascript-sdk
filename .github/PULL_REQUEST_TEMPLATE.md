@@ -3,7 +3,6 @@
 
 ## Remember to ##
 - [ ] Update changelog
-- [ ] Verify if version has changed (check upstream to see if it has changed)
-- [ ] Used correct version. See [semver](http://semver.org)
-- [ ] Write unit tests
+- [ ] Updated to the correct version in `./package.json`. See [semver](http://semver.org)
+- [ ] Wrote unit tests (if applicable)
 - [ ] Clean up the commit log (should *only* contain the changes for this feature)

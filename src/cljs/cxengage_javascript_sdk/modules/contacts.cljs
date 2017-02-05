@@ -13,7 +13,7 @@
   (let [request-map {:url url
                      :method method
                      :resp-chan resp}]
-    (cond-> request-map 
+    (cond-> request-map
             body (assoc :body body)
             token (assoc :token token)
             true (u/api-request))
@@ -22,7 +22,7 @@
 
 (defn ^:private get-query-str
   [query]
-  (let [queryv (->> query 
+  (let [queryv (->> query
                     (reduce-kv (fn [acc k v] (conj acc  (name k) "=" v "&")) [])
                     (pop)
                     (into ["?"]))]
