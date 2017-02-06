@@ -12,6 +12,7 @@
             [goog.crypt :as c]
             [cljs-uuid-utils.core :as id]
             [cxengage-cljs-utils.core :as u]
+            [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
             [cognitect.transit :as t]
             [cljs.spec :as s])
@@ -195,8 +196,10 @@
                                 (select-keys (:credentials mqtt-config) [:secretKey :accessKey :sessionToken]))
                          (transform-keys camel/->kebab-case-keyword)
                          (#(rename-keys % {:region :region-name})))]
-    (u/start-simple-consumer! module-inputs< module-router)
-    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
-    (mqtt-init mqtt-config client-id on-msg-fn done-init<)
-    {:messages module-inputs<
-     :shutdown module-shutdown<}))
+    (if-not mqtt-config
+      (a/put! done-init< {:status :failure})
+      (do (u/start-simple-consumer! module-inputs< module-router)
+          (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
+          (mqtt-init mqtt-config client-id on-msg-fn done-init<)
+          {:messages module-inputs<
+           :shutdown module-shutdown<}))))

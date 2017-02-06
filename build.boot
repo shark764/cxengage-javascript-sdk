@@ -17,6 +17,7 @@
                  [org.clojure/core.async "0.2.391"
                   :exclusions [org.clojure/tools.reader]]
                  [camel-snake-kebab "0.4.0"]
+                 [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljsjs/aws-sdk-js "2.2.41-4"]
                  [binaryage/devtools "0.9.0"]
                  [cljsjs/paho "1.0.1-0"]
@@ -79,8 +80,8 @@
 
 (deftask make-prod-release []
   (comp (production*)
-        (sift :move {#"main.js" "cxengage-javascript-sdk.min.js"
-                     #"main.js.map" "cxengage-javascript-sdk.min.js.map"})
+        (sift :move {#"main.js" "cxengage-javascript-sdk.min.js"})
+        (sift :move {#"cxengage-javascript-sdk.min.js.map" "main.js.map"})
         (target :dir #{"release"})))
 
 (deftask test-once []
