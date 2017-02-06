@@ -51,7 +51,6 @@
                                        :resourceId resourceId
                                        :direction direction
                                        :channelType channelType}})]
-         (log :debug "AAAAAAAAAAAAAAAAAa" contact-msg)
          (go (let [assign-contact-response (a/<! (mg/send-module-message contact-msg))]
                (sdk-response pubsub-topic assign-contact-response callback)
                nil)))))))
