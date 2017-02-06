@@ -3,6 +3,7 @@
 ## [Unreleased]
 * remove boot audio playing during build (causing jenkins builds to fail)
 ### Changed
+* Alter interrupt function to accommodate complex interrupt types 
 * Modules no longer live in core state.
 * fix boot source mapping
 * add some error handling if certain integrations arent returned via api
