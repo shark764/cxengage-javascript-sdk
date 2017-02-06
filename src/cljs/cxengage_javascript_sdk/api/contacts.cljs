@@ -206,12 +206,13 @@
          (go (let [list-attributes-response (a/<! (mg/send-module-message qp-msg))
                    relevant-attributes  (->> list-attributes-response
                                              (filterv #(:active %))
-                                             (mapv (fn [{:keys [type label mandatory objectName default]}]
+                                             (mapv (fn [{:keys [type label mandatory objectName default id]}]
                                                      (clj->js {:type type
                                                                :label label
                                                                :mandatory mandatory
                                                                :objectName objectName
-                                                               :default default}))))]
+                                                               :default default
+                                                               :id id}))))]
                (sdk-response pubsub-topic relevant-attributes callback))))))))
 
 (s/def ::get-layout-params
