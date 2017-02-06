@@ -61,14 +61,15 @@
                    start-session-msg (iu/base-module-request
                                       :SESSION/START_SESSION
                                       {:tenant-id (state/get-active-tenant-id)
-                                       :user-id (state/get-active-user-id)})]
-               (a/put! (state/get-async-module-registration) {:module-name :mqtt :config result})
-               (a/put! (state/get-async-module-registration) {:module-name :twilio :config result})
+                                       :user-id (state/get-active-user-id)})
+                   pub-chan (mg/>get-publication-channel)]
+               (a/put! pub-chan {:type :MQTT/INIT :module-name :mqtt :config result})
+               (a/put! pub-chan {:type :TWILIO/INIT :module-name :twilio :config result})
                (state/set-config! result)
                (let [start-session-response (a/<! (mg/send-module-message start-session-msg))]
                  (state/set-session-details! start-session-response)
                  (log :info "Successfully initiated presence session")
                  (sdk-response "cxengage/session/started" {:sessionId (:sessionId start-session-response)})
                  (change-presence-state {:state "notready"})
-                 (a/put! (state/get-async-module-registration) {:module-name :sqs :config (state/get-session-details)})
+                 (a/put! pub-chan {:type :SQS/INIT :module-name :sqs :config (state/get-session-details)})
                  nil))))))))
