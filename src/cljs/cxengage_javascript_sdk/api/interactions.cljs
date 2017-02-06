@@ -36,7 +36,7 @@
                                  {:tenantId (state/get-active-tenant-id)
                                   :interruptType "offer-accept"
                                   :source "client"
-                                  :resourceId (state/get-active-user-id)
+                                  :interrupt {:resourceId (state/get-active-user-id)}
                                   :interactionId interactionId})]
          (go (let [accept-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
                (sdk-response pubsub-topic accept-interaction-response callback)
@@ -71,7 +71,7 @@
                                  {:tenantId (state/get-active-tenant-id)
                                   :interruptType "resource-disconnect"
                                   :source "client"
-                                  :resourceId (state/get-active-user-id)
+                                  :interrupt {:resourceId (state/get-active-user-id)}
                                   :interactionId interactionId})]
          (go (let [end-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
                (sdk-response pubsub-topic end-interaction-response callback)

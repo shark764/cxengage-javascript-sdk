@@ -7,10 +7,10 @@
 (def module-state (atom {}))
 
 (defn send-interrupt [message]
-  (let [{:keys [resp-chan token interruptType source resourceId interactionId tenantId]} message
+  (let [{:keys [resp-chan token interruptType source interrupt interactionId tenantId]} message
         interrupt-body {:source source
                         :interruptType interruptType
-                        :interrupt {:resource-id resourceId}}
+                        :interrupt interrupt}
         request-map {:method :post
                      :body interrupt-body
                      :url (u/api-url (:env @module-state)
