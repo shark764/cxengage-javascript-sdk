@@ -41,8 +41,10 @@
                (init-fn (state/get-env) done-chan config router))
              (:messages)
              (a/sub publication (str "modules/" (str/upper-case (name module-name)))))
-        (a/<! done-chan)
-        (log :debug (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async)."))))))
+        (let [registration-response (a/<! done-chan)]
+             (if-not (= (:status registration-response) :ok)
+               (log :fatal (str "Failed to register module `" (name module-name) "`!"))
+               (log :debug (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async)."))))))))
 
 (defn start-modules
   [env terseLogs logLevel twilio-router mqtt-router sqs-router]
