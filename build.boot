@@ -17,6 +17,7 @@
                  [org.clojure/core.async "0.2.391"
                   :exclusions [org.clojure/tools.reader]]
                  [camel-snake-kebab "0.4.0"]
+                 [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljsjs/aws-sdk-js "2.2.41-4"]
                  [binaryage/devtools "0.9.0"]
                  [cljsjs/paho "1.0.1-0"]
