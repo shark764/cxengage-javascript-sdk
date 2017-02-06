@@ -13,13 +13,18 @@
 
 (def module-state (atom {}))
 
-(def topics [[:authentication [:login]]
+(def topics [[:features [:voice-enabled]
+                        [:messaging-enabled]]
+             [:authentication [:login]]
              [:interactions [:work-offer
                              :work-accepted
                              :work-ended
+                             :work-initiated
                              :accept-response
                              :end-response
-                             :work-rejected]]
+                             :work-rejected
+                             :contact-unassigned
+                             :contact-assigned]]
              [:messaging [:send-message-response
                           :new-message-received
                           :history]]

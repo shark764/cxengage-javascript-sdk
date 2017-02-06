@@ -19,7 +19,7 @@
                             (merge {:token (state/get-token)
                                     :resp-chan history-result-chan
                                     :type :MESSAGING/GET_HISTORY}))]
-        (a/put! (state/get-module-chan :messaging) history-req)
+        (a/put! (mg/>get-publication-channel) history-req)
         (go (let [history (a/<! history-result-chan)]
               (sdk-response "cxengage/messaging/history" history)
               (state/add-messages-to-history! interactionId history))))))
@@ -72,7 +72,7 @@
     (state/transition-interaction! :pending :active interactionId)
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
-      (a/put! (state/get-module-chan :mqtt) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
+      (a/put! (mg/>get-publication-channel) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
                                              :tenantId tenantId
                                              :interactionId interactionId}))
     (sdk-response "cxengage/interactions/work-accepted" {:interactionId interactionId}) ))

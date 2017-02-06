@@ -86,8 +86,10 @@
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)
         sqs-config (first (filter #(= (:type %) "sqs") (:integrations config)))]
-    (u/start-simple-consumer! module-inputs< module-router)
-    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
-    (sqs-init sqs-config on-msg-fn done-init<)
-    {:messages module-inputs<
-     :shutdown module-shutdown<}))
+    (if-not sqs-config
+      (a/put! done-init< {:status :failure})
+      (do (u/start-simple-consumer! module-inputs< module-router)
+          (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
+          (sqs-init sqs-config on-msg-fn done-init<)
+          {:messages module-inputs<
+           :shutdown module-shutdown<}))))

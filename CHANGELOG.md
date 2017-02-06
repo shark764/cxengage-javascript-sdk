@@ -1,7 +1,14 @@
 # Change Log
 
 ## [Unreleased]
+
+## [1.3.1]
+* CXV1-7670 assigning contacts to interactions
 * remove boot audio playing during build (causing jenkins builds to fail)
+* alter interrupt function to accommodate complex interrupt types
+* modules no longer live in core state.
+* fix boot source mapping
+* add some error handling if certain integrations arent returned via api
 
 ## [1.3.0]
 * re-did entire production build process (& fixed advanced clojurescript compilation)

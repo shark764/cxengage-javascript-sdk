@@ -20,6 +20,8 @@
                     :interactions {:accept int/accept-interaction
                                    :end int/end-interaction
                                    :messaging {:sendMessage msg/send-message}
+                                   :assignContact (partial contacts/contact-interaction-assignment :assign)
+                                   :unassignContact (partial contacts/contact-interaction-assignment :unassign)
                                    :voice {:hold (partial voice/auxiliary-features "customer-hold")
                                            :resume (partial voice/auxiliary-features "customer-resume")
                                            :mute (partial voice/auxiliary-features "mute-resource")
@@ -27,11 +29,11 @@
                                            :startRecording (partial voice/auxiliary-features "recording-start")
                                            :endRecording (partial voice/auxiliary-features "recording-stop")}}
                     :subscribe pubsub/subscribe
-                    :contacts {:getContact contacts/get-contact
-                               :searchContacts contacts/search-contacts
-                               :createContact contacts/create-contact
-                               :updateContact contacts/update-contact
-                               :deleteContact contacts/delete-contact
+                    :contacts {:get contacts/get-contact
+                               :search contacts/search-contacts
+                               :create contacts/create-contact
+                               :update contacts/update-contact
+                               :delete contacts/delete-contact
                                :listAttributes contacts/list-attributes
                                :getLayout contacts/get-layout
                                :listLayouts contacts/list-layouts}})]
