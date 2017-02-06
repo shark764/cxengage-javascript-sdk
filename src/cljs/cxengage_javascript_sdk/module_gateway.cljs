@@ -35,12 +35,13 @@
     (a/sub publication (str "init/" (str/upper-case (name module-name))) start-chan)
     (go
       (let [{:keys [type module-name config]} (a/<! start-chan)
-            done-chan (a/promise-chan)]
-        (->> (if (= :mqtt module-name)
-               (init-fn (state/get-env) done-chan (state/get-active-user-id) config router)
-               (init-fn (state/get-env) done-chan config router))
-             (:messages)
-             (a/sub publication (str "modules/" (str/upper-case (name module-name)))))
+            done-chan (a/promise-chan)
+            init-map (case module-name
+                       :mqtt (init-fn (state/get-env) done-chan (state/get-active-user-id) config router)
+                       :twilio (init-fn (state/get-env) done-chan config router)
+                       :sqs (init-fn (state/get-env) done-chan config router)
+                       (log :error "Unrecognized asynchronous module registration attempt."))]
+        (register-module publication module-name init-map)
         (let [registration-response (a/<! done-chan)]
              (if-not (= (:status registration-response) :ok)
                (log :fatal (str "Failed to register module `" (name module-name) "`!"))
@@ -49,9 +50,9 @@
 (defn start-modules
   [env terseLogs logLevel twilio-router mqtt-router sqs-router]
   (let [publication (a/pub pub-chan 
-                           (fn [message]  (if (= "INIT"  (peek (clojure.string/split (str (:type message)) #"[:/]+"))) 
-                                            (str "init/" (second (clojure.string/split (str (:type message)) #"[:/]+"))) 
-                                            (str "modules/" (second (clojure.string/split (str (:type message)) #"[:/]+"))))))]
+                           (fn [message] (if (= "INIT"  (peek (clojure.string/split (str (:type message)) #"[:/]+"))) 
+                                           (str "init/" (second (clojure.string/split (str (:type message)) #"[:/]+"))) 
+                                           (str "modules/" (second (clojure.string/split (str (:type message)) #"[:/]+"))))))]
     (register-module publication :logging (logging/init env {:terse? (or terseLogs false) :level logLevel}))
     (register-module publication :messaging (msg/init env))
     (register-module publication :interactions (flow/init env))

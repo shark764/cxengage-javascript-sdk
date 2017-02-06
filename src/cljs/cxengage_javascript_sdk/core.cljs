@@ -10,11 +10,7 @@
             [cxengage-javascript-sdk.module-gateway :as mg]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.interaction-management :as intmgmt]
-            [cxengage-javascript-sdk.api :as api]
-            [devtools.core :as devtools]))
-
-(devtools/install!)
-(enable-console-print!)
+            [cxengage-javascript-sdk.api :as api]))
 
 (defn shutdown! []
   (let [channels (reduce
