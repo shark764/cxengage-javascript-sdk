@@ -40,7 +40,7 @@
     (not= nil (get-in @sdk-state [:interactions :pending interaction-id])) :pending
     (not= nil (get-in @sdk-state [:interactions :active interaction-id])) :active
     (not= nil (get-in @sdk-state [:interactions :past interaction-id])) :past
-    :else (log :error "Unable to find interaction location")))
+    :else (log :error "Unable to find interaction location - we have never received that interaction")))
 
 (defn get-all-interactions []
   (get @sdk-state :interactions))
@@ -59,6 +59,10 @@
 
 (defn get-active-interaction [interaction-id]
   (get-in @sdk-state [:interactions :active interaction-id]))
+
+(defn get-interaction [interaction-id]
+  (let [location (find-interaction-location interaction-id)]
+    (get-in @sdk-state [:interactions location interaction-id])))
 
 (defn add-interaction! [type interaction]
   (let [{:keys [interactionId]} interaction]
@@ -184,7 +188,6 @@
 
 (defn get-module-shutdown-chan [module]
   (get-in @sdk-state [:module-channels module :shutdown]))
-
 
 ;;;;;;;;;;;
 ;; Predicates

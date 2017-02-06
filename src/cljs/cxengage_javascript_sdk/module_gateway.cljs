@@ -49,9 +49,9 @@
 
 (defn start-modules
   [env terseLogs logLevel twilio-router mqtt-router sqs-router]
-  (let [publication (a/pub pub-chan 
-                           (fn [message] (if (= "INIT"  (peek (clojure.string/split (str (:type message)) #"[:/]+"))) 
-                                           (str "init/" (second (clojure.string/split (str (:type message)) #"[:/]+"))) 
+  (let [publication (a/pub pub-chan
+                           (fn [message] (if (= "INIT"  (peek (clojure.string/split (str (:type message)) #"[:/]+")))
+                                           (str "init/" (second (clojure.string/split (str (:type message)) #"[:/]+")))
                                            (str "modules/" (second (clojure.string/split (str (:type message)) #"[:/]+"))))))]
     (register-module publication :logging (logging/init env {:terse? (or terseLogs false) :level logLevel}))
     (register-module publication :messaging (msg/init env))
