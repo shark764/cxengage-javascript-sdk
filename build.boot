@@ -41,8 +41,7 @@
  '[crisptrutski.boot-cljs-test :refer [test-cljs]])
 
 (deftask build* []
-  (comp (speak)
-        (cljs)))
+  (comp (cljs)))
 
 (deftask run* []
   (comp (serve :port 3449)
@@ -70,8 +69,7 @@
                                           :output-wrapper true
                                           :source-map true
                                           :verbose true}})
-  (comp (speak)
-        (cljs)))
+  (comp (cljs)))
 
 (ns-unmap 'boot.user 'test)
 
