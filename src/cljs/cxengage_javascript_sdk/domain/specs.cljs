@@ -9,6 +9,7 @@
 (s/def ::tenantId ::uuid)
 (s/def ::interactionId ::uuid)
 (s/def ::contactId ::uuid)
+(s/def ::layoutId ::uuid)
 (s/def ::topic string?)
 (s/def ::state string?)
 (s/def ::callback (s/or :callback fn?

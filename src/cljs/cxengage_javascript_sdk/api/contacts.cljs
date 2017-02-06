@@ -67,7 +67,7 @@
 
 (defn create-contact
   ([params callback]
-   (create-contact (merge iu/extract-params params) {:callback callback}))
+   (create-contact (merge (iu/extract-params params) {:callback callback})))
   ([params]
    (let [params (iu/extract-params params)
          pubsub-topic "cxengage/contacts/create-response"
@@ -92,7 +92,7 @@
 
 (defn update-contact
   ([params callback]
-   (update-contact (merge iu/extract-params params) {:callback callback}))
+   (update-contact (merge (iu/extract-params params) {:callback callback})))
   ([params]
    (let [params (iu/extract-params params)
          pubsub-topic "cxengage/contacts/update-response"
@@ -117,7 +117,7 @@
 
 (defn delete-contact
   ([params callback]
-   (delete-contact (merge iu/extract-params params) {:callback callback}))
+   (delete-contact (merge (iu/extract-params params) {:callback callback})))
   ([params]
    (let [params (iu/extract-params params)
          pubsub-topic "cxengage/contacts/delete-response"
@@ -135,3 +135,90 @@
                           :attributes attributes})]
          (go (let [delete-contact-response (a/<! (mg/send-module-message delete-msg))]
                (sdk-response pubsub-topic delete-contact-response callback))))))))
+
+(s/def ::list-attributes-params
+  (s/keys :req-un []
+          :opt-un [:specs/callback]))
+
+(defn list-attributes
+  ([params callback]
+   (list-attributes {:callback callback}))
+  ([]
+   (list-attributes {}))
+  ([params]
+   (let [params (iu/extract-params params)
+         pubsub-topic "cxengage/contacts/list-attributes-response"
+         {:keys [callback]} params]
+     (if-let [error (cond
+                     (not (s/valid? ::list-attributes-params params)) (err/invalid-params-err)
+                     (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
+                     (not (state/active-tenant-set?)) (err/invalid-sdk-state-err "Your active tenant isn't set yet.")
+                     :else false)]
+       (sdk-error-response pubsub-topic error callback)
+       (let [qp-msg (iu/base-module-request
+                     :CONTACTS/LIST_ATTRIBUTES
+                     {:tenant-id (state/get-active-tenant-id)})]
+         (go (let [list-attributes-response (a/<! (mg/send-module-message qp-msg))
+                   relevant-attributes  (->> list-attributes-response
+                                             (filterv #(:active %))
+                                             (mapv (fn [{:keys [type label mandatory objectName default]}]
+                                                     (clj->js {:type type
+                                                               :label label
+                                                               :mandatory mandatory
+                                                               :objectName objectName
+                                                               :default default}))))]
+               (sdk-response pubsub-topic relevant-attributes callback))))))))
+
+(s/def ::get-layout-params
+  (s/keys :req-un [:specs/layoutId]
+          :opt-un [:specs/callback]))
+
+(defn get-layout
+  ([params callback]
+   (get-layout (merge (iu/extract-params params) {:callback callback})))
+  ([params]
+   (let [params (iu/extract-params params)
+         pubsub-topic "cxengage/contacts/get-layout-response"
+         {:keys [layoutId callback]} params]
+     (if-let [error (cond
+                     (not (s/valid? ::get-layout-params params)) (err/invalid-params-err)
+                     (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
+                     (not (state/active-tenant-set?)) (err/invalid-sdk-state-err "Your active tenant isn't set yet.")
+                     :else false)]
+       (sdk-error-response pubsub-topic error callback)
+       (let [layout-msg (iu/base-module-request
+                         :CONTACTS/GET_LAYOUT
+                         {:tenant-id (state/get-active-tenant-id)
+                          :layout-id layoutId})]
+         (go (let [get-layout-response (a/<! (mg/send-module-message layout-msg))]
+               (sdk-response pubsub-topic get-layout-response callback))))))))
+
+(s/def ::list-layouts-params
+  (s/keys :req-un []
+          :opt-un [:specs/callback]))
+
+(defn list-layouts
+  ([params callback]
+   (list-layouts {:callback callback}))
+  ([]
+   (list-layouts {}))
+  ([params]
+   (let [params (iu/extract-params params)
+         pubsub-topic "cxengage/contacts/list-layouts-response"
+         {:keys [callback]} params]
+     (if-let [error (cond
+                     (not (s/valid? ::list-layouts-params params)) (err/invalid-params-err)
+                     (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
+                     (not (state/active-tenant-set?)) (err/invalid-sdk-state-err "Your active tenant isn't set yet.")
+                     :else false)]
+       (sdk-error-response pubsub-topic error callback)
+       (let [layout-msg (iu/base-module-request
+                     :CONTACTS/LIST_LAYOUTS
+                     {:tenant-id (state/get-active-tenant-id)})]
+         (go (let [list-layouts-response (a/<! (mg/send-module-message layout-msg))
+                   relevant-layouts  (->> list-layouts-response
+                                             (filterv #(:active %))
+                                             (mapv (fn [{:keys [id layout]}]
+                                                     (clj->js {:id id
+                                                               :layout layout}))))]
+               (sdk-response pubsub-topic relevant-layouts callback))))))))

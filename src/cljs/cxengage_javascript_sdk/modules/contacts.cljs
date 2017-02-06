@@ -72,6 +72,31 @@
         method :delete]
     (contact-request url nil method token resp resp-chan)))
 
+(defn list-attributes
+  [message]
+  (let [{:keys [token tenant-id resp-chan]} message
+        resp (a/promise-chan)
+        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/attributes"))
+        method :get]
+    (contact-request url nil method token resp resp-chan)))
+
+
+(defn get-layout
+  [message]
+  (let [{:keys [token tenant-id layout-id resp-chan]} message
+        resp (a/promise-chan)
+        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts/" layout-id))
+        method :get]
+    (contact-request url nil method token resp resp-chan)))
+
+(defn list-layouts
+  [message]
+  (let [{:keys [token tenant-id resp-chan]} message
+        resp (a/promise-chan)
+        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts"))
+        method :get]
+    (contact-request url nil method token resp resp-chan)))
+
 (defn module-router [message]
   (let [handling-fn (case (:type message)
                       :CONTACTS/GET_CONTACT get-contact
@@ -79,6 +104,9 @@
                       :CONTACTS/SEARCH_CONTACTS list-contacts
                       :CONTACTS/UPDATE_CONTACT update-contact
                       :CONTACTS/DELETE_CONTACT delete-contact
+                      :CONTACTS/LIST_ATTRIBUTES list-attributes
+                      :CONTACTS/GET_LAYOUT get-layout
+                      :CONTACTS/LIST_LAYOUTS list-layouts
                       nil)]
     (if handling-fn
       (handling-fn message)
