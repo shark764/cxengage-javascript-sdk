@@ -44,8 +44,10 @@
       :sqs (register-module! :sqs (sqs/init (state/get-env) done-registry< config intmgmt/sqs-msg-router))
       :mqtt (register-module! :mqtt (mqtt/init (state/get-env) done-registry< (state/get-active-user-id) config intmgmt/mqtt-msg-router))
       (log :error "Unrecognized asynchronous module registration attempt."))
-    (go (a/<! done-registry<)
-        (log :debug (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))
+    (go (let [registration-response (a/<! done-registry<)]
+          (if-not (= (:status registration-response) :ok)
+            (log :fatal (str "Failed to register module `" (name module-name) "`!"))
+            (log :debug (str "SDK Module `" (str/upper-case (name module-name)) "` succesfully registered (async).")))))))
 
 (s/def ::env #{"dev" "qe" "staging" "production"})
 (s/def ::cljs boolean?)
