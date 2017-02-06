@@ -80,8 +80,7 @@
 
 (deftask make-prod-release []
   (comp (production*)
-        (sift :move {#"main.js" "cxengage-javascript-sdk.min.js"
-                     #"main.js.map" "cxengage-javascript-sdk.min.js.map"})
+        (sift :move {#"main.js" "cxengage-javascript-sdk.min.js"})
         (target :dir #{"release"})))
 
 (deftask test-once []
