@@ -2,32 +2,51 @@
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
-            [cxengage-javascript-sdk.state :as state]))
+            [cljs.spec :as s]
+            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.module-gateway :as mg]
+            [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.pubsub :refer [sdk-response sdk-error-response]]
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.errors :as err]))
+
+(s/def ::get-entity-params
+  (s/keys :req-un []
+          :opt-un []))
 
 (defn get-entity
-  [params]
-  #_(let [module-chan (state/get-module-chan :crud)
-        response-chan (a/promise-chan)
-        {:keys [entity entityId callback]} (js->clj params :keywordize-keys true)
-        entitiy-msg {:resp-chan response-chan
-                     :type :CRUD/GET_ENTITY
-                     :token (state/get-token)
-                     :tenant-id (state/get-active-tenant-id)
-                     :entity entity
-                     :entity-id entityId}]
-    (a/put! module-chan entitiy-msg)
-    (go (let [{:keys [results]} (a/<! response-chan)]
-          (callback (clj->js results))))))
+  ([entity-type params callback]
+   (get-entity entity-type (merge (iu/extract-params params) {:callback callback})))
+  ([entity-type params]
+   (let [params (iu/extract-params params)
+         {:keys [entityId callback]} params
+         pubsub-topic (str "cxengage/crud/get-" (.slice entity-type 0 -1) "-response")]
+     (if-not (s/valid? ::get-entity-params params)
+       (sdk-error-response pubsub-topic (err/invalid-params-err) callback)
+       (let [get-entity-msg (iu/base-module-request
+                                        :CRUD/GET_ENTITY
+                                        {:tenant-id (state/get-active-tenant-id)
+                                         :entity entity-type
+                                         :entity-id entityId})]
+         (go (let [get-entity-response (a/<! (mg/send-module-message get-entity-msg))]
+               (sdk-response pubsub-topic get-entity-response callback))))))))
+
+(s/def ::get-entities-params
+  (s/keys :req-un []
+          :opt-un []))
 
 (defn get-entities
-  [params]
-  #_(let [module-chan (state/get-module-chan :crud)
-        response-chan (a/promise-chan)
-        {:keys [entity callback]} (js->clj params :keywordize-keys true)
-        entity-msg {:resp-chan response-chan
-                    :type :CRUD/GET_ENTITIES
-                    :token (state/get-token)
-                    :tenant-id (state/get-active-tenant-id)
-                    :entity entity}]
-    (a/put! module-chan entity-msg)
-    (go (callback (clj->js (a/<! response-chan))))))
+   ([entity-type params callback]
+    (get-entities entity-type (merge (iu/extract-params params) {:callback callback})))
+   ([entity-type params]
+    (let [params (iu/extract-params params)
+          {:keys [callback]} params
+          pubsub-topic (str "cxengage/crud/get-" entity-type "-response")]
+      (if-not (s/valid? ::get-entities-params params)
+        (sdk-error-response pubsub-topic (err/invalid-params-err) callback)
+        (let [get-entities-msg (iu/base-module-request
+                                         :CRUD/GET_ENTITIES
+                                         {:tenant-id (state/get-active-tenant-id)
+                                          :entity entity-type})]
+          (go (let [get-entities-response (a/<! (mg/send-module-message get-entities-msg))]
+                (sdk-response pubsub-topic get-entities-response callback))))))))

@@ -57,6 +57,7 @@
     (register-module publication :messaging (msg/init env))
     (register-module publication :interactions (flow/init env))
     (register-module publication :auth (auth/init env))
+    (register-module publication :crud (crud/init env))
     (register-module publication :reporting (reporting/init env))
     (register-module publication :session (presence/init env))
     (register-module publication :contacts (contacts/init env))
