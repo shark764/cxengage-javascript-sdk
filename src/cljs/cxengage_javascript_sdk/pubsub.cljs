@@ -35,6 +35,10 @@
                       :recording-started
                       :recording-ended
                       :phone-controls-response]]
+             [:crud [:get-user-response
+                     :get-users-response
+                     :get-queue-response
+                     :get-queues-response]]
              [:session [:active-tenant-set
                         :started
                         :state-changed]]

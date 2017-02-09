@@ -12,7 +12,7 @@
   [result-chan message]
   (let [{:keys [token resp-chan tenant-id entity entity-id]} message
         request-map {:method :get
-                     :url (str "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/" entity "/" entity-id)
+                     :url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/" entity "/" entity-id))
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
@@ -21,10 +21,9 @@
 
 (defn get-entities
   [result-chan message]
-  (log :debug "Entities Message Check..." (clj->js message))
   (let [{:keys [token resp-chan tenant-id entity]} message
         request-map {:method :get
-                     :url (str "https://dev-api.cxengagelabs.net/v1/tenants/" tenant-id "/" entity)
+                     :url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/" entity))
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
