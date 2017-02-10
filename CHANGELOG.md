@@ -2,14 +2,15 @@
 
 ## [Unreleased]
 * remove boot audio playing during build (causing jenkins builds to fail)
-### Changed
-* Voice Module - Added queue transfers, and pubsub topics
-* Voice Module - Added transfer functionality (Warm/Cold)
-* Crud Module - Added to ability to retrive a specific Queue or User, or all Queues and all Users
-* Alter interrupt function to accommodate complex interrupt types
-* Modules no longer live in core state.
+* added to ability to retrive a specific queue or user, or all queues and all users
+* reworked transfers & added extension transfers
+* retrieve messaging history on interaction accept (in addition to on interaction work offer)
+* added transfer-lists crud
+* alter interrupt function to accommodate complex interrupt types
+* modules no longer live in core state
 * fix boot source mapping
 * add some error handling if certain integrations arent returned via api
+
 ## [1.3.0]
 * re-did entire production build process (& fixed advanced clojurescript compilation)
 * re-did entire unit testing workflow (run once and get automatic live feedback on if you broke tests)

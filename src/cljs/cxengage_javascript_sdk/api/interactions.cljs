@@ -41,8 +41,19 @@
          (go (let [accept-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
                (sdk-response pubsub-topic accept-interaction-response callback)
                (when (= channelType "voice")
-                (let [connection (state/get-twilio-connection)]
-                  (.accept connection)))
+                 (let [connection (state/get-twilio-connection)]
+                   (.accept connection)))
+               (when (or (= channelType "sms")
+                         (= channelType "messaging"))
+                 (let [history-result-chan (a/promise-chan)
+                       history-req (iu/base-module-request
+                                    :MESSAGING/GET_HISTORY
+                                    {:tenantId (state/get-active-tenant-id)
+                                     :interactionId interactionId})]
+                   (a/put! (mg/>get-publication-channel) history-req)
+                   (go (let [history (a/<! history-result-chan)]
+                         (sdk-response "cxengage/messaging/history" history)
+                         (state/add-messages-to-history! interactionId history)))))
                nil)))))))
 
 (s/def ::end-interaction-params
