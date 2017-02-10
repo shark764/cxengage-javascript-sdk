@@ -50,7 +50,7 @@
   ([interrupt-type params]
    (let [params (iu/extract-params params)
          pubsub-topic (str "cxengage/voice/transfer-response")
-         {:keys [interactionId resourceId callback]} params]
+         {:keys [interactionId resourceId queueId callback]} params]
     (if-let [error (cond
                      (not (s/valid? ::voice-transfer-params params)) (err/invalid-params-err "Invalid interaction ID")
                      (not (state/session-started?)) (err/invalid-sdk-state-err "Session not started.")
@@ -62,12 +62,18 @@
       (let [module-chan (state/get-module-chan :interactions)
             transfer-body (merge (iu/base-module-request
                                     :INTERACTIONS/SEND_INTERRUPT
-                                    {:tenantId (state/get-active-tenant-id)
-                                     :interruptType "customer-transfer"
-                                     :interrupt {:resource-id (state/get-active-user-id)
-                                                 :transfer-resource-id resourceId
-                                                 :transfer-type interrupt-type}
-                                     :source "client"
-                                     :interactionId interactionId}))]
+                                    (merge {:tenantId (state/get-active-tenant-id)
+                                            :interruptType "customer-transfer"
+                                            :source "client"
+                                            :interactionId interactionId}
+                                           (when (not (nil? resourceId))
+                                              {:interrupt {:resource-id (state/get-active-user-id)
+                                                           :transfer-resource-id resourceId
+                                                           :transfer-type interrupt-type}})
+                                           (when (not (nil? queueId))
+                                              {:interrupt {:resource-id (state/get-active-user-id)
+                                                           :transfer-queue-id queueId
+                                                           :transfer-type interrupt-type}}))))]
+
         (go (let [transfer-response (a/<! (mg/send-module-message transfer-body))]
               (sdk-response pubsub-topic transfer-response callback))))))))
