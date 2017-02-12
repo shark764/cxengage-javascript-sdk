@@ -19,9 +19,10 @@
    (change-presence-state (merge (iu/extract-params params) {:callback callback})))
   ([params]
    (let [params (iu/extract-params params)
-         {:keys [callback]} params]
+         {:keys [callback]} params
+         sub-topic "cxengage/session/state-changed"]
      (if-not (s/valid? ::change-presence-state-params params)
-       (sdk-error-response "cxengage/session/state-changed" (err/invalid-params-err) callback)
+       (sdk-error-response sub-topic (err/invalid-params-err) callback)
        (let [{:keys [state direction]} params
              change-presence-state-msg (iu/base-module-request
                                         :SESSION/CHANGE_STATE
@@ -31,10 +32,13 @@
                                          :state state
                                          :direction direction})]
          (go (let [change-presence-state-response (a/<! (mg/send-module-message change-presence-state-msg))
-                   {:keys [result]} change-presence-state-response]
-               (log :info (str "Sucessfully changed state to " state))
-               (state/set-user-session-state! result)
-               nil)))))))
+                   {:keys [result status]} change-presence-state-response]
+               (if (not= status 200)
+                 (do (sdk-error-response sub-topic (err/sdk-request-error) callback)
+                     (sdk-error-response "cxengage/errors/error" (err/sdk-request-error (str "Error from the server: " status)) callback))
+                 (do (log :info (str "Sucessfully changed state to " state))
+                     (state/set-user-session-state! result)
+                     nil)))))))))
 
 (s/def ::set-active-tenant-params
   (s/keys :req-un [:specs/tenantId]
@@ -66,10 +70,14 @@
                (a/put! pub-chan {:type :MQTT/INIT :module-name :mqtt :config result})
                (a/put! pub-chan {:type :TWILIO/INIT :module-name :twilio :config result})
                (state/set-config! result)
-               (let [start-session-response (a/<! (mg/send-module-message start-session-msg))]
-                 (state/set-session-details! start-session-response)
-                 (log :info "Successfully initiated presence session")
-                 (sdk-response "cxengage/session/started" {:sessionId (:sessionId start-session-response)})
-                 (change-presence-state {:state "notready"})
-                 (a/put! pub-chan {:type :SQS/INIT :module-name :sqs :config (state/get-session-details)})
-                 nil))))))))
+               (let [start-session-response (a/<! (mg/send-module-message start-session-msg))
+                     session-topic "cxengage/session/started"]
+                 (if-let [error (:error start-session-response)]
+                   (do (sdk-error-response session-topic error callback)
+                       (sdk-error-response "cxengage/errors/error" (err/sdk-request-error (str "Error from the server: " error)) callback))
+                   (do (state/set-session-details! start-session-response)
+                       (log :info "Successfully initiated presence session")
+                       (sdk-response session-topic {:sessionId (:sessionId start-session-response)})
+                       (change-presence-state {:state "notready"})
+                       (a/put! pub-chan {:type :SQS/INIT :module-name :sqs :config (state/get-session-details)})
+                       nil))))))))))

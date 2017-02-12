@@ -110,6 +110,11 @@
   (log :debug "Mqtt client connected")
   (a/put! done-init< {:status :ok}))
 
+(defn on-failure [done-init< msg]
+  (log :debug "Mqtt Client failed to connect")
+  (a/put! done-init< {:status :error
+                      :msg msg}))
+
 (defn disconnect [client]
   (log :debug "Disconnecting mqtt client")
   (.disconnect client))
@@ -119,12 +124,15 @@
   (let [mqtt (Paho.MQTT.Client. endpoint client-id)
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
+                                      (a/put! (:error-channel @module-state) {:type :messaging/SHUTDOWN})
                                       (log :error "Mqtt Connection Lost" {:reasonCode reason-code
                                                                           :reasonMessage reason-message})))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
     (set! (.-onSuccess connect-options) (fn [] (on-connect done-init<)))
-    (set! (.-onFailure connect-options) (fn [_ _ msg] (log :error "Mqtt Client failed to connect: " msg)))
+    (set! (.-onFailure connect-options) (fn [_ _ msg]
+                                          (a/put! (:error-channel @module-state) {:type :messaging/SHUTDOWN})
+                                          (on-failure done-init< msg)))
     (.connect mqtt connect-options)
     mqtt))
 
@@ -172,21 +180,26 @@
     (send-message-impl payload topic)
     (a/put! resp-chan true)))
 
-(defn module-router [message]
+(defn module-shutdown-handler [msg-chan sd-chan message]
+  (when message
+    (a/close! msg-chan)
+    (a/close! sd-chan)
+    (reset! module-state {}))
+  (log :debug "Received shutdown message from Core - MQTT Module shutting down...."))
+
+(defn module-router [msg-chan sd-chan message]
   (let [handling-fn (case (:type message)
                       :MQTT/SUBSCRIBE_TO_INTERACTION subscribe-to-interaction
                       :MQTT/UNSUBSCRIBE_FROM_INTERACTION unsubscribe-from-interaction
                       :MQTT/SEND_MESSAGE send-message
+                      :MQTT/SHUTDOWN (partial module-shutdown-handler msg-chan sd-chan)
                       nil)]
     (if handling-fn
       (handling-fn message)
       (log :error "No appropriate handler found in MQTT SDK module." (:type message)))))
 
-(defn module-shutdown-handler [message]
-  (log :debug "Received shutdown message from Core - MQTT Module shutting down...."))
-
 (defn init
-  [env done-init< client-id config on-msg-fn]
+  [env done-init< client-id config on-msg-fn err-chan]
   (log :debug "Initializing SDK module: MQTT")
   (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
@@ -196,10 +209,11 @@
                                 (select-keys (:credentials mqtt-config) [:secretKey :accessKey :sessionToken]))
                          (transform-keys camel/->kebab-case-keyword)
                          (#(rename-keys % {:region :region-name})))]
+    (swap! module-state assoc :error-channel err-chan)
     (if-not mqtt-config
       (a/put! done-init< {:status :failure})
-      (do (u/start-simple-consumer! module-inputs< module-router)
-          (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
+      (do (u/start-simple-consumer! module-inputs< (partial module-router module-inputs< module-shutdown<))
+          (u/start-simple-consumer! module-shutdown< (partial module-shutdown-handler module-inputs< module-shutdown<))
           (mqtt-init mqtt-config client-id on-msg-fn done-init<)
           {:messages module-inputs<
            :shutdown module-shutdown<}))))

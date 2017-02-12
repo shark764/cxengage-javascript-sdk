@@ -6,7 +6,8 @@
             [cxengage-javascript-sdk.api.interactions :as int]
             [cxengage-javascript-sdk.module-gateway :as mg]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.pubsub :as pubsub :refer [sdk-response sdk-error-response]]))
+            [cxengage-javascript-sdk.pubsub :as pubsub :refer [sdk-response sdk-error-response]]
+            [cxengage-javascript-sdk.domain.errors :as err]))
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
@@ -20,9 +21,15 @@
                                     :resp-chan history-result-chan
                                     :type :MESSAGING/GET_HISTORY}))]
         (a/put! (mg/>get-publication-channel) history-req)
-        (go (let [history (a/<! history-result-chan)]
-              (sdk-response "cxengage/messaging/history" history)
-              (state/add-messages-to-history! interactionId history))))))
+        (go (let [{:keys [result status]} (a/<! history-result-chan)
+                  history result
+                  sub-topic "cxengage/messaging/history"
+                  err-msg (str "Failed to get the message history for this interaction. Status: " status)]
+              (if (not= status 200)
+                (do (sdk-error-response sub-topic (err/sdk-request-error err-msg))
+                    (sdk-error-response "cxengage/errors/error" (err/sdk-request-error err-msg)))
+                (do (sdk-response sub-topic history)
+                    (state/add-messages-to-history! interactionId history))))))))
   (sdk-response "cxengage/interactions/work-offer" message))
 
 (defn handle-new-messaging-message [payload]

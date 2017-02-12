@@ -25,3 +25,10 @@
    (let [code 1200
          msg (or msg "Unknown subscription topic.")]
      (error code msg))))
+
+(defn sdk-request-error
+  ([] (sdk-request-error nil))
+  ([msg]
+   (let [code 1300
+         msg (or msg "SDK failed to retrieve requested information or state from server.")]
+     (error code msg))))

@@ -39,7 +39,14 @@
  '[adzerk.boot-cljs-repl :refer [cljs-repl start-repl]]
  '[adzerk.boot-reload :refer [reload]]
  '[pandeiro.boot-http :refer [serve]]
- '[crisptrutski.boot-cljs-test :refer [test-cljs]])
+ '[crisptrutski.boot-cljs-test :refer [test-cljs]]
+ 'boot.repl)
+
+(swap! boot.repl/*default-dependencies*
+       concat '[[cider/cider-nrepl "0.15.0-SNAPSHOT"]])
+
+(swap! boot.repl/*default-middleware*
+       conj 'cider.nrepl/cider-middleware)
 
 (deftask build* []
   (comp (cljs)))

@@ -14,7 +14,7 @@
 (def module-state (atom {}))
 
 (def topics [[:features [:voice-enabled]
-                        [:messaging-enabled]]
+              [:messaging-enabled]]
              [:authentication [:login]]
              [:interactions [:work-offer
                              :work-accepted
@@ -49,7 +49,11 @@
                          :delete-response
                          :list-attributes-response
                          :get-layout-response
-                         :list-layouts-response]]])
+                         :list-layouts-response]]
+             [:errors [:fatal
+                       :error
+                       :info
+                       :debug]]])
 
 (def topic-strings
   (let [prefix "cxengage"]

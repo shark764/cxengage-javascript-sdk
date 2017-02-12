@@ -288,7 +288,10 @@
           break;
 
         case 'cxengage/session/state-changed':
-          updatePresenceState(response.state, response.availableStates);
+          if (response != null)
+           updatePresenceState(response.state, response.availableStates);
+          else
+             console.log(response);
           break;
 
         case 'cxengage/interactions/work-accepted':
@@ -303,9 +306,13 @@
           appendNewMessages(response);
           break;
 
-        case 'cxengage/session/started':
-          sessionId = response.sessionId;
-          switchScreens('toolbar');
+         case 'cxengage/session/started':
+          if (response != null) {
+            sessionId = response.sessionId;
+            switchScreens('toolbar');
+          }
+          else
+            console.log("Broke something");
           break;
 
         case 'cxengage/session/active-tenant-set':
@@ -340,6 +347,10 @@
         case 'cxengage/voice/recording-ended':
           isRecording = false;
           $('#recording').text('Start Recording');
+          break;
+
+        case 'cxengage/errors':
+          console.log("Got us an error: " + response);
           break;
 
         case 'cxengage/contacts/get-response':

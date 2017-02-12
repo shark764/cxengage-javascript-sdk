@@ -16,8 +16,17 @@
                      :url (u/api-url (:env @module-state)
                                      (str "/tenants/" tenantId "/interactions/" interactionId "/interrupts"))
                      :token token
-                     :resp-chan resp-chan}]
-    (u/api-request request-map)))
+                     :resp-chan resp-chan}
+        resp (a/promise-chan)]
+    (u/api-request request-map)
+    (go (let [{:keys [result status] :as interrupt-response} (a/<! resp-chan)]
+          (if (and (not= status 200) (not= interruptType "resource-disconnect"))
+            (do (log :error "Bad interrupt response from server, ending interaction" interruptType)
+                (a/put! (:error-channel @module-state) {:type :interaction/SHUTDOWN
+                                                        :interaction-id interactionId}))
+            (log :error "Bad interrupt response from server while ending interaction." interruptType))
+          (a/put! resp interrupt-response)
+          resp))))
 
 (defn acknowledge-flow-action [message]
   (let [{:keys [token tenantId actionId interactionId subId resourceId]} message
@@ -40,15 +49,20 @@
       (handling-fn message)
       (log :error "No appropriate handler found in Interactions SDK module." (:type message)))))
 
-(defn module-shutdown-handler [message]
+(defn module-shutdown-handler [msg-chan sd-chan message]
+  (when message
+    (a/close! msg-chan)
+    (a/close! sd-chan)
+    (reset! module-state {}))
   (log :info "Received shutdown message from Core - Interactions Module shutting down...."))
 
-(defn init [env]
+(defn init [env err-chan]
   (log :debug "Initializing SDK module: Flow")
   (swap! module-state assoc :env env)
+  (swap! module-state assoc :error-channel err-chan)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)
-    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
+    (u/start-simple-consumer! module-shutdown< (partial module-shutdown-handler module-inputs< module-shutdown<))
     {:messages module-inputs<
      :shutdown module-shutdown<}))

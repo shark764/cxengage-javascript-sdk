@@ -73,9 +73,12 @@
                                   :source "client"
                                   :interrupt {:resourceId (state/get-active-user-id)}
                                   :interactionId interactionId})]
-         (go (let [end-interaction-response (a/<! (mg/send-module-message send-interrupt-msg))]
-               (sdk-response pubsub-topic end-interaction-response callback)
-               (when (= channelType "voice")
-                (let [device (state/get-twilio-device)]
-                  (.disconnectAll device)))
-               nil)))))))
+         (go (let [{:keys [result status] :as end-interaction-response} (a/<! (mg/send-module-message send-interrupt-msg))]
+               (if (not= status 200)
+                 (do (sdk-error-response "cxengage/errors/error" (err/sdk-request-error "Send interrupt failed") callback)
+                     (sdk-error-response pubsub-topic (err/sdk-request-error "Send interrupt failed") callback))
+                 (do (sdk-response pubsub-topic end-interaction-response callback)
+                     (when (= channelType "voice")
+                       (let [device (state/get-twilio-device)]
+                         (.disconnectAll device)))
+                     nil)))))))))

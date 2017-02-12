@@ -18,13 +18,17 @@
     (go-loop [first-heartbeat? true
               next-heartbeat-resp-chan (a/promise-chan)]
       (u/api-request (merge heartbeat-req-map {:resp-chan next-heartbeat-resp-chan}))
-      (let [{:keys [result]} (a/<! next-heartbeat-resp-chan)
+      (let [{:keys [result status]} (a/<! next-heartbeat-resp-chan)
             next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
         (log :debug "Heartbeat sent!")
-        (when first-heartbeat?
-          (a/put! resp-chan (merge result session)))
-        (a/<! (a/timeout next-heartbeat-delay))
-        (recur false (a/promise-chan))))))
+        (if (not= status 200)
+          (do (log :fatal "Failed to send heartbeat, shutting down.")
+              (a/put! (:error-channel @module-state) {:type :fatal/SHUTDOWN})
+              (a/put! resp-chan {:error "Heartbeat failed."}))
+          (do (when first-heartbeat?
+                (a/put! resp-chan (merge result session)))
+              (a/<! (a/timeout next-heartbeat-delay))
+              (recur false (a/promise-chan))))))))
 
 (defn change-presence-state
   [result-chan message]
@@ -76,15 +80,20 @@
       (handling-fn message)
       (log :error "No appropriate handler found in Presence SDK module." (:type message)))))
 
-(defn module-shutdown-handler [message]
-  (log :debug "Received shutdown message from Core - Presence Module shutting down...."))
+(defn module-shutdown-handler
+  [msg-chan sd-chan message]
+  (log :debug "Received shutdown message from Core - Presence Module shutting down....")
+  (when (= (:type :modules/SHUTDOWN))
+    (a/close! msg-chan)
+    (a/close! sd-chan)
+    (reset! module-state {})))
 
-(defn init [env]
+(defn init [env err-chan]
   (log :debug "Initializing SDK module: Presence")
-  (swap! module-state assoc :env env)
+  (swap! module-state assoc :env env :error-channel err-chan)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)
-    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
+    (u/start-simple-consumer! module-shutdown< (partial module-shutdown-handler module-inputs< module-shutdown<))
     {:messages module-inputs<
      :shutdown module-shutdown<}))

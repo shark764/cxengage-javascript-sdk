@@ -13,6 +13,16 @@
                         :active {}
                         :past {}}}))
 
+(defn reset-state []
+  (reset! sdk-state {:async-module-registration (a/chan 1024)
+                     :module-channels {}
+                     :authentication {}
+                     :user {}
+                     :session {}
+                     :interactions {:pending {}
+                                    :active {}
+                                    :past {}}}))
+
 (defn get-state []
   sdk-state)
 
@@ -47,6 +57,9 @@
 
 (defn get-all-pending-interactions []
   (get-in @sdk-state [:interactions :pending]))
+
+(defn get-all-active-interactions []
+  (get-in @sdk-state [:interactions :active]))
 
 (defn add-messages-to-history! [interaction-id messages]
   (let [interaction-location (find-interaction-location interaction-id)
