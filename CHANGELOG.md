@@ -3,6 +3,7 @@
 ## [Unreleased]
 * remove boot audio playing during build (causing jenkins builds to fail)
 ### Changed
+* Voice Module - Added queue transfers, and pubsub topics
 * Voice Module - Added transfer functionality (Warm/Cold)
 * Crud Module - Added to ability to retrive a specific Queue or User, or all Queues and all Users
 * Alter interrupt function to accommodate complex interrupt types

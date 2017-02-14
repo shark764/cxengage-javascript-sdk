@@ -116,6 +116,10 @@
   (let [{:keys [interactionId]} message]
     (sdk-response "cxengage/voice/recording-ended" {:interactionId interactionId})))
 
+(defn handle-transfer-connected [message]
+  (let [{:keys [interactionId]} message]
+    (sdk-response "cxengage/voice/transfer-connected" {:interactionId interactionId})))
+
 (defn handle-generic [message]
   nil)
 
@@ -143,6 +147,7 @@
                       :INTERACTIONS/RESOURCE_UNMUTE_RECEIVED handle-resource-unmute
                       :INTERACTIONS/RECORDING_START_RECEIVED handle-recording-start
                       :INTERACTIONS/RECORDING_STOP_RECEIVED handle-recording-stop
+                      :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED handle-transfer-connected
                       :AUTH/LOGIN_RESPONSE handle-login
                       nil)]
     (when (and (get message :actionId)
@@ -176,6 +181,7 @@
                                        "resource-unmute" :INTERACTIONS/RESOURCE_UNMUTE_RECEIVED
                                        "recording-start" :INTERACTIONS/RECORDING_START_RECEIVED
                                        "recording-stop" :INTERACTIONS/RECORDING_STOP_RECEIVED
+                                       "transfer-connected" :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:msg-type inferred-notification-type} message))))
 
