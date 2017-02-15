@@ -13,8 +13,8 @@
 
 (def module-state (atom {}))
 
-(def topics [[:features [:voice-enabled]
-              [:messaging-enabled]]
+(def topics [[:features [:voice-enabled
+                         :messaging-enabled]]
              [:authentication [:login]]
              [:interactions [:work-offer
                              :work-accepted
