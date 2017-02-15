@@ -61,6 +61,12 @@
 (defn get-all-active-interactions []
   (get-in @sdk-state [:interactions :active]))
 
+(defn list-all-active-interactions []
+  (reduce-kv (fn [acc k v]
+               (conj acc k))
+             []
+             (get-all-active-interactions)))
+
 (defn add-messages-to-history! [interaction-id messages]
   (let [interaction-location (find-interaction-location interaction-id)
         old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])

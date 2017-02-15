@@ -32,10 +32,11 @@
                                          :state state
                                          :direction direction})]
          (go (let [change-presence-state-response (a/<! (mg/send-module-message change-presence-state-msg))
-                   {:keys [result status]} change-presence-state-response]
+                   {:keys [result status]} change-presence-state-response
+                   error (delay (err/sdk-request-error (str "Error from the server: " status)))]
                (if (not= status 200)
-                 (do (sdk-error-response sub-topic (err/sdk-request-error) callback)
-                     (sdk-error-response "cxengage/errors/error" (err/sdk-request-error (str "Error from the server: " status)) callback))
+                 (do (sdk-error-response sub-topic @error callback)
+                     (sdk-error-response "cxengage/errors/error" @error callback))
                  (do (log :info (str "Sucessfully changed state to " state))
                      (state/set-user-session-state! result)
                      nil)))))))))
@@ -74,7 +75,7 @@
                      session-topic "cxengage/session/started"]
                  (if-let [error (:error start-session-response)]
                    (do (sdk-error-response session-topic error callback)
-                       (sdk-error-response "cxengage/errors/error" (err/sdk-request-error (str "Error from the server: " error)) callback))
+                       (sdk-error-response "cxengage/errors/error" error callback))
                    (do (state/set-session-details! start-session-response)
                        (log :info "Successfully initiated presence session")
                        (sdk-response session-topic {:sessionId (:sessionId start-session-response)})

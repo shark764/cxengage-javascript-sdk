@@ -289,9 +289,9 @@
 
         case 'cxengage/session/state-changed':
           if (response != null)
-           updatePresenceState(response.state, response.availableStates);
+            updatePresenceState(response.state, response.availableStates);
           else
-             console.log(response);
+            console.log(response);
           break;
 
         case 'cxengage/interactions/work-accepted':
@@ -306,13 +306,14 @@
           appendNewMessages(response);
           break;
 
-         case 'cxengage/session/started':
+        case 'cxengage/session/started':
           if (response != null) {
             sessionId = response.sessionId;
             switchScreens('toolbar');
           }
-          else
+          else {
             console.log("Broke something");
+          }
           break;
 
         case 'cxengage/session/active-tenant-set':
