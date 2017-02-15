@@ -34,7 +34,9 @@
                       :mute-ended
                       :recording-started
                       :recording-ended
-                      :phone-controls-response]]
+                      :phone-controls-response
+                      :transfer-response
+                      :transfer-connected]]
              [:crud [:get-user-response
                      :get-users-response
                      :get-queue-response
