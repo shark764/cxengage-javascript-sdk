@@ -32,11 +32,11 @@
                                          :state state
                                          :direction direction})]
          (go (let [change-presence-state-response (a/<! (mg/send-module-message change-presence-state-msg))
-                   {:keys [result status]} change-presence-state-response
-                   error (delay (err/sdk-request-error (str "Error from the server: " status)))]
+                   {:keys [result status]} change-presence-state-response]
                (if (not= status 200)
-                 (do (sdk-error-response sub-topic @error callback)
-                     (sdk-error-response "cxengage/errors/error" @error callback))
+                 (let [error (err/sdk-request-error (str "Error from the server: " status))]
+                   (do (sdk-error-response sub-topic error callback)
+                       (sdk-error-response "cxengage/errors/error" error callback)))
                  (do (log :info (str "Sucessfully changed state to " state))
                      (state/set-user-session-state! result)
                      nil)))))))))

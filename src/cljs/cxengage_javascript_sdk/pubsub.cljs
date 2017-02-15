@@ -51,9 +51,7 @@
                          :get-layout-response
                          :list-layouts-response]]
              [:errors [:fatal
-                       :error
-                       :info
-                       :debug]]])
+                       :error]]])
 
 (def topic-strings
   (let [prefix "cxengage"]

@@ -16,7 +16,10 @@
 (defn shutdown!
   [message]
   (when (= :fatal/SHUTDOWN (:type message))
-    (let [active-interactions (state/list-all-active-interactions)
+    (let [active-interactions (reduce-kv (fn [acc k v]
+                                           (conj acc k))
+                                         []
+                                         (state/get-all-active-interactions))
           pub-chan (mg/>get-publication-channel)]
       (log :info "Received shutdown notification, ending interactions and user session.")
       (go (doseq [interaction-id active-interactions]

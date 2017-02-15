@@ -23,11 +23,11 @@
         (a/put! (mg/>get-publication-channel) history-req)
         (go (let [{:keys [result status]} (a/<! history-result-chan)
                   history result
-                  sub-topic "cxengage/messaging/history"
-                  err-msg (delay (err/sdk-request-error (str "Failed to get the message history for this interaction. Status: " status)))]
+                  sub-topic "cxengage/messaging/history"]
               (if (not= status 200)
-                (do (sdk-error-response sub-topic @err-msg)
-                    (sdk-error-response "cxengage/errors/error" @err-msg))
+                (let [err-msg  (err/sdk-request-error (str "Failed to get the message history for this interaction. Status: " status))]
+                  (do (sdk-error-response sub-topic err-msg)
+                      (sdk-error-response "cxengage/errors/error" err-msg)))
                 (do (sdk-response sub-topic history)
                     (state/add-messages-to-history! interactionId history))))))))
   (sdk-response "cxengage/interactions/work-offer" message))
