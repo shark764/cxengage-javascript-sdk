@@ -18,8 +18,8 @@
                      :token token
                      :resp-chan request-chan}]
     (u/api-request request-map)
-    (go (let [{:keys [result]} (a/<! request-chan)]
-          (a/put! resp-chan result)))))
+    (go (let [{:keys [result status] :as resp} (a/<! request-chan)]
+          (a/put! resp-chan resp)))))
 
 (defn module-router [message]
   (let [handling-fn (case (:type message)

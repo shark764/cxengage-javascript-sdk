@@ -6,21 +6,13 @@
             [cxengage-javascript-sdk.domain.errors :as err]
             [clojure.string :as str]
             [lumbajack.core :as logging]
+            [cxengage-cljs-utils.core :as u]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.module-gateway :as mg]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.interaction-management :as intmgmt]
-            [cxengage-javascript-sdk.api :as api]))
-
-(defn shutdown! []
-  (let [channels (reduce
-                  (fn [acc modules]
-                    (let [module (get modules :shutdown)]
-                      (conj acc module)))
-                  []
-                  (vals (get @(state/get-state) :module-channels)))]
-    (doseq [shutdown-channel channels] (a/put! shutdown-channel :shutdown))))
-
+            [cxengage-javascript-sdk.api :as api]
+            [cxengage-javascript-sdk.shutdown :as shutdown]))
 (s/def ::env #{"dev" "qe" "staging" "production"})
 (s/def ::cljs boolean?)
 (s/def ::terseLogs boolean?)
@@ -37,8 +29,11 @@
        (iu/format-response (err/invalid-params-err))
        (let [{:keys [env cljs terseLogs logLevel]} params
              logLevel (or (keyword logLevel) :debug)
-             env (or (keyword env) :production)]
+             env (or (keyword env) :production)
+             core-chan (a/chan)
+             publication (mg/start-modules env terseLogs logLevel intmgmt/twilio-msg-router intmgmt/mqtt-msg-router intmgmt/sqs-msg-router)]
          (state/set-consumer-type! (or cljs :js))
          (state/set-env! env)
-         (mg/start-modules env terseLogs logLevel intmgmt/twilio-msg-router intmgmt/mqtt-msg-router intmgmt/sqs-msg-router)
+         (a/sub publication :core/SHUTDOWN core-chan)
+         (u/start-simple-consumer! core-chan shutdown/msg-router)
          (api/assemble-api))))))
