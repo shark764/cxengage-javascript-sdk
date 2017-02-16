@@ -46,7 +46,7 @@
                                        :interactionId interactionId
                                        :subId subId
                                        :actionId actionId
-                                       :workofferId workOfferId
+                                       :workOfferId workOfferId
                                        :sessionId sessionId
                                        :resourceId resourceId
                                        :direction direction
