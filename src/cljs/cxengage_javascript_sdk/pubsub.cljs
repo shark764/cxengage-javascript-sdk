@@ -15,7 +15,8 @@
 
 (def topics [[:features [:voice-enabled
                          :messaging-enabled]]
-             [:authentication [:login]]
+             [:authentication [:login
+                               :logout]]
              [:interactions [:work-offer
                              :work-accepted
                              :work-ended

@@ -8,7 +8,8 @@
             [cxengage-javascript-sdk.pubsub :refer [sdk-response sdk-error-response]]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.domain.specs :as specs]))
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.api.session :as session]))
 
 (s/def ::username string?)
 (s/def ::password string?)
@@ -39,3 +40,20 @@
                  (state/set-user-identity! result)
                  (sdk-response pubsub-topic result callback)
                  nil))))))))
+
+(defn logout
+  ([]
+   (logout {}))
+  ([params callback]
+   (logout (merge (iu/extract-params params) {:callback callback})))
+  ([params]
+   (let [pubsub-topic "cxengage/authentication/logout"
+         params (iu/extract-params params)
+         {:keys [callback]} params]
+     (if-let [error (cond
+                      (not (state/active-tenant-set?)) "You have to be logged in to log out."
+                      :else false)]
+       (sdk-error-response pubsub-topic error callback)
+       (let [change-state-msg {:state "offline"}]
+         (session/change-presence-state change-state-msg)
+         (sdk-response pubsub-topic "logout"))))))

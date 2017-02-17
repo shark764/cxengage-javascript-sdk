@@ -29,6 +29,7 @@
 
     <div id="toolbar" style="display: none;">
       <h1>Toolbar</h1>
+      <button style="display: none;" id="logout" onclick="logout()">Logout</button>
 
       <h2>Agent State</h2>
       <h3 style="display: none;" id="currentState">Current state: <span></span></h3>
@@ -386,6 +387,10 @@
           console.log("Layouts: " + response);
           break;
 
+        case 'cxengage/authentication/logout':
+          location.reload();
+          break;
+
         default:
           console.warn('No handler yet for this pubsub msg');
           break;
@@ -396,7 +401,12 @@
       sdk.auth.login({ username: $('#username').val(), password:$('#password').val() });
     }
 
+    function logout() {
+      sdk.auth.logout();
+    }
+
     function selectTenant() {
+      $('#logout').show();
       var selectedTenantId = $('#tenantList').val();
       sdk.session.setActiveTenant({tenantId:selectedTenantId});
     }
