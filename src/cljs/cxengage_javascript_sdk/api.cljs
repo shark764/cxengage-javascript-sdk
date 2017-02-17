@@ -28,12 +28,16 @@
                                            :unmute (partial voice/auxiliary-features "unmute-resource")
                                            :startRecording (partial voice/auxiliary-features "recording-start")
                                            :endRecording (partial voice/auxiliary-features "recording-stop")
-                                           :warmTransfer (partial voice/transfer "warm-transfer")
-                                           :coldTransfer (partial voice/transfer "cold-transfer")}}
+                                           :transferToResource voice/transfer-to-resource
+                                           :transferToQueue voice/transfer-to-queue
+                                           :transferToExtension voice/transfer-to-extension
+                                           :cancelTransfer voice/cancel-transfer}}
                     :api {:getQueue (partial crud/get-entity "queues")
-                           :getQueues (partial crud/get-entities "queues")
-                           :getUser (partial crud/get-entity "users")
-                           :getUsers (partial crud/get-entities "users")}
+                          :getQueues (partial crud/get-entities "queues")
+                          :getUser (partial crud/get-entity "users")
+                          :getUsers (partial crud/get-entities "users")
+                          :getTransferList (partial crud/get-entity "transfer-lists")
+                          :getTransferLists (partial crud/get-entities "transfer-lists")}
                     :subscribe pubsub/subscribe
                     :contacts {:get contacts/get-contact
                                :search contacts/search-contacts

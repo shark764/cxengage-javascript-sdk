@@ -8,11 +8,12 @@
 
 (def module-state (atom {}))
 
-(defn ^:private contact-request
+(defn contact-request
   [url body method token resp resp-chan]
   (let [request-map {:url url
                      :method method
                      :resp-chan resp}]
+    (log :warn request-map)
     (cond-> request-map
             body (assoc :body body)
             token (assoc :token token)
@@ -20,10 +21,11 @@
     (go
       (a/>! resp-chan (:result (a/<! resp))))))
 
-(defn ^:private get-query-str
+(defn get-query-str
   [query]
+  (log :warn query)
   (let [queryv (->> query
-                    (reduce-kv (fn [acc k v] (conj acc  (name k) "=" v "&")) [])
+                    (reduce-kv (fn [acc k v] (conj acc (name k) "=" v "&")) [])
                     (pop)
                     (into ["?"]))]
     (clojure.string/join queryv)))
@@ -79,7 +81,6 @@
         url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/attributes"))
         method :get]
     (contact-request url nil method token resp resp-chan)))
-
 
 (defn get-layout
   [message]

@@ -36,11 +36,14 @@
                       :recording-ended
                       :phone-controls-response
                       :transfer-response
+                      :cancel-transfer-response
                       :transfer-connected]]
              [:crud [:get-user-response
                      :get-users-response
                      :get-queue-response
-                     :get-queues-response]]
+                     :get-queues-response
+                     :get-transfer-list-response
+                     :get-transfer-lists-response]]
              [:session [:active-tenant-set
                         :started
                         :state-changed]]
