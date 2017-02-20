@@ -12,11 +12,12 @@
 (s/def ::layoutId ::uuid)
 (s/def ::topic string?)
 (s/def ::state string?)
+(s/def ::phoneNumber string?)
 (s/def ::callback (s/or :callback fn?
                         :callback nil?))
 (s/def ::username string?)
 (s/def ::password string?)
 (s/def ::message string?)
-(s/def ::query (s/coll-of (s/or :keyword keyword? 
+(s/def ::query (s/coll-of (s/or :keyword keyword?
                                 :string string?)))
 (s/def ::attributes map?)

@@ -40,10 +40,28 @@
                      :token token}]
     (u/api-request request-map)))
 
+(defn create-interaction [message]
+  (let [{:keys [resp-chan token tenantId resourceId customer]} message
+        dial-body {:source "twilio"
+                   :customer customer
+                   :channelType "voice"
+                   :direction "outbound"
+                   :contactPoint "click to call"
+                   :interaction {:resourceId resourceId}
+                   :metadata {}}
+        request-map {:method :post
+                     :body dial-body
+                     :url (u/api-url (:env @module-state)
+                                     (str "/tenants/" tenantId "/interactions"))
+                     :token token
+                     :resp-chan resp-chan}]
+    (u/api-request request-map)))
+
 (defn module-router [message]
   (let [handling-fn (case (:type message)
                       :INTERACTIONS/SEND_INTERRUPT send-interrupt
                       :INTERACTIONS/ACKNOWLEDGE_FLOW_ACTION acknowledge-flow-action
+                      :INTERACTIONS/CREATE_INTERACTION create-interaction
                       nil)]
     (if handling-fn
       (handling-fn message)

@@ -32,7 +32,8 @@
                                            :transferToResource voice/transfer-to-resource
                                            :transferToQueue voice/transfer-to-queue
                                            :transferToExtension voice/transfer-to-extension
-                                           :cancelTransfer voice/cancel-transfer}}
+                                           :cancelTransfer voice/cancel-transfer
+                                           :dial voice/dial}}
                     :api {:getQueue (partial crud/get-entity "queues")
                           :getQueues (partial crud/get-entities "queues")
                           :getUser (partial crud/get-entity "users")
