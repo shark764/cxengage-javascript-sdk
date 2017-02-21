@@ -158,3 +158,29 @@
        (transfer-impl* (-> params
                            (merge {:interruptBody {:transfer-extension (:transferExtension params)}})
                            (dissoc :extensionId)))))))
+
+(s/def ::voice-dial-params
+  (s/keys :req-un [:specs/phoneNumber]
+        :opt-un [:specs/callback]))
+
+(defn dial
+  ([params callback]
+   (dial (merge (iu/extract-params params) {:callback callback})))
+  ([params]
+   (let [params (iu/extract-params params)
+         pubsub-topic "cxengage/voice/dial-response"
+         {:keys [phoneNumber callback]} params]
+    (if-let [error (cond
+                     (not (s/valid? ::voice-dial-params params)) (err/invalid-params-err "Invalid Customer Number")
+                     (not (state/session-started?)) (err/invalid-sdk-state-err "Session not started.")
+                     (not (state/active-tenant-set?)) (err/invalid-sdk-state-err "Active Tenant not set.")
+                     (not (state/presence-state-matches? "ready")) (err/invalid-sdk-state-err "User is not set to 'Ready'.")
+                     :else false)]
+      (sdk-error-response "cxengage/voice/dial-response" error (:callback params))
+      (let [dial-body (iu/base-module-request
+                        :INTERACTIONS/CREATE_INTERACTION
+                        {:tenantId (state/get-active-tenant-id)
+                         :resourceId (state/get-active-user-id)
+                         :customer phoneNumber})]
+        (go (let [dial-response (a/<! (mg/send-module-message dial-body))]
+              (sdk-response pubsub-topic dial-response callback))))))))

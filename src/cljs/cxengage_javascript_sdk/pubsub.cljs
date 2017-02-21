@@ -38,7 +38,8 @@
                       :phone-controls-response
                       :transfer-response
                       :cancel-transfer-response
-                      :transfer-connected]]
+                      :transfer-connected
+                      :dial-response]]
              [:crud [:get-user-response
                      :get-users-response
                      :get-queue-response
