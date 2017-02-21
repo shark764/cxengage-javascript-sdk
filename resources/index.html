@@ -40,10 +40,12 @@
       <h2>Voice Interaction</h2>
       <button id="answerPhone" onclick="answerPhone()" disabled="true">Answer phone <span></span></button>
       <button id="hangupPhone" onclick="hangupPhone()" disabled="true">Hangup phone</button>
+      <button id="endwrapup" onclick="endWrapup()" disabled="true">End wrapup</button>
       <div id="phoneControls" style="display:none;">
         <button id="mute" onclick="toggleMute()">Mute</button>
         <button id="hold" onclick="toggleHold()">Hold</button>
         <button id="recording" onclick="toggleRecording()">Start Recording</button>
+        <button id="wrapup" onclick="toggleWrapup()">Wrapup Off</button>
       </div>
       <div id="phoneDetails"></div>
 
@@ -66,6 +68,7 @@
     var voiceTimer = null;
     var currentState = 'offline';
     var availableStates = ['notready'];
+    var wrapupEnabled = false;
 
     function switchScreens (newScreen) {
       var screens = ['login', 'tenantSelect', 'toolbar'];
@@ -110,6 +113,22 @@
         } else {
           sdk.interactions.voice.startRecording({interactionId: voiceInteractionId});
         }
+    }
+
+    function toggleWrapup() {
+      if(wrapupEnabled) {
+        sdk.interactions.disableWrapup({interactionId: voiceInteractionId});
+      } else {
+        sdk.interactions.enableWrapup({interactionId: voiceInteractionId});
+      }
+    }
+
+    function endWrapup() {
+      if(wrapupEnabled) {
+        sdk.interactions.endWrapup({interactionId: voiceInteractionId});
+      } else {
+        console.log("Wrapup is disabled!!!!!");
+      }
     }
 
     function answerPhone() {
@@ -282,6 +301,7 @@
 
         case 'cxengage/interactions/work-ended':
           handleWorkEnded(response);
+          $('#endwrapup').attr('disabled', 'disabled');
           break;
 
         case 'cxengage/messaging/new-message-received':
@@ -349,6 +369,21 @@
         case 'cxengage/voice/recording-ended':
           isRecording = false;
           $('#recording').text('Start Recording');
+          break;
+
+        case 'cxengage/interactions/wrapup-details':
+          if((response.wrapupEnabled == null) || (response.wrapupEnabled == false)) {
+            wrapupEnabled = false;
+            $('#wrapup').text('Wrapup Off');
+          } else {
+            wrapupEnabled = true;
+            $('#wrapup').text('Wrapup On');
+          }
+          break;
+
+        case 'cxengage/interactions/wrapup-started':
+          console.log("Began wrapup..." + response);
+          $('#endwrapup').removeAttr('disabled');
           break;
 
         case 'cxengage/errors':

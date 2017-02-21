@@ -25,7 +25,9 @@
                              :end-response
                              :work-rejected
                              :contact-unassigned
-                             :contact-assigned]]
+                             :contact-assigned
+                             :wrapup-details
+                             :wrapup-started]]
              [:messaging [:send-message-response
                           :new-message-received
                           :history]]

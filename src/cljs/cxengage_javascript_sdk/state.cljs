@@ -83,15 +83,21 @@
 
 (defn add-interaction-custom-field-details! [custom-field-details interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :custom-field-details custom-field-details])))
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :custom-field-details] custom-field-details)))
+
+(defn get-interaction-wrapup-details [interaction-id]
+  (let [location (find-interaction-location interaction-id)]
+    (get-in @sdk-state [:interactions location interaction-id :wrapup-details])))
 
 (defn add-interaction-wrapup-details! [wrapup-details interaction-id]
-  (let [interaction-location (find-interaction-location interaction-id)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :wrapup-details wrapup-details])))
+  (let [interaction-location (find-interaction-location interaction-id)
+        current-details (get-interaction-wrapup-details interaction-id)
+        wrapup-details (merge current-details wrapup-details)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :wrapup-details] wrapup-details)))
 
 (defn add-interaction-disposition-code-details! [disposition-code-details interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :disposition-code-details disposition-code-details])))
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :disposition-code-details] disposition-code-details)))
 
 (defn transition-interaction! [from to interaction-id]
   (let [interaction (get-in @sdk-state [:interactions from interaction-id])

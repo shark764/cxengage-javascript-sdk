@@ -33,7 +33,10 @@
                                            :transferToQueue voice/transfer-to-queue
                                            :transferToExtension voice/transfer-to-extension
                                            :cancelTransfer voice/cancel-transfer
-                                           :dial voice/dial}}
+                                           :dial voice/dial}
+                                   :enableWrapup int/enable-wrapup
+                                   :disableWrapup int/disable-wrapup
+                                   :endWrapup int/end-wrapup}
                     :api {:getQueue (partial crud/get-entity "queues")
                           :getQueues (partial crud/get-entities "queues")
                           :getUser (partial crud/get-entity "users")
