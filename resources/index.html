@@ -371,7 +371,7 @@
           $('#recording').text('Start Recording');
           break;
 
-        case 'cxengage/interactions/wrapup-details':
+        case 'cxengage/interactions/wrapup-changed':
           if((response.wrapupEnabled == null) || (response.wrapupEnabled == false)) {
             wrapupEnabled = false;
             $('#wrapup').text('Wrapup Off');
@@ -381,8 +381,12 @@
           }
           break;
 
+        case 'cxengage/interactions/wrapup-details':
+          console.log(response);
+          break;
+
         case 'cxengage/interactions/wrapup-started':
-          console.log("Began wrapup..." + response);
+          console.log(response);
           $('#endwrapup').removeAttr('disabled');
           break;
 

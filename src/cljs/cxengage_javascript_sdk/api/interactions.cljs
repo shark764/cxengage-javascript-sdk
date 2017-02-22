@@ -106,10 +106,10 @@
                     :specs/wrapup]
           ::opt-un [:specs/callback]))
 
-(defn- wrapup
+(defn wrapup-impl*
   [params]
   (let [params (iu/extract-params params)
-        pubsub-topic "cxengage/interactions/wrapup-details"
+        pubsub-topic "cxengage/interactions/wrapup-changed"
         {:keys [interactionId callback wrapup]} params]
     (if-let [error (cond
                      (not (s/valid? ::wrapup-params params)) (err/invalid-params-err)
@@ -141,16 +141,16 @@
   ([params callback]
    (enable-wrapup (merge (iu/extract-params params) {:callback callback})))
   ([params]
-   (wrapup (merge (iu/extract-params params) {:wrapup "wrapup-on"}))))
+   (wrapup-impl* (merge (iu/extract-params params) {:wrapup "wrapup-on"}))))
 
 (defn disable-wrapup
   ([params callback]
-   (enable-wrapup (merge (iu/extract-params params) {:callback callback})))
+   (disable-wrapup (merge (iu/extract-params params) {:callback callback})))
   ([params]
-   (wrapup (merge (iu/extract-params params) {:wrapup "wrapup-off"}))))
+   (wrapup-impl* (merge (iu/extract-params params) {:wrapup "wrapup-off"}))))
 
 (defn end-wrapup
   ([params callback]
-   (enable-wrapup (merge (iu/extract-params params) {:callback callback})))
+   (end-wrapup (merge (iu/extract-params params) {:callback callback})))
   ([params]
-   (wrapup (merge (iu/extract-params params) {:wrapup "wrapup-end"}))))
+   (wrapup-impl* (merge (iu/extract-params params) {:wrapup "wrapup-end"}))))

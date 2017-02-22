@@ -27,7 +27,8 @@
                              :contact-unassigned
                              :contact-assigned
                              :wrapup-details
-                             :wrapup-started]]
+                             :wrapup-started
+                             :wrapup-changed]]
              [:messaging [:send-message-response
                           :new-message-received
                           :history]]
