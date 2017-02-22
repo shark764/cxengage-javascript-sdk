@@ -32,3 +32,10 @@
    (let [code 1300
          msg (or msg "SDK failed to retrieve requested information or state from server.")]
      (error code msg))))
+
+(defn insufficient-permissions-err
+  ([] (insufficient-permissions-err nil))
+  ([msg]
+   (let [code 1400
+         msg (or msg "Resource does not have the sufficient permissions.")]
+     (error code msg))))

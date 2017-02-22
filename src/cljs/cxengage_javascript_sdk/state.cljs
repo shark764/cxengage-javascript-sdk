@@ -1,7 +1,8 @@
 (ns cxengage-javascript-sdk.state
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [lumbajack.core]
-            [cljs.core.async :as a]))
+            [cljs.core.async :as a]
+            [cljs.spec :as s]))
 
 (defonce sdk-state
   (atom {:async-module-registration (a/chan 1024)
@@ -134,6 +135,9 @@
 ;; Sessiony Things
 ;;;;;;;;;;;;;;;;;;
 
+(defn get-user-tenants []
+  (get-in @sdk-state [:user :tenants]))
+
 (defn get-session-details []
   (get @sdk-state :session))
 
@@ -223,3 +227,9 @@
 
 (defn interaction-exists-in-state? [interaction-state interaction-id]
   (get-in @sdk-state [:interactions interaction-state interaction-id]))
+
+(defn has-permissions? [resource-perms req-perms]
+  (let [req-perms (set req-perms)
+        resource-perms (set resource-perms)
+        check (clojure.set/intersection resource-perms req-perms)]
+    (= check req-perms)))

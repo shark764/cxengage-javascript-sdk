@@ -41,6 +41,14 @@
                      (state/set-user-session-state! result)
                      nil)))))))))
 
+(def required-permissions ["CONTACTS_CREATE"
+                           "CONTACTS_UPDATE"
+                           "CONTACTS_READ"
+                           "CONTACTS_ATTRIBUTES_READ"
+                           "CONTACTS_LAYOUTS_READ"
+                           "CONTACTS_ASSIGN_INTERACTION"
+                           "CONTACTS_INTERACTION_HISTORY_READ"])
+
 (s/def ::set-active-tenant-params
   (s/keys :req-un [:specs/tenantId]
           :opt-un [:specs/callback]))
@@ -57,28 +65,37 @@
              get-config-msg (iu/base-module-request
                              :AUTH/GET_CONFIG
                              {:tenant-id tenantId
-                              :user-id (state/get-active-user-id)})]
-         (state/set-active-tenant! tenantId)
-         (log :info "Successfully set active tenant")
-         (sdk-response "cxengage/session/active-tenant-set" {:tenantId tenantId} callback)
-         (go (let [get-config-response (a/<! (mg/send-module-message get-config-msg))
-                   {:keys [result]} get-config-response
-                   start-session-msg (iu/base-module-request
-                                      :SESSION/START_SESSION
-                                      {:tenant-id (state/get-active-tenant-id)
-                                       :user-id (state/get-active-user-id)})
-                   pub-chan (mg/>get-publication-channel)]
-               (a/put! pub-chan {:type :MQTT/INIT :module-name :mqtt :config result})
-               (a/put! pub-chan {:type :TWILIO/INIT :module-name :twilio :config result})
-               (state/set-config! result)
-               (let [start-session-response (a/<! (mg/send-module-message start-session-msg))
-                     session-topic "cxengage/session/started"]
-                 (if-let [error (:error start-session-response)]
-                   (do (sdk-error-response session-topic error callback)
-                       (sdk-error-response "cxengage/errors/error" error callback))
-                   (do (state/set-session-details! start-session-response)
-                       (log :info "Successfully initiated presence session")
-                       (sdk-response session-topic {:sessionId (:sessionId start-session-response)})
-                       (change-presence-state {:state "notready"})
-                       (a/put! pub-chan {:type :SQS/INIT :module-name :sqs :config (state/get-session-details)})
-                       nil))))))))))
+                              :user-id (state/get-active-user-id)})
+             tenant-permissions (->> (state/get-user-tenants)
+                                     (filter #(= tenantId (:tenantId %1)))
+                                     (first)
+                                     (:tenantPermissions))]
+         (if-let [error (cond
+                          (not (state/has-permissions? tenant-permissions required-permissions)) (err/insufficient-permissions-err)
+                          :else false)]
+           (sdk-error-response "cxengage/errors/error" error)
+           (do
+             (state/set-active-tenant! tenantId)
+             (log :info "Successfully set active tenant")
+             (sdk-response "cxengage/session/active-tenant-set" {:tenantId tenantId} callback)
+             (go (let [get-config-response (a/<! (mg/send-module-message get-config-msg))
+                       {:keys [result]} get-config-response
+                       start-session-msg (iu/base-module-request
+                                          :SESSION/START_SESSION
+                                          {:tenant-id (state/get-active-tenant-id)
+                                           :user-id (state/get-active-user-id)})
+                       pub-chan (mg/>get-publication-channel)]
+                   (a/put! pub-chan {:type :MQTT/INIT :module-name :mqtt :config result})
+                   (a/put! pub-chan {:type :TWILIO/INIT :module-name :twilio :config result})
+                   (state/set-config! result)
+                   (let [start-session-response (a/<! (mg/send-module-message start-session-msg))
+                         session-topic "cxengage/session/started"]
+                     (if-let [error (:error start-session-response)]
+                       (do (sdk-error-response session-topic error callback)
+                           (sdk-error-response "cxengage/errors/error" error callback))
+                       (do (state/set-session-details! start-session-response)
+                           (log :info "Successfully initiated presence session")
+                           (sdk-response session-topic {:sessionId (:sessionId start-session-response)})
+                           (change-presence-state {:state "notready"})
+                           (a/put! pub-chan {:type :SQS/INIT :module-name :sqs :config (state/get-session-details)})
+                           nil))))))))))))
