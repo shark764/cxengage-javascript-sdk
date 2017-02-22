@@ -3,6 +3,7 @@
 ## [Unreleased]
 * started returning resource id in Mute / hold / transfers publications
 * added appending plus sign to sms phone numbers
+* replace the fb id with the fb name in the "from" field of facebook messaging interactions
 * added permissions checking at tenant set
 * added wrapup functionality
 * added extension setting functionality

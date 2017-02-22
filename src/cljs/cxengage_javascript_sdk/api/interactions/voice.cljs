@@ -73,7 +73,7 @@
 (s/def ::cancel? boolean?)
 (s/def ::voice-transfer-params
   (s/keys :req-un [::transferType :specs/interactionId ::interruptBody]
-          :opt-un [:specs/callback ::cancel?]))
+          :opt-un [:specs/callback]))
 
 (defn transfer-impl*
   ([params callback]

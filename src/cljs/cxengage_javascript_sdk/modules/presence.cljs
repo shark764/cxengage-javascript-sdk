@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop go]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
+            [cxengage-javascript-sdk.state :as state]
             [cxengage-cljs-utils.core :as u]))
 
 (def module-state (atom {}))
@@ -17,18 +18,21 @@
                            :token token}]
     (go-loop [first-heartbeat? true
               next-heartbeat-resp-chan (a/promise-chan)]
-      (u/api-request (merge heartbeat-req-map {:resp-chan next-heartbeat-resp-chan}))
-      (let [{:keys [result status]} (a/<! next-heartbeat-resp-chan)
-            next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
-        (log :debug "Heartbeat sent!")
-        (if (not= status 200)
-          (do (log :fatal "Failed to send heartbeat, shutting down.")
-              (a/put! (:error-channel @module-state) {:type :fatal/SHUTDOWN})
-              (a/put! resp-chan {:error "Heartbeat failed."}))
-          (do (when first-heartbeat?
-                (a/put! resp-chan (merge result session)))
-              (a/<! (a/timeout next-heartbeat-delay))
-              (recur false (a/promise-chan))))))))
+      (if (= "offline" (state/get-user-session-state))
+        (do (log :info "Session is now offline; ceasing heartbeats.")
+            nil)
+        (do (u/api-request (merge heartbeat-req-map {:resp-chan next-heartbeat-resp-chan}))
+            (let [{:keys [result status]} (a/<! next-heartbeat-resp-chan)
+                  next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
+              (log :debug "Heartbeat sent!")
+              (if (not= status 200)
+                (do (log :fatal "Failed to send heartbeat, shutting down.")
+                    (a/put! (:error-channel @module-state) {:type :fatal/SHUTDOWN})
+                    (a/put! resp-chan {:error "Heartbeat failed."}))
+                (do (when first-heartbeat?
+                      (a/put! resp-chan (merge result session)))
+                    (a/<! (a/timeout next-heartbeat-delay))
+                    (recur false (a/promise-chan))))))))))
 
 (defn change-presence-state
   [result-chan message]

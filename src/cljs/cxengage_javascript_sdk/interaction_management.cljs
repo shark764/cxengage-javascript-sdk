@@ -15,21 +15,27 @@
     (when (or (= channelType "sms")
               (= channelType "messaging"))
       (let [history-result-chan (a/promise-chan)
-            history-req (-> message
-                            (select-keys [:tenantId :interactionId])
-                            (merge {:token (state/get-token)
-                                    :resp-chan history-result-chan
-                                    :type :MESSAGING/GET_HISTORY}))]
-        (a/put! (mg/>get-publication-channel) history-req)
-        (go (let [{:keys [result status]} (a/<! history-result-chan)
-                  history result
-                  sub-topic "cxengage/messaging/history"]
-              (if (not= status 200)
-                (let [err-msg  (err/sdk-request-error (str "Failed to get the message history for this interaction. Status: " status))]
-                  (do (sdk-error-response sub-topic err-msg)
-                      (sdk-error-response "cxengage/errors/error" err-msg)))
-                (do (sdk-response sub-topic history)
-                    (state/add-messages-to-history! interactionId history))))))))
+            {:keys [tenantId interactionId]} message
+            history-req (iu/base-module-request
+                         :MESSAGING/GET_HISTORY
+                         {:tenantId tenantId
+                          :interactionId interactionId})
+            metadata-req (iu/base-module-request
+                          :MESSAGING/GET_CHANNEL_METADATA
+                          {:tenantId tenantId
+                           :interactionId interactionId})]
+
+        (go (let [metadata-response (a/<! (mg/send-module-message metadata-req))]
+              (state/add-messaging-interaction-metadata! metadata-response)
+              (let [{:keys [result status]} (a/<! (mg/send-module-message history-req))
+                    history result
+                    history-pubsub-topic "cxengage/messaging/history"]
+                (if (not= status 200)
+                  (let [err-msg (err/sdk-request-error (str "Failed to get the message history for this interaction. Status: " status))]
+                    (do (sdk-error-response history-pubsub-topic err-msg)
+                        (sdk-error-response "cxengage/errors/error" err-msg)))
+                  (do (sdk-response history-pubsub-topic (state/insert-fb-name-to-messages history interactionId))
+                      (state/add-messages-to-history! interactionId history)))))))))
   (sdk-response "cxengage/interactions/work-offer" message))
 
 (defn handle-new-messaging-message [payload]
@@ -212,6 +218,8 @@
       (merge {:msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
+  (when (state/get-blast-sqs-output)
+    (log :debug "[BLAST SQS OUTPUT] Message received:" message))
   (let [cljsd-msg (js->clj message :keywordize-keys true)
         sessionId (or (get cljsd-msg :sessionId)
                       (get-in cljsd-msg [:resource :sessionId]))
