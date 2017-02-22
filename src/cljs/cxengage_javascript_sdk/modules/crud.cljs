@@ -30,10 +30,22 @@
     (go (let [result (a/<! result-chan)]
           (a/put! resp-chan result)))))
 
+(defn set-active-extension [message]
+  (let [{:keys [resp-chan token tenant-id resource-id extension]} message
+        extension-body {:activeExtension extension}
+        request-map {:method :put
+                     :body extension-body
+                     :url (u/api-url (:env @module-state)
+                                     (str "/tenants/" tenant-id "/users/" resource-id))
+                     :token token
+                     :resp-chan resp-chan}]
+    (u/api-request request-map)))
+
 (defn module-router [message]
   (let [handling-fn (case (:type message)
                       :CRUD/GET_ENTITY (partial get-entity (a/promise-chan))
                       :CRUD/GET_ENTITIES (partial get-entities (a/promise-chan))
+                      :CRUD/SET_ACTIVE_EXTENSION set-active-extension
                       nil)]
     (if handling-fn
       (handling-fn message)

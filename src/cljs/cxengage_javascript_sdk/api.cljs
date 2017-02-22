@@ -15,7 +15,9 @@
 
 (defn assemble-api []
   (let [api (merge {:session {:setActiveTenant session/set-active-tenant
-                              :changeState session/change-presence-state}
+                              :goReady (partial session/change-presence-state-ready "ready")
+                              :goNotReady (partial session/change-presence-state "notready")
+                              :goOffline (partial session/change-presence-state "offline")}
                     :auth {:login auth/login
                            :logout auth/logout}
                     :interactions {:accept int/accept-interaction

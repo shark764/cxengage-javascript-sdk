@@ -3,6 +3,7 @@
 ## [Unreleased]
 * added permissions checking at tenant set
 * added wrapup functionality
+* added extension setting functionality
 * added click-to-dial functionality
 * remove boot audio playing during build (causing jenkins builds to fail)
 * added to ability to retrive a specific queue or user, or all queues and all users
@@ -32,6 +33,3 @@
 
 ## [1.0.0] - 2017-01-18
 * Initial release
-
-[Unreleased]: https://github.com/liveops/client-sdk-core/tags/1.0.0...HEAD
-[1.0.0]: https://github.com/liveops/client-sdk-core/compare/1.0.0
