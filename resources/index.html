@@ -371,17 +371,27 @@
           $('#recording').text('Start Recording');
           break;
 
-        case 'cxengage/interactions/wrapup-changed':
-          if((response.wrapupEnabled == null) || (response.wrapupEnabled == false)) {
+        case 'cxengage/interactions/wrapup-off':
+          wrapupEnabled = false;
+          $('#wrapup').text('Wrapup Off');
+          break;
+
+        case 'cxengage/interactions/wrapup-on':
+          wrapupEnabled = true;
+          $('#wrapup').text('Wrapup On');
+          break;
+
+        case 'cxengage/interactions/wrapup-end':
+          console.log(response);
+
+        case 'cxengage/interactions/wrapup-details':
+          if (response.wrapupEnabled == null) {
             wrapupEnabled = false;
             $('#wrapup').text('Wrapup Off');
           } else {
             wrapupEnabled = true;
             $('#wrapup').text('Wrapup On');
           }
-          break;
-
-        case 'cxengage/interactions/wrapup-details':
           console.log(response);
           break;
 

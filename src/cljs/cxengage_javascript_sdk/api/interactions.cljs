@@ -109,8 +109,8 @@
 (defn wrapup-impl*
   [params]
   (let [params (iu/extract-params params)
-        pubsub-topic "cxengage/interactions/wrapup-changed"
-        {:keys [interactionId callback wrapup]} params]
+        {:keys [interactionId callback wrapup]} params
+        pubsub-topic (str "cxengage/interactions/" wrapup)]
     (if-let [error (cond
                      (not (s/valid? ::wrapup-params params)) (err/invalid-params-err)
                      (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
@@ -132,8 +132,9 @@
                   (do (sdk-error-response "cxengage/errors/error" error callback)
                       (sdk-error-response pubsub-topic error callback)))
                 (do (let [wu (if (= wrapup "wrapup-on") true false)
-                          pub-response {:wrapupEnabled wu}]
-                      (state/add-interaction-wrapup-details! pub-response interactionId)
+                          wrapup-state {:wrapupEnabled wu}
+                          pub-response {:interactionId interactionId}]
+                      (state/add-interaction-wrapup-details! wrapup-state interactionId)
                       (sdk-response pubsub-topic pub-response callback))
                     nil))))))))
 
