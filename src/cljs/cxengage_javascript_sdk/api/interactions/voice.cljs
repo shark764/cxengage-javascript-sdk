@@ -161,7 +161,7 @@
 
 (s/def ::voice-dial-params
   (s/keys :req-un [:specs/phoneNumber]
-        :opt-un [:specs/callback]))
+          :opt-un [:specs/callback]))
 
 (defn dial
   ([params callback]

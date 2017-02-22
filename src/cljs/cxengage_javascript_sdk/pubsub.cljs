@@ -44,7 +44,9 @@
                       :transfer-response
                       :cancel-transfer-response
                       :transfer-connected
-                      :dial-response]]
+                      :dial-response
+                      :extension-set
+                      :extensions-response]]
              [:crud [:get-user-response
                      :get-users-response
                      :get-queue-response

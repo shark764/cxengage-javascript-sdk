@@ -8,6 +8,7 @@
 (s/def ::uuid id/valid-uuid?)
 (s/def ::tenantId ::uuid)
 (s/def ::interactionId ::uuid)
+(s/def ::extensionId string?)
 (s/def ::contactId ::uuid)
 (s/def ::layoutId ::uuid)
 (s/def ::topic string?)

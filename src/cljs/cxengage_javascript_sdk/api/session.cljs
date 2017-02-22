@@ -3,6 +3,7 @@
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
+            [camel-snake-kebab.core :as camel]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.module-gateway :as mg]
             [cxengage-javascript-sdk.internal-utils :as iu]
@@ -15,11 +16,11 @@
           :opt-un [:specs/callback]))
 
 (defn change-presence-state
-  ([params callback]
-   (change-presence-state (merge (iu/extract-params params) {:callback callback})))
+  ([state params callback]
+   (change-presence-state (merge (iu/extract-params params) {:callback callback :state state})))
   ([params]
    (let [params (iu/extract-params params)
-         {:keys [callback]} params
+         {:keys [extension callback]} params
          sub-topic "cxengage/session/state-changed"]
      (if-not (s/valid? ::change-presence-state-params params)
        (sdk-error-response sub-topic (err/invalid-params-err) callback)
@@ -48,6 +49,36 @@
                            "CONTACTS_LAYOUTS_READ"
                            "CONTACTS_ASSIGN_INTERACTION"
                            "CONTACTS_INTERACTION_HISTORY_READ"])
+
+(s/def ::change-presence-state-ready-params
+ (s/keys :req-un [:specs/extensionId]
+         :opt-un [:specs/callback]))
+
+(defn change-presence-state-ready
+  ([state params callback]
+   (change-presence-state-ready state (merge (iu/extract-params params) {:callback callback})))
+  ([state params]
+   (let [params (iu/extract-params params)
+         {:keys [extensionId callback]} params
+         pubsub-topic "cxengage/session/state-changed"]
+    (if-not (s/valid? ::change-presence-state-ready-params params)
+      (sdk-error-response pubsub-topic (err/invalid-params-err) callback)
+      (let [config (state/get-session-details)
+            {:keys [activeExtension]} config
+            {:keys [value]} activeExtension
+            active-extension-id (or value "")]
+       (if (= active-extension-id extensionId)
+        (change-presence-state {:state state :callback callback})
+        (go (let [{:keys [extensions]} config
+                  extension (first (filter #(= extensionId (:value %)) extensions))
+                  set-active-extension-msg (iu/base-module-request
+                                            :CRUD/SET_ACTIVE_EXTENSION
+                                            {:tenant-id (state/get-active-tenant-id)
+                                             :resource-id (state/get-active-user-id)
+                                             :extension extension})
+                  set-active-extension-response (a/<! (mg/send-module-message set-active-extension-msg))]
+              (sdk-response "cxengage/voice/extension-set" set-active-extension-response callback)
+              (change-presence-state {:state state :callback callback})))))))))
 
 (s/def ::set-active-tenant-params
   (s/keys :req-un [:specs/tenantId]
@@ -80,6 +111,7 @@
              (sdk-response "cxengage/session/active-tenant-set" {:tenantId tenantId} callback)
              (go (let [get-config-response (a/<! (mg/send-module-message get-config-msg))
                        {:keys [result]} get-config-response
+                       {:keys [activeExtension extensions]} result
                        start-session-msg (iu/base-module-request
                                           :SESSION/START_SESSION
                                           {:tenant-id (state/get-active-tenant-id)
@@ -88,6 +120,7 @@
                    (a/put! pub-chan {:type :MQTT/INIT :module-name :mqtt :config result})
                    (a/put! pub-chan {:type :TWILIO/INIT :module-name :twilio :config result})
                    (state/set-config! result)
+                   (sdk-response "cxengage/voice/extensions-response" {:activeExtension activeExtension :extensions extensions})
                    (let [start-session-response (a/<! (mg/send-module-message start-session-msg))
                          session-topic "cxengage/session/started"]
                      (if-let [error (:error start-session-response)]
