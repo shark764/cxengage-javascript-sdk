@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added wrapup functionality
 * added click-to-dial functionality
 * remove boot audio playing during build (causing jenkins builds to fail)
 * added to ability to retrive a specific queue or user, or all queues and all users

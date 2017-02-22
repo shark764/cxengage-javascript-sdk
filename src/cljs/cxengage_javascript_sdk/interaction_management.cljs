@@ -97,7 +97,8 @@
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapupTime :wrapupEnabled :wrapupUpdateAllowed :targetWrapupTime])
         {:keys [interactionId]} message]
-    (state/add-interaction-wrapup-details! wrapup-details interactionId)))
+    (do (state/add-interaction-wrapup-details! wrapup-details interactionId)
+        (sdk-response "cxengage/interactions/wrapup-details" wrapup-details))))
 
 (defn handle-customer-hold [message]
   (let [{:keys [interactionId]} message]
@@ -133,6 +134,13 @@
 (defn handle-screen-pop [message]
   nil)
 
+(defn handle-wrapup-started
+  [message]
+  (let [{:keys [interactionId]} message
+        wrapup-details (state/get-interaction-wrapup-details interactionId)]
+    (when (:wrapupEnabled wrapup-details)
+      (sdk-response "cxengage/interactions/wrapup-started" {:interactionId interactionId}))))
+
 (defn msg-router [message]
   (let [handling-fn (case (:msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
@@ -144,6 +152,7 @@
                       :INTERACTIONS/DISPOSITION_CODES_RECEIVED handle-disposition-codes
                       :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED handle-interaction-heartbeat
                       :INTERACTIONS/WRAP_UP_RECEIVED handle-wrapup
+                      :INTERACTIONS/WRAP_UP_STARTED handle-wrapup-started
                       :INTERACTIONS/SCREEN_POP_RECEIVED handle-screen-pop
                       :INTERACTIONS/GENERIC_AGENT_NOTIFICATION handle-generic
                       :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
@@ -180,6 +189,7 @@
                                        "disposition-codes" :INTERACTIONS/DISPOSITION_CODES_RECEIVED
                                        "custom-fields" :INTERACTIONS/CUSTOM_FIELDS_RECEIVED
                                        "wrapup" :INTERACTIONS/WRAP_UP_RECEIVED
+                                       "wrapup-start" :INTERACTIONS/WRAP_UP_STARTED
                                        "interaction-timeout" :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED
                                        "screen-pop" :INTERACTIONS/SCREEN_POP_RECEIVED
                                        "customer-hold" :INTERACTIONS/CUSTOMER_HOLD_RECEIVED

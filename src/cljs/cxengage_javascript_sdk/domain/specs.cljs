@@ -21,3 +21,4 @@
 (s/def ::query (s/coll-of (s/or :keyword keyword?
                                 :string string?)))
 (s/def ::attributes map?)
+(s/def ::wrapup string?)
