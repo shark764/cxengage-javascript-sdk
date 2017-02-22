@@ -27,12 +27,13 @@
    (let [params (iu/extract-params params)]
      (if-not (s/valid? ::init-params params)
        (iu/format-response (err/invalid-params-err))
-       (let [{:keys [env cljs terseLogs logLevel]} params
+       (let [{:keys [env cljs terseLogs logLevel blastSqsOutput]} params
              logLevel (or (keyword logLevel) :debug)
              env (or (keyword env) :production)
              core-chan (a/chan)
              publication (mg/start-modules env terseLogs logLevel intmgmt/twilio-msg-router intmgmt/mqtt-msg-router intmgmt/sqs-msg-router)]
          (state/set-consumer-type! (or cljs :js))
+         (state/set-blast-sqs-output! (or blastSqsOutput false))
          (state/set-env! env)
          (a/sub publication :core/SHUTDOWN core-chan)
          (u/start-simple-consumer! core-chan shutdown/msg-router)

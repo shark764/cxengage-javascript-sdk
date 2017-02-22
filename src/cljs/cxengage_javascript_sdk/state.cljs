@@ -4,25 +4,20 @@
             [cljs.core.async :as a]
             [cljs.spec :as s]))
 
+(def initial-state {:async-module-registration (a/chan 1024)
+                    :module-channels {}
+                    :authentication {}
+                    :user {}
+                    :session {}
+                    :interactions {:pending {}
+                                   :active {}
+                                   :past {}}})
+
 (defonce sdk-state
-  (atom {:async-module-registration (a/chan 1024)
-         :module-channels {}
-         :authentication {}
-         :user {}
-         :session {}
-         :interactions {:pending {}
-                        :active {}
-                        :past {}}}))
+  (atom initial-state))
 
 (defn reset-state []
-  (reset! sdk-state {:async-module-registration (a/chan 1024)
-                     :module-channels {}
-                     :authentication {}
-                     :user {}
-                     :session {}
-                     :interactions {:pending {}
-                                    :active {}
-                                    :past {}}}))
+  (reset! sdk-state initial-state))
 
 (defn get-state []
   sdk-state)
@@ -41,6 +36,12 @@
 
 (defn get-consumer-type []
   (or (get @sdk-state :consumer-type) :js))
+
+(defn set-blast-sqs-output! [blast]
+  (swap! sdk-state assoc :blast-sqs-output blast))
+
+(defn get-blast-sqs-output []
+  (get @sdk-state :blast-sqs-output))
 
 ;;;;;;;;;;;
 ;; Interactions
@@ -62,12 +63,6 @@
 (defn get-all-active-interactions []
   (get-in @sdk-state [:interactions :active]))
 
-(defn add-messages-to-history! [interaction-id messages]
-  (let [interaction-location (find-interaction-location interaction-id)
-        old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
-        new-msg-history (reduce conj old-msg-history messages)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)))
-
 (defn get-pending-interaction [interaction-id]
   (get-in @sdk-state [:interactions :pending interaction-id]))
 
@@ -77,6 +72,22 @@
 (defn get-interaction [interaction-id]
   (let [location (find-interaction-location interaction-id)]
     (get-in @sdk-state [:interactions location interaction-id])))
+
+(defn insert-fb-name-to-messages [messages interaction-id]
+  (let [interaction (get-interaction interaction-id)
+        {:keys [channelType messaging-metadata]} interaction
+        {:keys [customerName]} messaging-metadata
+        messages (if (= channelType "messaging")
+                   (map #(assoc-in % [:payload :from] customerName) messages)
+                   messages)]
+    messages))
+
+(defn add-messages-to-history! [interaction-id messages]
+  (let [interaction-location (find-interaction-location interaction-id)
+        old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
+        messages (insert-fb-name-to-messages messages interaction-id)
+        new-msg-history (reduce conj old-msg-history messages)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)))
 
 (defn add-interaction! [type interaction]
   (let [{:keys [interactionId]} interaction]
@@ -106,6 +117,11 @@
         updated-interactions-to (assoc (get-in @sdk-state [:interactions to]) interaction-id interaction)]
     (swap! sdk-state assoc-in [:interactions from] updated-interactions-from)
     (swap! sdk-state assoc-in [:interactions to] updated-interactions-to)))
+
+(defn add-messaging-interaction-metadata! [metadata]
+  (let [{:keys [interactionId]} metadata
+        interaction-location (find-interaction-location interactionId)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interactionId :messaging-metadata] metadata)))
 
 ;;;;;;;;;;;
 ;; Auth

@@ -7,7 +7,19 @@
 
 (def module-state (atom {}))
 
-(defn get-channel-metadata [message])
+(defn get-channel-metadata [message]
+  (let [request-chan (a/promise-chan)
+        {:keys [tenantId interactionId token resp-chan]} message
+        request-map {:method :get
+                     :url (u/api-url (:env @module-state)
+                                     (str "/messaging/tenants/" tenantId "/channels/" interactionId))
+                     :token token
+                     :resp-chan request-chan}]
+    (u/api-request request-map)
+    (go (let [result (a/<! request-chan)
+              {:keys [result]} result
+              {:keys [metadata id]} result]
+          (a/put! resp-chan (assoc metadata :interactionId id))))))
 
 (defn get-history [message]
   (let [request-chan (a/promise-chan)
@@ -24,6 +36,7 @@
 (defn module-router [message]
   (let [handling-fn (case (:type message)
                       :MESSAGING/GET_HISTORY get-history
+                      :MESSAGING/GET_CHANNEL_METADATA get-channel-metadata
                       nil)]
     (if handling-fn
       (handling-fn message)

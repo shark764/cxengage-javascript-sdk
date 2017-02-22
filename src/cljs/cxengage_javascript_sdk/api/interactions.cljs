@@ -28,7 +28,6 @@
                       (not (s/valid? ::accept-interaction-params params)) (err/invalid-params-err)
                       (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
                       (not (state/active-tenant-set?)) (err/invalid-sdk-state-err "Your active tenant isn't set yet.")
-                      (not (state/presence-state-matches? "ready")) (err/invalid-sdk-state-err "You must be in a 'ready' state.")
                       (not (state/interaction-exists-in-state? :pending interactionId)) (err/invalid-sdk-state-err "No interaction of that ID found.")
                       :else false)]
        (sdk-error-response pubsub-topic error callback)
@@ -75,7 +74,6 @@
                       (not (s/valid? ::end-interaction-params params)) (err/invalid-params-err)
                       (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
                       (not (state/active-tenant-set?)) (err/invalid-sdk-state-err "Your active tenant isn't set yet.")
-                      (not (state/presence-state-matches? "ready")) (err/invalid-sdk-state-err "You must be in a 'ready' state.")
                       (not (state/interaction-exists-in-state? :active interactionId)) (err/invalid-sdk-state-err "No interaction of that ID found.")
                       :else false)]
        (sdk-error-response pubsub-topic error callback)

@@ -3,10 +3,12 @@
 ## [Unreleased]
 * started returning resource id in Mute / hold / transfers publications
 * added appending plus sign to sms phone numbers
+* replace the fb id with the fb name in the "from" field of facebook messaging interactions
 * added permissions checking at tenant set
 * added wrapup functionality
 * added extension setting functionality
 * added click-to-dial functionality
+* allow end interaction & accept interaction in states other than ready
 * remove boot audio playing during build (causing jenkins builds to fail)
 * added to ability to retrive a specific queue or user, or all queues and all users
 * reworked transfers & added extension transfers
@@ -27,8 +29,11 @@
 * removed dead testing macro with-reset
 * removed devtools from production build
 
-## [1.1.1]
-* N/A (testing jenkins release script stuff)
+## [1.2.0]
+* N/A (testing jenkins release script stuff, no code changes)
+
+## [1.1.0]
+* N/A (testing jenkins release script stuff, no code changes)
 
 ## [1.0.3]
 * Added contacts Module.
