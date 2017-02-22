@@ -37,7 +37,9 @@
                     (js/JSON.parse)
                     (js->clj :keywordize-keys true))
         interactionId (:to payload)
-        channelId (:id payload)]
+        channelId (:id payload)
+        from (:from payload)
+        payload (if (= (:channelType (state/get-active-interaction interactionId)) "sms") (merge payload {:from (str "+" from)}) payload)]
     (sdk-response "cxengage/messaging/new-message-received" payload)
     (state/add-messages-to-history! interactionId [{:payload payload}])))
 
@@ -101,32 +103,39 @@
         (sdk-response "cxengage/interactions/wrapup-details" wrapup-details))))
 
 (defn handle-customer-hold [message]
-  (let [{:keys [interactionId]} message]
-    (sdk-response "cxengage/voice/hold-started" {:interactionId interactionId})))
+  (let [{:keys [interactionId resourceId]} message]
+    (sdk-response "cxengage/voice/hold-started" {:interactionId interactionId
+                                                 :resourceId resourceId})))
 
 (defn handle-customer-resume [message]
-  (let [{:keys [interactionId]} message]
-    (sdk-response "cxengage/voice/hold-ended" {:interactionId interactionId})))
+  (let [{:keys [interactionId resourceId]} message]
+    (sdk-response "cxengage/voice/hold-ended" {:interactionId interactionId
+                                               :resourceId resourceId})))
 
 (defn handle-resource-mute [message]
-  (let [{:keys [interactionId]} message]
-    (sdk-response "cxengage/voice/mute-started" {:interactionId interactionId})))
+  (let [{:keys [interactionId resourceId]} message]
+    (sdk-response "cxengage/voice/mute-started" {:interactionId interactionId
+                                                 :resourceId resourceId})))
 
 (defn handle-resource-unmute [message]
-  (let [{:keys [interactionId]} message]
-    (sdk-response "cxengage/voice/mute-ended" {:interactionId interactionId})))
+  (let [{:keys [interactionId resourceId]} message]
+    (sdk-response "cxengage/voice/mute-ended" {:interactionId interactionId
+                                               :resourceId resourceId})))
 
 (defn handle-recording-start [message]
-  (let [{:keys [interactionId]} message]
-    (sdk-response "cxengage/voice/recording-started" {:interactionId interactionId})))
+  (let [{:keys [interactionId resourceId]} message]
+    (sdk-response "cxengage/voice/recording-started" {:interactionId interactionId
+                                                      :resourceId resourceId})))
 
 (defn handle-recording-stop [message]
-  (let [{:keys [interactionId]} message]
-    (sdk-response "cxengage/voice/recording-ended" {:interactionId interactionId})))
+  (let [{:keys [interactionId resourceId]} message]
+    (sdk-response "cxengage/voice/recording-ended" {:interactionId interactionId
+                                                    :resourceId resourceId})))
 
 (defn handle-transfer-connected [message]
-  (let [{:keys [interactionId]} message]
-    (sdk-response "cxengage/voice/transfer-connected" {:interactionId interactionId})))
+  (let [{:keys [interactionId resourceId]} message]
+    (sdk-response "cxengage/voice/transfer-connected" {:interactionId interactionId
+                                                       :resourceId resourceId})))
 
 (defn handle-generic [message]
   nil)
