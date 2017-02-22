@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+* started returning resource id in Mute / hold / transfers publications
+* added appending plus sign to sms phone numbers
 * added permissions checking at tenant set
 * added wrapup functionality
 * added extension setting functionality
