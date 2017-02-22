@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added permissions checking at tenant set
 * added wrapup functionality
 * added click-to-dial functionality
 * remove boot audio playing during build (causing jenkins builds to fail)
