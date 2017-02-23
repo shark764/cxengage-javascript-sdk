@@ -56,8 +56,7 @@
              [:session [:active-tenant-set
                         :started
                         :state-changed
-                        :outbound
-                        :inbound]]
+                        :direction-changed]]
              [:contacts [:get-response
                          :search-response
                          :create-response

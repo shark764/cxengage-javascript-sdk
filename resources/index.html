@@ -364,14 +364,16 @@
           $('#inbound').removeAttr('disabled');
           break;
 
-        case 'cxengage/session/outbound':
-          $('#outbound').attr('disabled', 'disabled');
-          $('#inbound').removeAttr('disabled');
-          break;
-
-        case 'cxengage/session/inbound':
-          $('#inbound').attr('disabled', 'disabled');
-          $('#outbound').removeAttr('disabled');
+        case 'cxengage/session/direction-changed':
+          if(response.newDirection == "inbound") {
+            $('#inbound').attr('disabled', 'disabled');
+            $('#outbound').removeAttr('disabled');
+          } else if (response.newDirection == "outbound") {
+            $('#outbound').attr('disabled', 'disabled');
+            $('#inbound').removeAttr('disabled');
+          } else {
+            console.log("I don't know that interaction direction!!!");
+          }
           break;
 
         case 'cxengage/session/active-tenant-set':

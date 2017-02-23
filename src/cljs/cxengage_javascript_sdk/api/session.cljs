@@ -140,13 +140,13 @@
 
 (defn set-direction
   ([]
-   (set-direction [{:callback nil}]))
+   (set-direction {:callback nil}))
   ([params callback]
-   (set-direction [(merge (iu/extract-params params) {:callback callback})]))
+   (set-direction (merge (iu/extract-params params) {:callback callback})))
   ([params]
    (let [params (iu/extract-params params)
          {:keys [callback direction]} params
-         pubsub-topic (str "cxengage/session/" direction)]
+         pubsub-topic (str "cxengage/session/direction-changed")]
      (if-let [error (cond
                       (not (s/valid? ::set-direction-params params)) (err/invalid-params-err)
                       (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
@@ -161,7 +161,8 @@
                                   :sessionId sessionId
                                   :state (state/get-user-session-state)
                                   :direction direction})]
-         (go (let [direction-response {:sessionId sessionId}
+         (go (let [direction-response {:sessionId sessionId
+                                       :newDirection direction}
                    {:keys [result status] :as direction-change-response} (a/<! (mg/send-module-message send-interrupt-msg))]
                (if (not= status 200)
                  (do (sdk-error-response pubsub-topic (err/sdk-request-error) callback)
@@ -171,7 +172,7 @@
 
 (defn set-direction-inbound
   ([]
-   (set-direction {:callback nil :direction "inbound"}))
+   (set-direction {:direction "inbound"}))
   ([callback]
    (let [params (iu/extract-params callback)]
      (if (map? params)
@@ -180,7 +181,7 @@
 
 (defn set-direction-outbound
   ([]
-   (set-direction {:callback nil :direction "outbound"}))
+   (set-direction {:direction "outbound"}))
   ([callback]
    (let [params (iu/extract-params callback)]
      (if (map? params)
