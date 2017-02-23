@@ -17,8 +17,10 @@
 (defn assemble-api []
   (let [api (merge {:session {:setActiveTenant session/set-active-tenant
                               :goReady (partial session/change-presence-state-ready "ready")
-                              :goNotReady (partial session/change-presence-state "notready")
-                              :goOffline (partial session/change-presence-state "offline")}
+                              :goNotReady (partial session/change-presence-state {:state "notready"})
+                              :goOffline (partial session/change-presence-state {:state "offline"})
+                              :setDirectionInbound session/set-direction-inbound
+                              :setDirectionOutbound session/set-direction-outbound}
                     :auth {:login auth/login
                            :logout auth/logout}
                     :interactions {:accept int/accept-interaction

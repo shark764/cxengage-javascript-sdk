@@ -62,12 +62,12 @@
 
 (defn set-direction
   [result-chan message]
-  (let [{:keys [resp-chan tenant-id user-id token]} message
-        body (select-keys message [:sessionId :initiatorId :direction])
+  (let [{:keys [resp-chan tenantId resourceId token]} message
+        body (select-keys message [:sessionId :direction :tenantId :resourceId :state])
         req-map {:method :post
                  :body body
                  :url (u/api-url (:env @module-state)
-                                 (str "/tenants/" tenant-id "/presence/" user-id "/direction"))
+                                 (str "/tenants/" tenantId "/presence/" resourceId "/direction"))
                  :token token
                  :resp-chan result-chan}]
     (u/api-request req-map)

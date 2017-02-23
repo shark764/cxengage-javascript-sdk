@@ -36,6 +36,8 @@
       <button style="display: none;" id="ready" onclick="changePresenceState('ready')">Go ready</button>
       <button style="display: none;" id="notready" onclick="changePresenceState('notready')">Go not ready</button>
       <button style="display: none;" id="offline" onclick="changePresenceState('offline')">Go offline</button>
+      <button id="inbound" onclick="inbound()" disabled="true">Inbound</button>
+      <button id="outbound" onclick="outbound()" disabled="true">Outbound</button>
 
       <h2>Voice Interaction</h2>
       <button id="answerPhone" onclick="answerPhone()" disabled="true">Answer phone <span></span></button>
@@ -137,6 +139,14 @@
       } else {
         console.log("Wrapup is disabled!!!!!");
       }
+    }
+
+    function outbound() {
+      sdk.session.setDirectionOutbound();
+    }
+
+    function inbound() {
+      sdk.session.setDirectionInbound();
     }
 
     function answerPhone() {
@@ -293,6 +303,9 @@
       console.info('Pub/sub message received from SDK:', topic);
       console.info(response);
       switch (topic) {
+        case 'cxengage/errors':
+          console.log("Got us an error: " + response);
+          break;
 
         case 'cxengage/authentication/login':
           tenantList = response.tenants;
@@ -347,6 +360,18 @@
           else {
             console.log("Broke something");
           }
+          $('#outbound').removeAttr('disabled');
+          $('#inbound').removeAttr('disabled');
+          break;
+
+        case 'cxengage/session/outbound':
+          $('#outbound').attr('disabled', 'disabled');
+          $('#inbound').removeAttr('disabled');
+          break;
+
+        case 'cxengage/session/inbound':
+          $('#inbound').attr('disabled', 'disabled');
+          $('#outbound').removeAttr('disabled');
           break;
 
         case 'cxengage/session/active-tenant-set':
@@ -410,10 +435,6 @@
         case 'cxengage/interactions/wrapup-started':
           console.log(response);
           $('#endwrapup').removeAttr('disabled');
-          break;
-
-        case 'cxengage/errors':
-          console.log("Got us an error: " + response);
           break;
 
         case 'cxengage/contacts/get-response':
