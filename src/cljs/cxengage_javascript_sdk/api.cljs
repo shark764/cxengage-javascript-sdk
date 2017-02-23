@@ -11,7 +11,8 @@
             [cxengage-javascript-sdk.api.interactions.messaging :as msg]
             [cxengage-javascript-sdk.api.interactions.voice :as voice]
             [cxengage-javascript-sdk.api.contacts :as contacts]
-            [cxengage-javascript-sdk.api.crud :as crud]))
+            [cxengage-javascript-sdk.api.crud :as crud]
+            [cxengage-javascript-sdk.api.reporting :as reporting]))
 
 (defn assemble-api []
   (let [api (merge {:session {:setActiveTenant session/set-active-tenant
@@ -53,7 +54,11 @@
                                :delete contacts/delete-contact
                                :listAttributes contacts/list-attributes
                                :getLayout contacts/get-layout
-                               :listLayouts contacts/list-layouts}})]
+                               :listLayouts contacts/list-layouts}
+                    :reporting {:startPolling reporting/start-polling
+                                :checkCapacity reporting/check-capacity
+                                :getAvailableStats reporting/available-stats}})]
+
     (if (= (state/get-consumer-type) :cljs)
       api
       (clj->js api))))
