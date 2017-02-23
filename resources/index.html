@@ -78,7 +78,15 @@
     }
 
     function changePresenceState(state) {
-      sdk.session.changeState({state: state});
+      if (state == 'ready') {
+        sdk.session.goReady({extensionId: extensionId});
+      } else if (state == 'notready') {
+        sdk.session.goNotReady();
+      } else if (state == 'offline') {
+        sdk.session.goOffline();
+      } else {
+        console.warn('Unknown state');
+      }
     }
 
     function updatePresenceState(state, availableStates) {
@@ -325,6 +333,10 @@
 
         case 'cxengage/messaging/history':
           appendNewMessages(response);
+          break;
+
+        case 'cxengage/voice/extensions-response':
+          extensionId = response.activeExtension.value;
           break;
 
         case 'cxengage/session/started':
