@@ -13,6 +13,7 @@
             [cxengage-javascript-sdk.interaction-management :as intmgmt]
             [cxengage-javascript-sdk.api :as api]
             [cxengage-javascript-sdk.shutdown :as shutdown]))
+
 (s/def ::baseUrl string?)
 (s/def ::cljs boolean?)
 (s/def ::terseLogs boolean?)

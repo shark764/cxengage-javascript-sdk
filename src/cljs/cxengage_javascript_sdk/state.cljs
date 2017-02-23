@@ -46,6 +46,15 @@
 (defn get-blast-sqs-output []
   (get-in @sdk-state [:config :blast-sqs-output]))
 
+(defn set-log-level! [level]
+  (swap! sdk-state assoc-in [:config :log-level] level))
+
+(defn get-log-level []
+  (get-in @sdk-state [:config :log-level]))
+
+(defn get-config []
+  (get @sdk-state :config))
+
 ;;;;;;;;;;;
 ;; Interactions
 ;;;;;;;;;;;
@@ -148,7 +157,7 @@
 
 (defn get-active-user-id
   []
-  (get-in @sdk-state [:user :userId]))
+  (get-in @sdk-state [:user :user-id]))
 
 ;;;;;;;;;;;;;;;;;;
 ;; Sessiony Things
@@ -156,6 +165,14 @@
 
 (defn get-user-tenants []
   (get-in @sdk-state [:user :tenants]))
+
+(defn get-tenant-permissions [tenant-id]
+  (let [tenants (get-in @sdk-state [:user :tenants])
+        permissions (->> tenants
+                         (filter #(= tenant-id (:tenant-id %)))
+                         (first)
+                         (:tenant-permissions))]
+    permissions))
 
 (defn get-session-details []
   (get @sdk-state :session))
@@ -168,6 +185,16 @@
   [config]
   (swap! sdk-state assoc :session (merge (get-session-details) config)))
 
+(defn get-all-extensions []
+  (get-in @sdk-state [:session :extensions]))
+
+(defn get-active-extension []
+  (get-in @sdk-state [:session :active-extension :value]))
+
+(defn get-extension-by-id [id]
+  (let [extensions (get-all-extensions)]
+    (first (filter #(= id (:value %)) extensions))))
+
 (defn set-active-tenant!
   [tenant-id]
   (swap! sdk-state assoc-in [:session :tenant-id] tenant-id))
@@ -178,7 +205,6 @@
 
 (defn get-active-tenant-region
   []
-  (log :debug (get :session @(get-state)))
   (get-in @sdk-state [:session :region]))
 
 (defn set-direction!
@@ -187,7 +213,7 @@
 
 (defn get-session-id
   []
-  (get-in @sdk-state [:session :sessionId]))
+  (get-in @sdk-state [:session :session-id]))
 
 (defn set-capacity!
   [capacity]

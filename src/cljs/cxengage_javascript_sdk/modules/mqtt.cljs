@@ -176,7 +176,7 @@
         payload (-> message
                     (gen-payload)
                     (format-payload))
-        topic (str (name (get @module-state :env)) "/tenants/" tenantId "/channels/" interactionId)]
+        topic (str (name (state/get-env)) "/tenants/" tenantId "/channels/" interactionId)]
     (send-message-impl payload topic)
     (a/put! resp-chan true)))
 
