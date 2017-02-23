@@ -4,6 +4,7 @@
   (:require [cljs.core.async :as a]
             [cxengage-cljs-utils.core :as u]
             [lumbajack.core :as jack]
+            [cxengage-javascript-sdk.state :as state]
             [cljs-uuid-utils.core :as uuid]))
 
 (def module-state (atom {}))
@@ -35,7 +36,7 @@
   (let [{:keys [token contact-id tenant-id resp-chan]} message
         resp (a/promise-chan)
         method :get
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/" contact-id))]
+        url (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts/" contact-id)]
     (contact-request url nil method token resp resp-chan)))
 
 (defn list-contacts
@@ -44,15 +45,15 @@
         resp (a/promise-chan)
         method :get
         url (if query
-              (str (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts")) (get-query-str query))
-              (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts")))]
+              (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts" (get-query-str query))
+              (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts"))]
     (contact-request url nil method token resp resp-chan)))
 
 (defn create-contact
   [message]
   (let [{:keys [token tenant-id resp-chan attributes]} message
         resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts"))
+        url (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts")
         body {:attributes attributes}
         method :post]
     (contact-request url body method token resp resp-chan)))
@@ -61,7 +62,7 @@
   [message]
   (let [{:keys [token contact-id tenant-id resp-chan attributes]} message
         resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/" contact-id))
+        url (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts/" contact-id)
         body {:attributes attributes}
         method :put]
     (contact-request url body method token resp resp-chan)))
@@ -70,7 +71,7 @@
   [message]
   (let [{:keys [token contact-id tenant-id resp-chan]} message
         resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/" contact-id))
+        url (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts/" contact-id)
         method :delete]
     (contact-request url nil method token resp resp-chan)))
 
@@ -78,7 +79,7 @@
   [message]
   (let [{:keys [token tenant-id resp-chan]} message
         resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/attributes"))
+        url (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts/attributes")
         method :get]
     (contact-request url nil method token resp resp-chan)))
 
@@ -86,7 +87,7 @@
   [message]
   (let [{:keys [token tenant-id layout-id resp-chan]} message
         resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts/" layout-id))
+        url (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts/layouts/" layout-id)
         method :get]
     (contact-request url nil method token resp resp-chan)))
 
@@ -94,7 +95,7 @@
   [message]
   (let [{:keys [token tenant-id resp-chan]} message
         resp (a/promise-chan)
-        url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/contacts/layouts"))
+        url (str (state/get-base-api-url) "/tenants/" tenant-id "/contacts/layouts")
         method :get]
     (contact-request url nil method token resp resp-chan)))
 
@@ -117,9 +118,8 @@
   (reset! module-state)
   (log :info "Received shutdown message form Core - Contacts Module shutting down...."))
 
-(defn init [env]
+(defn init []
   (log :debug "Initializing SDK module: Contacts")
-  (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)

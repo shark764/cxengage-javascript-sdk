@@ -13,8 +13,7 @@
   (let [{:keys [sessionId]} session
         heartbeat-req-map {:method :post
                            :body {:sessionId sessionId}
-                           :url (u/api-url (:env @module-state)
-                                           (str "/tenants/" tenant-id "/presence/" user-id "/heartbeat"))
+                           :url (str (state/get-base-api-url) "/tenants/" tenant-id "/presence/" user-id "/heartbeat")
                            :token token}]
     (go-loop [first-heartbeat? true
               next-heartbeat-resp-chan (a/promise-chan)]
@@ -41,8 +40,7 @@
         req-map {:method :post
                  :body body
                  :resp-chan result-chan
-                 :url (u/api-url (:env @module-state)
-                                 (str "/tenants/" tenant-id "/presence/" user-id))
+                 :url (str (state/get-base-api-url) "/tenants/" tenant-id "/presence/" user-id)
                  :token token}]
     (u/api-request req-map)
     (go (let [response (a/<! result-chan)]
@@ -52,8 +50,7 @@
   [result-chan message]
   (let [{:keys [token user-id tenant-id resp-chan]} message
         req-map {:method :post
-                 :url (u/api-url (:env @module-state)
-                                 (str "/tenants/" tenant-id "/presence/" user-id "/session"))
+                 :url (str (state/get-base-api-url) "/tenants/" tenant-id "/presence/" user-id "/session")
                  :token token
                  :resp-chan result-chan}]
     (u/api-request req-map)
@@ -66,8 +63,7 @@
         body (select-keys message [:sessionId :direction :tenantId :resourceId :state])
         req-map {:method :post
                  :body body
-                 :url (u/api-url (:env @module-state)
-                                 (str "/tenants/" tenantId "/presence/" resourceId "/direction"))
+                 :url (str (state/get-base-api-url) "/tenants/" tenantId "/presence/" resourceId "/direction")
                  :token token
                  :resp-chan result-chan}]
     (u/api-request req-map)
@@ -92,9 +88,9 @@
     (a/close! sd-chan)
     (reset! module-state {})))
 
-(defn init [env err-chan]
+(defn init [err-chan]
   (log :debug "Initializing SDK module: Presence")
-  (swap! module-state assoc :env env :error-channel err-chan)
+  (swap! module-state assoc :error-channel err-chan)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)

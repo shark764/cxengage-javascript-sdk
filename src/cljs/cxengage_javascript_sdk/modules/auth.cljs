@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
+            [cxengage-javascript-sdk.state :as state]
             [cxengage-cljs-utils.core :as u]))
 
 (def module-state (atom {}))
@@ -10,7 +11,7 @@
   [message]
   (let [{:keys [token resp-chan]} message
         request-map {:method :post
-                     :url (u/api-url (:env @module-state) "/login")
+                     :url (str (state/get-base-api-url) "/login")
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)))
@@ -19,8 +20,7 @@
   [message]
   (let [{:keys [token resp-chan tenant-id user-id]} message
         request-map {:method :get
-                     :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenant-id "/users/" user-id "/config"))
+                     :url (str (state/get-base-api-url) "/tenants/" tenant-id "/users/" user-id "/config")
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)))
@@ -29,7 +29,7 @@
   [message]
   (let [{:keys [username password resp-chan]} message
         request-map {:method :post
-                     :url (u/api-url (:env @module-state) "/tokens")
+                     :url (str (state/get-base-api-url) "/tokens")
                      :body {:username username :password password}
                      :resp-chan resp-chan}]
     (u/api-request request-map)))
@@ -47,9 +47,8 @@
 (defn module-shutdown-handler [message]
   (log :info "Received shutdown message from Core - Authentication Module shutting down...."))
 
-(defn init [env]
+(defn init []
   (log :debug "Initializing SDK module: Auth")
-  (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)

@@ -39,7 +39,7 @@
                  (let [error (err/sdk-request-error (str "Error from the server: " status))]
                    (do (sdk-error-response sub-topic error callback)
                        (sdk-error-response "cxengage/errors/error" error callback)))
-                 (do (log :info (str "Sucessfully changed state to " state))
+                 (do (log :info (str "Successfully changed state to " state))
                      (state/set-user-session-state! result)
                      nil)))))))))
 

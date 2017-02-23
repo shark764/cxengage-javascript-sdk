@@ -4,7 +4,6 @@
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.api.auth :as auth]
             [cxengage-javascript-sdk.api.session :as session]
-            [cxengage-javascript-sdk.api.logging :as logging]
             [cxengage-javascript-sdk.pubsub :as pubsub]
             [cxengage-javascript-sdk.api.reporting :as reporting]
             [cxengage-javascript-sdk.api.interactions :as int]

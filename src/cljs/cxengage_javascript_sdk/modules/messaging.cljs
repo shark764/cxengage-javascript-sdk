@@ -3,6 +3,7 @@
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [lumbajack.core]
+            [cxengage-javascript-sdk.state :as state]
             [cxengage-cljs-utils.core :as u]))
 
 (def module-state (atom {}))
@@ -11,8 +12,7 @@
   (let [request-chan (a/promise-chan)
         {:keys [tenantId interactionId token resp-chan]} message
         request-map {:method :get
-                     :url (u/api-url (:env @module-state)
-                                     (str "/messaging/tenants/" tenantId "/channels/" interactionId))
+                     :url (str (state/get-base-api-url) "/messaging/tenants/" tenantId "/channels/" interactionId)
                      :token token
                      :resp-chan request-chan}]
     (u/api-request request-map)
@@ -25,8 +25,7 @@
   (let [request-chan (a/promise-chan)
         {:keys [tenantId interactionId token resp-chan]} message
         request-map {:method :get
-                     :url (u/api-url (:env @module-state)
-                                     (str "/messaging/tenants/" tenantId "/channels/" interactionId "/history"))
+                     :url (str (state/get-base-api-url) "/messaging/tenants/" tenantId "/channels/" interactionId "/history")
                      :token token
                      :resp-chan request-chan}]
     (u/api-request request-map)
@@ -45,9 +44,8 @@
 (defn module-shutdown-handler [message]
   (log :info "Received shutdown message from Core - Messaging Module shutting down...."))
 
-(defn init [env]
+(defn init []
   (log :debug "Initializing SDK module: Messaging")
-  (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)

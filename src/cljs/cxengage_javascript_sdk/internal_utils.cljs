@@ -44,10 +44,6 @@
 
 (defn get-signature-key
  [key date-stamp region-name service-name]
- (log :debug "DDDDDDDDDDDDDDDDDDDDDDDDDDd")
- (log :debug date-stamp)
- (log :debug region-name)
- (log :debug service-name)
  (let [date-stamp (or date-stamp (js/Date.))
        k-date (doto (Hmac. (Sha256.) (c/stringToByteArray (str "AWS4" key))) (.update date-stamp))
        k-region (doto (Hmac. (Sha256.)  (.digest k-date)) (.update region-name))

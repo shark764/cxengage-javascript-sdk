@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
+            [cxengage-javascript-sdk.state :as state]
             [cxengage-cljs-utils.core :as u]))
 
 (def module-state (atom {}))
@@ -13,8 +14,7 @@
                         :interrupt interrupt}
         request-map {:method :post
                      :body interrupt-body
-                     :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenantId "/interactions/" interactionId "/interrupts"))
+                     :url (str (state/get-base-api-url) "/tenants/" tenantId "/interactions/" interactionId "/interrupts")
                      :token token
                      :resp-chan resp-chan}
         resp (a/promise-chan)]
@@ -35,8 +35,7 @@
                           :update {:resourceId resourceId}}
         request-map {:method :post
                      :body acknowledge-body
-                     :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenantId "/interactions/" interactionId "/actions/" actionId))
+                     :url (str (state/get-base-api-url) "/tenants/" tenantId "/interactions/" interactionId "/actions/" actionId)
                      :token token}]
     (u/api-request request-map)))
 
@@ -51,8 +50,7 @@
                    :metadata {}}
         request-map {:method :post
                      :body dial-body
-                     :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenantId "/interactions"))
+                     :url (str (state/get-base-api-url) "/tenants/" tenantId "/interactions")
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)))
@@ -74,9 +72,8 @@
     (reset! module-state {}))
   (log :info "Received shutdown message from Core - Interactions Module shutting down...."))
 
-(defn init [env err-chan]
+(defn init [err-chan]
   (log :debug "Initializing SDK module: Flow")
-  (swap! module-state assoc :env env)
   (swap! module-state assoc :error-channel err-chan)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]

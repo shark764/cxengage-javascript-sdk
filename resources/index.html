@@ -57,7 +57,7 @@
 
     <script>
 
-    var sdk = cxengage_javascript_sdk.core.init({ "env":"dev", "logLevel":"debug", "blastSqsOutput":true });
+    var sdk = cxengage_javascript_sdk.core.init({ "baseUrl":"https://dev-api.cxengagelabs.net/v1", "logLevel":"debug", "blastSqsOutput":true });
     var tenantList = [];
     var interactions = [];
     var activeTenant = null;
@@ -300,8 +300,8 @@
     }
 
     sdk.subscribe('cxengage', function(error, topic, response) {
-      console.info('Pub/sub message received from SDK:', topic);
-      console.info(response);
+      // console.info('Pub/sub message received from SDK:', topic);
+      // console.info(response);
       switch (topic) {
         case 'cxengage/errors':
           console.log("Got us an error: " + response);
@@ -311,7 +311,11 @@
           tenantList = response.tenants;
           agentId = response.userId;
           _.each(tenantList, function(t) {
-            $('#tenantList').append('<option value="' + t.tenantId + '">' + t.tenantName + '</option>');
+            if (t.tenantId === '7db68260-6889-11e6-bab5-2a8ecd302b89') {
+              $('#tenantList').append('<option value="' + t.tenantId + '" selected="selected">' + t.tenantName + '</option>');
+            } else {
+              $('#tenantList').append('<option value="' + t.tenantId + '">' + t.tenantName + '</option>');
+            }
           });
           switchScreens('tenantSelect');
           break;

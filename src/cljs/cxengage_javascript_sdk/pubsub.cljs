@@ -159,9 +159,8 @@
 (defn module-shutdown-handler [message]
   (log :info "Received shutdown message from Core - PubSub Module shutting down...."))
 
-(defn init [env]
+(defn init []
   (log :debug "Initializing SDK module: Pub/Sub")
-  (swap! module-state assoc :env env)
   (let [module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
     {:shutdown module-shutdown<}))
