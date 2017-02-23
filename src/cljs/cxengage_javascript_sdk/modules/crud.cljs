@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop go]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
+            [cxengage-javascript-sdk.state :as state]
             [cxengage-cljs-utils.core :as u]))
 
 (def module-state (atom {}))
@@ -12,7 +13,7 @@
   [result-chan message]
   (let [{:keys [token resp-chan tenant-id entity entity-id]} message
         request-map {:method :get
-                     :url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/" entity "/" entity-id))
+                     :url (str (state/get-base-api-url) "/tenants/" tenant-id "/" entity "/" entity-id)
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
@@ -23,7 +24,7 @@
   [result-chan message]
   (let [{:keys [token resp-chan tenant-id entity]} message
         request-map {:method :get
-                     :url (u/api-url (:env @module-state) (str "/tenants/" tenant-id "/" entity))
+                     :url (str (state/get-base-api-url) "/tenants/" tenant-id "/" entity)
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
@@ -35,8 +36,7 @@
         extension-body {:activeExtension extension}
         request-map {:method :put
                      :body extension-body
-                     :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenant-id "/users/" resource-id))
+                     :url (str (state/get-base-api-url) "/tenants/" tenant-id "/users/" resource-id)
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)))
@@ -54,9 +54,8 @@
 (defn module-shutdown-handler [message]
   (log :info "Received shutdown message from Core - CRUD Module shutting down...."))
 
-(defn init [env]
+(defn init []
   (log :debug "Initializing SDK module: CRUD")
-  (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)

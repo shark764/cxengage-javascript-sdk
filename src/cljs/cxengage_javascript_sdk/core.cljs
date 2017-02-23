@@ -13,13 +13,13 @@
             [cxengage-javascript-sdk.interaction-management :as intmgmt]
             [cxengage-javascript-sdk.api :as api]
             [cxengage-javascript-sdk.shutdown :as shutdown]))
-(s/def ::env #{"dev" "qe" "staging" "production"})
+(s/def ::baseUrl string?)
 (s/def ::cljs boolean?)
 (s/def ::terseLogs boolean?)
 (s/def ::logLevel #{"debug" "info" "warn" "error" "fatal" "off"})
 (s/def ::init-params
   (s/keys :req-un []
-          :opt-un [::env ::cljs ::terseLogs ::logLevel]))
+          :opt-un [::baseUrl ::cljs ::terseLogs ::logLevel]))
 
 (defn init
   ([] (init {}))
@@ -27,14 +27,13 @@
    (let [params (iu/extract-params params)]
      (if-not (s/valid? ::init-params params)
        (iu/format-response (err/invalid-params-err))
-       (let [{:keys [env cljs terseLogs logLevel blastSqsOutput]} params
+       (let [{:keys [baseUrl cljs terseLogs logLevel blastSqsOutput]} params
              logLevel (or (keyword logLevel) :debug)
-             env (or (keyword env) :production)
              core-chan (a/chan)
-             publication (mg/start-modules env terseLogs logLevel intmgmt/twilio-msg-router intmgmt/mqtt-msg-router intmgmt/sqs-msg-router)]
+             publication (mg/start-modules terseLogs logLevel intmgmt/twilio-msg-router intmgmt/mqtt-msg-router intmgmt/sqs-msg-router)]
          (state/set-consumer-type! (or cljs :js))
          (state/set-blast-sqs-output! (or blastSqsOutput false))
-         (state/set-env! env)
+         (state/set-base-api-url! baseUrl)
          (a/sub publication :core/SHUTDOWN core-chan)
          (u/start-simple-consumer! core-chan shutdown/msg-router)
          (api/assemble-api))))))

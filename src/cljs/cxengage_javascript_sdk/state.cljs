@@ -4,11 +4,11 @@
             [cljs.core.async :as a]
             [cljs.spec :as s]))
 
-(def initial-state {:async-module-registration (a/chan 1024)
-                    :module-channels {}
-                    :authentication {}
+(def initial-state {:authentication {}
                     :user {}
                     :session {}
+                    :config {:api-url "https://api.cxengage.net/v1/"
+                             :consumer-type :js}
                     :interactions {:pending {}
                                    :active {}
                                    :past {}}})
@@ -22,26 +22,29 @@
 (defn get-state []
   sdk-state)
 
+(defn set-base-api-url! [url]
+  (swap! sdk-state assoc-in [:config :api-url] url))
+
+(defn get-base-api-url []
+  (get-in @sdk-state [:config :api-url]))
+
 (defn get-env []
-  (get @sdk-state :env))
+  (get-in @sdk-state [:config :env]))
 
 (defn set-env! [env]
-  (swap! sdk-state assoc :env env))
-
-(defn get-async-module-registration []
-  (get @sdk-state :async-module-registration))
+  (swap! sdk-state assoc-in [:config :env] env))
 
 (defn set-consumer-type! [env]
-  (swap! sdk-state assoc :consumer-type env))
+  (swap! sdk-state assoc-in [:config :consumer-type] env))
 
 (defn get-consumer-type []
-  (or (get @sdk-state :consumer-type) :js))
+  (get-in @sdk-state [:config :consumer-type]))
 
 (defn set-blast-sqs-output! [blast]
-  (swap! sdk-state assoc :blast-sqs-output blast))
+  (swap! sdk-state assoc-in [:config :blast-sqs-output] blast))
 
 (defn get-blast-sqs-output []
-  (get @sdk-state :blast-sqs-output))
+  (get-in @sdk-state [:config :blast-sqs-output]))
 
 ;;;;;;;;;;;
 ;; Interactions
@@ -217,16 +220,6 @@
 (defn get-twilio-connection
   []
   (get-in @sdk-state [:interal :twilio-connection]))
-
-;;;;;;;;;;;
-;; Chans
-;;;;;;;;;;;
-
-(defn get-module-chan [module]
-  (get-in @sdk-state [:module-channels module :messages]))
-
-(defn get-module-shutdown-chan [module]
-  (get-in @sdk-state [:module-channels module :shutdown]))
 
 ;;;;;;;;;;;
 ;; Predicates

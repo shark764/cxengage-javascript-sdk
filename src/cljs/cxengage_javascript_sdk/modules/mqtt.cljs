@@ -66,7 +66,7 @@
   [date access-key credential-scope host]
   (let [canonical-query-string (get-canonical-query-string date access-key credential-scope)
         canonical-headers (str "host:" host "\n")
-        canonical-request (clojure.string/join "\n" [method canonical-uri canonical-query-string canonical-headers "host" (u/sha256 "")])]
+        canonical-request (clojure.string/join "\n" [method canonical-uri canonical-query-string canonical-headers "host" (iu/sha256 "")])]
     canonical-request))
 
 (defn get-credential-scope
@@ -75,9 +75,9 @@
 
 (defn sign-string
   [date {:keys [secret-key region-name]} service-name credential-scope canonical-request]
-  (let [string-to-sign (clojure.string/join "\n" [algorithm (get-amz-date-stamp date) credential-scope (u/sha256 canonical-request)])
-        signing-key (u/get-signature-key secret-key (get-date-stamp date) region-name service-name)]
-    (u/sign signing-key string-to-sign)))
+  (let [string-to-sign (clojure.string/join "\n" [algorithm (get-amz-date-stamp date) credential-scope (iu/sha256 canonical-request)])
+        signing-key (iu/get-signature-key secret-key (get-date-stamp date) region-name service-name)]
+    (iu/sign signing-key string-to-sign)))
 
 (defn get-iot-url
   [date {:keys [endpoint region-name access-key secret-key session-token] :as mqtt-conf}]

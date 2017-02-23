@@ -2,8 +2,9 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop go]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
-            [cxengage-cljs-utils.core :as u]
-            [cxengage-javascript-sdk.pubsub :refer [sdk-response sdk-error-response]]))
+            [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.pubsub :as p :refer [sdk-response sdk-error-response]]
+            [cxengage-cljs-utils.core :as u]))
 
 (def module-state (atom {}))
 
@@ -12,8 +13,7 @@
   (let [{:keys [tenant-id token stats interval]} message
         reporting-req-map {:method :post
                            :body {:requests stats}
-                           :url (u/api-url (:env @module-state)
-                                           (str "/tenants/" tenant-id "/realtime-statistics/batch"))
+                           :url (str (state/get-base-api-url) "/tenants/" tenant-id "/realtime-statistics/batch")
                            :token token}]
     (go-loop [next-batch-resp-chan (a/promise-chan)]
       (u/api-request (merge reporting-req-map {:resp-chan next-batch-resp-chan}))
@@ -26,8 +26,7 @@
   [response-chan message]
   (let [{:keys [token resp-chan tenant-id resource-id]} message
         request-map {:method :get
-                     :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenant-id "/users/" resource-id "/realtime-statistics/resource-capacity"))
+                     :url (str (state/get-base-api-url) "/tenants/" tenant-id "/users/" resource-id "/realtime-statistics/resource-capacity")
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
@@ -38,8 +37,7 @@
   [response-chan message]
   (let [{:keys [token resp-chan tenant-id user-id]} message
         request-map {:method :get
-                     :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenant-id "/realtime-statistics/available?client=toolbar"))
+                     :url (str (state/get-base-api-url) "/tenants/" tenant-id "/realtime-statistics/available?client=toolbar")
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
@@ -59,9 +57,8 @@
 (defn module-shutdown-handler [message]
   (log :info "Received shutdown message from Core - Reporting Module shutting down...."))
 
-(defn init [env]
+(defn init []
   (log :debug "Initializing SDK module: Reporting")
-  (swap! module-state assoc :env env)
   (let [module-inputs< (a/chan 1024)
         module-shutdown< (a/chan 1024)]
     (u/start-simple-consumer! module-inputs< module-router)

@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [1.4.0]
 * added ability to set direction to either outbound or inbound
 * started returning resource id in Mute / hold / transfers publications
 * added appending plus sign to sms phone numbers

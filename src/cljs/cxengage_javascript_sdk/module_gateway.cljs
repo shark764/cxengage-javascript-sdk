@@ -62,7 +62,7 @@
       nil)))
 
 (defn start-modules
-  [env terseLogs logLevel twilio-router mqtt-router sqs-router]
+  [terseLogs logLevel twilio-router mqtt-router sqs-router]
   (let [publication (a/pub pub-chan
                            (fn [message] (cond
                                            (= "INIT"  (peek (clojure.string/split (str (:type message)) #"[:/]+"))) (str "init/" (second (clojure.string/split (str (:type message)) #"[:/]+")))
@@ -71,18 +71,18 @@
                                            (= :interaction/SHUTDOWN (:type message)) :core/SHUTDOWN
                                            (= :modules/SHUTDOWN (:type message)) :modules/SHUTDOWN
                                            :default (str "modules/" (second (clojure.string/split (str (:type message)) #"[:/]+"))))))]
-    (register-module publication :logging (logging/init env {:terse? (or terseLogs false) :level logLevel}))
-    (register-module publication :messaging (msg/init env))
-    (register-module publication :interactions (flow/init env err-chan))
-    (register-module publication :auth (auth/init env))
-    (register-module publication :crud (crud/init env))
-    (register-module publication :reporting (reporting/init env))
-    (register-module publication :session (presence/init env err-chan))
-    (register-module publication :contacts (contacts/init env))
+    (register-module publication :logging (logging/init {:terse? (or terseLogs false) :level logLevel}))
+    (register-module publication :messaging (msg/init))
+    (register-module publication :interactions (flow/init err-chan))
+    (register-module publication :auth (auth/init))
+    (register-module publication :crud (crud/init))
+    (register-module publication :reporting (reporting/init))
+    (register-module publication :session (presence/init err-chan))
+    (register-module publication :contacts (contacts/init))
     (register-async-module publication :twilio twilio/init twilio-router)
     (register-async-module publication :mqtt mqtt/init mqtt-router)
     (register-async-module publication :sqs sqs/init sqs-router)
-    (pubsub/init env)
+    (pubsub/init)
     (u/start-simple-consumer! err-chan handle-shutdown!)
     publication))
 

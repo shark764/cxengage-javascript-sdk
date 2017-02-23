@@ -230,7 +230,7 @@
                        nil)]
     (if (not= (state/get-session-id) sessionId)
       (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
-                          (state/get-session-id) " - Session ID on message received: " sessionId " - Message:") cljsd-msg)
+                          (state/get-session-id) " - Session ID on message received: " sessionId))
           nil)
       (if inferred-msg
         (msg-router inferred-msg)
