@@ -2,33 +2,32 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop go]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
-            [cxengage-cljs-utils.core :as u]))
+            [cxengage-cljs-utils.core :as u]
+            [cxengage-javascript-sdk.pubsub :refer [sdk-response sdk-error-response]]))
 
 (def module-state (atom {}))
 
 (defn start-polling [response-chan message]
   (log :debug "Starting reporting polls...")
-  (let [{:keys [tenant-id token interval]} message
+  (let [{:keys [tenant-id token stats interval]} message
         reporting-req-map {:method :post
-                           :body {:requests {:widget {:statistic "interaction-starts-count"}}}
+                           :body {:requests stats}
                            :url (u/api-url (:env @module-state)
                                            (str "/tenants/" tenant-id "/realtime-statistics/batch"))
                            :token token}]
     (go-loop [next-batch-resp-chan (a/promise-chan)]
       (u/api-request (merge reporting-req-map {:resp-chan next-batch-resp-chan}))
-      (log :debug "Batch request sent!")
       (let [{:keys [results]} (a/<! next-batch-resp-chan)]
-        (a/put! response-chan results)
-        (log :debug "Reporting data received!")
+        (sdk-response "cxengage/reporting/polling-response" results)
         (a/<! (a/timeout (or interval 3000)))
         (recur (a/promise-chan))))))
 
 (defn check-capacity
   [response-chan message]
-  (let [{:keys [token resp-chan tenant-id user-id]} message
+  (let [{:keys [token resp-chan tenant-id resource-id]} message
         request-map {:method :get
                      :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenant-id "/users/" user-id "/realtime-statistics/resource-capacity"))
+                                     (str "/tenants/" tenant-id "/users/" resource-id "/realtime-statistics/resource-capacity"))
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
@@ -40,7 +39,7 @@
   (let [{:keys [token resp-chan tenant-id user-id]} message
         request-map {:method :get
                      :url (u/api-url (:env @module-state)
-                                     (str "/tenants/" tenant-id "/realtime-statistics/available"))
+                                     (str "/tenants/" tenant-id "/realtime-statistics/available?client=toolbar"))
                      :token token
                      :resp-chan resp-chan}]
     (u/api-request request-map)
@@ -49,7 +48,7 @@
 
 (defn module-router [message]
   (let [handling-fn (case (:type message)
-                      :REPORTING/POLL (partial start-polling (a/promise-chan))
+                      :REPORTING/START_POLLING (partial start-polling (a/promise-chan))
                       :REPORTING/CHECK_CAPACITY (partial check-capacity (a/promise-chan))
                       :REPORTING/AVAILABLE_STATS (partial available-stats (a/promise-chan))
                       nil)]

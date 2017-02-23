@@ -64,6 +64,9 @@
                          :list-attributes-response
                          :get-layout-response
                          :list-layouts-response]]
+             [:reporting [:polling-response
+                          :available-stats-response
+                          :check-capacity-response]]
              [:errors [:fatal
                        :error]]])
 
