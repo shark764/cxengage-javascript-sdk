@@ -13,13 +13,13 @@
             [cxengage-javascript-sdk.interaction-management :as intmgmt]
             [cxengage-javascript-sdk.api :as api]
             [cxengage-javascript-sdk.shutdown :as shutdown]))
-(s/def ::base-url string?)
+(s/def ::baseUrl string?)
 (s/def ::cljs boolean?)
 (s/def ::terseLogs boolean?)
 (s/def ::logLevel #{"debug" "info" "warn" "error" "fatal" "off"})
 (s/def ::init-params
   (s/keys :req-un []
-          :opt-un [::env ::cljs ::terseLogs ::logLevel]))
+          :opt-un [::baseUrl ::cljs ::terseLogs ::logLevel]))
 
 (defn init
   ([] (init {}))

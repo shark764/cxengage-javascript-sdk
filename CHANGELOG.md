@@ -1,11 +1,9 @@
 # Change Log
 
-<<<<<<< Updated upstream
 ## [Unreleased]
-* added ability to set direction to either outbound or inbound
-=======
+
 ## [1.4.0]
->>>>>>> Stashed changes
+* added ability to set direction to either outbound or inbound
 * started returning resource id in Mute / hold / transfers publications
 * added appending plus sign to sms phone numbers
 * replace the fb id with the fb name in the "from" field of facebook messaging interactions
