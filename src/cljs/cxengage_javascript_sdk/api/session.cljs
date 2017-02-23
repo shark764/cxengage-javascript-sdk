@@ -1,6 +1,7 @@
 (ns cxengage-javascript-sdk.api.session
   (:require-macros [cljs.core.async.macros :refer [go]]
-                   [lumbajack.macros :refer [log]])
+                   [lumbajack.macros :refer [log]]
+                   [clojure.set :as set])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [camel-snake-kebab.core :as camel]
@@ -132,3 +133,57 @@
                            (change-presence-state {:state "notready"})
                            (a/put! pub-chan {:type :SQS/INIT :module-name :sqs :config (state/get-session-details)})
                            nil))))))))))))
+
+(s/def ::set-direction-params
+  (s/keys :req-un []
+          :opt-un [:specs/callback]))
+
+(defn set-direction
+  ([]
+   (set-direction {:callback nil}))
+  ([params callback]
+   (set-direction (merge (iu/extract-params params) {:callback callback})))
+  ([params]
+   (let [params (iu/extract-params params)
+         {:keys [callback direction]} params
+         pubsub-topic (str "cxengage/session/direction-changed")]
+     (if-let [error (cond
+                      (not (s/valid? ::set-direction-params params)) (err/invalid-params-err)
+                      (not (state/session-started?)) (err/invalid-sdk-state-err "Your session isn't started yet.")
+                      (not (state/active-tenant-set?)) (err/invalid-sdk-state-err "Your active tenant isn't set yet.")
+                      :else false)]
+       (sdk-error-response pubsub-topic error callback)
+       (let [sessionId (state/get-session-id)
+             send-interrupt-msg (iu/base-module-request
+                                 :SESSION/SET_DIRECTION
+                                 {:tenantId (state/get-active-tenant-id)
+                                  :resourceId (state/get-active-user-id)
+                                  :sessionId sessionId
+                                  :state (state/get-user-session-state)
+                                  :direction direction})]
+         (go (let [direction-response {:sessionId sessionId
+                                       :newDirection direction}
+                   {:keys [result status] :as direction-change-response} (a/<! (mg/send-module-message send-interrupt-msg))]
+               (if (not= status 200)
+                 (do (sdk-error-response pubsub-topic (err/sdk-request-error) callback)
+                     (sdk-error-response "cxengage/errors/error" (err/sdk-request-error) callback))
+                 (do (sdk-response pubsub-topic direction-response callback)
+                     nil)))))))))
+
+(defn set-direction-inbound
+  ([]
+   (set-direction {:direction "inbound"}))
+  ([callback]
+   (let [params (iu/extract-params callback)]
+     (if (map? params)
+       (set-direction (merge params {:direction "inbound"}))
+       (set-direction {:callback callback :direction "inbound"})))))
+
+(defn set-direction-outbound
+  ([]
+   (set-direction {:direction "outbound"}))
+  ([callback]
+   (let [params (iu/extract-params callback)]
+     (if (map? params)
+       (set-direction (merge params {:direction "outbound"}))
+       (set-direction {:callback callback :direction "outbound"})))))

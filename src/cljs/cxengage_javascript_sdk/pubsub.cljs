@@ -55,7 +55,8 @@
                      :get-transfer-lists-response]]
              [:session [:active-tenant-set
                         :started
-                        :state-changed]]
+                        :state-changed
+                        :direction-changed]]
              [:contacts [:get-response
                          :search-response
                          :create-response
