@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.4.2]
+* update lumbajack dep to fix compilation bug
+
 ## [1.4.1]
 * started auto-holding customers on transfers
 * fixed env-passing bug w/ mqtt subscriptions preventing messaging from working
