@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* started auto-holding customers on transfer
 
 ## [1.4.0]
 * added ability to set direction to either outbound or inbound
