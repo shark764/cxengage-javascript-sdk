@@ -26,7 +26,7 @@
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
 
                  [org.serenova/cxengage-cljs-utils "1.0.0"]
-                 [org.serenova/lumbajack "1.0.1-SNAPSHOT"]]
+                 [org.serenova/lumbajack "1.0.0"]]
 
  :repositories #(apply conj %
                        [["releases" {:url "http://nexus.cxengagelabs.net/content/repositories/releases/"
