@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added twilio init missing-required-integration error
 
 ## [1.4.2]
 * update lumbajack dep to fix compilation bug
