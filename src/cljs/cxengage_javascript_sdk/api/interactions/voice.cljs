@@ -99,10 +99,19 @@
                                 :interruptType "customer-transfer"
                                 :source "client"
                                 :interactionId interactionId
-                                :interrupt interrupt})]
-         (go (let [transfer-response (a/<! (mg/send-module-message transfer-request))]
-               (sdk-response pubsub-topic transfer-response callback)
-               nil)))))))
+                                :interrupt interrupt})
+             customer-hold-request (iu/base-module-request
+                                    :INTERACTIONS/SEND_INTERRUPT
+                                    {:tenantId (state/get-active-tenant-id)
+                                     :interruptType "customer-hold"
+                                     :source "client"
+                                     :interactionId interactionId
+                                     :interrupt {:resourceId (state/get-active-user-id)}})]
+         (go (let [customer-hold-response (a/<! (mg/send-module-message customer-hold-request))]
+               (sdk-response "cxengage/voice/hold-started" customer-hold-response)
+               (go (let [transfer-response (a/<! (mg/send-module-message transfer-request))]
+                     (sdk-response pubsub-topic transfer-response callback)
+                     nil)))))))))
 
 (s/def ::transfer-to-resource-params
   (s/keys :req-un [:specs/interactionId :specs/resourceId]
