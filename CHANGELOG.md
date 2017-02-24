@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 * started auto-holding customers on transfer
+* fixed env-passing bug w/ mqtt subscriptions preventing messaging from working
 
 ## [1.4.0]
 * added ability to set direction to either outbound or inbound
