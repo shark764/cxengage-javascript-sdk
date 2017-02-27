@@ -146,7 +146,12 @@
   ([topic error callback]
    (let [error-msg {:error error
                     :response nil}]
-     (send-response topic error-msg callback))))
+     (if (vector? topic)
+      (doseq [t topic]
+        (if (= t (first topic))
+          (send-response t error-msg callback)
+          (send-response t error-msg nil)))
+      (send-response topic error-msg callback)))))
 
 (defn sdk-response
   ([topic response]
@@ -154,7 +159,12 @@
   ([topic response callback]
    (let [success-msg {:error nil
                       :response response}]
-     (send-response topic success-msg callback))))
+     (if (vector? topic)
+      (doseq [t topic]
+        (if (= t (first topic))
+          (send-response t success-msg callback)
+          (send-response t success-msg nil)))
+      (send-response topic success-msg callback)))))
 
 (defn module-shutdown-handler [message]
   (log :info "Received shutdown message from Core - PubSub Module shutting down...."))

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 * added twilio init missing-required-integration error
+* added ability to publish to multiple topics at once
 
 ## [1.4.2]
 * update lumbajack dep to fix compilation bug
