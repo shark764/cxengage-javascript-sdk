@@ -8,8 +8,21 @@
             [camel-snake-kebab.extras :refer [transform-keys]])
   (:import [goog.crypt Sha256 Hmac]))
 
+(defn deep-merge
+  [& vals]
+  (if (every? map? vals)
+    (apply merge-with deep-merge vals)
+    (last vals)))
+
+(defn camelify [m]
+  (->> m
+       (transform-keys camel/->camelCase)
+       (clj->js)))
+
 (defn kebabify [m]
-  (transform-keys camel/->kebab-case (js->clj m :keywordize-keys true)))
+  (->> m
+       (#(js->clj % :keywordize-keys true))
+       (transform-keys camel/->kebab-case)))
 
 (defn build-api-url-with-params [url params]
   (let [{:keys [tenant-id resource-id session-id entity-id]} params]
@@ -21,11 +34,15 @@
 
 (defn normalize-response-stucture
   [[ok? response]]
-  (let [status (if ok? 200 (get response :status))
-        api-response (-> response
-                         (dissoc :status)
-                         (kebabify))]
-    {:api-response api-response :status status}))
+  (if (and (false? ok?)
+           (= (:status response) 200))
+    {:api-response nil :status 200}
+    (let [status (if ok? 200 (get response :status))
+
+          api-response (-> response
+                           (dissoc :status)
+                           (kebabify))]
+      {:api-response api-response :status status})))
 
 (defn api-request [request-map]
   (let [response-channel (a/promise-chan)

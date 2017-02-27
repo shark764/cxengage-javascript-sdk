@@ -60,11 +60,16 @@
    :urls {:token "tokens"
           :login "login"}})
 
-(defrecord Module [config state]
+(defn get-entity [module entity-type])
+
+(defrecord AuthenticationModule [config state core-messages<]
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")]
-      (register {:api {:login (partial login this)}
-                 :module-name (get @(:state this) :module-name)})))
+    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
+          module-name (get @(:state this) :module-name)]
+      (register {:api {module-name {:login (partial login this)}}
+                 :module-name module-name})
+      (a/put! core-messages< {:module-registration-status :success :module module-name})
+      (js/console.info "<----- Started " module-name " module! ----->")))
   (stop [this]))
