@@ -9,6 +9,7 @@
             [cxengage-javascript-sdk.next.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.next.authentication :as authentication]
+            [cxengage-javascript-sdk.next.entities :as entities]
             [cxengage-javascript-sdk.next.session :as session]
             [cxengage-javascript-sdk.next.interaction :as interaction]
             [cxengage-javascript-sdk.next.sqs :as sqs]
@@ -39,8 +40,9 @@
   (let [auth-module (authentication/map->AuthenticationModule. (gen-new-initial-module-config comm<))
         session-module (session/map->SessionModule. (gen-new-initial-module-config comm<))
         interaction-module (interaction/map->InteractionModule. (gen-new-initial-module-config comm<))
-        voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [auth-module session-module interaction-module voice-module]]
+        voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))
+        entities-module (entities/map->EntitiesModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [auth-module session-module interaction-module voice-module entities-module]]
       (start-internal-module module))))
 
 (defn start-session-dependant-modules [comm<]
