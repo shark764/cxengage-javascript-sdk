@@ -10,11 +10,7 @@
             [cxengage-javascript-sdk.module-gateway :as mg]
             [cxengage-javascript-sdk.internal-utils :as iu]))
 
-(s/def ::message string?)
-(s/def ::send-message-params
-  (s/keys :req-un [:specs/interactionId
-                   ::message]
-          :opt-un [:specs/callback]))
+
 
 (defn send-message
   ([params callback]

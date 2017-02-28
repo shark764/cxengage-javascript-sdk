@@ -41,72 +41,77 @@
                 (a/<! (a/timeout next-heartbeat-delay))
                 (recur))))))))
 
-(s/def ::extension-id ::specs/uuid)
+(s/def ::extension-id string?)
+
+(s/def ::state #{"ready" "notready" "offline"})
+
 (s/def ::go-ready-params
-  (s/keys ::req-un [::extension-id]
-          ::opt-un [:specs/callback]))
+  (s/keys :req-un [::extension-id ::state]
+          :opt-un [::specs/callback]))
+
 (s/def ::go-not-ready-params
-  (s/keys ::req-un []
-          ::opt-un [:specs/callback]))
+  (s/keys :req-un [::state]
+          :opt-un [::specs/callback]))
+
 (s/def ::go-offline-params
-  (s/keys ::req-un []
-          ::opt-un [:specs/callback]))
+  (s/keys :req-un [::state]
+          :opt-un [::specs/callback]))
 
 (defn change-presence-state
-  ([module] (e/wrong-number-of-args-error))
-  ([module params & others]
+  ([module state] (change-presence-state module state {}))
+  ([module state params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (change-presence-state module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
+     (change-presence-state module state (merge (iu/extract-params params)
+                                                {:callback (first others)}))))
+  ([module state params]
+   (let [params (assoc (iu/extract-params params) :state state)
          api-url (get-in module [:config :api-url])
          module-state @(:state module)
          session-id (state/get-session-id)
          resource-id (state/get-active-user-id)
          tenant-id (state/get-active-tenant-id)
-         {:keys [state extension-id callback]} params
+         {:keys [extension-id callback]} params
          active-extension-id (state/get-active-extension)
          extensions (state/get-all-extensions)
-         _ (js/console.error "EXT" extensions)
-         _ (js/console.error "AEXT" active-extension-id)
-         _ (js/console.error "CONFIG" (state/get-session-details))
          change-state-publish-fn (fn [r] (p/publish "session/change-state" r callback))
          validation-spec (cond
                            (= state "ready") ::go-ready-params
                            (= state "notready") ::go-not-ready-params
-                           (= state "offline") ::go-offline-params)
-         active-extension-id "test"]
-     (when (and (= state "ready")
-                extension-id
-                (not= active-extension-id extension-id))
-       (let [new-extension (state/get-extension-by-id extension-id)
-             update-user-url (str api-url (get-in module-state [:urls :update-user]))
-             user-update-request {:method :put
-                                  :url (iu/build-api-url-with-params
-                                        update-user-url
-                                        {:tenant-id tenant-id
-                                         :resource-id resource-id})
-                                  :body new-extension}]
-         (go (let [user-update-response (a/<! (iu/api-request user-update-request))]
-               (js/console.error "UUR" user-update-response)))))
-     (if-not (s/valid? validation-spec params)
-       (change-state-publish-fn (e/invalid-args-error (s/explain-data validation-spec params)))
-       (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
-             change-state-request {:method :post
-                                   :url (iu/build-api-url-with-params
-                                         change-state-url
-                                         {:tenant-id tenant-id
-                                          :resource-id resource-id})
-                                   :body {:session-id session-id
-                                          :state state}}]
-         (go (let [change-state-response (a/<! (iu/api-request change-state-request))
-                   {:keys [api-response status]} change-state-response
-                   {:keys [result]} api-response]
-               (if (not= status 200)
-                 (change-state-publish-fn (e/api-error api-response))
-                 (change-state-publish-fn result))))
-         nil)))))
+                           (= state "offline") ::go-offline-params
+                           :else ::go-ready-params)]
+     (if (not (s/valid? validation-spec params))
+       (change-state-publish-fn (s/explain-data validation-spec params))
+       (do #_(when (and (= state "ready")
+                        extension-id
+                        (not= active-extension-id extension-id))
+               (let [new-extension (state/get-extension-by-id extension-id)
+                     update-user-url (str api-url (get-in module-state [:urls :update-user]))
+                     user-update-request {:method :put
+                                          :url (iu/build-api-url-with-params
+                                                update-user-url
+                                                {:tenant-id tenant-id
+                                                 :resource-id resource-id})
+                                          :body new-extension}]
+                 (if (= nil new-extension)
+                   (change-state-publish-fn (e/no-entity-found-for-specified-id "extension" extension-id))
+                   (go (let [user-update-response (a/<! (iu/api-request user-update-request))]
+                         (js/console.error "UUR2" user-update-response))))))
+           (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
+                 change-state-request {:method :post
+                                       :url (iu/build-api-url-with-params
+                                             change-state-url
+                                             {:tenant-id tenant-id
+                                              :resource-id resource-id})
+                                       :body {:session-id session-id
+                                              :state state}}]
+             (go (let [change-state-response (a/<! (iu/api-request change-state-request))
+                       {:keys [api-response status]} change-state-response
+                       {:keys [result]} api-response]
+                   (if (not= status 200)
+                     (change-state-publish-fn (e/api-error api-response))
+                     (change-state-publish-fn result))))
+             nil))))))
 
 (defn start-session* [module]
   (let [api-url (get-in module [:config :api-url])
@@ -127,7 +132,7 @@
             (start-session-publish-fn (e/api-error api-response))
             (do (state/set-session-details! result)
                 (start-session-publish-fn result)
-                (change-presence-state module {:state "notready"})
+                (change-presence-state module "notready" {})
                 (start-heartbeats* module)))))
     nil))
 
@@ -149,11 +154,12 @@
           (if (not= status 200)
             (config-publish-fn (e/api-error api-response))
             (do (state/set-config! result)
+                (a/put! (:core-messages< module) :config-ready)
                 (config-publish-fn result)
                 (start-session* module)))))
     nil))
 
-(s/def ::tenant-id ::specs/uuid)
+(s/def ::tenant-id string?)
 (s/def ::set-active-tenant-params
   (s/keys :req-un [::tenant-id]
           :opt-un [:specs/callback]))
@@ -193,10 +199,6 @@
            (get-config* module)
            nil)))))
 
-;; turn on mqtt
-;; turn on twilio
-;; turn on sqs?
-
 (def initial-state
   {:module-name :session
    :topics ["active-tenant-set" "start-session"]
@@ -206,14 +208,17 @@
           :update-user "tenants/tenant-id/users/resource-id"
           :heartbeat "tenants/tenant-id/presence/resource-id/heartbeat"}})
 
-(defrecord Module [config state]
+(defrecord SessionModule [config state core-messages<]
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")]
-      (register {:api {:set-active-tenant (partial set-active-tenant this)
-                       :go-ready (partial change-presence-state this)
-                       :go-not-ready (partial change-presence-state this)
-                       :go-offline (partial change-presence-state this)}
-                 :module-name (get @(:state this) :module-name)})))
+    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
+          module-name (get @(:state this) :module-name)]
+      (register {:api {module-name {:set-active-tenant (partial set-active-tenant this)
+                                    :go-ready (partial change-presence-state this "ready")
+                                    :go-not-ready (partial change-presence-state this "notready")
+                                    :go-offline (partial change-presence-state this "offline")}}
+                 :module-name module-name})
+      (a/put! core-messages< {:module-registration-status :success :module module-name})
+      (js/console.info "<----- Started " module-name " module! ----->")))
   (stop [this]))

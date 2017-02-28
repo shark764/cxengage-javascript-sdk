@@ -85,25 +85,35 @@
   (let [location (find-interaction-location interaction-id)]
     (get-in @sdk-state [:interactions location interaction-id])))
 
-(defn insert-fb-name-to-messages [messages interaction-id]
-  (let [interaction (get-interaction interaction-id)
-        {:keys [channelType messaging-metadata]} interaction
-        {:keys [customerName]} messaging-metadata
-        messages (if (= channelType "messaging")
-                   (map #(assoc-in % [:payload :from] customerName) messages)
-                   messages)]
-    messages))
+(defn augment-messaging-payload [msg]
+  (let [{:keys [payload]} msg
+        {:keys [from id to]} payload
+        interaction (get-interaction to)
+        {:keys [channel-type messaging-metadata]} interaction
+        {:keys [customer-name]} messaging-metadata
+        payload (cond
+                  (= channel-type "sms") (assoc-in msg [:payload :from] (str "+" from))
+                  (= channel-type "messaging") (assoc-in msg [:payload :from] customer-name)
+                  :else (do (js/console.error "error augmenting payload") nil))]
+    payload))
 
 (defn add-messages-to-history! [interaction-id messages]
   (let [interaction-location (find-interaction-location interaction-id)
         old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
-        messages (insert-fb-name-to-messages messages interaction-id)
+        messages (->> messages
+                      (mapv augment-messaging-payload)
+                      (mapv #(dissoc % :channel-id :timestamp))
+                      (mapv :payload))
         new-msg-history (reduce conj old-msg-history messages)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)))
 
+(defn get-interaction-messaging-history [interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (get-in @sdk-state [:interactions interaction-location interaction-id :message-history])))
+
 (defn add-interaction! [type interaction]
-  (let [{:keys [interactionId]} interaction]
-    (swap! sdk-state assoc-in [:interactions type interactionId] interaction)))
+  (let [{:keys [interaction-id]} interaction]
+    (swap! sdk-state assoc-in [:interactions type interaction-id] interaction)))
 
 (defn add-interaction-custom-field-details! [custom-field-details interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
@@ -131,9 +141,9 @@
     (swap! sdk-state assoc-in [:interactions to] updated-interactions-to)))
 
 (defn add-messaging-interaction-metadata! [metadata]
-  (let [{:keys [interactionId]} metadata
-        interaction-location (find-interaction-location interactionId)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interactionId :messaging-metadata] metadata)))
+  (let [{:keys [id]} metadata
+        interaction-location (find-interaction-location id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location id :messaging-metadata] metadata)))
 
 ;;;;;;;;;;;
 ;; Auth
@@ -183,17 +193,23 @@
 
 (defn set-config!
   [config]
-  (swap! sdk-state assoc :session (merge (get-session-details) config)))
+  (swap! sdk-state assoc-in [:session :config] config))
 
 (defn get-all-extensions []
-  (get-in @sdk-state [:session :extensions]))
+  (get-in @sdk-state [:session :config :extensions]))
+
+(defn get-all-integrations []
+  (get-in @sdk-state [:session :config :integrations]))
 
 (defn get-active-extension []
-  (get-in @sdk-state [:session :active-extension :value]))
+  (get-in @sdk-state [:session :config :active-extension :value]))
 
 (defn get-extension-by-id [id]
   (let [extensions (get-all-extensions)]
     (first (filter #(= id (:value %)) extensions))))
+
+(defn get-integration-by-type [type]
+  (first (filter #(= (:type %) type) (get-all-integrations))))
 
 (defn set-active-tenant!
   [tenant-id]
