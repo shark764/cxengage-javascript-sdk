@@ -1,8 +1,10 @@
 (ns cxengage-javascript-sdk.internal-utils
-  (:require-macros [lumbajack.macros :refer [log]])
+  (:require-macros [lumbajack.macros :refer [log]]
+                   [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [goog.crypt :as c]
             [ajax.core :as ajax]
+            [cxengage-javascript-sdk.next.errors :as e]
             [cxengage-javascript-sdk.state :as state]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]])
@@ -24,24 +26,6 @@
        (#(js->clj % :keywordize-keys true))
        (transform-keys camel/->kebab-case)))
 
-(defn send-interrupt*
-  ([module params]
-   (let [params (iu/extract-params params)
-         module-state @(:state module)
-         {:keys [interaction-id interrupt-type interrupt-body publish-fn]} params
-         tenant-id (state/get-active-tenant-id)
-         interrupt-request {:method :post
-                            :body {:source "client"
-                                   :interrupt-type interrupt-type
-                                   :interrupt interrupt-body}
-                            :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
-     (do (go (let [interrupt-response (a/<! (iu/api-request interrupt-request))
-                   {:keys [api-response status]} interrupt-response]
-               (if (not= status 200)
-                 (publish-fn (e/api-error api-response))
-                 (publish-fn {:interacton-id interaction-id}))))
-         nil))))
-
 (defn build-api-url-with-params [url params]
   (let [{:keys [tenant-id resource-id session-id entity-id]} params]
     (cond-> url
@@ -56,7 +40,6 @@
            (= (:status response) 200))
     {:api-response nil :status 200}
     (let [status (if ok? 200 (get response :status))
-
           api-response (-> response
                            (dissoc :status)
                            (kebabify))]
@@ -100,6 +83,24 @@
        additional-params (merge additional-params)
        token (merge {:token token})))))
 
+(defn send-interrupt*
+  ([module params]
+   (let [params (extract-params params)
+         module-state @(:state module)
+         {:keys [interaction-id interrupt-type interrupt-body publish-fn]} params
+         tenant-id (state/get-active-tenant-id)
+         interrupt-request {:method :post
+                            :body {:source "client"
+                                   :interrupt-type interrupt-type
+                                   :interrupt interrupt-body}
+                            :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
+     (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
+                   {:keys [api-response status]} interrupt-response]
+               (if (not= status 200)
+                 (publish-fn (e/api-error api-response))
+                 (publish-fn {:interacton-id interaction-id}))))
+         nil))))
+
 ;;;;;;;;;;;;;;;
 ;; sigv4 utils
 ;;;;;;;;;;;;;;;
@@ -109,13 +110,11 @@
   (let [hmac (doto (Hmac. (Sha256.) key)
                (.update msg))]
     (c/byteArrayToHex (.digest hmac))))
-
 (defn sha256
   [msg]
   (let [hash (doto (Sha256.)
                (.update msg))]
     (c/byteArrayToHex (.digest hash))))
-
 (defn get-signature-key
   [key date-stamp region-name service-name]
   (let [date-stamp (or date-stamp (js/Date.))

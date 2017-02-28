@@ -7,10 +7,13 @@
 
 (s/def ::uuid id/valid-uuid?)
 (s/def ::tenantId ::uuid)
+(s/def ::tenant-id ::uuid)
 (s/def ::interactionId ::uuid)
 (s/def ::extensionId string?)
 (s/def ::contactId ::uuid)
+(s/def ::contact-id ::uuid)
 (s/def ::layoutId ::uuid)
+(s/def ::layout-id ::uuid)
 (s/def ::topic string?)
 (s/def ::state string?)
 (s/def ::phoneNumber string?)

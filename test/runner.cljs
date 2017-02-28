@@ -7,4 +7,5 @@
 
 (doo-tests 'cxengage-javascript-sdk.core-test
            'cxengage-javascript-sdk.modules.contacts-test
+           'cxengage-javascript-sdk.next.contacts-test
            'cxengage-javascript-sdk.api.auth-test)
