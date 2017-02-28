@@ -149,15 +149,15 @@
 (s/fdef init
         :args (s/cat :mqtt-conf ::mqtt-conf :client-id string? :on-received fn?))
 
-(defn subscribe-to-interaction* [message]
-  (let [{:keys [tenant-id interaction-id]} message
-        topic (str (name (get @module-state :env)) "/tenants/" tenant-id "/channels/" interaction-id)]
+(defn subscribe-to-messaging-interaction [message]
+  (let [{:keys [tenant-id interaction-id env]} message
+        topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
     (subscribe topic)))
 
-(defn unsubscribe-from-interaction* [message])
+(defn unsubscribe-from-messaging-interaction* [message])
 
 (defn gen-payload [message]
-  (let [{:keys [message user-id tenant-id interaction-id]} message
+  (let [{:keys [message resource-id tenant-id interaction-id]} message
         uid (str (id/make-random-uuid))
         metadata {:name "Agent"
                   :first-name "Agent"
@@ -168,7 +168,7 @@
      :tenant-id tenant-id
      :type "message"
      :to interaction-id
-     :from user-id
+     :from resource-id
      :metadata metadata
      :body body
      :timestamp (fmt/unparse (fmt/formatters :date-time) (time/now))}))
@@ -192,12 +192,15 @@
   ([module params]
    (let [module-state @(:state module)
          params (iu/extract-params params)
-         {:keys [tenant-id interaction-id callback]} params
-         send-message-publish-fn (fn [r] (p/publish "messaging/message-sent" r callback))]
-     (if-let [error (cond
-                      (not (s/valid? ::send-message-params params)) (e/invalid-args-error (s/explain-data ::send-message-params params)))]
-       (send-message-publish-fn error)
-       (let [payload (-> params
+         {:keys [interaction-id callback]} params
+         send-message-publish-fn (fn [r] (p/publish "messaging/message-sent" r callback))
+         tenant-id (state/get-active-tenant-id)
+         payload (assoc params
+                        :resource-id (state/get-active-user-id)
+                        :tenant-id tenant-id)]
+     (if-not (s/valid? ::send-message-params params)
+       (send-message-publish-fn (e/invalid-args-error (s/explain-data ::send-message-params params)))
+       (let [payload (-> payload
                          (gen-payload)
                          (format-payload))
              mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
@@ -221,8 +224,8 @@
                                 (transform-keys camel/->kebab-case-keyword)
                                 (#(rename-keys % {:region :region-name})))]
       (if-not mqtt-integration
-        (a/put! core-messages< {:module-registration-status
-                                :failure :module module-name})
+        (a/put! core-messages< {:module-registration-status :failure
+                                :module module-name})
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
             (register {:api {:interactions {:messaging {:send-message (partial send-message this)}}}
                        :module-name module-name})

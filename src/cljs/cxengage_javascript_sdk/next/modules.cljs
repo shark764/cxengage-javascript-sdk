@@ -13,6 +13,7 @@
             [cxengage-javascript-sdk.next.interaction :as interaction]
             [cxengage-javascript-sdk.next.sqs :as sqs]
             [cxengage-javascript-sdk.next.messaging :as messaging]
+            [cxengage-javascript-sdk.next.voice :as voice]
             [cxengage-javascript-sdk.next.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-cljs-utils.core :as u]
@@ -37,8 +38,9 @@
 (defn start-base-modules [comm<]
   (let [auth-module (authentication/map->AuthenticationModule. (gen-new-initial-module-config comm<))
         session-module (session/map->SessionModule. (gen-new-initial-module-config comm<))
-        interaction-module (interaction/map->InteractionModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [auth-module session-module interaction-module]]
+        interaction-module (interaction/map->InteractionModule. (gen-new-initial-module-config comm<))
+        voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [auth-module session-module interaction-module voice-module]]
       (start-internal-module module))))
 
 (defn start-session-dependant-modules [comm<]

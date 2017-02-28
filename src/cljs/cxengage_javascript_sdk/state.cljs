@@ -85,21 +85,25 @@
   (let [location (find-interaction-location interaction-id)]
     (get-in @sdk-state [:interactions location interaction-id])))
 
-(defn insert-fb-name-to-messages [interaction-id messages]
-  (let [interaction (get-interaction interaction-id)
-        {:keys [channelType messaging-metadata]} interaction
-        {:keys [customerName]} messaging-metadata
-        messages (if (= channelType "messaging")
-                   (map #(assoc-in % [:payload :from] customerName) messages)
-                   messages)]
-    messages))
+(defn augment-messaging-payload [msg]
+  (let [{:keys [payload]} msg
+        {:keys [from id to]} payload
+        interaction (get-interaction to)
+        {:keys [channel-type messaging-metadata]} interaction
+        {:keys [customer-name]} messaging-metadata
+        payload (cond
+                  (= channel-type "sms") (assoc-in msg [:payload :from] (str "+" from))
+                  (= channel-type "messaging") (assoc-in msg [:payload :from] customer-name)
+                  :else (do (js/console.error "error augmenting payload") nil))]
+    payload))
 
 (defn add-messages-to-history! [interaction-id messages]
   (let [interaction-location (find-interaction-location interaction-id)
         old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
         messages (->> messages
-                      (insert-fb-name-to-messages interaction-id)
-                      (mapv #(dissoc % :channel-id :timestamp)))
+                      (mapv augment-messaging-payload)
+                      (mapv #(dissoc % :channel-id :timestamp))
+                      (mapv :payload))
         new-msg-history (reduce conj old-msg-history messages)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)))
 

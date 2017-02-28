@@ -14,24 +14,6 @@
             [cxengage-javascript-sdk.next.errors :as e]
             [cxengage-javascript-sdk.next.pubsub :as p]))
 
-(defn send-interrupt*
-  ([module params]
-   (let [params (iu/extract-params params)
-         module-state @(:state module)
-         {:keys [interaction-id interrupt-type interrupt-body publish-fn]} params
-         tenant-id (state/get-active-tenant-id)
-         interrupt-request {:method :post
-                            :body {:source "client"
-                                   :interrupt-type interrupt-type
-                                   :interrupt interrupt-body}
-                            :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
-     (do (go (let [interrupt-response (a/<! (iu/api-request interrupt-request))
-                   {:keys [api-response status]} interrupt-response]
-               (if (not= status 200)
-                 (publish-fn (e/api-error api-response))
-                 (publish-fn {:interacton-id interaction-id}))))
-         nil))))
-
 (s/def ::assign-contact-params
   (s/keys :req-un [:specs/contact-id :specs/interaction-id]
           :opt-un [:specs/callback]))
@@ -82,41 +64,34 @@
                             :end {:validation ::end-interaction-params
                                   :interrupt-type "resource-disconnect"
                                   :publish-fn (fn [r] (p/publish "interactions/end-acknowledge" r callback))
-                                  :interrupt-body {:resource-id (state/get-active-user-id)}
-                                  :interaction-id interaction-id}
+                                  :interrupt-body {:resource-id (state/get-active-user-id)}}
                             :accept {:validation ::end-interaction-params
                                      :interrupt-type "offer-accept"
                                      :publish-fn (fn [r] (p/publish "interactions/accept-acknowledge" r callback))
-                                     :interrupt-body {:resource-id (state/get-active-user-id)}
-                                     :interaction-id interaction-id}
+                                     :interrupt-body {:resource-id (state/get-active-user-id)}}
                             :assign {:validation ::contact-operation-params
                                      :interrupt-type "interaction-contact-selected"
                                      :publish-fn (fn [r] (p/publish "interactions/contact-assigned" r callback))
-                                     :interrupt-body contact-assignment-body
-                                     :interaction-id interaction-id}
+                                     :interrupt-body contact-assignment-body}
                             :unassign {:validation ::contact-operation-params
                                        :interrupt-type "interaction-contact-deselected"
                                        :publish-fn (fn [r] (p/publish "interactions/contact-unassigned" r callback))
-                                       :interrupt-body contact-assignment-body
-                                       :interaction-id interaction-id}
+                                       :interrupt-body contact-assignment-body}
                             :enable-wrapup {:validation ::wrapup-params
                                             :interrupt-type "wrapup-on"
                                             :publish-fn (fn [r] (p/publish "interactions/wrapup-enabled" r callback))
-                                            :interrupt-body {:resource-id (state/get-active-user-id)}
-                                            :interaction-id interaction-id}
+                                            :interrupt-body {:resource-id (state/get-active-user-id)}}
                             :disable-wrapup {:validation ::wrapup-params
                                              :interrupt-type "wrapup-off"
                                              :publish-fn (fn [r] (p/publish "interactions/wrapup-disabled" r callback))
-                                             :interrupt-body {:resource-id (state/get-active-user-id)}
-                                             :interaction-id interaction-id}
+                                             :interrupt-body {:resource-id (state/get-active-user-id)}}
                             :end-wrapup {:validation ::wrapup-params
                                          :interrupt-type "wrapup-end"
                                          :publish-fn (fn [r] (p/publish "interactions/wrapup-ended" r callback))
-                                         :interrupt-body {:resource-id (state/get-active-user-id)}
-                                         :interaction-id interaction-id})]
+                                         :interrupt-body {:resource-id (state/get-active-user-id)}})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
        ((:publish-fn interrupt-params) (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params)))
-       (send-interrupt* module interrupt-params)))))
+       (iu/send-interrupt* module (assoc interrupt-params :interaction-id interaction-id))))))
 
 (def initial-state
   {:module-name :interactions})

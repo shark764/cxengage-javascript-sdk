@@ -9,7 +9,8 @@
             [cxengage-javascript-sdk.pubsub :as pubsub :refer [sdk-response sdk-error-response]]
             [cxengage-javascript-sdk.domain.errors :as err]
             [cxengage-javascript-sdk.next.pubsub :as p]
-            [cxengage-javascript-sdk.next.errors :as e]))
+            [cxengage-javascript-sdk.next.errors :as e]
+            [cxengage-javascript-sdk.next.messaging :as messaging]))
 
 ;; TODO: make these better? in a module
 
@@ -41,10 +42,9 @@
                       (if (not= status 200)
                         (e/api-error result)
                         (do (state/add-messages-to-history! interaction-id result)
-                            (p/publish "cxengage/messaging/history" (state/get-interaction-messaging-history interaction-id)))))))))
-        nil)))
-
-  (p/publish "cxengage/interactions/work-offer" message))
+                            (p/publish "cxengage/messaging/history" (state/get-interaction-messaging-history interaction-id))))))))))))
+  (p/publish "cxengage/interactions/work-offer" message)
+  nil)
 
 (defn handle-new-messaging-message [payload]
   (let [payload (-> (.-payloadString payload)
@@ -52,9 +52,8 @@
                     (iu/kebabify))
         interaction-id (:to payload)
         channel-id (:id payload)
-        from (:from payload)
-        payload (if (= (:channel-type (state/get-active-interaction interaction-id)) "sms") (merge payload {:from (str "+" from)}) payload)]
-    (p/publish "cxengage/messaging/new-message-received" payload)
+        from (:from payload)]
+    (p/publish "cxengage/messaging/new-message-received" (:payload (state/augment-messaging-payload {:payload payload})))
     (state/add-messages-to-history! interaction-id [{:payload payload}])))
 
 (defn handle-resource-state-change [message]
@@ -92,9 +91,10 @@
     (state/transition-interaction! :pending :active interaction-id)
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
-      (a/put! (mg/>get-publication-channel) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
-                                             :tenant-id tenant-id
-                                             :interaction-id interaction-id}))
+      (messaging/subscribe-to-messaging-interaction
+       {:tenant-id tenant-id
+        :interaction-id interaction-id
+        :env (state/get-env)}))
     (p/publish "cxengage/interactions/work-accepted" {:interaction-id interaction-id}) ))
 
 (defn handle-work-ended [message]
