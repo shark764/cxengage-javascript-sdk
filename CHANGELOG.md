@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added send-script sqs listener
 * refactored contacts module in accordance with new module system
 * added twilio init missing-required-integration error
 * added ability to publish to multiple topics at once

@@ -30,7 +30,8 @@
                              :wrapup-started
                              :wrapup-on
                              :wrapup-off
-                             :wrapup-end]]
+                             :wrapup-end
+                             :script-received]]
              [:messaging [:send-message-response
                           :new-message-received
                           :history]]

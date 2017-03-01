@@ -145,6 +145,12 @@
         interaction-location (find-interaction-location id)]
     (swap! sdk-state assoc-in [:interactions interaction-location id :messaging-metadata] metadata)))
 
+(defn add-script-to-interaction! [interaction-id script]
+  (let [interaction-location (find-interaction-location interaction-id)
+        existing-scripts (or (get-in @sdk-state [:interactions interaction-location interaction-id :scripts]) [])
+        new-scripts (conj existing-scripts script)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :scripts] new-scripts)))
+
 ;;;;;;;;;;;
 ;; Auth
 ;;;;;;;;;;;
