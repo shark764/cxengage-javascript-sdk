@@ -6,49 +6,6 @@
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cljs-uuid-utils.core :as uuid]))
 
-
-
-(deftest contact-request-and-delete-contact-test
-  (testing "The contact request function"
-    (let [fake-user (str (uuid/make-random-squuid))
-          date (js/Date.)
-          date-time (.toISOString date)]
-      (with-redefs [u/api-request (fn [request-map]
-                                    (let [{:keys [url method token resp-chan]} request-map
-                                          contact-id (peek (clojure.string/split url #"[/]+"))]
-                                      (when (and method url resp-chan)
-                                        (case method
-                                          :get (a/put! resp-chan {:result {:id contact-id
-                                                                      :attributes {:name "Ian Bishop"
-                                                                                   :mobile "+15554442222"
-                                                                                   :age 27}
-                                                                      :created date-time
-                                                                      :createdBy fake-user
-                                                                      :updated date-time
-                                                                      :updatedBy fake-user}})
-                                          (a/put! resp-chan {})))))]
-        (let [resp (a/promise-chan)
-              resp-chan (a/promise-chan)
-              contact-id (str (uuid/make-random-uuid))
-              tenant-id (str (uuid/make-random-uuid))
-              delete-response (a/promise-chan)
-              _ (swap! contacts/module-state assoc :env "dev")
-              url (u/api-url (:env @contacts/module-state) (str "/tenants/" tenant-id "/contacts/" contact-id))]
-          (cxengage-javascript-sdk.modules.contacts/contact-request url nil :get "auoki;.paoe" resp resp-chan)
-          (async done
-                 (go
-                   (is (= (a/<! resp-chan) {:id contact-id
-                                            :attributes {:name "Ian Bishop"
-                                                         :mobile "+15554442222"
-                                                         :age 27}
-                                            :created date-time
-                                            :createdBy fake-user
-                                            :updated date-time
-                                            :updatedBy fake-user}))
-                   
-                   (done))))))))
-
-
 (deftest get-query-str-test
   (testing "The query string builder"
     (let [query {:q "name"
@@ -73,7 +30,7 @@
                                                                      :createdBy fake-user
                                                                      :updated date-time
                                                                      :updatedBy fake-user}))))]
-        
+
         (let [resp (a/promise-chan)
               contact-id (str (uuid/make-random-squuid))]
           (swap! contacts/module-state assoc :env "dev")
