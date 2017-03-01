@@ -9,19 +9,23 @@
             [cxengage-javascript-sdk.next.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.next.authentication :as authentication]
+            [cxengage-javascript-sdk.next.entities :as entities]
             [cxengage-javascript-sdk.next.session :as session]
+            [cxengage-javascript-sdk.next.interaction :as interaction]
+            [cxengage-javascript-sdk.next.sqs :as sqs]
+            [cxengage-javascript-sdk.next.messaging :as messaging]
+            [cxengage-javascript-sdk.next.voice :as voice]
             [cxengage-javascript-sdk.next.errors :as e]
-            [cxengage-javascript-sdk.internal-utils :as iu]))
+            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-cljs-utils.core :as u]
+            [cxengage-javascript-sdk.interaction-management :as int]))
 
 (defn register-module [module]
-  (let [{:keys [api topics module-name]} module
-        cxengage (aget js/window "serenova" "cxengage")
-        new-topics (into (js->clj (aget cxengage "topics"))
-                         (map #(str "cxengage/" (name module-name) "/" %) topics))
-        new-api (merge (js->clj (aget cxengage "api")) {module-name api})]
-    (js/console.log (str "Registering " (name module-name) " module"))
-    (aset cxengage "topics" (clj->js new-topics))
-    (aset cxengage "api" (clj->js (transform-keys k/->camelCase new-api)))))
+  (let [{:keys [api module-name]} module
+        old-api (iu/kebabify (aget js/window "serenova" "cxengage" "api"))
+        new-api (iu/deep-merge old-api api)]
+    (when api
+      (aset js/window "serenova" "cxengage" "api" (->> new-api (transform-keys k/->camelCase) (clj->js))))))
 
 (defn start-external-module [module]
   (.start module (clj->js (state/get-config))))
@@ -29,20 +33,35 @@
 (defn start-internal-module [module]
   (pr/start module))
 
-(defn gen-new-initial-module-config []
-  {:config (state/get-config) :state (atom {})})
+(defn gen-new-initial-module-config [comm<]
+  {:config (state/get-config) :state (atom {}) :core-messages< comm<})
 
-(defn start-required-modules []
-  (let [auth-module (authentication/map->Module. (gen-new-initial-module-config))
-        session-module (session/map->Module. (gen-new-initial-module-config))]
-    (doseq [module [auth-module session-module]]
+(defn start-base-modules [comm<]
+  (let [auth-module (authentication/map->AuthenticationModule. (gen-new-initial-module-config comm<))
+        session-module (session/map->SessionModule. (gen-new-initial-module-config comm<))
+        interaction-module (interaction/map->InteractionModule. (gen-new-initial-module-config comm<))
+        voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))
+        entities-module (entities/map->EntitiesModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [auth-module session-module interaction-module voice-module entities-module]]
       (start-internal-module module))))
+
+(defn start-session-dependant-modules [comm<]
+  (let [sqs-module (sqs/map->SQSModule. (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/sqs-msg-router))
+        messaging-module (messaging/map->MessagingModule (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/messaging-msg-router))]
+    (doseq [module [sqs-module messaging-module]]
+      (start-internal-module module))))
+
+(defn route-module-message [comm< m]
+  (case m
+    :config-ready (start-session-dependant-modules comm<)
+    nil))
 
 (s/def ::base-url string?)
 (s/def ::consumer-type #{:js :cljs})
+(s/def ::environment #{"dev" "qe" "staging" "prod"})
 (s/def ::log-level #{"debug" "info" "warn" "error" "fatal" "off"})
 (s/def ::initialize-options
-  (s/keys :req-un [::base-url]
+  (s/keys :req-un [::base-url ::environment]
           :opt-un [::consumer-type ::log-level]))
 
 (defn ^:export initialize
@@ -52,18 +71,21 @@
    (let [options (iu/extract-params options)]
      (if-not (s/valid? ::initialize-options options)
        (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
-       (let [log-level (or (:log-level options) :info)
+       (let [{:keys [log-level consumer-tyoe base-url environment]} options
+             log-level (or (:log-level options) :info)
              consumer-type (or (:consumer-type options) :js)
-             base-api-url (get options :base-url)
-             core {:topics []
-                   :api {:subscribe pu/subscribe
-                         :publish pu/publish}
-                   :modules {:register register-module
-                             :start start-external-module}}]
-         (state/set-base-api-url! base-api-url)
+             environment (keyword environment)
+             core (iu/camelify {:api {:subscribe pu/subscribe
+                                      :publish pu/publish}
+                                :modules {:register register-module
+                                          :start start-external-module}})
+             _ (js/console.info "CAMEL" core)
+             module-comm-chan (a/chan 1024)]
+         (state/set-base-api-url! base-url)
          (state/set-consumer-type! consumer-type)
          (state/set-log-level! log-level)
-         (-> (aset js/window "serenova" #js {})
-             (aset "cxengage" (clj->js (transform-keys k/->camelCase core))))
-         (start-required-modules)
+         (state/set-env! environment)
+         (aset js/window "serenova" #js {"cxengage" core})
+         (start-base-modules module-comm-chan)
+         (u/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
          (aget js/window "serenova"))))))

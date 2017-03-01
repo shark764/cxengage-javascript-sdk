@@ -33,7 +33,7 @@
              logLevel (or (keyword logLevel) :debug)
              env (or (keyword env) :prod)
              core-chan (a/chan)
-             publication (mg/start-modules terseLogs logLevel intmgmt/twilio-msg-router intmgmt/mqtt-msg-router intmgmt/sqs-msg-router)]
+             publication (mg/start-modules terseLogs logLevel intmgmt/twilio-msg-router intmgmt/messaging-msg-router intmgmt/sqs-msg-router)]
          (state/set-consumer-type! (or cljs :js))
          (state/set-blast-sqs-output! (or blastSqsOutput false))
          (state/set-base-api-url! baseUrl)
