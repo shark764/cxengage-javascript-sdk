@@ -14,8 +14,13 @@
   (s/keys :req-un []
           :opt-un [:specs/callback]))
 
+(s/def ::entity-sub-id (s/and string? ::not-empty-string))
 (s/def ::not-empty-string #(not= 0 (.-length %)))
 (s/def ::entity-id (s/and string? ::not-empty-string))
+(s/def ::get-sub-entity-params
+  (s/keys :req-un [::entity-id ::entity-sub-id]
+          :opt-un [:specs/callback]))
+
 (s/def ::get-single-entity-params
   (s/keys :req-un [::entity-id]
           :opt-un [:specs/callback]))
@@ -46,11 +51,10 @@
                                        api-url
                                        params)}]
          (go (let [entity-get-response (a/<! (iu/api-request entity-get-request))
-                   {:keys [status api-response]} entity-get-response
-                   {:keys [result]} api-response]
+                   {:keys [status api-response]} entity-get-response]
                (if (not= status 200)
                  (publish-fn (e/api-error api-response))
-                 (publish-fn result))))
+                 (publish-fn api-response))))
         nil)))))
 
 (s/def ::put-entity-params
@@ -84,25 +88,35 @@
                                        api-url
                                        params)}]
          (go (let [entity-get-response (a/<! (iu/api-request entity-get-request))
-                   {:keys [status api-response]} entity-get-response
-                   {:keys [result]} api-response]
+                   {:keys [status api-response]} entity-get-response]
                (if (not= status 200)
                  (publish-fn (e/api-error api-response))
-                 (publish-fn result))))
+                 (publish-fn api-response))))
         nil)))))
 
 (def initial-state
   {:module-name :entities
    :urls {:user "tenants/tenant-id/users/entity-id"
-          :users "tenants/tenant-id/users"}})
+          :users "tenants/tenant-id/users"
+          :capacity "tenants/tenant-id/users/entity-id/realtime-statistics/capacity"
+          :available-stats "tenants/tenant-id/realtime-statistics/available?client=toolbar"
+          :contact-history "tenants/tenant-id/contacts/entity-id/interactions"
+          :contact-interaction "tenants/tenant-id/interactions/entity-id"}})
 
-(defrecord EntitiesModule [config state]
+(defrecord EntitiesModule [config state core-messages<]
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")]
-      (register {:api {:get-users (partial get-entity this :users ::get-all-entity-params)
-                       :get-user (partial get-entity this :user ::get-single-entity-params)
-                       :update-user (partial put-entity this :user)}
-                 :module-name (get @(:state this) :module-name)})))
+    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
+          module-name (get @(:state this) :module-name)]
+      (register {:api {module-name {:get-users (partial get-entity this :users ::get-all-entity-params)
+                                    :get-user (partial get-entity this :user ::get-single-entity-params)
+                                    :update-user (partial put-entity this :user)}
+                       :reporting  {:get-capacity (partial get-entity this :capacity ::get-single-entity-params)
+                                    :get-available-stats (partial get-entity this :available-stats ::get-all-entity-params)
+                                    :get-contact-history (partial get-entity this :contact-history ::get-single-entity-params)
+                                    :get-contact-interaction (partial get-entity this :contact-interaction ::get-single-entity-params)}}
+                 :module-name module-name})
+      (a/put! core-messages< {:module-registration-status :success :module module-name})
+      (js/console.info "<----- Started " module-name " module! ----->")))
   (stop [this]))

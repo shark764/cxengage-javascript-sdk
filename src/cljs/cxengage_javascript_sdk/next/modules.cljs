@@ -10,6 +10,7 @@
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.next.authentication :as authentication]
             [cxengage-javascript-sdk.next.entities :as entities]
+            [cxengage-javascript-sdk.next.reporting :as reporting]
             [cxengage-javascript-sdk.next.session :as session]
             [cxengage-javascript-sdk.next.contacts :as contacts]
             [cxengage-javascript-sdk.next.interaction :as interaction]
@@ -43,8 +44,9 @@
         interaction-module (interaction/map->InteractionModule. (gen-new-initial-module-config comm<))
         voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))
         entities-module (entities/map->EntitiesModule. (gen-new-initial-module-config comm<))
-        contacts-module (contacts/map->ContactsModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [auth-module session-module interaction-module voice-module entities-module contacts-module]]
+        contacts-module (contacts/map->ContactsModule. (gen-new-initial-module-config comm<))
+        reporting-module (reporting/map->ReportingModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [auth-module session-module interaction-module voice-module entities-module contacts-module reporting-module]]
       (start-internal-module module))))
 
 (defn start-session-dependant-modules [comm<]
