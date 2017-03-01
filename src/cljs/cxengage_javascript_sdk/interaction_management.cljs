@@ -148,6 +148,12 @@
     (p/publish "cxengage/voice/transfer-connected" {:interaction-id interaction-id
                                                     :resource-id resource-id})))
 
+(defn handle-script-received [message]
+  (let [{:keys [interaction-id resource-id script]} message]
+    (state/add-script-to-interaction! interaction-id script)
+    (p/publish "cxengage/interactions/script-received" {:interaction-id interaction-id
+                                                        :resource-id resource-id
+                                                        :script script})))
 (defn handle-generic [message]
   nil)
 
@@ -182,6 +188,7 @@
                       :INTERACTIONS/RECORDING_START_RECEIVED handle-recording-start
                       :INTERACTIONS/RECORDING_STOP_RECEIVED handle-recording-stop
                       :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED handle-transfer-connected
+                      :INTERACTIONS/SCRIPT_RECEIVED handle-script-received
                       :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
                       :SESSION/START_SESSION_RESPONSE handle-session-start
                       nil)]
@@ -238,6 +245,7 @@
         inferred-msg (case (:type cljsd-msg)
                        "resource-state-change" (merge {:sdk-msg-type :SESSION/CHANGE_STATE_RESPONSE} cljsd-msg)
                        "work-offer" (merge {:sdk-msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
+                       "send-script" (merge {:sdk-msg-type :INTERACTIONS/SCRIPT_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (if (not= (state/get-session-id) session-id)
