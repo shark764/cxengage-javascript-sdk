@@ -1,11 +1,11 @@
 ## Change Summary ##
-**JIRA Reference** [CXV1-<JIRA-NUMBER-HERE>](https://liveops.atlassian.net/browse/CXV1-<JIRA-NUMBER-HERE>)
+**JIRA Reference** [CXV1-{{JIRA-NUMBER-HERE}}](https://liveops.atlassian.net/browse/CXV1-{{JIRA-NUMBER-HERE}})
 
 ## Pull request checklist ##
 
 | Completed |       N/A      |                                                                                                  |
 |:---------:|:--------------:|--------------------------------------------------------------------------------------------------|
-|    [ ]    |       [ ]      | Update changelog with relevant information ("added", "removed", "fixed", "changed", "refactored" |
-|    [ ]    |       [ ]      | Updated to the correct version in `./package.json`. See [semver](http://semver.org)              |
-|    [ ]    |       [ ]      | Wrote / updated applicable unit tests                                                            |
-|    [ ]    |       [ ]      | Clean up the commit log (good messages, no needless commits)                                     |
+|    <ul><li>[x] </li></ul>    |       <ul><li>[x] </li></ul>      | Update changelog with relevant information ("added", "removed", "fixed", "changed", "refactored", etc) |
+|    <ul><li>[x] </li></ul>    |       <ul><li>[x] </li></ul>      | Updated to the correct version in [`./package.json`](https://github.com/liveops/cxengage-javascript-sdk/blob/master/package.json)              |
+|    <ul><li>[x] </li></ul>    |       <ul><li>[x] </li></ul>      | Wrote / updated applicable unit tests                                                            |
+|    <ul><li>[x] </li></ul>    |       <ul><li>[x] </li></ul>      | Clean up the commit log (good messages, no needless commits)                                     |
