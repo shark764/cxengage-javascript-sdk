@@ -137,7 +137,7 @@
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
                                       (log :error "Mqtt Connection Lost" {:reasonCode reason-code
-                                                                                :reasonMessage reason-message})))
+                                                                          :reasonMessage reason-message})))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
     (set! (.-onSuccess connect-options) (fn [] (on-connect done-init<)))
@@ -215,6 +215,44 @@
          (send-message-impl payload mqtt-topic callback)))
      nil)))
 
+(defn get-transcript [interaction-id tenant-id artifact-id callback]
+  (go (let [transcript (a/<! (iu/get-artifact tenant-id interaction-id artifact-id))
+            {:keys [api-response status]} transcript]
+        (if-not (= status 200)
+          (p/publish {:topics (p/get-topic :transcript-response)
+                      :response (e/api-error "api returned error")
+                      :callback callback})
+          (p/publish {:topics (p/get-topic :transcript-response)
+                      :response api-response
+                      :callback callback})))))
+
+(defn get-transcripts
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (get-transcripts module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [params (iu/extract-params params)
+         {:keys [interaction-id callback]} params]
+     (go (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))
+               {:keys [api-response status]} interaction-files
+               {:keys [results]} api-response
+               tenant-id (state/get-active-tenant-id)
+               transcripts (filterv #(= (:artifact-type %) "messaging-transcript") results)]
+           (if-not (= status 200)
+             (p/publish {:topics (p/get-topic :transcript-response)
+                         :response (e/api-error "api returned error")
+                         :callback callback})
+             (if (= (count transcripts) 0)
+               (p/publish {:topics (p/get-topic :transcript-response)
+                           :response []
+                           :callback callback})
+               (doseq [t transcripts]
+                 (get-transcript interaction-id tenant-id (:artifact-id t) callback))))))
+     nil)))
+
+
 (def initial-state
   {:module-name :messaging
    :urls {}})
@@ -235,7 +273,8 @@
         (a/put! core-messages< {:module-registration-status :failure
                                 :module module-name})
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
-            (register {:api {:interactions {:messaging {:send-message (partial send-message this)}}}
+            (register {:api {:interactions {:messaging {:send-message (partial send-message this)
+                                                        :get-transcripts (partial get-transcripts this)}}}
                        :module-name module-name})
             (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))))
   (stop [this]))

@@ -99,10 +99,10 @@
        (p/publish {:topic (:topic interrupt-params)
                    :error (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params))
                    :callback callback})
-       (do (when (or (= type :transfer-to-resource)
-                     (= type :transfer-to-queue)
-                     (= type :transfer-to-extension))
-             (send-interrupt module :hold {:interaction-id interaction-id}))
+       (do #_(when (or (= type :transfer-to-resource)
+                       (= type :transfer-to-queue)
+                       (= type :transfer-to-extension))
+               (send-interrupt module :hold {:interaction-id interaction-id}))
            (iu/send-interrupt* module (assoc interrupt-params
                                              :interaction-id interaction-id
                                              :callback callback)))))))
@@ -221,6 +221,43 @@
                              :callback callback}))
              (catch js/Object e (str "Caught: Invalid Dial-Tone Multiple Frequency signal: " e)))))))))
 
+(defn get-recording [interaction-id tenant-id artifact-id callback]
+  (go (let [audio-recording (a/<! (iu/get-artifact tenant-id interaction-id artifact-id))
+            {:keys [api-response status]} audio-recording]
+        (if-not (= status 200)
+          (p/publish {:topics (p/get-topic :recording-response)
+                      :response (e/api-error "api returned error")
+                      :callback callback})
+          (p/publish {:topics (p/get-topic :recording-response)
+                      :response api-response
+                      :callback callback})))))
+
+(defn get-recordings
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (get-recordings module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [params (iu/extract-params params)
+         {:keys [interaction-id callback]} params]
+     (go (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))
+               {:keys [api-response status]} interaction-files
+               {:keys [results]} api-response
+               tenant-id (state/get-active-tenant-id)
+               audio-recordings (filterv #(= (:artifact-type %) "audio-recording") results)]
+           (if-not (= status 200)
+             (p/publish {:topics (p/get-topic :recording-response)
+                         :response (e/api-error "api returned error")
+                         :callback callback})
+             (if (= (count audio-recordings) 0)
+               (p/publish {:topics (p/get-topic :recording-response)
+                           :response []
+                           :callback callback})
+               (doseq [rec audio-recordings]
+                 (get-recording interaction-id tenant-id (:artifact-id rec) callback))))))
+     nil)))
+
 (def initial-state
   {:module-name :voice})
 
@@ -246,6 +283,7 @@
                                                     :transferToExtension (partial send-interrupt this :transfer-to-extension)
                                                     :cancel-transfer (partial send-interrupt this :cancel-transfer)
                                                     :dial (partial dial this)
-                                                    :send-digits (partial send-digits this)}}}
+                                                    :send-digits (partial send-digits this)
+                                                    :get-recordings (partial get-recordings this)}}}
                        :module-name module-name})))))
   (stop [this]))

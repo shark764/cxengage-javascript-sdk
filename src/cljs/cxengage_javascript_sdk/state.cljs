@@ -164,6 +164,21 @@
   (let [interaction-location (find-interaction-location interaction-id)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact] artifact-data)))
 
+(defn add-email-reply-details-to-interaction [email-reply-details]
+  (let [{:keys [interaction-id]} email-reply-details
+        interaction-location (find-interaction-location interaction-id)]
+   (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-reply-details] email-reply-details)))
+
+(defn get-all-email-attachments [interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (get-in @sdk-state assoc-in [:interactions interaction-location interaction-id :email-reply-details :attachments])))
+
+(defn add-attachment-details-to-interaction [interaction-id attachment-details]
+  (let [interaction-location (find-interaction-location interaction-id)
+        all-current-attachments (get-all-email-attachments interaction-id)
+        new-attachments (conj all-current-attachments attachment-details)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-reply-details :attachments] new-attachments)))
+
 ;;;;;;;;;;;
 ;; Auth
 ;;;;;;;;;;;
