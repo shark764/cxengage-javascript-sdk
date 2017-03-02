@@ -6,7 +6,7 @@
             [cljs-uuid-utils.core :as uuid]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.modules.modules :as m]
+            [cxengage-javascript-sdk.core :as m]
             [cljs.test :refer-macros [deftest is testing run-tests async use-fixtures]]))
 
 (deftest contact-request
