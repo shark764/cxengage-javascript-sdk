@@ -1,11 +1,11 @@
-(ns cxengage-javascript-sdk.next.entities
+(ns cxengage-javascript-sdk.modules.entities
   (:require-macros [lumbajack.macros :refer [log]]
                    [cljs.core.async.macros :refer [go]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.next.protocols :as pr]
-            [cxengage-javascript-sdk.next.errors :as e]
-            [cxengage-javascript-sdk.next.pubsub :as p]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]))
@@ -109,9 +109,13 @@
     (reset! (:state this) initial-state)
     (let [register (aget js/window "serenova" "cxengage" "modules" "register")
           module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:get-users (partial get-entity this :users ::get-all-entity-params)
-                                    :get-user (partial get-entity this :user ::get-single-entity-params)
-                                    :update-user (partial put-entity this :user)}
+      (register {:api {module-name {:get {:users (partial get-entity this :users ::get-all-entity-params)
+                                          :user (partial get-entity this :user ::get-single-entity-params)
+                                          :queues (partial get-entity this :queues ::get-all-entity-params)
+                                          :queue (partial get-entity this :queue ::get-single-entity-params)
+                                          :transfer-lists (partial get-entity this :transfer-lists ::get-all-entity-params)
+                                          :transfer-list (partial get-entity this :transfer-lists ::get-single-entity-params)}
+                                    :update {:user (partial put-entity this :user)}}
                        :reporting  {:get-capacity (partial get-entity this :capacity ::get-single-entity-params)
                                     :get-available-stats (partial get-entity this :available-stats ::get-all-entity-params)
                                     :get-contact-history (partial get-entity this :contact-history ::get-single-entity-params)

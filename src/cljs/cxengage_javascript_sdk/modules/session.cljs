@@ -1,11 +1,11 @@
-(ns cxengage-javascript-sdk.next.session
+(ns cxengage-javascript-sdk.modules.session
   (:require-macros [lumbajack.macros :refer [log]]
                    [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.next.protocols :as pr]
-            [cxengage-javascript-sdk.next.errors :as e]
-            [cxengage-javascript-sdk.next.pubsub :as p]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]))
@@ -81,7 +81,7 @@
                            (= state "offline") ::go-offline-params
                            :else ::go-ready-params)]
      (if (not (s/valid? validation-spec params))
-       (change-state-publish-fn (s/explain-data validation-spec params))
+       (change-state-publish-fn (e/invalid-args-error (s/explain-data validation-spec params)))
        (do #_(when (and (= state "ready")
                         extension-id
                         (not= active-extension-id extension-id))
@@ -164,7 +164,7 @@
   (s/keys :req-un [::tenant-id]
           :opt-un [:specs/callback]))
 
-(def required-permissions
+(def required-desktop-permissions
   #{"CONTACTS_CREATE"
     "CONTACTS_UPDATE"
     "CONTACTS_READ"
@@ -172,6 +172,44 @@
     "CONTACTS_LAYOUTS_READ"
     "CONTACTS_ASSIGN_INTERACTION"
     "CONTACTS_INTERACTION_HISTORY_READ"})
+
+(s/def ::set-direction-params
+  (s/keys :req-un [::specs/direction]
+          :opt-un [::specs/callback]))
+
+(defn set-direction
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (set-direction module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [params (iu/extract-params params)
+         {:keys [direction callback]} params
+         set-direction-publish-fn (fn [r] (p/publish "session/direction-set" r callback))
+         api-url (get-in module [:config :api-url])
+         tenant-id (state/get-active-tenant-id)
+         resource-id (state/get-active-user-id)
+         session-id (state/get-session-id)
+         direction-url (str api-url "tenants/tenant-id/presence/resource-id/direction")
+         direction-body {:session-id session-id
+                         :direction direction
+                         :initiator-id resource-id}
+         direction-request {:method :post
+                            :url (iu/build-api-url-with-params
+                                  direction-url
+                                  {:tenant-id tenant-id
+                                   :resource-id resource-id})
+                            :body direction-body}]
+     (if-not (s/valid? ::set-direction-params params)
+       (set-direction-publish-fn (e/invalid-args-error (s/explain-data ::dial-params params)))
+       (do (go (let [set-direction-response (a/<! (iu/api-request direction-request))
+                     {:keys [status api-response]} set-direction-response
+                     {:keys [result]} api-response]
+                 (if (not= status 200)
+                   (set-direction-publish-fn (e/api-error "api error"))
+                   (set-direction-publish-fn (select-keys result [:session-id])))))
+           nil)))))
 
 (defn set-active-tenant
   ([module] (e/wrong-number-of-args-error))
@@ -189,7 +227,7 @@
                       (not (s/valid? ::set-active-tenant-params params))
                       (e/invalid-args-error (s/explain-data ::set-active-tenant-params params))
 
-                      (not (state/has-permissions? tenant-permissions required-permissions))
+                      (not (state/has-permissions? tenant-permissions required-desktop-permissions))
                       (e/missing-required-permissions-error)
 
                       :else false)]
@@ -217,7 +255,8 @@
       (register {:api {module-name {:set-active-tenant (partial set-active-tenant this)
                                     :go-ready (partial change-presence-state this "ready")
                                     :go-not-ready (partial change-presence-state this "notready")
-                                    :go-offline (partial change-presence-state this "offline")}}
+                                    :go-offline (partial change-presence-state this "offline")
+                                    :set-direction (partial set-direction this)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success :module module-name})
       (js/console.info "<----- Started " module-name " module! ----->")))

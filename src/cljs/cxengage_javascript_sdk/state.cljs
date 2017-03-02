@@ -2,7 +2,8 @@
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [lumbajack.core]
             [cljs.core.async :as a]
-            [cljs.spec :as s]))
+            [cljs.spec :as s]
+            [cljs-uuid-utils.core :as id]))
 
 (def initial-state {:authentication {}
                     :user {}
@@ -20,7 +21,7 @@
   (reset! sdk-state initial-state))
 
 (defn get-state []
-  sdk-state)
+  @sdk-state)
 
 (defn set-base-api-url! [url]
   (swap! sdk-state assoc-in [:config :api-url] url))
@@ -92,9 +93,10 @@
         {:keys [channel-type messaging-metadata]} interaction
         {:keys [customer-name]} messaging-metadata
         payload (cond
-                  (= channel-type "sms") (assoc-in msg [:payload :from] (str "+" from))
+                  (and (= channel-type "sms")
+                       (nil? (id/valid-uuid? from))) (assoc-in msg [:payload :from] (str "+" from))
                   (= channel-type "messaging") (assoc-in msg [:payload :from] customer-name)
-                  :else (do (js/console.error "error augmenting payload") nil))]
+                  :else msg)]
     payload))
 
 (defn add-messages-to-history! [interaction-id messages]

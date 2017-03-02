@@ -1,67 +1,66 @@
 (ns cxengage-javascript-sdk.modules.reporting
-  (:require-macros [cljs.core.async.macros :refer [go-loop go]]
-                   [lumbajack.macros :refer [log]])
-  (:require [cljs.core.async :as a]
-            [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.pubsub :as p :refer [sdk-response sdk-error-response]]
-            [cxengage-cljs-utils.core :as u]))
+  (:require-macros [lumbajack.macros :refer [log]]
+                   [cljs.core.async.macros :refer [go go-loop]])
+  (:require [cljs.spec :as s]
+            [cljs.core.async :as a]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.state :as st]
+            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.domain.specs :as specs]))
 
-(def module-state (atom {}))
+(s/def ::polling-params
+  (s/keys :req-un []
+          :opt-un [:specs/callback]))
 
-(defn start-polling [response-chan message]
-  (log :debug "Starting reporting polls...")
-  (let [{:keys [tenant-id token stats interval]} message
-        reporting-req-map {:method :post
-                           :body {:requests stats}
-                           :url (str (state/get-base-api-url) "/tenants/" tenant-id "/realtime-statistics/batch")
-                           :token token}]
-    (go-loop [next-batch-resp-chan (a/promise-chan)]
-      (u/api-request (merge reporting-req-map {:resp-chan next-batch-resp-chan}))
-      (let [{:keys [results]} (a/<! next-batch-resp-chan)]
-        (sdk-response "cxengage/reporting/polling-response" results)
-        (a/<! (a/timeout (or interval 3000)))
-        (recur (a/promise-chan))))))
+(defn start-polling
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (first others))
+     (e/wrong-number-of-args-error)
+     (start-polling module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [params (iu/extract-params params)
+         module-state @(:state module)
+         api-url (get-in module [:config :api-url])
+         {:keys [stats interval callback]} params
+         tenant-id (st/get-active-tenant-id)
+         params (merge params {:tenant-id tenant-id})
+         publish-fn (fn [r] (p/publish (str "reporting/polling-response") r callback))]
+     (if (not (s/valid? ::polling-params params))
+       (publish-fn (e/invalid-args-error (s/explain-data ::polling-params params)))
+       (let [api-url (str api-url (get-in module-state [:urls :batch]))
+             polling-request {:method :post
+                                 :body {:requests stats}
+                                 :url (iu/build-api-url-with-params
+                                       api-url
+                                       params)}]
+         (go-loop []
+           (let [{:keys [api-response status]} (a/<! (iu/api-request polling-request))
+                 {:keys [results]} api-response
+                 next-polling-delay (or interval 3000)]
+             (if (not= status 200)
+               (do (js/console.error "Batch request failed.")
+                   (publish-fn (e/api-error api-response)))
+               (do (js/console.info "Batch request received!")
+                   (publish-fn results)
+                   (a/<! (a/timeout next-polling-delay))
+                   (recur))))
+          nil))))))
 
-(defn check-capacity
-  [response-chan message]
-  (let [{:keys [token resp-chan tenant-id resource-id]} message
-        request-map {:method :get
-                     :url (str (state/get-base-api-url) "/tenants/" tenant-id "/users/" resource-id "/realtime-statistics/resource-capacity")
-                     :token token
-                     :resp-chan resp-chan}]
-    (u/api-request request-map)
-    (go (let [result (a/<! response-chan)]
-          (a/put! resp-chan result)))))
+(def initial-state
+  {:module-name :reporting
+   :urls {:batch "tenants/tenant-id/realtime-statistics/batch"}})
 
-(defn available-stats
-  [response-chan message]
-  (let [{:keys [token resp-chan tenant-id user-id]} message
-        request-map {:method :get
-                     :url (str (state/get-base-api-url) "/tenants/" tenant-id "/realtime-statistics/available?client=toolbar")
-                     :token token
-                     :resp-chan resp-chan}]
-    (u/api-request request-map)
-    (go (let [result (a/<! response-chan)]
-          (a/put! resp-chan result)))))
-
-(defn module-router [message]
-  (let [handling-fn (case (:type message)
-                      :REPORTING/START_POLLING (partial start-polling (a/promise-chan))
-                      :REPORTING/CHECK_CAPACITY (partial check-capacity (a/promise-chan))
-                      :REPORTING/AVAILABLE_STATS (partial available-stats (a/promise-chan))
-                      nil)]
-    (if handling-fn
-      (handling-fn message)
-      (log :error "No appropriate handler found in Reporting SDK module." (:type message)))))
-
-(defn module-shutdown-handler [message]
-  (log :info "Received shutdown message from Core - Reporting Module shutting down...."))
-
-(defn init []
-  (log :debug "Initializing SDK module: Reporting")
-  (let [module-inputs< (a/chan 1024)
-        module-shutdown< (a/chan 1024)]
-    (u/start-simple-consumer! module-inputs< module-router)
-    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
-    {:messages module-inputs<
-     :shutdown module-shutdown<}))
+(defrecord ReportingModule [config state core-messages<]
+  pr/SDKModule
+  (start [this]
+    (reset! (:state this) initial-state)
+    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
+          module-name (get @(:state this) :module-name)]
+      (register {:api {module-name {:start-polling (partial start-polling this)}}
+                 :module-name module-name})
+      (a/put! core-messages< {:module-registration-status :success :module module-name})
+      (js/console.info "<----- Started " module-name " module! ----->")))
+  (stop [this]))
