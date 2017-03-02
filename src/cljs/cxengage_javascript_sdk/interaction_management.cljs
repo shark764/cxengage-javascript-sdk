@@ -3,26 +3,35 @@
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.api.interactions :as int]
-            [cxengage-javascript-sdk.module-gateway :as mg]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.pubsub :as pubsub :refer [sdk-response sdk-error-response]]
             [cxengage-javascript-sdk.domain.errors :as err]
-            [cxengage-javascript-sdk.next.pubsub :as p]
-            [cxengage-javascript-sdk.next.errors :as e]
-            [cxengage-javascript-sdk.next.messaging :as messaging]))
+            [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.modules.messaging :as messaging]))
 
 ;; TODO: make these better? in a module
 
 (defn get-messaging-history [tenant-id interaction-id]
   (let [history-request {:method :get
                          :url (str (state/get-base-api-url) "messaging/tenants/" tenant-id "/channels/" interaction-id "/history")}]
-    (iu/api-request history-request)))
+    (go (let [history-response (a/<! (iu/api-request history-request))
+              {:keys [api-response status]} history-response
+              {:keys [result]} api-response]
+          (if (not= status 200)
+            (e/api-error result)
+            (do (state/add-messages-to-history! interaction-id result)
+                (p/publish "cxengage/messaging/history" (state/get-interaction-messaging-history interaction-id))))))))
 
 (defn get-messaging-metadata [tenant-id interaction-id]
   (let [metadata-request {:method :get
                           :url (str (state/get-base-api-url) "messaging/tenants/" tenant-id "/channels/" interaction-id)}]
-    (iu/api-request metadata-request)))
+    (go (let [metadata-response (a/<! (iu/api-request metadata-request))
+              {:keys [api-response status]} metadata-response
+              {:keys [result]} api-response]
+          (if (not= status 200)
+            (e/api-error result)
+            (do (state/add-messaging-interaction-metadata! result)
+                (get-messaging-history tenant-id interaction-id)))))))
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
@@ -30,19 +39,7 @@
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
       (let [{:keys [tenant-id interaction-id]} message]
-        (go (let [metadata-response (a/<! (get-messaging-metadata tenant-id interaction-id))
-                  {:keys [api-response status]} metadata-response
-                  {:keys [result]} api-response]
-              (if (not= status 200)
-                (e/api-error result)
-                (do (state/add-messaging-interaction-metadata! result)
-                    (let [history-response (a/<! (get-messaging-history tenant-id interaction-id))
-                          {:keys [api-response status]} history-response
-                          {:keys [result]} api-response]
-                      (if (not= status 200)
-                        (e/api-error result)
-                        (do (state/add-messages-to-history! interaction-id result)
-                            (p/publish "cxengage/messaging/history" (state/get-interaction-messaging-history interaction-id))))))))))))
+        (get-messaging-metadata tenant-id interaction-id))))
   (p/publish "cxengage/interactions/work-offer" message)
   nil)
 
@@ -53,7 +50,7 @@
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (p/publish "cxengage/messaging/new-message-received" (:payload (state/augment-messaging-payload {:payload payload})))
+    (p/publish "cxengage/messaging/new-message-received" (state/augment-messaging-payload {:payload payload}))
     (state/add-messages-to-history! interaction-id [{:payload payload}])))
 
 (defn handle-resource-state-change [message]

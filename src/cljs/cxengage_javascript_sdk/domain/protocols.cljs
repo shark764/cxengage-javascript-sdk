@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.next.protocols)
+(ns cxengage-javascript-sdk.domain.protocols)
 
 (defprotocol SDKModule
   (start [this] "")

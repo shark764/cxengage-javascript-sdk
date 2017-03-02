@@ -4,7 +4,7 @@
   (:require [cljs.core.async :as a]
             [goog.crypt :as c]
             [ajax.core :as ajax]
-            [cxengage-javascript-sdk.next.errors :as e]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.state :as state]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]])
@@ -57,7 +57,7 @@
                         :format (ajax/json-request-format)
                         :response-format (ajax/json-response-format {:keywords? true})}
                        (when body
-                         {:params body})
+                         {:params (camelify body)})
                        (when-let [token (state/get-token)]
                          {:headers {"Authorization" (str "Token " token)}}))]
     (ajax/ajax-request request)
@@ -88,7 +88,7 @@
  ([module params]
   (let [params (extract-params params)
         module-state @(:state module)
-        {:keys [interaction-id interrupt-type interrupt-body publish-fn]} params
+        {:keys [interaction-id interrupt-type interrupt-body publish-fn on-confirm-fn]} params
         tenant-id (state/get-active-tenant-id)
         interrupt-request {:method :post
                            :body {:source "client"
@@ -99,7 +99,8 @@
                   {:keys [api-response status]} interrupt-response]
               (if (not= status 200)
                 (publish-fn (e/api-error api-response))
-                (publish-fn {:interacton-id interaction-id}))))
+                (do (publish-fn {:interacton-id interaction-id})
+                    (when on-confirm-fn (on-confirm-fn))))))
         nil))))
 
 ;;;;;;;;;;;;;;;

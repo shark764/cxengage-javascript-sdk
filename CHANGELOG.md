@@ -1,10 +1,14 @@
 # Change Log
 
 ## [Unreleased]
+* refactored all modules in accordance with new module system
+* refactored many public-facing responses & pubsub topics
 * added send-script sqs listener
-* refactored contacts module in accordance with new module system
+* added interaction-focus & interaction-unfocus fns
 * added twilio init missing-required-integration error
 * added ability to publish to multiple topics at once
+* added get-all contacts fn
+
 
 ## [1.4.2]
 * update lumbajack dep to fix compilation bug
