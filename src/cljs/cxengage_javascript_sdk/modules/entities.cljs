@@ -122,5 +122,5 @@
                                     :get-contact-interaction (partial get-entity this :contact-interaction ::get-single-entity-params)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (js/console.info "<----- Started " module-name " module! ----->")))
+      (js/console.info "<----- Started " (name module-name) " module! ----->")))
   (stop [this]))

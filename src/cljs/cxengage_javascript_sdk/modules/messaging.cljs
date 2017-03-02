@@ -229,5 +229,5 @@
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
             (register {:api {:interactions {:messaging {:send-message (partial send-message this)}}}
                        :module-name module-name})
-            (js/console.info "<----- Started " module-name " module! ----->")))))
+            (js/console.info "<----- Started " (name module-name) " module! ----->")))))
   (stop [this]))

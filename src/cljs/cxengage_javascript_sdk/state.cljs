@@ -23,6 +23,9 @@
 (defn get-state []
   @sdk-state)
 
+(defn get-state-js []
+  (clj->js @sdk-state))
+
 (defn set-base-api-url! [url]
   (swap! sdk-state assoc-in [:config :api-url] url))
 

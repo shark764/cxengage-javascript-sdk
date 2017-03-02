@@ -61,35 +61,38 @@
     nil))
 
 (s/def ::base-url string?)
-(s/def ::consumer-type #{:js :cljs})
-(s/def ::environment #{"dev" "qe" "staging" "prod"})
-(s/def ::log-level #{"debug" "info" "warn" "error" "fatal" "off"})
+(s/def ::type #{:js :cljs})
+(s/def ::environment #{:dev :qe :staging :prod})
+(s/def ::log-level #{:debug :info :warn :error :fatal :off})
 (s/def ::initialize-options
-  (s/keys :req-un [::base-url ::environment]
-          :opt-un [::consumer-type ::log-level]))
+  (s/keys :req-un [::base-url]
+          :opt-un [::type ::log-level ::environment]))
 
-(defn ^:export initialize
+(defn initialize
   ([] (clj->js (e/wrong-number-of-args-error)))
   ([options & rest] (clj->js (e/wrong-number-of-args-error)))
   ([options]
-   (let [options (iu/extract-params options)]
+   (let [options (-> options
+                  (iu/extract-params)
+                  (assoc :type (keyword (or (:type options) :js)))
+                  (assoc :log-level (keyword (or (:log-level options) :info)))
+                  (assoc :environment (keyword (or (:environment options) :dev))))]
      (if-not (s/valid? ::initialize-options options)
        (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
-       (let [{:keys [log-level consumer-tyoe base-url environment]} options
-             log-level (or (:log-level options) :info)
-             consumer-type (or (:consumer-type options) :js)
-             environment (keyword environment)
+       (let [{:keys [log-level type base-url environment]} options
              core (iu/camelify {:api {:subscribe pu/subscribe
-                                      :publish pu/publish}
+                                      :publish pu/publish
+                                      :dump-state state/get-state-js}
                                 :modules {:register register-module
                                           :start start-external-module}})
-             _ (js/console.info "CAMEL" core)
              module-comm-chan (a/chan 1024)]
          (state/set-base-api-url! base-url)
-         (state/set-consumer-type! consumer-type)
+         (state/set-consumer-type! type)
          (state/set-log-level! log-level)
          (state/set-env! environment)
          (aset js/window "serenova" #js {"cxengage" core})
          (start-base-modules module-comm-chan)
          (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
-         (aget js/window "serenova"))))))
+         (if (= type :cljs)
+           (kebabify (aget js/window "serenova"))
+           (aget js/window "serenova")))))))

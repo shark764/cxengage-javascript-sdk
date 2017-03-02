@@ -197,5 +197,5 @@
                                                     :cancel-transfer (partial send-interrupt this :cancel-transfer)
                                                     :dial (partial dial this)}}}
                        :module-name module-name})
-            (js/console.info "<----- Started " module-name " module! ----->")))))
+            (js/console.info "<----- Started " (name module-name) " module! ----->")))))
   (stop [this]))

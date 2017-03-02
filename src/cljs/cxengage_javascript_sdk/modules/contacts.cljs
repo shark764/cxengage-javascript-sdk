@@ -247,5 +247,6 @@
                                     :list-attributes (partial list-attributes this)
                                     :get-layout (partial get-layout this)
                                     :list-layouts (partial list-layouts this)}}
-                 :module-name (get @(:state this) :module-name)})))
+                 :module-name module-name})
+      (js/console.info "<----- Started " (name module-name) " module! ----->")))
   (stop [this]))

@@ -79,6 +79,6 @@
         (if-not sqs-integration
           (a/put! core-messages< {:module-registration-status :failure :module module-name})
           (do (sqs-init* this sqs-integration on-msg-fn core-messages<)
-              (js/console.info "<----- Started " module-name " module! ----->")
+              (js/console.info "<----- Started " (name module-name) " module! ----->")
               (register {:module-name module-name}))))))
   (stop [this]))
