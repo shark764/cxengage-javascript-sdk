@@ -27,13 +27,15 @@
        (transform-keys camel/->kebab-case)))
 
 (defn build-api-url-with-params [url params]
-  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id]} params]
+  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id]} params]
     (cond-> url
       tenant-id (clojure.string/replace #"tenant-id" (str tenant-id))
       resource-id (clojure.string/replace #"resource-id" (str resource-id))
       session-id (clojure.string/replace #"session-id" session-id)
       entity-id (clojure.string/replace #"entity-id" entity-id)
-      entity-sub-id (clojure.string/replace #"entity-sub-id" entity-sub-id))))
+      entity-sub-id (clojure.string/replace #"entity-sub-id" entity-sub-id)
+      contact-id (clojure.string/replace #"contact-id" contact-id)
+      layout-id (clojure.string/replace #"layout-id" layout-id))))
 
 (defn normalize-response-stucture
   [[ok? response]]
@@ -57,7 +59,7 @@
                         :format (ajax/json-request-format)
                         :response-format (ajax/json-response-format {:keywords? true})}
                        (when body
-                         {:params (camelify body)})
+                         {:params body})
                        (when-let [token (state/get-token)]
                          {:headers {"Authorization" (str "Token " token)}}))]
     (ajax/ajax-request request)

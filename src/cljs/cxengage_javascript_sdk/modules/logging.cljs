@@ -1,0 +1,144 @@
+(ns cxengage-javascript-sdk.modules.logging
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require [cljs.core.async :as a]
+            [cljs.spec :as s]
+            [cxengage-cljs-utils.core :as u]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.state :as state]
+            [cljs-uuid-utils.core :as uuid]
+            [clojure.string :as str]
+            [lumbajack.core :as jack]))
+
+
+(def invalid-logging-level-specified-error "Invalid logging level specified.")
+
+(def levels
+  {:debug "color:blue;"
+   :info "color:green;"
+   :warn "color:white; background-color:orange;"
+   :error "color:white; background-color:red;"
+   :fatal "color:white; background-color:black;"})
+
+(defn format-request-logs
+  [log]
+  (let [{:keys [level data]} log
+        date-time (js/Date.)]
+    (assoc {}
+           :level "info"
+           :message (js/JSON.stringify (iu/camelify {:data (clojure.string/join " " data) :original-client-log-level (name level)}))
+           :timestamp (.toISOString date-time))))
+
+(defn log*
+  [level & data]
+  (if (some #{level} (state/get-valid-log-levels))
+    (let [level (keyword level)]
+      (apply (partial jack/log* level) data)
+      (when (state/get-unsaved-logs)
+        (state/append-logs! {:data data :level level}))
+      nil)
+    (jack/log* :error (str invalid-logging-level-specified-error " Correct values are: " (str/join ", " (vec (state/get-valid-log-levels)))))))
+
+(s/def ::dump-logs-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(defn dump-logs
+  ([module]
+   (dump-logs module {}))
+  ([module params & others]
+   (if-not (fn? (first others))
+     (e/wrong-number-of-args-error)
+     (dump-logs module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [module-state @(:state module)
+         {:keys [callback] :as params} (iu/extract-params params)
+         dump-pub (fn [r] (p/publish (get-in module-state [:topics :dump-logs]) r callback))]
+     (if-not (s/valid? ::dump-logs-params params)
+       (dump-pub (e/invalid-args-error (s/explain-data ::dump-logs-params params)))
+       (dump-pub (state/get-unsaved-logs))))))
+
+(s/def ::set-level-params
+  (s/keys :req-un [::specs/level]
+          :opt-un [::specs/callback]))
+
+(defn set-level
+  ([module]
+   (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (first others))
+     (e/wrong-number-of-args-error)
+     (set-level module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [{:keys [level callback] :as params} (iu/extract-params params)
+         set-pub (fn [r] (p/publish (get-in @(:state module) [:topics :set-level]) r callback))
+         level (keyword level)]
+     (if-not (s/valid? ::set-level-params params)
+       (set-pub (e/invalid-args-error (s/explain-data ::set-level-params params)))
+       (if (not= -1 (.indexOf (vec (keys levels)) level))
+         (let [idx {:fatal 1 :error 2 :warn 3 :info 4 :debug 5}
+               updated-valid-levels (take (or (get idx level) 0) (vec (reverse (keys levels))))]
+           (state/set-valid-log-levels! updated-valid-levels)
+           (js/console.log (str "%cSet log level to " level) (get levels :info)))
+         (js/console.log (str "%c" invalid-logging-level-specified-error) (get levels :error)))))))
+
+(s/def ::save-logs-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(defn save-logs
+  ([module]
+   (save-logs module {}))
+  ([module params & others]
+   (if-not (fn? (first others))
+     (e/wrong-number-of-args-error)
+     (save-logs module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [{:keys [callback] :as params} (iu/extract-params params)
+         module-state @(:state module)
+         api-url (get-in module [:config :api-url])
+         routes (get-in module-state [:urls :save-logs])
+         base-url (str api-url routes)
+         topic (get-in module-state [:topcis :save-logs])
+         logs (reduce (fn [acc x] (let [log (format-request-logs x)]
+                                    (conj acc log))) [] (state/get-unsaved-logs))
+         request-map {:url (iu/build-api-url-with-params base-url {:tenant-id (state/get-active-tenant-id)
+                                                                   :resource-id (state/get-active-user-id)})
+                      :method :post
+                      :body {:logs logs
+                             :device "client"
+                             :app-id (str (uuid/make-random-squuid))
+                             :app-name "CxEngage Javascript SDK"}}
+         save-logs-publish-fn (fn [r] (p/publish topic r callback))]
+     (if-not (s/valid? ::save-logs-params params)
+       (save-logs-publish-fn (e/invalid-args-error (s/explain-data ::save-logs-params params)))
+       (do (go (let [save-response (a/<! (iu/api-request request-map))
+                     {:keys [status api-response]} save-response
+                     {:keys [result]} api-response]
+                 (if (not= 200)
+                   (save-logs-publish-fn (e/api-error api-response))
+                   (do (save-logs-publish-fn api-response)
+                       (state/save-logs)))))
+           nil)))))
+
+(def initial-state
+  {:module-name :logging
+   :topics {:save-logs "logs/logs-saved"
+            :dump-logs "logs/logs-dump"
+            :set-level "logs/level-set"}
+   :urls {:save-logs "tenants/tenant-id/users/resource-id/logs"}})
+
+(defrecord LoggingModule [config state]
+  pr/SDKModule
+  (start [this]
+    (reset! (:state this) initial-state)
+    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
+          module-name (get @(:state this) :module-name)]
+      (register {:api {module-name {:set-level (partial set-level this)
+                                    :save-logs (partial save-logs this)
+                                    :dump-logs (partial dump-logs this)}}
+                 :module-name module-name})))
+  (stop [this]))

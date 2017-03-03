@@ -29,3 +29,5 @@
                                 :string string?)))
 (s/def ::attributes map?)
 (s/def ::wrapup string?)
+
+(s/def ::level #{"debug" "info" "warn" "error" "fatal"})
