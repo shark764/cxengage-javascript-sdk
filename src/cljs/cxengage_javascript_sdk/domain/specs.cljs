@@ -16,6 +16,7 @@
 (s/def ::contact-id ::uuid)
 (s/def ::layoutId ::uuid)
 (s/def ::layout-id ::uuid)
+(s/def ::subscription-id ::uuid)
 (s/def ::topic string?)
 (s/def ::state string?)
 (s/def ::phoneNumber string?)

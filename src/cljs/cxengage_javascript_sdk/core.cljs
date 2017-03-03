@@ -85,6 +85,7 @@
        (let [{:keys [log-level consumer-type base-url environment]} options
              core (iu/camelify {:api {:subscribe pu/subscribe
                                       :publish pu/publish
+                                      :unsubscribe pu/unsubscribe
                                       :dump-state state/get-state-js}
                                 :modules {:register register-module
                                           :start start-external-module}})
