@@ -27,7 +27,7 @@
        (transform-keys camel/->kebab-case)))
 
 (defn build-api-url-with-params [url params]
-  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id]} params]
+  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id interaction-id artifact-id]} params]
     (cond-> url
       tenant-id (clojure.string/replace #"tenant-id" (str tenant-id))
       resource-id (clojure.string/replace #"resource-id" (str resource-id))
@@ -35,7 +35,9 @@
       entity-id (clojure.string/replace #"entity-id" entity-id)
       entity-sub-id (clojure.string/replace #"entity-sub-id" entity-sub-id)
       contact-id (clojure.string/replace #"contact-id" contact-id)
-      layout-id (clojure.string/replace #"layout-id" layout-id))))
+      layout-id (clojure.string/replace #"layout-id" layout-id)
+      interaction-id (clojure.string/replace #"interaction-id" interaction-id)
+      artifact-id (clojure.string/replace #"artifact-id" artifact-id))))
 
 (defn normalize-response-stucture
   [[ok? response]]
@@ -87,23 +89,23 @@
        token (merge {:token token})))))
 
 (defn send-interrupt*
- ([module params]
-  (let [params (extract-params params)
-        module-state @(:state module)
-        {:keys [interaction-id interrupt-type interrupt-body publish-fn on-confirm-fn]} params
-        tenant-id (state/get-active-tenant-id)
-        interrupt-request {:method :post
-                           :body {:source "client"
-                                  :interrupt-type interrupt-type
-                                  :interrupt interrupt-body}
-                           :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
-    (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
-                  {:keys [api-response status]} interrupt-response]
-              (if (not= status 200)
-                (publish-fn (e/api-error api-response))
-                (do (publish-fn {:interacton-id interaction-id})
-                    (when on-confirm-fn (on-confirm-fn))))))
-        nil))))
+  ([module params]
+   (let [params (extract-params params)
+         module-state @(:state module)
+         {:keys [interaction-id interrupt-type interrupt-body publish-fn on-confirm-fn]} params
+         tenant-id (state/get-active-tenant-id)
+         interrupt-request {:method :post
+                            :body {:source "client"
+                                   :interrupt-type interrupt-type
+                                   :interrupt interrupt-body}
+                            :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
+     (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
+                   {:keys [api-response status]} interrupt-response]
+               (if (not= status 200)
+                 (publish-fn (e/api-error api-response))
+                 (do (publish-fn {:interacton-id interaction-id})
+                     (when on-confirm-fn (on-confirm-fn))))))
+         nil))))
 
 ;;;;;;;;;;;;;;;
 ;; sigv4 utils

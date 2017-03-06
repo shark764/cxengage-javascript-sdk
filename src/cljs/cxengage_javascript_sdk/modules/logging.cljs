@@ -36,7 +36,8 @@
   [level & data]
   (if (some #{level} (state/get-valid-log-levels))
     (let [level (keyword level)]
-      (apply (partial jack/log* level) data)
+      (doseq [d data]
+        (apply (partial jack/log* level) d))
       (when (state/get-unsaved-logs)
         (state/append-logs! {:data data :level level}))
       nil)

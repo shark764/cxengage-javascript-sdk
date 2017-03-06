@@ -37,16 +37,15 @@
          {:keys [sub-id action-id channel-type resource-id tenant-id resource direction channel-type]} (state/get-interaction interaction-id)
          {:keys [extension role-id session-id work-offer-id]} resource
          basic-interrupt-body {:resource-id (state/get-active-user-id)}
-         contact-assignment-body {:tenant-id tenant-id
-                                  :contact-id contact-id
-                                  :interaction-id interaction-id
-                                  :sub-id sub-id
-                                  :action-id action-id
-                                  :work-offer-id work-offer-id
-                                  :session-id session-id
-                                  :resource-id resource-id
-                                  :direction direction
-                                  :channel-type channel-type}
+         detailed-interaction-interrupt-body {:tenant-id tenant-id
+                                              :interaction-id interaction-id
+                                              :sub-id sub-id
+                                              :action-id action-id
+                                              :work-offer-id work-offer-id
+                                              :session-id session-id
+                                              :resource-id resource-id
+                                              :direction direction
+                                              :channel-type channel-type}
          interrupt-params (case type
                             :end {:validation ::generic-interaction-fn-params
                                   :interrupt-type "resource-disconnect"
@@ -63,22 +62,22 @@
                                                       (when (or (= channel-type "sms")
                                                                 (= channel-type "messaging"))
                                                         (int/get-messaging-history tenant-id interaction-id)))}
-                            :assign {:validation ::contact-operation-params
-                                     :interrupt-type "interaction-contact-selected"
-                                     :publish-fn (fn [r] (p/publish "interactions/contact-assigned" r callback))
-                                     :interrupt-body contact-assignment-body}
                             :focus {:validation ::generic-interaction-fn-params
                                     :interrupt-type "interaction-focused"
                                     :publish-fn (fn [r] (p/publish "interactions/focus-acknowledged" r callback))
-                                    :interrupt-body (assoc basic-interrupt-body :session-id (state/get-session-id))}
+                                    :interrupt-body detailed-interaction-interrupt-body}
                             :unfocus {:validation ::generic-interaction-fn-params
                                       :interrupt-type "interaction-unfocused"
                                       :publish-fn (fn [r] (p/publish "interactions/unfocus-acknowledged" r callback))
-                                      :interrupt-body (assoc basic-interrupt-body :session-id (state/get-session-id))}
+                                      :interrupt-body detailed-interaction-interrupt-body}
+                            :assign {:validation ::contact-operation-params
+                                     :interrupt-type "interaction-contact-selected"
+                                     :publish-fn (fn [r] (p/publish "interactions/contact-assigned" r callback))
+                                     :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
                             :unassign {:validation ::contact-operation-params
                                        :interrupt-type "interaction-contact-deselected"
                                        :publish-fn (fn [r] (p/publish "interactions/contact-unassigned" r callback))
-                                       :interrupt-body contact-assignment-body}
+                                       :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
                             :enable-wrapup {:validation ::wrapup-params
                                             :interrupt-type "wrapup-on"
                                             :publish-fn (fn [r] (p/publish "interactions/wrapup-enabled" r callback))
