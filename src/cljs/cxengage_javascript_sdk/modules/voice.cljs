@@ -142,7 +142,6 @@
                    (dial-publish-fn api-response))))
            nil)))))
 
-
 (defn update-twilio-connection [connection]
   (state/set-twilio-connection connection))
 
@@ -151,25 +150,59 @@
 
 (defn ^:private twilio-init
   [config done-init<]
-  (let [{:keys [js-api-url credentials]} config
-        {:keys [token]} credentials
-        script (js/document.createElement "script")
-        body (.-body js/document)]
-    (.setAttribute script "type" "text/javascript")
-    (.setAttribute script "src" js-api-url)
-    (.appendChild body script)
-    (go-loop []
-      (if (aget js/window "Twilio")
-        (do
-          (state/set-twilio-device (js/Twilio.Device.setup token))
-          (js/Twilio.Device.incoming update-twilio-connection)
-          (js/Twilio.Device.ready update-twilio-connection)
-          (js/Twilio.Device.cancel update-twilio-connection)
-          (js/Twilio.Device.offline update-twilio-connection)
-          (js/Twilio.Device.disconnect update-twilio-connection)
-          (js/Twilio.Device.error handle-twilio-error))
-        (do (a/<! (a/timeout 250))
-            (recur))))))
+  (let [script-init (fn [& args]
+                      (let [{:keys [js-api-url credentials]} config
+                            {:keys [token]} credentials
+                            script (js/document.createElement "script")
+                            body (.-body js/document)]
+                        (.setAttribute script "type" "text/javascript")
+                        (.setAttribute script "src" js-api-url)
+                        (.appendChild body script)
+                        (go-loop []
+                          (if (aget js/window "Twilio")
+                            (do
+                              (state/set-twilio-device (js/Twilio.Device.setup token))
+                              (js/Twilio.Device.incoming update-twilio-connection)
+                              (js/Twilio.Device.ready update-twilio-connection)
+                              (js/Twilio.Device.cancel update-twilio-connection)
+                              (js/Twilio.Device.offline update-twilio-connection)
+                              (js/Twilio.Device.disconnect update-twilio-connection)
+                              (js/Twilio.Device.error handle-twilio-error)
+                              (js/console.info "<----- Started voice module! ----->"))
+                            (do (a/<! (a/timeout 250))
+                                (recur))))))]
+    (-> js/navigator
+        (.-mediaDevices)
+        (.getUserMedia (clj->js {:audio true}))
+        (.then script-init)
+        (.catch (fn [err] (e/no-microphone-access-error err))))))
+
+(s/def ::send-digits-params
+  (s/keys :req-un [::specs/interaction-id
+                   ::specs/digit]
+          :opt-un [::specs/callback]))
+
+(defn send-digits
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (send-digits module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [connection (state/get-twilio-connection)
+         {:keys [interaction-id digit callback] :as params} (iu/extract-params params)
+         module-state @(:state module)
+         send-digits-publish-fn (fn [r] (p/publish "cxengage/voice" r callback))]
+     (if-not (s/valid? ::send-digits-params params)
+       (send-digits-publish-fn (e/invalid-args-error (s/explain-data ::send-digits-params params))))
+     (when (and (= :active (state/find-interaction-location interaction-id))
+                (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
+       (when connection
+         (try
+           (do (.sendDigits connection digit)
+               (send-digits-publish-fn {:interaction-id interaction-id
+                                        :digit-sent digit}))
+           (catch js/Object e (str "Caught: Invalid Dial-Tone Multiple Frequency signal: " e))))))))
 
 (def initial-state
   {:module-name :voice})
@@ -195,7 +228,7 @@
                                                     :transferToQueue (partial send-interrupt this :transfer-to-queue)
                                                     :transferToExtension (partial send-interrupt this :transfer-to-extension)
                                                     :cancel-transfer (partial send-interrupt this :cancel-transfer)
-                                                    :dial (partial dial this)}}}
-                       :module-name module-name})
-            (js/console.info "<----- Started " (name module-name) " module! ----->")))))
+                                                    :dial (partial dial this)
+                                                    :send-digits (partial send-digits this)}}}
+                       :module-name module-name})))))
   (stop [this]))

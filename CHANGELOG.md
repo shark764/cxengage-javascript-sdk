@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+* started checking for microphone access prior to starting twilio module
+* added DTMF signaling capability
 * refactored all modules in accordance with new module system
 * refactored many public-facing responses & pubsub topics
 * made all SDK init parameters optional with defaults
