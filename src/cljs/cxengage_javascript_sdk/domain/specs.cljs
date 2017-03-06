@@ -8,7 +8,7 @@
 (s/def ::tenant-id ::uuid)
 (s/def ::interactionId ::uuid)
 (s/def ::extensionId string?)
-(s/def ::extension-id ::uuid)
+(s/def ::extension-value (s/or ::uuid string?))
 (s/def ::queue-id ::uuid)
 (s/def ::resource-id ::uuid)
 (s/def ::transfer-type #{"cold" "warm"})

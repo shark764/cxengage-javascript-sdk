@@ -17,17 +17,15 @@
       "logLevel":"debug"
     });
 
-    SDK.authentication.login({username:'sstiles@liveopscloud.com',password:'DevProfile1!'});
+    SDK.authentication.login({username:'',password:''});
 
     setTimeout(function() {
-      SDK.session.setActiveTenant({tenantId:'3b639eb0-febc-11e6-98a7-36051d50f3bf'});
+      SDK.session.setActiveTenant({tenantId:''});
     }, 3000);
 
     setTimeout(function() {
-      SDK.session.goReady({extensionId:'asdf'});
+      SDK.session.goReady({extensionValue:''});
     }, 5500);
   </script>
-
-
 </body>
 </html>

@@ -41,12 +41,10 @@
                 (a/<! (a/timeout next-heartbeat-delay))
                 (recur))))))))
 
-(s/def ::extension-id string?)
-
 (s/def ::state #{"ready" "notready" "offline"})
 
 (s/def ::go-ready-params
-  (s/keys :req-un [::extension-id ::state]
+  (s/keys :req-un [::specs/extension-value ::state]
           :opt-un [::specs/callback]))
 
 (s/def ::go-not-ready-params
@@ -56,6 +54,15 @@
 (s/def ::go-offline-params
   (s/keys :req-un [::state]
           :opt-un [::specs/callback]))
+
+(defn change-presence-state-impl* [request pub-fn]
+  (go
+    (let [change-state-response (a/<! (iu/api-request request))
+          {:keys [api-response status]} change-state-response
+          {:keys [result]} api-response]
+      (if (not= status 200)
+        (pub-fn (e/api-error api-response))
+        (pub-fn result)))))
 
 (defn change-presence-state
   ([module state] (change-presence-state module state {}))
@@ -71,10 +78,11 @@
          session-id (state/get-session-id)
          resource-id (state/get-active-user-id)
          tenant-id (state/get-active-tenant-id)
-         {:keys [extension-id callback]} params
-         active-extension-id (state/get-active-extension)
+         {:keys [extension-value callback]} params
+         active-extension-value (state/get-active-extension)
          extensions (state/get-all-extensions)
          change-state-publish-fn (fn [r] (p/publish "session/change-state" r callback))
+         new-extension (state/get-extension-by-value extension-value)
          validation-spec (cond
                            (= state "ready") ::go-ready-params
                            (= state "notready") ::go-not-ready-params
@@ -82,36 +90,34 @@
                            :else ::go-ready-params)]
      (if (not (s/valid? validation-spec params))
        (change-state-publish-fn (e/invalid-args-error (s/explain-data validation-spec params)))
-       (do #_(when (and (= state "ready")
-                        extension-id
-                        (not= active-extension-id extension-id))
-               (let [new-extension (state/get-extension-by-id extension-id)
-                     update-user-url (str api-url (get-in module-state [:urls :update-user]))
-                     user-update-request {:method :put
-                                          :url (iu/build-api-url-with-params
-                                                update-user-url
-                                                {:tenant-id tenant-id
-                                                 :resource-id resource-id})
-                                          :body new-extension}]
-                 (if (= nil new-extension)
-                   (change-state-publish-fn (e/no-entity-found-for-specified-id "extension" extension-id))
-                   (go (let [user-update-response (a/<! (iu/api-request user-update-request))]
-                         (js/console.error "UUR2" user-update-response))))))
-           (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
-                 change-state-request {:method :post
-                                       :url (iu/build-api-url-with-params
-                                             change-state-url
-                                             {:tenant-id tenant-id
-                                              :resource-id resource-id})
-                                       :body {:session-id session-id
-                                              :state state}}]
-             (go (let [change-state-response (a/<! (iu/api-request change-state-request))
-                       {:keys [api-response status]} change-state-response
-                       {:keys [result]} api-response]
-                   (if (not= status 200)
-                     (change-state-publish-fn (e/api-error api-response))
-                     (change-state-publish-fn result))))
-             nil))))))
+       (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
+             change-state-request {:method :post
+                                   :url (iu/build-api-url-with-params
+                                         change-state-url
+                                         {:tenant-id tenant-id
+                                          :resource-id resource-id})
+                                   :body {:session-id session-id
+                                          :state state}}]
+         (if (and (= state "ready")
+                  extension-value
+                  (not= active-extension-value extension-value))
+           (let [update-user-url (str api-url (get-in module-state [:urls :update-user]))
+                 user-update-request {:method :put
+                                      :url (iu/build-api-url-with-params
+                                            update-user-url
+                                            {:tenant-id tenant-id
+                                             :resource-id resource-id})
+                                      :body {:activeExtension new-extension}}]
+             (if (nil? new-extension)
+               (change-state-publish-fn (e/not-a-valid-extension))
+               (do (go (let [user-update-response (a/<! (iu/api-request user-update-request))
+                             {:keys [api-response status]} user-update-response]
+                         (if (not= status 200)
+                           (change-state-publish-fn (e/api-error "failed to set user extension"))
+                           (change-presence-state-impl* change-state-request change-state-publish-fn))))
+                   nil)))
+           (do (change-presence-state-impl* change-state-request change-state-publish-fn)
+               nil)))))))
 
 (defn start-session* [module]
   (let [api-url (get-in module [:config :api-url])

@@ -13,4 +13,5 @@
   (error {:code 1004 :error (str "No " entity " found by that ID") :data entity-id}))
 (defn no-microphone-access-error [err]
   (error {:code 7000 :error (str "No access to microphone: " (.-message err))}))
+(defn not-a-valid-extension [] {:code 5000 :error "that isn't a valid extension."})
 (defn invalid-logging-level-specified-error [] "Invalid logging level specified.")

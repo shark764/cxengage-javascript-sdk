@@ -212,9 +212,9 @@
 (defn get-active-extension []
   (get-in @sdk-state [:session :config :active-extension :value]))
 
-(defn get-extension-by-id [id]
+(defn get-extension-by-value [value]
   (let [extensions (get-all-extensions)]
-    (first (filter #(= id (:value %)) extensions))))
+    (first (filter #(= value (:value %)) extensions))))
 
 (defn get-integration-by-type [type]
   (first (filter #(= (:type %) type) (get-all-integrations))))

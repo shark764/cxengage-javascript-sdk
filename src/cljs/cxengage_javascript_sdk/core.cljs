@@ -97,6 +97,7 @@
          (aset js/window "serenova" #js {"cxengage" core})
          (start-base-modules module-comm-chan)
          (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
-         (if (= consumer-type :cljs)
-           (iu/kebabify (aget js/window "serenova"))
-           (aget js/window "serenova" "cxengage" "api")))))))
+         (let [api (aget js/window "serenova" "cxengage" "api")]
+           (if (= consumer-type :cljs)
+             (iu/kebabify api)
+             api)))))))
