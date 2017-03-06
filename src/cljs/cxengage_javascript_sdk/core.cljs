@@ -4,6 +4,7 @@
             [cljs.core.async :as a]
             [camel-snake-kebab.core :as k]
             [camel-snake-kebab.extras :refer [transform-keys]]
+            [lumbajack.core :as l]
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as pu]
@@ -92,7 +93,7 @@
              module-comm-chan (a/chan 1024)]
          (state/set-base-api-url! base-url)
          (state/set-consumer-type! consumer-type)
-         (state/set-log-level! log-level logging/levels)
+         (state/set-log-level! log-level l/levels)
          (state/set-env! environment)
          (aset js/window "serenova" #js {"cxengage" core})
          (start-base-modules module-comm-chan)
