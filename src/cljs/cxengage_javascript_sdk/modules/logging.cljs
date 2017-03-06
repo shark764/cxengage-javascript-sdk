@@ -14,8 +14,6 @@
             [lumbajack.core :as jack]))
 
 
-(def invalid-logging-level-specified-error "Invalid logging level specified.")
-
 (def levels
   {:debug "color:blue;"
    :info "color:green;"
@@ -41,7 +39,7 @@
       (when (state/get-unsaved-logs)
         (state/append-logs! {:data data :level level}))
       nil)
-    (jack/log* :error (str invalid-logging-level-specified-error " Correct values are: " (str/join ", " (vec (state/get-valid-log-levels)))))))
+    (jack/log* :error (str (e/invalid-logging-level-specified-error) " Correct values are: " (str/join ", " (vec (state/get-valid-log-levels)))))))
 
 (s/def ::dump-logs-params
   (s/keys :req-un []
@@ -79,12 +77,7 @@
          level (keyword level)]
      (if-not (s/valid? ::set-level-params params)
        (set-pub (e/invalid-args-error (s/explain-data ::set-level-params params)))
-       (if (not= -1 (.indexOf (vec (keys levels)) level))
-         (let [idx {:fatal 1 :error 2 :warn 3 :info 4 :debug 5}
-               updated-valid-levels (take (or (get idx level) 0) (vec (reverse (keys levels))))]
-           (state/set-valid-log-levels! updated-valid-levels)
-           (js/console.log (str "%cSet log level to " level) (get levels :info)))
-         (js/console.log (str "%c" invalid-logging-level-specified-error) (get levels :error)))))))
+       (state/set-log-level! level levels)))))
 
 (s/def ::save-logs-params
   (s/keys :req-un []

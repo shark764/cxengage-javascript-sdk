@@ -13,7 +13,8 @@
   <script>
     var SDK = cxengage_javascript_sdk.core.initialize({
       "environment":"dev",
-      "baseUrl":"https://dev-api.cxengagelabs.net/v1/"
+      "baseUrl":"https://dev-api.cxengagelabs.net/v1/",
+      "logLevel":"debug"
     });
 
     SDK.authentication.login({username:'sstiles@liveopscloud.com',password:'DevProfile1!'});

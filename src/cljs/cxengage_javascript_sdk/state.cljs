@@ -1,6 +1,7 @@
 (ns cxengage-javascript-sdk.state
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [lumbajack.core]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cljs.core.async :as a]
             [cljs.spec :as s]
             [cljs-uuid-utils.core :as id]))
@@ -274,9 +275,6 @@
 ;; Logging
 ;;;;;;;;;;;
 
-(defn set-log-level! [level]
-  (swap! sdk-state assoc-in [:config :log-level] level))
-
 (defn get-log-level []
   (get-in @sdk-state [:config :log-level]))
 
@@ -285,6 +283,15 @@
 
 (defn get-valid-log-levels []
   (get-in @sdk-state [:logs :valid-levels]))
+
+(defn set-log-level! [level levels]
+  (if (not= -1 (.indexOf (vec (keys levels)) level))
+    (let [idx {:fatal 1 :error 2 :warn 3 :info 4 :debug 5}
+          updated-valid-levels (take (or (get idx level) 0) (vec (reverse (keys levels))))]
+      (set-valid-log-levels! updated-valid-levels)
+      (js/console.log (str "%cSet log level to " level) (get levels :info))
+      (swap! sdk-state assoc-in [:config :log-level] level))
+    (js/console.log (str "%c" (e/invalid-logging-level-specified-error)) (get levels :error))))
 
 (defn get-saved-logs []
   (get-in @sdk-state [:logs :saved-logs]))
