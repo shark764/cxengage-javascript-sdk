@@ -137,7 +137,8 @@
          subscription-callbacks (vals subscriptions-to-publish)]
     (doseq [cb subscription-callbacks]
       (cb response))
-    (if (set? topics)
+    (let [topics (if (set? topics)
+                  topics
+                  (conj #{} topics))]
       (doseq [t topics]
-        (js/console.warn (str "[PUBSUB]: " t) response))
-      (js/console.warn (str "[PUBSUB]: " topics) response)))))
+        (js/console.warn (str "[PUBSUB]: " t) response))))))
