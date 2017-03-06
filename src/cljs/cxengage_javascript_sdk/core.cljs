@@ -1,10 +1,10 @@
 (ns cxengage-javascript-sdk.core
-  (:require-macros [lumbajack.macros :refer [log]]
-                   [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [camel-snake-kebab.core :as k]
             [camel-snake-kebab.extras :refer [transform-keys]]
+            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
@@ -92,11 +92,12 @@
              module-comm-chan (a/chan 1024)]
          (state/set-base-api-url! base-url)
          (state/set-consumer-type! consumer-type)
-         (state/set-log-level! log-level)
+         (state/set-log-level! log-level logging/levels)
          (state/set-env! environment)
          (aset js/window "serenova" #js {"cxengage" core})
          (start-base-modules module-comm-chan)
          (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
-         (if (= consumer-type :cljs)
-           (iu/kebabify (aget js/window "serenova"))
-           (aget js/window "serenova" "cxengage" "api")))))))
+         (let [api (aget js/window "serenova" "cxengage" "api")]
+           (if (= consumer-type :cljs)
+             (iu/kebabify api)
+             api)))))))
