@@ -11,3 +11,5 @@
 (defn api-error [error] (merge (error {:code 1002 :error "API returned an error."} error)))
 (defn no-entity-found-for-specified-id [entity entity-id]
   (error {:code 1004 :error (str "No " entity " found by that ID") :data entity-id}))
+(defn no-microphone-access-error [err]
+  (error {:code 7000 :error (str "No access to microphone: " (.-message err))}))
