@@ -8,8 +8,7 @@
 (def initial-state {:authentication {}
                     :user {}
                     :session {}
-                    :config {:api-url "https://api.cxengage.net/v1/"
-                             :consumer-type :js}
+                    :config {}
                     :interactions {:pending {}
                                    :active {}
                                    :past {}}

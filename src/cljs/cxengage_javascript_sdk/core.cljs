@@ -67,21 +67,22 @@
 (s/def ::environment #{:dev :qe :staging :prod})
 (s/def ::log-level #{:debug :info :warn :error :fatal :off})
 (s/def ::initialize-options
-  (s/keys :req-un [::base-url]
-          :opt-un [::type ::log-level ::environment]))
+  (s/keys :req-un []
+          :opt-un [::consumer-type ::log-level ::environment ::base-url]))
 
 (defn initialize
-  ([] (clj->js (e/wrong-number-of-args-error)))
+  ([] (initialize {}))
   ([options & rest] (clj->js (e/wrong-number-of-args-error)))
   ([options]
    (let [options (-> options
                      (iu/extract-params)
-                     (assoc :type (keyword (or (:type options) :js)))
+                     (assoc :base-url (or (:base-url options) "https://api.cxengage.net/v1/"))
+                     (assoc :consumer-type (keyword (or (:consumer-type options) :js)))
                      (assoc :log-level (keyword (or (:log-level options) :info)))
-                     (assoc :environment (keyword (or (:environment options) :dev))))]
+                     (assoc :environment (keyword (or (:environment options) :prod))))]
      (if-not (s/valid? ::initialize-options options)
        (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
-       (let [{:keys [log-level type base-url environment]} options
+       (let [{:keys [log-level consumer-type base-url environment]} options
              core (iu/camelify {:api {:subscribe pu/subscribe
                                       :publish pu/publish
                                       :dump-state state/get-state-js}
@@ -89,12 +90,12 @@
                                           :start start-external-module}})
              module-comm-chan (a/chan 1024)]
          (state/set-base-api-url! base-url)
-         (state/set-consumer-type! type)
+         (state/set-consumer-type! consumer-type)
          (state/set-log-level! log-level)
          (state/set-env! environment)
          (aset js/window "serenova" #js {"cxengage" core})
          (start-base-modules module-comm-chan)
          (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
-         (if (= type :cljs)
+         (if (= consumer-type :cljs)
            (iu/kebabify (aget js/window "serenova"))
-           (aget js/window "serenova")))))))
+           (aget js/window "serenova" "cxengage" "api")))))))
