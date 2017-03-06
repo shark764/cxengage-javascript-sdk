@@ -11,7 +11,11 @@
   <script src="js/moment.js" type="text/javascript"></script>
 
   <script>
-    var SDK = cxengage_javascript_sdk.core.initialize({"environment":"dev"});
+    var SDK = cxengage_javascript_sdk.core.initialize({
+      "environment":"dev",
+      "baseUrl":"https://dev-api.cxengagelabs.net/v1/"
+    });
+
     SDK.authentication.login({username:'sstiles@liveopscloud.com',password:'DevProfile1!'});
 
     setTimeout(function() {
