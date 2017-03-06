@@ -13,14 +13,6 @@
             [clojure.string :as str]
             [lumbajack.core :as jack]))
 
-
-(def levels
-  {:debug "color:blue;"
-   :info "color:green;"
-   :warn "color:white; background-color:orange;"
-   :error "color:white; background-color:red;"
-   :fatal "color:white; background-color:black;"})
-
 (defn format-request-logs
   [log]
   (let [{:keys [level data]} log
@@ -77,7 +69,7 @@
          level (keyword level)]
      (if-not (s/valid? ::set-level-params params)
        (set-pub (e/invalid-args-error (s/explain-data ::set-level-params params)))
-       (state/set-log-level! level levels)))))
+       (state/set-log-level! level jack/levels)))))
 
 (s/def ::save-logs-params
   (s/keys :req-un []
