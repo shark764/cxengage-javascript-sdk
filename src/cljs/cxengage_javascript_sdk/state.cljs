@@ -12,7 +12,10 @@
                              :consumer-type :js}
                     :interactions {:pending {}
                                    :active {}
-                                   :past {}}})
+                                   :past {}}
+                    :logs {:unsaved-logs []
+                           :saved-logs []
+                           :valid-levels [:debug :info :warn :error :fatal]}})
 
 (defonce sdk-state
   (atom initial-state))
@@ -49,12 +52,6 @@
 
 (defn get-blast-sqs-output []
   (get-in @sdk-state [:config :blast-sqs-output]))
-
-(defn set-log-level! [level]
-  (swap! sdk-state assoc-in [:config :log-level] level))
-
-(defn get-log-level []
-  (get-in @sdk-state [:config :log-level]))
 
 (defn get-config []
   (get @sdk-state :config))
@@ -273,6 +270,41 @@
 (defn get-twilio-connection
   []
   (get-in @sdk-state [:interal :twilio-connection]))
+
+;;;;;;;;;;;
+;; Logging
+;;;;;;;;;;;
+
+(defn set-log-level! [level]
+  (swap! sdk-state assoc-in [:config :log-level] level))
+
+(defn get-log-level []
+  (get-in @sdk-state [:config :log-level]))
+
+(defn set-valid-log-levels! [levels]
+  (swap! sdk-state assoc-in [:logs :valid-levels] levels))
+
+(defn get-valid-log-levels []
+  (get-in @sdk-state [:logs :valid-levels]))
+
+(defn get-saved-logs []
+  (get-in @sdk-state [:logs :saved-logs]))
+
+(defn get-unsaved-logs []
+  (get-in @sdk-state [:logs :unsaved-logs]))
+
+(defn append-logs!
+  [& logs]
+  (let [unsaved (get-unsaved-logs)
+        appended (into unsaved logs)]
+    (swap! sdk-state assoc-in [:logs :unsaved-logs] appended)))
+
+(defn save-logs []
+  (let [unsaved (get-unsaved-logs)
+        saved (get-saved-logs)
+        appended (into saved unsaved)]
+    (swap! sdk-state assoc-in [:logs :saved-logs] appended)
+    (swap! sdk-state assoc-in [:logs :unsaved-logs] [])))
 
 ;;;;;;;;;;;
 ;; Predicates

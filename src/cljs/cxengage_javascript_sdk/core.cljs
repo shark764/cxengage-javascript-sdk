@@ -17,6 +17,7 @@
             [cxengage-javascript-sdk.modules.sqs :as sqs]
             [cxengage-javascript-sdk.modules.messaging :as messaging]
             [cxengage-javascript-sdk.modules.voice :as voice]
+            [cxengage-javascript-sdk.modules.logging :as logging]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-cljs-utils.core :as cxu]
@@ -44,8 +45,9 @@
         interaction-module (interaction/map->InteractionModule. (gen-new-initial-module-config comm<))
         entities-module (entities/map->EntitiesModule. (gen-new-initial-module-config comm<))
         contacts-module (contacts/map->ContactsModule. (gen-new-initial-module-config comm<))
-        reporting-module (reporting/map->ReportingModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [auth-module session-module interaction-module entities-module contacts-module reporting-module]]
+        reporting-module (reporting/map->ReportingModule. (gen-new-initial-module-config comm<))
+        logging-module (logging/map->LoggingModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [auth-module session-module interaction-module entities-module contacts-module reporting-module logging-module]]
       (start-internal-module module))))
 
 (defn start-session-dependant-modules [comm<]
@@ -73,10 +75,10 @@
   ([options & rest] (clj->js (e/wrong-number-of-args-error)))
   ([options]
    (let [options (-> options
-                  (iu/extract-params)
-                  (assoc :type (keyword (or (:type options) :js)))
-                  (assoc :log-level (keyword (or (:log-level options) :info)))
-                  (assoc :environment (keyword (or (:environment options) :dev))))]
+                     (iu/extract-params)
+                     (assoc :type (keyword (or (:type options) :js)))
+                     (assoc :log-level (keyword (or (:log-level options) :info)))
+                     (assoc :environment (keyword (or (:environment options) :dev))))]
      (if-not (s/valid? ::initialize-options options)
        (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
        (let [{:keys [log-level type base-url environment]} options
@@ -94,5 +96,5 @@
          (start-base-modules module-comm-chan)
          (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
          (if (= type :cljs)
-           (kebabify (aget js/window "serenova"))
+           (iu/kebabify (aget js/window "serenova"))
            (aget js/window "serenova")))))))
