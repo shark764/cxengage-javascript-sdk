@@ -51,57 +51,61 @@
          interrupt-params (case type
                             :hold {:validation ::generic-voice-interaction-fn-params
                                    :interrupt-type "customer-hold"
-                                   :publish-fn (fn [r] (p/publish "interactions/voice/hold-acknowledged" r callback))
+                                   :topic ""
                                    :interrupt-body simple-interrupt-body}
                             :resume {:validation ::generic-voice-interaction-fn-params
                                      :interrupt-type "customer-resume"
-                                     :publish-fn (fn [r] (p/publish "interactions/voice/resume-acknowledged" r callback))
+                                     :topic ""
                                      :interrupt-body simple-interrupt-body}
                             :mute {:validation ::generic-voice-interaction-fn-params
                                    :interrupt-type "mute-resource"
-                                   :publish-fn (fn [r] (p/publish "interactions/voice/mute-acknowledged" r callback))
+                                   :topic ""
                                    :interrupt-body simple-interrupt-body}
                             :unmute {:validation ::generic-voice-interaction-fn-params
                                      :interrupt-type "unmute-resource"
-                                     :publish-fn (fn [r] (p/publish "interactions/voice/unmute-acknowledged" r callback))
+                                     :topic ""
                                      :interrupt-body simple-interrupt-body}
                             :start-recording {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "recording-start"
-                                              :publish-fn (fn [r] (p/publish "interactions/voice/start-recording-acknowledged" r callback))
+                                              :topic ""
                                               :interrupt-body simple-interrupt-body}
                             :stop-recording {:validation ::generic-voice-interaction-fn-params
                                              :interrupt-type "recording-stop"
-                                             :publish-fn (fn [r] (p/publish "interactions/voice/stop-recording-acknowledged" r callback))
+                                             :topic ""
                                              :interrupt-body simple-interrupt-body}
                             :transfer-to-resource {:validation ::resource-transfer-params
                                                    :interrupt-type "customer-transfer"
-                                                   :publish-fn (fn [r] (p/publish "interactions/voice/transfer-acknowledged" r callback))
+                                                   :topic ""
                                                    :interrupt-body {:transfer-resource-id resource-id
                                                                     :resource-id (state/get-active-user-id)
                                                                     :transfer-type transfer-type}}
                             :transfer-to-queue {:validation ::queue-transfer-params
                                                 :interrupt-type "customer-transfer"
-                                                :publish-fn (fn [r] (p/publish "interactions/voice/transfer-acknowledged" r callback))
+                                                :topic ""
                                                 :interrupt-body {:transfer-queue-id queue-id
                                                                  :resource-id (state/get-active-user-id)
                                                                  :transfer-type transfer-type}}
                             :transfer-to-extension {:validation ::extension-transfer-params
                                                     :interrupt-type "customer-transfer"
-                                                    :publish-fn (fn [r] (p/publish "interactions/voice/transfer-acknowledged" r callback))
+                                                    :topic ""
                                                     :interrupt-body {:transfer-extension (state/get-extension-by-value extension-value)
                                                                      :resource-id (state/get-active-user-id)
                                                                      :transfer-type transfer-type}}
                             :cancel-transfer {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "cancel-transfer"
-                                              :publish-fn (fn [r] (p/publish "interactions/voice/cancel-transfer-acknowledged" r callback))
+                                              :topic ""
                                               :interrupt-body simple-interrupt-body})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
-       ((:publish-fn interrupt-params) (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params)))
+       (p/publish {:topic (:topic interrupt-params)
+                   :error (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params))
+                   :callback callback})
        (do (when (or (= type :transfer-to-resource)
                      (= type :transfer-to-queue)
                      (= type :transfer-to-extension))
              (send-interrupt module :hold {:interaction-id interaction-id}))
-         (iu/send-interrupt* module (assoc interrupt-params :interaction-id interaction-id)))))))
+           (iu/send-interrupt* module (assoc interrupt-params
+                                             :interaction-id interaction-id
+                                             :callback callback)))))))
 
 (s/def ::dial-params
   (s/keys :req-un [::specs/phone-number]
@@ -116,7 +120,7 @@
   ([module params]
    (let [params (iu/extract-params params)
          {:keys [phone-number callback]} params
-         dial-publish-fn (fn [r] (p/publish "interactions/dial-acknowledged" r callback))
+         topic ""
          api-url (get-in module [:config :api-url])
          dial-url (str api-url "tenants/tenant-id/interactions")
          tenant-id (state/get-active-tenant-id)
@@ -134,12 +138,18 @@
                              {:tenant-id tenant-id})
                        :body dial-body}]
      (if-not (s/valid? ::dial-params params)
-       (dial-publish-fn (e/invalid-args-error (s/explain-data ::dial-params params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::dial-params params))
+                   :callback callback})
        (do (go (let [dial-response (a/<! (iu/api-request dial-request))
                      {:keys [api-response status]} dial-response]
                  (if (not= status 200)
-                   (dial-publish-fn (e/api-error api-response))
-                   (dial-publish-fn api-response))))
+                   (p/publish {:topics topic
+                               :error (e/api-error api-response)
+                               :callback callback})
+                   (p/publish {:topics topic
+                               :response api-response
+                               :callback callback}))))
            nil)))))
 
 (defn update-twilio-connection [connection]
@@ -192,17 +202,21 @@
    (let [connection (state/get-twilio-connection)
          {:keys [interaction-id digit callback] :as params} (iu/extract-params params)
          module-state @(:state module)
-         send-digits-publish-fn (fn [r] (p/publish "cxengage/voice" r callback))]
+         topic ""]
      (if-not (s/valid? ::send-digits-params params)
-       (send-digits-publish-fn (e/invalid-args-error (s/explain-data ::send-digits-params params))))
-     (when (and (= :active (state/find-interaction-location interaction-id))
-                (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
-       (when connection
-         (try
-           (do (.sendDigits connection digit)
-               (send-digits-publish-fn {:interaction-id interaction-id
-                                        :digit-sent digit}))
-           (catch js/Object e (str "Caught: Invalid Dial-Tone Multiple Frequency signal: " e))))))))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::send-digits-params params))
+                   :callback callback})
+       (when (and (= :active (state/find-interaction-location interaction-id))
+                  (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
+         (when connection
+           (try
+             (do (.sendDigits connection digit)
+                 (p/publish {:topics topic
+                             :response {:interaction-id interaction-id
+                                        :digit-sent digit}
+                             :callback callback}))
+             (catch js/Object e (str "Caught: Invalid Dial-Tone Multiple Frequency signal: " e)))))))))
 
 (def initial-state
   {:module-name :voice})

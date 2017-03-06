@@ -27,27 +27,33 @@
          {:keys [stats interval callback]} params
          tenant-id (st/get-active-tenant-id)
          params (merge params {:tenant-id tenant-id})
-         publish-fn (fn [r] (p/publish (str "reporting/polling-response") r callback))]
+         topic ""]
      (if (not (s/valid? ::polling-params params))
-       (publish-fn (e/invalid-args-error (s/explain-data ::polling-params params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::polling-params params))
+                   :callback callback})
        (let [api-url (str api-url (get-in module-state [:urls :batch]))
              polling-request {:method :post
-                                 :body {:requests stats}
-                                 :url (iu/build-api-url-with-params
-                                       api-url
-                                       params)}]
+                              :body {:requests stats}
+                              :url (iu/build-api-url-with-params
+                                    api-url
+                                    params)}]
          (go-loop []
            (let [{:keys [api-response status]} (a/<! (iu/api-request polling-request))
                  {:keys [results]} api-response
                  next-polling-delay (or interval 3000)]
              (if (not= status 200)
                (do (js/console.error "Batch request failed.")
-                   (publish-fn (e/api-error api-response)))
+                   (p/publish {:topics topic
+                               :error (e/api-error api-response)
+                               :callback callback}))
                (do (js/console.info "Batch request received!")
-                   (publish-fn results)
+                   (p/publish {:topics topic
+                               :response results
+                               :callback callback})
                    (a/<! (a/timeout next-polling-delay))
                    (recur))))
-          nil))))))
+           nil))))))
 
 (def initial-state
   {:module-name :reporting

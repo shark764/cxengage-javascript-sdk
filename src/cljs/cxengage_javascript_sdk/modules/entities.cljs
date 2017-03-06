@@ -42,9 +42,11 @@
          params (merge params {:tenant-id tenant-id
                                :resource-id resource-id
                                :session-id session-id})
-         publish-fn (fn [r] (p/publish (str "entities/get-" (name entity-type) "-response") r callback))]
+         topic ""]
      (if (not (s/valid? validation params))
-       (publish-fn (e/invalid-args-error (s/explain-data validation params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data validation params))
+                   :callback callback})
        (let [api-url (str api-url (get-in module-state [:urls entity-type]))
              entity-get-request {:method :get
                                  :url (iu/build-api-url-with-params
@@ -53,9 +55,13 @@
          (go (let [entity-get-response (a/<! (iu/api-request entity-get-request))
                    {:keys [status api-response]} entity-get-response]
                (if (not= status 200)
-                 (publish-fn (e/api-error api-response))
-                 (publish-fn api-response))))
-        nil)))))
+                 (p/publish {:topics topic
+                             :error (e/api-error api-response)
+                             :callback callback})
+                 (p/publish {:topics topic
+                             :response api-response
+                             :callback callback}))))
+         nil)))))
 
 (s/def ::put-entity-params
   (s/keys :req-un [::entity-id]
@@ -78,9 +84,11 @@
          params (merge params {:tenant-id tenant-id
                                :resource-id resource-id
                                :session-id session-id})
-         publish-fn (fn [r] (p/publish (str "entities/put-" (name entity-type) "-response") r callback))]
+         topic ""]
      (if (not (s/valid? ::put-entity-params params))
-       (publish-fn (e/invalid-args-error (s/explain-data ::put-entity-params params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::put-entity-params params))
+                   :callback callback})
        (let [api-url (str api-url (get-in module-state [:urls entity-type]))
              entity-get-request {:method :put
                                  :body body
@@ -90,9 +98,13 @@
          (go (let [entity-get-response (a/<! (iu/api-request entity-get-request))
                    {:keys [status api-response]} entity-get-response]
                (if (not= status 200)
-                 (publish-fn (e/api-error api-response))
-                 (publish-fn api-response))))
-        nil)))))
+                 (p/publish {:topics topic
+                             :error (e/api-error api-response)
+                             :callback callback})
+                 (p/publish {:topics topic
+                             :response api-response
+                             :callback callback}))))
+         nil)))))
 
 (def initial-state
   {:module-name :entities

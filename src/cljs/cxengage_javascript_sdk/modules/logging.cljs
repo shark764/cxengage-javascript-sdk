@@ -47,10 +47,14 @@
   ([module params]
    (let [module-state @(:state module)
          {:keys [callback] :as params} (iu/extract-params params)
-         dump-pub (fn [r] (p/publish (get-in module-state [:topics :dump-logs]) r callback))]
+         topic ""]
      (if-not (s/valid? ::dump-logs-params params)
-       (dump-pub (e/invalid-args-error (s/explain-data ::dump-logs-params params)))
-       (dump-pub (state/get-unsaved-logs))))))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::dump-logs-params params))
+                   :callback callback})
+       (p/publish {:topics topic
+                   :response (state/get-unsaved-logs)
+                   :callback callback})))))
 
 (s/def ::set-level-params
   (s/keys :req-un [::specs/level]
@@ -65,11 +69,13 @@
      (set-level module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [{:keys [level callback] :as params} (iu/extract-params params)
-         set-pub (fn [r] (p/publish (get-in @(:state module) [:topics :set-level]) r callback))
+         topic ""
          level (keyword level)]
      (if-not (s/valid? ::set-level-params params)
-       (set-pub (e/invalid-args-error (s/explain-data ::set-level-params params)))
-       (state/set-log-level! level jack/levels)))))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::set-level-params params))
+                   :callback callback}))
+     (state/set-log-level! level jack/levels))))
 
 (s/def ::save-logs-params
   (s/keys :req-un []
@@ -98,15 +104,21 @@
                              :device "client"
                              :app-id (str (uuid/make-random-squuid))
                              :app-name "CxEngage Javascript SDK"}}
-         save-logs-publish-fn (fn [r] (p/publish topic r callback))]
+         topic ""]
      (if-not (s/valid? ::save-logs-params params)
-       (save-logs-publish-fn (e/invalid-args-error (s/explain-data ::save-logs-params params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::save-logs-params params))
+                   :callback callback})
        (do (go (let [save-response (a/<! (iu/api-request request-map))
                      {:keys [status api-response]} save-response
                      {:keys [result]} api-response]
                  (if (not= 200)
-                   (save-logs-publish-fn (e/api-error api-response))
-                   (do (save-logs-publish-fn api-response)
+                   (p/publish {:topics topic
+                               :error (e/api-error api-response)
+                               :callback callback})
+                   (do (p/publish {:topics topic
+                                   :response result
+                                   :callback callback})
                        (state/save-logs)))))
            nil)))))
 
