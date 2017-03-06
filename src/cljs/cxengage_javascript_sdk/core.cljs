@@ -74,8 +74,8 @@
   ([] (initialize {}))
   ([options & rest] (clj->js (e/wrong-number-of-args-error)))
   ([options]
-   (let [options (-> options
-                     (iu/extract-params)
+   (let [options (iu/extract-params options)
+         options (-> options
                      (assoc :base-url (or (:base-url options) "https://api.cxengage.net/v1/"))
                      (assoc :consumer-type (keyword (or (:consumer-type options) :js)))
                      (assoc :log-level (keyword (or (:log-level options) :info)))
