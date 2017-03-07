@@ -155,7 +155,10 @@
   nil)
 
 (defn handle-screen-pop [message]
-  nil)
+  (let [{:keys [pop-uri pop-type interaction-id]} message]
+    (when (and pop-uri (or (= pop-type "external-url") (= pop-type "url")))
+      (p/publish "cxengage/interactions/screen-pop/uri" {:interaction-id interaction-id
+                                                         :pop-uri pop-uri}))))
 
 (defn handle-wrapup-started
   [message]

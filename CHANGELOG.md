@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added support of screen pop type url
 * started checking for microphone access prior to starting twilio module
 * added DTMF signaling capability
 * refactored all modules in accordance with new module system

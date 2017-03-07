@@ -32,6 +32,7 @@
              :wrapup-on "cxengage/interactions/wrapup-on"
              :wrapup-off "cxengage/interactions/wrapup-off"
              :wrapup-end "cxengage/interactions/wrapup-end"
+             :screen-pop-uri "cxengage/interactions/screen-pop/uri"
              :send-message-response "cxengage/messaging/send-message-response"
              :new-message-received "cxengage/messaging/new-message-received"
              :history "cxengage/messaging/history"
