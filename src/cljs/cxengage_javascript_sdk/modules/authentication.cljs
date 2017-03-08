@@ -60,8 +60,8 @@
                            (p/publish {:topics login-topic
                                        :response result
                                        :callback callback})
-                           (p/publish {:topics (p/get-topic :tenant-list)
-                                       :response (:tenants result)}))))))))
+                           #_(p/publish {:topics (p/get-topic :tenant-list)
+                                         :response (:tenants result)}))))))))
          nil)))))
 
 (def initial-state
