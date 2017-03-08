@@ -61,8 +61,7 @@
                                        :response result
                                        :callback callback})
                            (p/publish {:topics (p/get-topic :tenant-list)
-                                       :response (:tenants result)
-                                       :callback callback}))))))))
+                                       :response (:tenants result)}))))))))
          nil)))))
 
 (def initial-state
