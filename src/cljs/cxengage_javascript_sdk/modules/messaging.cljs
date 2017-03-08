@@ -106,11 +106,11 @@
 (defn send-message-impl
   [payload topic callback]
   (let [msg (Paho.MQTT.Message. payload)
-        topic (p/get-topic :asdf)]
+        pubsub-topic (p/get-topic :send-message-acknowledged)]
     (set! (.-destinationName msg) topic)
     (set! (.-qos msg) 1)
     (.send (get-mqtt-client) msg)
-    (p/publish {:topics topic
+    (p/publish {:topics pubsub-topic
                 :response true
                 :callback callback})))
 
@@ -199,7 +199,7 @@
    (let [module-state @(:state module)
          params (iu/extract-params params)
          {:keys [interaction-id callback]} params
-         topic (p/get-topic :asdf)
+         topic (p/get-topic :send-message-acknowledged)
          tenant-id (state/get-active-tenant-id)
          payload (assoc params
                         :resource-id (state/get-active-user-id)

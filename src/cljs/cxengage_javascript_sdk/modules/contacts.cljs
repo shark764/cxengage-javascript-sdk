@@ -24,7 +24,7 @@
          request-url (iu/build-api-url-with-params
                       base-url
                       (:params url))
-         topic (p/get-topic :asdf)]
+         topic (p/get-topic :contact-response)]
      (if-not (s/valid? spec params)
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data spec params))

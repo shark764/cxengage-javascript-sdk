@@ -20,7 +20,7 @@
           (if (not= status 200)
             (e/api-error result)
             (do (state/add-messages-to-history! interaction-id result)
-                (p/publish {:topics (p/get-topic :asdf)
+                (p/publish {:topics (p/get-topic :messaging-history-received)
                             :response (state/get-interaction-messaging-history interaction-id)})))))))
 
 (defn get-messaging-metadata [tenant-id interaction-id]
@@ -41,7 +41,7 @@
               (= channel-type "messaging"))
       (let [{:keys [tenant-id interaction-id]} message]
         (get-messaging-metadata tenant-id interaction-id))))
-  (p/publish {:topics (p/get-topic :asdf)
+  (p/publish {:topics (p/get-topic :work-offer-received)
               :response message})
   nil)
 
@@ -52,8 +52,8 @@
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (p/publish {:topics (p/get-topic :asdf)
-                :respones (state/augment-messaging-payload {:payload payload})})
+    (p/publish {:topics (p/get-topic :new-message-received)
+                :response (:payload (state/augment-messaging-payload {:payload payload}))})
     (state/add-messages-to-history! interaction-id [{:payload payload}])))
 
 (defn handle-resource-state-change [message]
@@ -65,24 +65,28 @@
                 :response true})))
 
 (defn handle-work-initiated [message]
-  (p/publish {:topics (p/get-topic :asdf)
+  (p/publish {:topics (p/get-topic :work-initiated-received)
               :response message}))
 
 (defn handle-work-rejected [message]
   (let [{:keys [interaction-id]} message]
     (state/transition-interaction! :pending :past interaction-id)
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :work-rejected-received)
                 :response {:interaction-id interaction-id}})))
 
 (defn handle-custom-fields [message]
   (let [{:keys [interaction-id]} message
         custom-field-details (:custom-fields message)]
-    (state/add-interaction-custom-field-details! custom-field-details interaction-id)))
+    (state/add-interaction-custom-field-details! custom-field-details interaction-id)
+    (p/publish {:topics (p/get-topic :custom-fields-received)
+                :response custom-field-details})))
 
 (defn handle-disposition-codes [message]
   (let [{:keys [interaction-id]} message
         disposition-code-details (:disposition-codes message)]
-    (state/add-interaction-disposition-code-details! disposition-code-details interaction-id)))
+    (state/add-interaction-disposition-code-details! disposition-code-details interaction-id)
+    (p/publish {:topics (p/get-topic :disposition-codes-received)
+                :response disposition-code-details})))
 
 (defn handle-session-start [message]
   nil)
@@ -101,73 +105,73 @@
        {:tenant-id tenant-id
         :interaction-id interaction-id
         :env (state/get-env)}))
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :work-accepted-received)
                 :response {:interaction-id interaction-id}}) ))
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message
-        interaction (state/get-pending-interaction interaction-id)
+        interaction (state/get-interaction interaction-id)
         channel-type (get interaction :channel-type)]
     (when (= channel-type "voice")
       (let [connection (state/get-twilio-device)]
         (.disconnectAll connection)))
     (state/transition-interaction! :active :past interaction-id)
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :work-ended-received)
                 :response {:interaction-id interaction-id}})))
 
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
         {:keys [interaction-id]} message]
     (do (state/add-interaction-wrapup-details! wrapup-details interaction-id)
-        (p/publish {:topics (p/get-topic :asdf)
-                    :response wrapup-details}))))
+        (p/publish {:topics (p/get-topic :wrapup-details-received)
+                    :response (assoc wrapup-details :interaction-id interaction-id)}))))
 
 (defn handle-customer-hold [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :customer-hold)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-customer-resume [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :customer-resume)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-resource-mute [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :resource-muted)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-resource-unmute [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :resource-unmuted)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-recording-start [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :recording-started)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-recording-stop [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :recording-ended)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-transfer-connected [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :transfer-connected)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-script-received [message]
   (let [{:keys [interaction-id resource-id script]} message]
     (state/add-script-to-interaction! interaction-id script)
-    (p/publish {:topics (p/get-topic :asdf)
+    (p/publish {:topics (p/get-topic :script-received)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id
                            :script script}})))
@@ -177,7 +181,7 @@
 (defn handle-screen-pop [message]
   (let [{:keys [pop-uri pop-type interaction-id]} message]
     (when (and pop-uri (or (= pop-type "external-url") (= pop-type "url")))
-      (p/publish {:topics (p/get-topic :asdf)
+      (p/publish {:topics (p/get-topic :url-pop-received)
                   :response {:interaction-id interaction-id
                              :pop-uri pop-uri}}))))
 
@@ -186,7 +190,7 @@
   (let [{:keys [interaction-id]} message
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
     (when (:wrapup-enabled wrapup-details)
-      (p/publish {:topics (p/get-topic :asdf)
+      (p/publish {:topics (p/get-topic :wrapup-started)
                   :response {:interaction-id interaction-id}}))))
 
 (defn msg-router [message]

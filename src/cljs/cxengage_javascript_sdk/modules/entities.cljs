@@ -42,7 +42,7 @@
          params (merge params {:tenant-id tenant-id
                                :resource-id resource-id
                                :session-id session-id})
-         topic (p/get-topic :asdf)]
+         topic (p/get-topic (keyword (str "get-" (name entity-type) "-response")))]
      (if (not (s/valid? validation params))
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data validation params))
@@ -84,7 +84,7 @@
          params (merge params {:tenant-id tenant-id
                                :resource-id resource-id
                                :session-id session-id})
-         topic (p/get-topic :asdf)]
+         topic (p/get-topic (keyword (str "update-" (name entity-type) "-response")))]
      (if (not (s/valid? ::put-entity-params params))
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data ::put-entity-params params))

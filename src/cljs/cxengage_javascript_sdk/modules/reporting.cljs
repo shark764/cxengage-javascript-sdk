@@ -27,7 +27,7 @@
          {:keys [stats interval callback]} params
          tenant-id (st/get-active-tenant-id)
          params (merge params {:tenant-id tenant-id})
-         topic (p/get-topic :asdf)]
+         topic (p/get-topic :batch-response)]
      (if (not (s/valid? ::polling-params params))
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data ::polling-params params))

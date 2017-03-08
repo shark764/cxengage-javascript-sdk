@@ -49,11 +49,11 @@
          interrupt-params (case type
                             :end {:validation ::generic-interaction-fn-params
                                   :interrupt-type "resource-disconnect"
-                                  :topic (p/get-topic :asdf)
+                                  :topic (p/get-topic :interaction-end-acknowledged)
                                   :interrupt-body basic-interrupt-body}
                             :accept {:validation ::generic-interaction-fn-params
                                      :interrupt-type "offer-accept"
-                                     :topic (p/get-topic :asdf)
+                                     :topic (p/get-topic :interaction-accept-acknowledged)
                                      :interrupt-body basic-interrupt-body
                                      :on-confirm-fn (fn []
                                                       (when (= channel-type "voice")
@@ -64,31 +64,31 @@
                                                         (int/get-messaging-history tenant-id interaction-id)))}
                             :focus {:validation ::generic-interaction-fn-params
                                     :interrupt-type "interaction-focused"
-                                    :topic (p/get-topic :asdf)
+                                    :topic (p/get-topic :interaction-focus-acknowledged)
                                     :interrupt-body detailed-interaction-interrupt-body}
                             :unfocus {:validation ::generic-interaction-fn-params
                                       :interrupt-type "interaction-unfocused"
-                                      :topic (p/get-topic :asdf)
+                                      :topic (p/get-topic :interaction-unfocus-acknowledged)
                                       :interrupt-body detailed-interaction-interrupt-body}
                             :assign {:validation ::contact-operation-params
                                      :interrupt-type "interaction-contact-selected"
-                                     :topic (p/get-topic :asdf)
+                                     :topic (p/get-topic :contact-assignment-acknowledged)
                                      :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
                             :unassign {:validation ::contact-operation-params
                                        :interrupt-type "interaction-contact-deselected"
-                                       :topic (p/get-topic :asdf)
+                                       :topic (p/get-topic :contact-unassignment-acknowledged)
                                        :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
                             :enable-wrapup {:validation ::wrapup-params
                                             :interrupt-type "wrapup-on"
-                                            :topic (p/get-topic :asdf)
+                                            :topic (p/get-topic :enable-wrapup-acknowledged)
                                             :interrupt-body basic-interrupt-body}
                             :disable-wrapup {:validation ::wrapup-params
                                              :interrupt-type "wrapup-off"
-                                             :topic (p/get-topic :asdf)
+                                             :topic (p/get-topic :disable-wrapup-acknowledged)
                                              :interrupt-body basic-interrupt-body}
                             :end-wrapup {:validation ::wrapup-params
                                          :interrupt-type "wrapup-end"
-                                         :topic (p/get-topic :asdf)
+                                         :topic (p/get-topic :end-wrapup-acknowledged)
                                          :interrupt-body basic-interrupt-body})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
        (p/publish {:topics (:topic interrupt-params)

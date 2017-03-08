@@ -11,9 +11,9 @@
   <script src="js/moment.js" type="text/javascript"></script>
 
   <div id="login-screen" style="display: block;">
-    <input type="text" id="username" name="username" value="sstiles@liveopscloud.com">
+    <input type="text" id="username" name="username" value="">
     <br><br>
-    <input type="password" id="password" name="password" value="DevProfile1!">
+    <input type="password" id="password" name="password" value="">
     <br><br>
     <button onclick="login()">Log In </button>
   </div>
@@ -29,7 +29,7 @@
       <h2>Agent State Controls</h2>
       <select disabled name="extension-select" id="extension-select"></select>
       <br><br>
-      <button disabled onclick="selectExtension()">select extension</button>
+      <button id="esbutton" disabled onclick="selectExtension()">select extension</button>
       <br>
       <br>
       <button id="ready" disabled onclick="goReady()">Go Ready</button>
@@ -41,35 +41,43 @@
       <button disabled onclick="goOutbound()">Go Outbound</button>
     </div>
     <hr>
-    <div class="call-controls">
-      <h2>Phone Interaction</h2>
+    <div class="call-controls" style="display: none;">
+      <h2>Phone Interaction <span></span></h2>
       <div style="width:350px; text-align: center;">
-        <button disabled style="float: left;" onclick="()">answer phone</button>
-        <pre style="display: inline;"><--></pre>
-        <button disabled style="float: right;" onclick="()">hangup phone</button>
+        <button id="answerPhone" disabled onclick="acceptCall()">answer call <span></span></button>
+        <button id="rejectPhone" disabled onclick="endCall()">reject call <span></span></button>
+        <button id="hangupPhone" disabled onclick="endCall()">hangup phone</button>
       </div>
-      <br><br>
-      <div style="width:350px; text-align: center;">
-        <button disabled style="float: left;" onclick="()">hold call</button>
-        <pre style="display: inline;"><--></pre>
-        <button disabled style="float: right;" onclick="()">resume call</button>
-      </div>
-      <br><br>
-      <div style="width:350px; text-align: center;">
-        <button disabled style="float: left;" onclick="()">start recording call</button>
-        <pre style="display: inline;"><--></pre>
-        <button disabled style="float: right;" onclick="()">stop recording call</button>
-      </div>
-      <br><br>
-      <div style="width:350px; text-align: center;">
-        <button disabled style="float: left;" onclick="()">mute your voice</button>
-        <pre style="display: inline;"><--></pre>
-        <button disabled style="float: right;" onclick="()">unmute your voice</button>
+      <div class="aux">
+        <br><br>
+        <div style="width:350px; text-align: center;" class="hold">
+          <button class="on" id="holdCall" disabled style="float: left;" onclick="holdCall()">hold call</button>
+          <pre style="display: inline;"><--></pre>
+          <button class="off" id="resumeCall" disabled style="float: right;" onclick="resumeCall()">resume call</button>
+        </div>
+        <br><br>
+        <div style="width:350px; text-align: center;" class="recording">
+          <button class="on" id="startRecordingCall" disabled style="float: left;" onclick="startRecordingCall()">start recording call</button>
+          <pre style="display: inline;"><--></pre>
+          <button class="off" id="stopRecordingCall" disabled style="float: right;" onclick="stopRecordingCall()">stop recording call</button>
+        </div>
+        <br><br>
+        <div style="width:350px; text-align: center;" class="mute">
+          <button class="on" id="muteCall" disabled style="float: left;" onclick="muteCall()">mute your voice</button>
+          <pre style="display: inline;"><--></pre>
+          <button class="off" id="unmuteCall" disabled style="float: right;" onclick="unmuteCall()">unmute your voice</button>
+        </div>
+        <br><br>
+        <div style="width:350px; text-align: center;" class="focus">
+          <button class="on" id="focusCall" disabled style="float: left;" onclick="focusCall()">focus call</button>
+          <pre style="display: inline;"><--></pre>
+          <button class="off" id="unfocusCall" disabled style="float: right;" onclick="unfocusCall()">unfocus call</button>
+        </div>
       </div>
     </div>
     <br><br>
     <hr>
-    <div class="messaging-controls">
+    <div class="messaging-controls" style="display: none;">
       <h2>Messaging Interactions</h2>
     </div>
     <hr>
@@ -83,7 +91,15 @@
       "logLevel":"debug"
     });
 
-    var state = {};
+    var state = {
+      voiceinteractionId:'',
+      voiceAccepted:false,
+      interactions:{}
+    };
+    var messagingTimers = {};
+    var onCallTimer;
+    var timeOnCall = 0;
+    var voiceTimer;
 
     SDK.subscribe('cxengage', function(error, topic, response) {
       console.log('\n\n');
@@ -108,6 +124,57 @@
         case 'cxengage/session/state-change-response':
           handleStateChange(error, topic, response);
           break;
+        case 'cxengage/interactions/work-offer-received':
+          handleWorkOffer(error, topic, response);
+          break;
+        case 'cxengage/interactions/work-rejected-received':
+          handleWorkRejected(error, topic, response);
+          break;
+        case 'cxengage/interactions/work-accepted-received':
+          handleWorkAccepted(error, topic, response);
+          break;
+        case 'cxengage/interactions/voice/customer-hold-received':
+          handleButtonSwitch(error, topic, response, 'hold', 'on');
+          break;
+        case 'cxengage/interactions/voice/customer-resume-received':
+          handleButtonSwitch(error, topic, response, 'hold', 'off');
+          break;
+        case 'cxengage/interactions/voice/resource-mute-received':
+          handleButtonSwitch(error, topic, response, 'mute', 'on');
+          break;
+        case 'cxengage/interactions/voice/resource-unmute-received':
+          handleButtonSwitch(error, topic, response, 'mute', 'off');
+          break;
+        case 'cxengage/interactions/voice/start-recording-acknowledged':
+          handleButtonSwitch(error, topic, response, 'recording', 'on');
+          break;
+        case 'cxengage/interactions/voice/stop-recording-acknowledged':
+          handleButtonSwitch(error, topic, response, 'recording', 'off');
+          break;
+        case 'cxengage/interactions/focus-acknowledged':
+          handleButtonSwitch(error, topic, response, 'focus', 'on');
+          break;
+        case 'cxengage/interactions/unfocus-acknowledged':
+          handleButtonSwitch(error, topic, response, 'focus', 'off');
+          break;
+        case 'cxengage/interactions/work-ended-received':
+          handleWorkEnded(error, topic, response);
+          break;
+        case 'cxengage/interactions/messaging/new-message-received':
+          handleNewMessagingMessage(error, topic, response);
+          break;
+        case 'cxengage/interactions/messaging/history-received':
+          $('#' + response[0].to).show().css({display:'inline-block'});
+          _.each(response, function(msg) {
+            handleNewMessagingMessage(error, topic, msg);
+          });
+          break;
+        case 'cxengage/capabilities/voice-available':
+          handleVoiceEnabled(error, topic, response);
+          break;
+        case 'cxengage/capabilities/messaging-available':
+          handleMessagingEnabled(error, topic, response);
+          break;
         default:
           console.warn('no handler written yet for ', topic);
           break;
@@ -121,6 +188,12 @@
      *
      */
 
+    var handleButtonSwitch = function(error, topic, response, buttonGroup, onOff) {
+      var x = onOff === 'on' ? 'off' : 'on';
+      $('.' + buttonGroup + ' button').attr('disabled', 'disabled');
+      $('.' + buttonGroup + ' button.' + x).removeAttr('disabled');
+    };
+
     var handleStateChange = function(error, topic, response) {
       if (error) return console.error('uh oh');
       var newState = response.state;
@@ -132,6 +205,53 @@
           $('#' + s).removeAttr('disabled');
         }
       });
+
+      if (newState === 'notready') {
+        $('#extension-select, #esbutton').removeAttr('disabled');
+      } else {
+        $('#extension-select, #esbutton').attr('disabled','disabled');
+      }
+    };
+
+    var handleVoiceEnabled = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      $('.call-controls').show();
+      SDK = serenova.cxengage.api;
+    };
+
+    var handleMessagingEnabled = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      $('.messaging-controls').show();
+      SDK = serenova.cxengage.api;
+    };
+
+    var handleNewMessagingMessage = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      console.log(response);
+      if ($('#' + response.id).length === 0) {
+        var fromName = (response.metadata && response.metadata.firstName) === 'Agent' ? 'Agent' : response.from;
+        $('#' + response.to + ' ul').append('<li id='+response.id+'><strong>'+fromName+':</strong> '+response.body.text+'</li>')
+      }
+    };
+
+    var handleWorkEnded = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      state.interactions[response.interactionId].ended = true;
+      if (response.interactionId === state.voiceInteractionId) {
+        $('.call-controls button.off').attr('disabled', 'disabled');
+        $('.call-controls button span').text('');
+        $('.call-controls h2 span').text('');
+        $('.call-controls .aux button').attr('disabled', 'disabled');
+        clearInterval(onCallTimer);
+        clearInterval(voiceTimer);
+        state.voiceAccepted = false;
+        setTimeout(function(){
+          $('#answerPhone span, #rejectPhone span').text('');
+        }, 2000);
+      } else {
+        clearInterval(messagingTimers[response.interactionId]);
+        $('#' + response.interactionId).remove();
+      }
     };
 
     var handleExtensionList = function(error, topic, response) {
@@ -154,9 +274,59 @@
       switchScreens('agent-screen');
     };
 
-    var handleSessionEnd = function(error, topic, message) {
+    var handleSessionEnd = function(error, topic, response) {
       if (error) return console.error('uh oh');
       location.reload(true);
+    };
+
+    var handleWorkAccepted = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      if (response.interactionId === state.voiceInteractionId) {
+        state.voiceAccepted = true;
+        $('#answerPhone, #rejectPhone').attr('disabled', 'disabled');
+        $('#hangupPhone').removeAttr('disabled');
+        $('#answerPhone span, #rejectPhone span').text('');
+        $('.call-controls .aux button.on').removeAttr('disabled');
+        timeOnCall = 0;
+        onCallTimer = setInterval(function() {
+          timeOnCall = timeOnCall + 1;
+          $('.call-controls h2 span').text(' (call duration: ' + timeOnCall + 's)');
+        }, 1000);
+      } else {
+        $('#' + response.interactionId + ' #acceptRejectArea').remove();
+        $('#' + response.interactionId + ' #responseArea').show();
+      }
+    };
+
+    var handleWorkRejected = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      state.voiceAccepted = false;
+      state.interactions[response.interactionId].ended = true;
+      clearInterval(messagingTimers[response.interactionId]);
+      if (response.interactionId === state.voiceInteractionId) {
+        $('#answerPhone span, #rejectPhone span').text('');
+        $('#answerPhone, #rejectPhone').attr('disabled', 'disabled');
+        $('.call-controls .aux button').attr('disabled', 'disabled');
+
+        setTimeout(function(){
+          $('#answerPhone span, #rejectPhone span').text('');
+        }, 2000);
+      } else {
+        $('#' + response.interactionId).remove();
+      }
+    };
+
+    var handleWorkOffer = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      state.interactions[response.interactionId] = {};
+      state.interactions[response.interactionId].ended = false;
+      if (response.channelType === 'voice') {
+        initializeVoiceInteraction(response);
+      } else if (response.channelType === 'messaging' || response.channelType === 'sms') {
+        initializeMessagingInteraction(response);
+      } else {
+        console.error ('Unknown channel type');
+      }
     };
 
     /*
@@ -174,6 +344,72 @@
           $('#' + s).show();
         }
       })
+    };
+
+    var initializeMessagingInteraction = function(workOffer) {
+      if ($('#' + workOffer.interactionId).find().length === 0) {
+        var msgingWindows = $('.messaging-controls');
+        console.log('asfdasdfasdfsafd');
+        var iid = workOffer.interactionId;
+        var timeout = Math.floor((new Date(workOffer.timeout).getTime() - new Date().getTime()) / 1000);
+        messagingTimers[workOffer.interactionId] = setInterval(function() {
+          var timeLeft = timeout--;
+          $('#' + iid + ' .acceptBtn span, #' + iid + ' .rejectBtn span').text('(' + timeLeft + 's remaining)');
+          if (timeLeft == 1) {
+            $('#' + iid + ' .acceptBtn').attr('disabled','disabled');
+          }
+          if (timeLeft == 0) {
+            clearInterval(messagingTimers[workOffer.interactionId]);
+          }
+        }, 1000);
+        var initialMessagingHTML = '<div style="margin: 20px; vertical-align: top; padding: 10px; display: none; max-width: 300px; border: 2px solid #000000;" id="' + iid + '">\
+          <strong style="width: 100%; text-align: center;">' + iid + '</strong><br><br>\
+          <strong>Type:</strong> ' + workOffer.channelType + '<br>\
+          <p><strong>Messages:</strong></p>\
+          <ul style="list-style: none; padding: 0; margin: 0;"></ul>\
+          <div id="acceptRejectArea">\
+            <button class="acceptBtn" onclick="acceptMessagingInteraction(\''+iid+'\')">Accept Messaging Interaction <span></span></button>\
+            <button class="rejectBtn" onclick="rejectMessagingInteraction(\''+iid+'\')">Reject Messaging Interaction <span></span></button>\
+          </div>\
+          <div style="display: none;" id="responseArea">\
+            <input class="msgText" type="text"></input>\
+            <button onclick="sendMessage(\'' + iid + '\')">Send Message</button><br>\
+            <button onclick="endMessagingInteraction(\'' + iid + '\')">End Chat</button><br>\
+          </div>\
+        </div>';
+        msgingWindows.append(initialMessagingHTML);
+      }
+    };
+
+    var initializeVoiceInteraction = function(workOffer) {
+      state.voiceInteractionId = workOffer.interactionId;
+      var timeout = Math.floor((new Date(workOffer.timeout).getTime() - new Date().getTime()) / 1000);
+      $('#answerPhone').removeAttr('disabled');
+      $('#rejectPhone').removeAttr('disabled');
+      $('#answerPhone span, #rejectPhone span').text('(' + (timeout + 1) + 's remaining)');
+      voiceTimer = setInterval(function() {
+        var timeLeft = timeout--;
+        if (timeLeft == 0) {
+          console.log('clearing interval 1');
+          clearInterval(voiceTimer);
+          return;
+        }
+        if (state.voiceAccepted == true) {
+          console.log('clearing interval 2');
+          clearInterval(voiceTimer);
+          return;
+        }
+        if (state.interactions[workOffer.interactionId].ended == true) {
+          console.log('clearing interval 3');
+          clearInterval(voiceTimer);
+        }
+        $('#answerPhone span, #rejectPhone span').text('(' + timeLeft + 's remaining)');
+        if (timeLeft == 1) {
+          $('#answerPhone').attr('disabled','disabled');
+          $('#rejectPhone').attr('disabled','disabled');
+          $('#acceptPhone span, #rejectPhone span').text('');
+        }
+      }, 1000);
     };
 
     var populateExtensionsDropdown = function(extensions) {
@@ -199,6 +435,20 @@
      * button handlers
      *
      */
+
+    var acceptMessagingInteraction = function(miid) {
+      SDK.interactions.accept({interactionId:miid});
+    };
+    var rejectMessagingInteraction = function(miid) {
+      SDK.interactions.reject({interactionId:miid});
+    };
+    var sendMessage = function(miid) {
+      SDK.interactions.messaging.sendMessage({interactionId:miid,message:$('#' + miid + ' .msgText').val()})
+      $('#' + miid + ' .msgText').val('');
+    };
+    var endMessagingInteraction = function(miid) {
+      SDK.interactions.end({interactionId:miid});
+    };
 
     var selectActiveTenant = function() {
       var tid = $('#tenantSelect').val();
@@ -229,6 +479,45 @@
       SDK.session.setDirection({direction:'outbound'});
     };
 
+    var acceptCall = function() {
+      SDK.interactions.accept({ interactionId: state.voiceInteractionId });
+    };
+
+    var endCall = function() {
+      SDK.interactions.end({ interactionId: state.voiceInteractionId });
+    };
+
+    var focusCall = function() {
+      SDK.interactions.focus({interactionId:state.voiceInteractionId});
+    };
+
+    var unfocusCall = function() {
+      SDK.interactions.unfocus({interactionId:state.voiceInteractionId});
+    };
+
+    var holdCall = function() {
+      SDK.interactions.voice.hold({interactionId:state.voiceInteractionId});
+    };
+
+    var resumeCall = function() {
+      SDK.interactions.voice.resume({interactionId:state.voiceInteractionId});
+    };
+
+    var startRecordingCall = function() {
+      SDK.interactions.voice.startRecording({interactionId:state.voiceInteractionId});
+    };
+
+    var stopRecordingCall = function() {
+      SDK.interactions.voice.stopRecording({interactionId:state.voiceInteractionId});
+    };
+
+    var muteCall = function() {
+      SDK.interactions.voice.mute({interactionId:state.voiceInteractionId});
+    };
+
+    var unmuteCall = function() {
+      SDK.interactions.voice.unmute({interactionId:state.voiceInteractionId});
+    };
 
     var login = function() {
       var params = {
