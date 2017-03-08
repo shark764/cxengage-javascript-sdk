@@ -49,11 +49,11 @@
          interrupt-params (case type
                             :end {:validation ::generic-interaction-fn-params
                                   :interrupt-type "resource-disconnect"
-                                  :publish-fn (fn [r] (p/publish "interactions/end-acknowledged" r callback))
+                                  :topic (p/get-topic :asdf)
                                   :interrupt-body basic-interrupt-body}
                             :accept {:validation ::generic-interaction-fn-params
                                      :interrupt-type "offer-accept"
-                                     :publish-fn (fn [r] (p/publish "interactions/accept-acknowledged" r callback))
+                                     :topic (p/get-topic :asdf)
                                      :interrupt-body basic-interrupt-body
                                      :on-confirm-fn (fn []
                                                       (when (= channel-type "voice")
@@ -64,35 +64,39 @@
                                                         (int/get-messaging-history tenant-id interaction-id)))}
                             :focus {:validation ::generic-interaction-fn-params
                                     :interrupt-type "interaction-focused"
-                                    :publish-fn (fn [r] (p/publish "interactions/focus-acknowledged" r callback))
+                                    :topic (p/get-topic :asdf)
                                     :interrupt-body detailed-interaction-interrupt-body}
                             :unfocus {:validation ::generic-interaction-fn-params
                                       :interrupt-type "interaction-unfocused"
-                                      :publish-fn (fn [r] (p/publish "interactions/unfocus-acknowledged" r callback))
+                                      :topic (p/get-topic :asdf)
                                       :interrupt-body detailed-interaction-interrupt-body}
                             :assign {:validation ::contact-operation-params
                                      :interrupt-type "interaction-contact-selected"
-                                     :publish-fn (fn [r] (p/publish "interactions/contact-assigned" r callback))
+                                     :topic (p/get-topic :asdf)
                                      :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
                             :unassign {:validation ::contact-operation-params
                                        :interrupt-type "interaction-contact-deselected"
-                                       :publish-fn (fn [r] (p/publish "interactions/contact-unassigned" r callback))
+                                       :topic (p/get-topic :asdf)
                                        :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
                             :enable-wrapup {:validation ::wrapup-params
                                             :interrupt-type "wrapup-on"
-                                            :publish-fn (fn [r] (p/publish "interactions/wrapup-enabled" r callback))
+                                            :topic (p/get-topic :asdf)
                                             :interrupt-body basic-interrupt-body}
                             :disable-wrapup {:validation ::wrapup-params
                                              :interrupt-type "wrapup-off"
-                                             :publish-fn (fn [r] (p/publish "interactions/wrapup-disabled" r callback))
+                                             :topic (p/get-topic :asdf)
                                              :interrupt-body basic-interrupt-body}
                             :end-wrapup {:validation ::wrapup-params
                                          :interrupt-type "wrapup-end"
-                                         :publish-fn (fn [r] (p/publish "interactions/wrapup-ended" r callback))
+                                         :topic (p/get-topic :asdf)
                                          :interrupt-body basic-interrupt-body})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
-       ((:publish-fn interrupt-params) (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params)))
-       (iu/send-interrupt* module (assoc interrupt-params :interaction-id interaction-id))))))
+       (p/publish {:topics (:topic interrupt-params)
+                   :error (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params))
+                   :callback callback})
+       (iu/send-interrupt* module (assoc interrupt-params
+                                         :interaction-id interaction-id
+                                         :callback callback))))))
 
 (def initial-state
   {:module-name :interactions})

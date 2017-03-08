@@ -88,11 +88,14 @@
        additional-params (merge additional-params)
        token (merge {:token token})))))
 
+(defn publish* [thing]
+  ((aget js/window "serenova" "cxengage" "api" "publish") thing))
+
 (defn send-interrupt*
   ([module params]
    (let [params (extract-params params)
          module-state @(:state module)
-         {:keys [interaction-id interrupt-type interrupt-body publish-fn on-confirm-fn]} params
+         {:keys [interaction-id interrupt-type interrupt-body topic on-confirm-fn callback]} params
          tenant-id (state/get-active-tenant-id)
          interrupt-request {:method :post
                             :body {:source "client"
@@ -102,8 +105,12 @@
      (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
                    {:keys [api-response status]} interrupt-response]
                (if (not= status 200)
-                 (publish-fn (e/api-error api-response))
-                 (do (publish-fn {:interacton-id interaction-id})
+                 (publish* {:topics topic
+                            :error (e/api-error api-response)
+                            :callback callback})
+                 (do (publish* {:topics topic
+                                :response {:interacton-id interaction-id}
+                                :callback callback})
                      (when on-confirm-fn (on-confirm-fn))))))
          nil))))
 

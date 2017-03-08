@@ -25,7 +25,7 @@
                                  heartbeat-url
                                  {:tenant-id tenant-id
                                   :resource-id resource-id})}
-        heartbeat-publish-fn (fn [r] (p/publish "session/heartbeat-acknowledged" r))]
+        topic ""]
     (go-loop []
       (if (= "offline" (state/get-user-session-state))
         (do (js/console.info "Session is now offline; ceasing future heartbeats.")
@@ -35,9 +35,12 @@
               next-heartbeat-delay (* 1000 (or (:heartbeatDelay api-response) 30))]
           (if (not= status 200)
             (do (js/console.error "Heartbeat failed; ceasing future heartbeats.")
+                (p/publish {:topics topic
+                            :error (e/api-error "no more heartbeats")})
                 nil)
             (do (js/console.info "Heartbeat sent!")
-                (heartbeat-publish-fn result)
+                (p/publish {:topics topic
+                            :response result})
                 (a/<! (a/timeout next-heartbeat-delay))
                 (recur))))))))
 
@@ -55,14 +58,18 @@
   (s/keys :req-un [::state]
           :opt-un [::specs/callback]))
 
-(defn change-presence-state-impl* [request pub-fn]
+(defn change-presence-state-impl* [request topic callback]
   (go
     (let [change-state-response (a/<! (iu/api-request request))
           {:keys [api-response status]} change-state-response
           {:keys [result]} api-response]
       (if (not= status 200)
-        (pub-fn (e/api-error api-response))
-        (pub-fn result)))))
+        (p/publish {:topics topic
+                    :error (e/api-error api-response)
+                    :callback callback})
+        (p/publish {:topics topic
+                    :response result
+                    :callback callback})))))
 
 (defn change-presence-state
   ([module state] (change-presence-state module state {}))
@@ -81,7 +88,7 @@
          {:keys [extension-value callback]} params
          active-extension-value (state/get-active-extension)
          extensions (state/get-all-extensions)
-         change-state-publish-fn (fn [r] (p/publish "session/change-state" r callback))
+         topic ""
          new-extension (state/get-extension-by-value extension-value)
          validation-spec (cond
                            (= state "ready") ::go-ready-params
@@ -89,7 +96,7 @@
                            (= state "offline") ::go-offline-params
                            :else ::go-ready-params)]
      (if (not (s/valid? validation-spec params))
-       (change-state-publish-fn (e/invalid-args-error (s/explain-data validation-spec params)))
+       (p/publish (e/invalid-args-error (s/explain-data validation-spec params)))
        (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
              change-state-request {:method :post
                                    :url (iu/build-api-url-with-params
@@ -109,14 +116,14 @@
                                              :resource-id resource-id})
                                       :body {:activeExtension new-extension}}]
              (if (nil? new-extension)
-               (change-state-publish-fn (e/not-a-valid-extension))
+               (p/publish (e/not-a-valid-extension))
                (do (go (let [user-update-response (a/<! (iu/api-request user-update-request))
                              {:keys [api-response status]} user-update-response]
                          (if (not= status 200)
-                           (change-state-publish-fn (e/api-error "failed to set user extension"))
-                           (change-presence-state-impl* change-state-request change-state-publish-fn))))
+                           (p/publish (e/api-error "failed to set user extension"))
+                           (change-presence-state-impl* change-state-request topic callback))))
                    nil)))
-           (do (change-presence-state-impl* change-state-request change-state-publish-fn)
+           (do (change-presence-state-impl* change-state-request topic callback)
                nil)))))))
 
 (defn start-session* [module]
@@ -124,7 +131,7 @@
         module-state @(:state module)
         resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
-        start-session-publish-fn (fn [r] (p/publish "session/started" r))
+        topic ""
         start-session-url (str api-url (get-in module-state [:urls :start-session]))
         start-session-request {:method :post
                                :url (iu/build-api-url-with-params
@@ -135,9 +142,11 @@
               {:keys [status api-response]} start-session-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (start-session-publish-fn (e/api-error api-response))
+            (p/publish {:topics topic
+                        :error (e/api-error api-response)})
             (do (state/set-session-details! result)
-                (start-session-publish-fn result)
+                (p/publish {:topics topic
+                            :response result})
                 (change-presence-state module "notready" {})
                 (start-heartbeats* module)))))
     nil))
@@ -153,15 +162,17 @@
                               config-url
                               {:tenant-id tenant-id
                                :resource-id resource-id})}
-        config-publish-fn (fn [r] (p/publish "session/config" r))]
+        topic ""]
     (go (let [config-response (a/<! (iu/api-request config-request))
               {:keys [api-response status]} config-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (config-publish-fn (e/api-error api-response))
+            (p/publish {:topics topic
+                        :error (e/api-error api-response)})
             (do (state/set-config! result)
                 (a/put! (:core-messages< module) :config-ready)
-                (config-publish-fn result)
+                (p/publish {:topics topic
+                            :response result})
                 (start-session* module)))))
     nil))
 
@@ -192,7 +203,7 @@
   ([module params]
    (let [params (iu/extract-params params)
          {:keys [direction callback]} params
-         set-direction-publish-fn (fn [r] (p/publish "session/direction-set" r callback))
+         topic ""
          api-url (get-in module [:config :api-url])
          tenant-id (state/get-active-tenant-id)
          resource-id (state/get-active-user-id)
@@ -208,13 +219,19 @@
                                    :resource-id resource-id})
                             :body direction-body}]
      (if-not (s/valid? ::set-direction-params params)
-       (set-direction-publish-fn (e/invalid-args-error (s/explain-data ::dial-params params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::dial-params params))
+                   :callback callback})
        (do (go (let [set-direction-response (a/<! (iu/api-request direction-request))
                      {:keys [status api-response]} set-direction-response
                      {:keys [result]} api-response]
                  (if (not= status 200)
-                   (set-direction-publish-fn (e/api-error "api error"))
-                   (set-direction-publish-fn (select-keys result [:session-id])))))
+                   (p/publish {:topics topic
+                               :error (e/api-error "api error")
+                               :callback callback})
+                   (p/publish {:topics topic
+                               :response (select-keys result [:session-id])
+                               :callback callback}))))
            nil)))))
 
 (defn set-active-tenant
@@ -228,7 +245,7 @@
          module-state @(:state module)
          {:keys [tenant-id callback]} params
          tenant-permissions (state/get-tenant-permissions tenant-id)
-         set-active-tenant-publish-fn (fn [r] (p/publish "session/active-tenant-set" r callback))]
+         topic ""]
      (if-let [error (cond
                       (not (s/valid? ::set-active-tenant-params params))
                       (e/invalid-args-error (s/explain-data ::set-active-tenant-params params))
@@ -237,9 +254,13 @@
                       (e/missing-required-permissions-error)
 
                       :else false)]
-       (set-active-tenant-publish-fn error)
+       (p/publish {:topics topic
+                   :error error
+                   :callback callback})
        (do (state/set-active-tenant! tenant-id)
-           (set-active-tenant-publish-fn {:tenant-id tenant-id})
+           (p/publish {:topics topic
+                       :response {:tenant-id tenant-id}
+                       :callback callback})
            (get-config* module)
            nil)))))
 

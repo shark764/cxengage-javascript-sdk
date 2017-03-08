@@ -27,9 +27,11 @@
    (let [params (iu/extract-params params)
          module-state @(:state module)
          {:keys [username password callback]} params
-         publish-fn (fn [r] (p/publish "authentication/login" r callback))]
+         pubsub-topic (p/get-topic :login)]
      (if (not (s/valid? ::login-params params))
-       (publish-fn (e/invalid-args-error (s/explain-data ::login-params params)))
+       (p/publish {:topics pubsub-topic
+                   :error (e/invalid-args-error (s/explain-data ::login-params params))
+                   :callback callback})
        (let [token-body {:username username
                          :password password}
              api-url (get-in module [:config :api-url])
@@ -43,15 +45,21 @@
          (go (let [token-response (a/<! (iu/api-request token-request))
                    {:keys [status api-response]} token-response]
                (if (not= status 200)
-                 (publish-fn (e/api-error api-response))
+                 (p/publish {:topics pubsub-topic
+                             :error (e/api-error "non 200 response")
+                             :callback callback})
                  (do (st/set-token! (:token api-response))
                      (let [login-response (a/<! (iu/api-request login-request))
                            {:keys [status api-response]} login-response]
                        (if (not= status 200)
-                         (publish-fn (e/api-error api-response))
+                         (p/publish {:topics pubsub-topic
+                                     :error (e/api-error "non 200 response")
+                                     :callback callback})
                          (let [{:keys [result]} api-response]
                            (st/set-user-identity! result)
-                           (publish-fn result))))))))
+                           (p/publish {:topics pubsub-topic
+                                       :response result
+                                       :callback callback}))))))))
          nil)))))
 
 (def initial-state

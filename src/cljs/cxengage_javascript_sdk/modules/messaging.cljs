@@ -104,11 +104,15 @@
   (.unsubscribe (get-mqtt-client) topic))
 
 (defn send-message-impl
-  [payload topic]
-  (let [msg (Paho.MQTT.Message. payload)]
+  [payload topic callback]
+  (let [msg (Paho.MQTT.Message. payload)
+        topic ""]
     (set! (.-destinationName msg) topic)
     (set! (.-qos msg) 1)
-    (.send (get-mqtt-client) msg)))
+    (.send (get-mqtt-client) msg)
+    (p/publish {:topics topic
+                :response true
+                :callback callback})))
 
 (defn on-connect [done-init<]
   (js/console.log "Mqtt client connected")
@@ -193,18 +197,20 @@
    (let [module-state @(:state module)
          params (iu/extract-params params)
          {:keys [interaction-id callback]} params
-         send-message-publish-fn (fn [r] (p/publish "messaging/message-sent" r callback))
+         topic ""
          tenant-id (state/get-active-tenant-id)
          payload (assoc params
                         :resource-id (state/get-active-user-id)
                         :tenant-id tenant-id)]
      (if-not (s/valid? ::send-message-params params)
-       (send-message-publish-fn (e/invalid-args-error (s/explain-data ::send-message-params params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::send-message-params params))
+                   :callback callback})
        (let [payload (-> payload
                          (gen-payload)
                          (format-payload))
              mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
-         (send-message-impl payload mqtt-topic)))
+         (send-message-impl payload mqtt-topic callback)))
      nil)))
 
 (def initial-state

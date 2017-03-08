@@ -24,15 +24,21 @@
          request-url (iu/build-api-url-with-params
                       base-url
                       (:params url))
-         pub-fn (fn [r] (p/publish (get-in module-state [:topics topic-key]) r callback))]
+         topic (p/get-topic :asdf)]
      (if-not (s/valid? spec params)
-       (pub-fn (e/invalid-args-error (s/explain-data spec params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data spec params))
+                   :callback callback})
        (do (go (let [response (a/<! (contact-request request-url body method))
                      {:keys [status api-response]} response
                      {:keys [result]} api-response]
                  (if (not= status 200)
-                   (pub-fn (e/api-error api-response))
-                   (pub-fn result))))
+                   (p/publish {:topics topic
+                               :error (e/api-error api-response)
+                               :callback callback})
+                   (p/publish {:topics topic
+                               :response result
+                               :callback callback}))))
            nil))))
   ([url body method]
    (let [request-map {:url url

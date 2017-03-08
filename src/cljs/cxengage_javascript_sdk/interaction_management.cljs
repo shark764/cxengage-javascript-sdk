@@ -20,7 +20,8 @@
           (if (not= status 200)
             (e/api-error result)
             (do (state/add-messages-to-history! interaction-id result)
-                (p/publish "cxengage/messaging/history" (state/get-interaction-messaging-history interaction-id))))))))
+                (p/publish {:topics "cxengage/messaging/history"
+                            :response (state/get-interaction-messaging-history interaction-id)})))))))
 
 (defn get-messaging-metadata [tenant-id interaction-id]
   (let [metadata-request {:method :get
@@ -40,7 +41,8 @@
               (= channel-type "messaging"))
       (let [{:keys [tenant-id interaction-id]} message]
         (get-messaging-metadata tenant-id interaction-id))))
-  (p/publish "cxengage/interactions/work-offer" message)
+  (p/publish {:topics "cxengage/interactions/work-offer"
+              :response message})
   nil)
 
 (defn handle-new-messaging-message [payload]
@@ -50,20 +52,24 @@
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (p/publish "cxengage/messaging/new-message-received" (state/augment-messaging-payload {:payload payload}))
+    (p/publish {:topics "cxengage/messaging/new-message-received"
+                :respones (state/augment-messaging-payload {:payload payload})})
     (state/add-messages-to-history! interaction-id [{:payload payload}])))
 
 (defn handle-resource-state-change [message]
   (state/set-user-session-state! message)
-  (p/publish "cxengage/session/state-changed" (select-keys message [:state :available-states :direction])))
+  (p/publish {:topics "cxengage/session/state-changed"
+              :response (select-keys message [:state :available-states :direction])}))
 
 (defn handle-work-initiated [message]
-  (p/publish "cxengage/interactions/work-initiated" message))
+  (p/publish {:topics "cxengage/interactions/work-initiated"
+              :response message}))
 
 (defn handle-work-rejected [message]
   (let [{:keys [interaction-id]} message]
     (state/transition-interaction! :pending :past interaction-id)
-    (p/publish "cxengage/interactions/work-rejected" {:interaction-id interaction-id})))
+    (p/publish {:topics "cxengage/interactions/work-rejected"
+                :response {:interaction-id interaction-id}})))
 
 (defn handle-custom-fields [message]
   (let [{:keys [interaction-id]} message
@@ -92,7 +98,8 @@
        {:tenant-id tenant-id
         :interaction-id interaction-id
         :env (state/get-env)}))
-    (p/publish "cxengage/interactions/work-accepted" {:interaction-id interaction-id}) ))
+    (p/publish {:topics "cxengage/interactions/work-accepted"
+                :response {:interaction-id interaction-id}}) ))
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message
@@ -102,70 +109,82 @@
       (let [connection (state/get-twilio-device)]
         (.disconnectAll connection)))
     (state/transition-interaction! :active :past interaction-id)
-    (p/publish "cxengage/interactions/work-ended" {:interaction-id interaction-id})))
+    (p/publish {:topics "cxengage/interactions/work-ended"
+                :response {:interaction-id interaction-id}})))
 
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
         {:keys [interaction-id]} message]
     (do (state/add-interaction-wrapup-details! wrapup-details interaction-id)
-        (p/publish "cxengage/interactions/wrapup-details" wrapup-details))))
+        (p/publish {:topics "cxengage/interactions/wrapup-details"
+                    :response wrapup-details}))))
 
 (defn handle-customer-hold [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish "cxengage/voice/hold-started" {:interaction-id interaction-id
-                                              :resource-id resource-id})))
+    (p/publish {:topics "cxengage/voice/hold-started"
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-customer-resume [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish "cxengage/voice/hold-ended" {:interaction-id interaction-id
-                                            :resource-id resource-id})))
+    (p/publish {:topics "cxengage/voice/hold-ended"
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-resource-mute [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish "cxengage/voice/mute-started" {:interaction-id interaction-id
-                                              :resource-id resource-id})))
+    (p/publish {:topics "cxengage/voice/mute-started"
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-resource-unmute [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish "cxengage/voice/mute-ended" {:interaction-id interaction-id
-                                            :resource-id resource-id})))
+    (p/publish {:topics "cxengage/voice/mute-ended"
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-recording-start [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish "cxengage/voice/recording-started" {:interaction-id interaction-id
-                                                   :resource-id resource-id})))
+    (p/publish {:topics "cxengage/voice/recording-started"
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-recording-stop [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish "cxengage/voice/recording-ended" {:interaction-id interaction-id
-                                                 :resource-id resource-id})))
+    (p/publish {:topics "cxengage/voice/recording-ended"
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-transfer-connected [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish "cxengage/voice/transfer-connected" {:interaction-id interaction-id
-                                                    :resource-id resource-id})))
+    (p/publish {:topics "cxengage/voice/transfer-connected"
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-script-received [message]
   (let [{:keys [interaction-id resource-id script]} message]
     (state/add-script-to-interaction! interaction-id script)
-    (p/publish "cxengage/interactions/script-received" {:interaction-id interaction-id
-                                                        :resource-id resource-id
-                                                        :script script})))
+    (p/publish {:topics "cxengage/interactions/script-received"
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id
+                           :script script}})))
 (defn handle-generic [message]
   nil)
 
 (defn handle-screen-pop [message]
   (let [{:keys [pop-uri pop-type interaction-id]} message]
     (when (and pop-uri (or (= pop-type "external-url") (= pop-type "url")))
-      (p/publish "cxengage/interactions/screen-pop/uri" {:interaction-id interaction-id
-                                                         :pop-uri pop-uri}))))
+      (p/publish {:topics "cxengage/interactions/screen-pop/uri"
+                  :response {:interaction-id interaction-id
+                             :pop-uri pop-uri}}))))
 
 (defn handle-wrapup-started
   [message]
   (let [{:keys [interaction-id]} message
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
     (when (:wrapup-enabled wrapup-details)
-      (p/publish "cxengage/interactions/wrapup-started" {:interaction-id interaction-id}))))
+      (p/publish {:topics "cxengage/interactions/wrapup-started"
+                  :response {:interaction-id interaction-id}}))))
 
 (defn msg-router [message]
   (let [handling-fn (case (:sdk-msg-type message)
