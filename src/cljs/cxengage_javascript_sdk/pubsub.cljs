@@ -1,95 +1,114 @@
 (ns cxengage-javascript-sdk.pubsub
-  (:require-macros [cljs.core.async.macros :refer [go]]
-                   [lumbajack.macros :refer [log]])
-  (:require [cljs.core.async :as a]
-            [cljs.spec :as s]
+  (:require-macros [lumbajack.macros :refer [log]]
+                   [cljs.core.async.macros :refer [go]])
+  (:require [cljs.spec :as s]
+            [cljs.core.async :as a]
             [clojure.string :as string]
-            [cljs-uuid-utils.core :as id]
-            [cxengage-cljs-utils.core :as u]
-            [cxengage-javascript-sdk.state :as state]
+            [clojure.set :as set]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.domain.specs :as specs]
-            [cxengage-javascript-sdk.domain.errors :as err]))
+            [cljs-uuid-utils.core :as id]
+            [cxengage-javascript-sdk.domain.specs :as specs]))
 
-(def module-state (atom {}))
+(def sdk-subscriptions (atom {}))
 
-(def topics [[:features [:voice-enabled
-                         :messaging-enabled]]
-             [:authentication [:login
-                               :logout]]
-             [:interactions [:work-offer
-                             :work-accepted
-                             :work-ended
-                             :work-initiated
-                             :accept-response
-                             :end-response
-                             :work-rejected
-                             :contact-unassigned
-                             :contact-assigned
-                             :wrapup-details
-                             :wrapup-started
-                             :wrapup-on
-                             :wrapup-off
-                             :wrapup-end]]
-             [:messaging [:send-message-response
-                          :new-message-received
-                          :history]]
-             [:voice [:hold-started
-                      :hold-ended
-                      :mute-started
-                      :mute-ended
-                      :recording-started
-                      :recording-ended
-                      :phone-controls-response
-                      :transfer-response
-                      :cancel-transfer-response
-                      :transfer-connected
-                      :dial-response
-                      :extension-set
-                      :extensions-response]]
-             [:crud [:get-user-response
-                     :get-users-response
-                     :get-queue-response
-                     :get-queues-response
-                     :get-transfer-list-response
-                     :get-transfer-lists-response]]
-             [:session [:active-tenant-set
-                        :started
-                        :state-changed
-                        :direction-changed]]
-             [:contacts [:get-response
-                         :search-response
-                         :create-response
-                         :update-response
-                         :delete-response
-                         :list-attributes-response
-                         :get-layout-response
-                         :list-layouts-response]]
-             [:reporting [:polling-response
-                          :available-stats-response
-                          :check-capacity-response]]
-             [:errors [:fatal
-                       :error]]])
+(def sdk-topics {;; Misc Topics
+                 :voice-enabled "cxengage/capabilities/voice-available"
+                 :messaging-enabled "cxengage/capabilities/messaging-available"
 
-(def topic-strings
-  (let [prefix "cxengage"]
-    (->> topics
-         (map
-          (fn [[module actions]]
-            (map
-             (fn [action]
-               [(str prefix "/" (name module) "/" (name action))
-                (str prefix "/" (name module))])
-             actions)))
-         (flatten)
-         (into #{prefix}))))
+                 ;; Authentication Topics
+                 :login-response "cxengage/authentication/login-response"
 
-(def subscriptions
-  (atom
-   (reduce
-    #(assoc %1 %2 {})
-    {}
-    topic-strings)))
+                 ;; Session Topics
+                 :active-tenant-set "cxengage/session/set-active-tenant-response"
+                 :config-response "cxengage/session/config-details"
+                 :presence-state-changed "cxengage/session/state-change-response"
+                 :presence-state-change-request-acknowledged "cxengage/session/state-change-request-acknowledged"
+                 :presence-heartbeats-response "cxengage/session/session-heartbeat-response"
+                 :session-started "cxengage/session/started"
+                 :set-direction-response "cxengage/session/set-direction-response"
+                 :extension-list "cxengage/session/extension-list"
+                 :tenant-list "cxengage/session/tenant-list"
+                 :session-ended "cxengage/session/ended"
+
+                 ;; CRUD topics
+                 :contact-response "cxengage/entities/contacts-response"
+                 :get-queue-response "cxengage/entities/get-queue-response"
+                 :get-queues-response "cxengage/entities/get-queues-response"
+                 :get-transfer-list-response "cxengage/entities/get-transfer-list-response"
+                 :get-transfer-lists-response "cxengage/entities/get-transfer-lists-response"
+                 :get-user-response "cxengage/entities/get-user-response"
+                 :get-users-response "cxengage/entities/get-users-response"
+                 :update-user-response "cxengage/entities/update-user-response"
+
+                 ;; Reporting
+                 :get-capacity-response "cxengage/reporting/get-capacity-response"
+                 :get-available-stats-response "cxengage/reporting/get-available-stats-response"
+                 :get-contact-history-response "cxengage/reporting/get-contact-interaction-history-response"
+                 :get-contact-interaction-response "cxengage/reporting/get-contact-interactions-response"
+                 :batch-response "cxengage/reporting/batch-response"
+
+                 ;; Logging
+                 :logs-dumped "cxengage/logging/logs-dumped"
+                 :log-level-set "cxengage/logging/log-level-set"
+                 :logs-saved "cxengage/logging/logs-saved"
+
+
+                 ;; Generic Interaction Topics
+                 :work-offer-received "cxengage/interactions/work-offer-received"
+                 :screen-pop-received "cxengage/interactions/url-pop-received"
+                 :work-initiated-received "cxengage/interactions/work-initiated"
+                 :disposition-codes-received "cxengage/interactions/disposition-codes-received"
+                 :custom-fields-received "cxengage/interactions/custom-fields-received"
+                 :work-accepted-received "cxengage/interactions/work-accepted-received"
+                 :work-rejected-received "cxengage/interactions/work-rejected-received"
+                 :work-ended-received "cxengage/interactions/work-ended-received"
+                 :interaction-end-acknowledged "cxengage/interactions/end-acknowledged"
+                 :interaction-accept-acknowledged "cxengage/interactions/accept-acknowledged"
+                 :interaction-focus-acknowledged "cxengage/interactions/focus-acknowledged"
+                 :interaction-unfocus-acknowledged "cxengage/interactions/unfocus-acknowledged"
+                 :contact-assignment-acknowledged "cxengage/interactions/contact-assign-acknowledged"
+                 :contact-unassignment-acknowledged "cxengage/interactions/contact-unassign-acknowledged"
+                 :script-received "cxengage/interactions/script-received"
+                 :wrapup-details-received "cxengage/interactions/wrapup-details-received"
+                 :enable-wrapup-acknowledged "cxengage/interactions/enable-wrapup-acknowledged"
+                 :disable-wrapup-acknowledged "cxengage/interactions/disable-wrapup-acknowledged"
+                 :end-wrapup-acknowledged "cxengage/interactions/end-wrapup-acknowledged"
+                 :wrapup-started "cxengage/interactions/wrapup-started"
+
+                 ;; Voice Interaction Topics
+                 :hold-acknowledged "cxengage/interactions/voice/hold-acknowledged"
+                 :resume-acknowledged "cxengage/interactions/voice/resume-acknowledged"
+                 :mute-acknowledged "cxengage/interactions/voice/mute-acknowledged"
+                 :unmute-acknowledged "cxengage/interactions/voice/unmute-acknowledged"
+                 :recording-start-acknowledged "cxengage/interactions/voice/start-recording-acknowledged"
+                 :recording-stop-acknowledged "cxengage/interactions/voice/stop-recording-acknowledged"
+                 :customer-hold-received "cxengage/interactions/voice/customer-hold-received"
+                 :customer-resume-received "cxengage/interactions/voice/customer-resume-received"
+                 :customer-transfer-acknowledged "cxengage/interactions/voice/customer-transfer-acknowledged"
+                 :cancel-transfer-acknowledged "cxengage/interactions/voice/cancel-transfer-acknowledged"
+                 :customer-hold "cxengage/interactions/voice/customer-hold-received"
+                 :customer-resume "cxengage/interactions/voice/customer-resume-received"
+                 :resource-muted "cxengage/interactions/voice/resource-mute-received"
+                 :resource-unmuted "cxengage/interactions/voice/resource-unmute-received"
+                 :recording-started "cxengage/interactions/voice/recording-start-received"
+                 :recording-ended "cxengage/interactions/voice/recording-end-received"
+                 :dial-send-acknowledged "cxengage/interactions/voice/dial-send-acknowledged"
+                 :send-digits-acknowledged "cxengage/interactions/voice/send-digits-acknowledged"
+                 :transfer-connected "cxengage/interactions/voice/transfer-connected"
+
+                 ;; Messaging Interaction Topics
+                 :messaging-history-received "cxengage/interactions/messaging/history-received"
+                 :send-message-acknowledged "cxengage/interactions/messaging/send-message-acknowledged"
+                 :new-message-received "cxengage/interactions/messaging/new-message-received"
+                 })
+
+(defn get-topic [k]
+  (if-let [topic (get sdk-topics k)]
+    topic
+    (js/console.error "NO TOPIC!!!!!!!!!!!!!!!!" k)))
 
 (defn get-topic-permutations [topic]
   (let [parts (string/split topic #"/")]
@@ -101,76 +120,64 @@
       {:x 1, :permutations []}
       parts))))
 
+(defn all-topics []
+  (reduce (fn [acc v] (into acc (get-topic-permutations v)))
+          #{}
+          (vals sdk-topics)))
+
 (defn valid-topic? [topic]
-  (contains? topic-strings topic))
+  (let [valid-topics (all-topics)]
+    (if (some #(= topic %) valid-topics)
+      topic)))
 
 (s/def ::subscribe-params
-  (s/keys :req-un [:specs/topic :specs/callback]
+  (s/keys :req-un [::specs/topic ::specs/callback]
           :opt-un []))
 
-(defn subscribe
-  ([topic callback]
-   (let [params {:topic topic :callback callback}]
-     (subscribe params)))
-  ([params]
-   (if-not (s/valid? ::subscribe-params (js->clj params :keywordize-keys true))
-     (iu/format-response (err/invalid-params-err))
-     (let [{:keys [topic callback]} params]
-       (if-not (valid-topic? topic)
-         (do (log :error (str "That is not a valid subscription topic (" topic ")."))
-             (iu/format-response (err/subscription-topic-not-recognized-err)))
-         (let [subscription-id (id/make-random-uuid)]
-           (swap! subscriptions assoc-in [topic subscription-id] callback)
-           nil))))))
+(defn subscribe [topic callback]
+  (let [params {:topic topic :callback callback}]
+    (if-not (s/valid? ::subscribe-params params)
+      (e/invalid-args-error (s/explain-data ::subscribe-params params))
+      (let [subscription-id (str (id/make-random-uuid))]
+        (if-not (valid-topic? topic)
+          (js/console.error "(" topic ") is not a valid subscription topic.")
+          (do (swap! sdk-subscriptions assoc-in [topic subscription-id] callback)
+              subscription-id))))))
 
-(defn publish! [original-topic error response]
-  (if-not (valid-topic? original-topic)
-    (do (log :error (str "That is not a valid subscription topic (" original-topic ")."))
-        nil)
-    (let [all-topics (get-topic-permutations original-topic)]
-      (doseq [topic all-topics]
-        (when-let [subscribers (vals (get @subscriptions topic))]
-          (doseq [subscription-handler subscribers]
-            (subscription-handler error original-topic response)))))))
+(s/def ::unsubscribe-params
+  (s/keys :req-un [::specs/subscription-id]
+          :opt-un []))
 
-(defn send-response [topic message callback]
-  (let [{:keys [error response]} message
-        error (iu/format-response error)
-        response (iu/format-response response)]
-    (when callback (callback error topic response))
-    (publish! topic error response)))
+(defn unsubscribe [subscription-id]
+  (let [original-subs @sdk-subscriptions
+        new-sub-list (reduce-kv
+                      (fn [updated-subscriptions topic subscribers]
+                        (assoc updated-subscriptions
+                               topic
+                               (dissoc subscribers subscription-id)))
+                      {}
+                      @sdk-subscriptions)]
+    (reset! sdk-subscriptions new-sub-list)
+    (if (= new-sub-list original-subs)
+      (js/console.error "Subscription ID not found")
+      (js/console.info "Successfully unsubscribed"))))
 
-(defn sdk-error-response
-  ([topic error]
-   (sdk-error-response topic error nil))
-  ([topic error callback]
-   (let [error-msg {:error error
-                    :response nil}]
-     (if (vector? topic)
-      (doseq [t topic]
-        (if (= t (first topic))
-          (send-response t error-msg callback)
-          (send-response t error-msg nil)))
-      (send-response topic error-msg callback)))))
-
-(defn sdk-response
-  ([topic response]
-   (sdk-response topic response nil))
-  ([topic response callback]
-   (let [success-msg {:error nil
-                      :response response}]
-     (if (vector? topic)
-      (doseq [t topic]
-        (if (= t (first topic))
-          (send-response t success-msg callback)
-          (send-response t success-msg nil)))
-      (send-response topic success-msg callback)))))
-
-(defn module-shutdown-handler [message]
-  (log :info "Received shutdown message from Core - PubSub Module shutting down...."))
-
-(defn init []
-  (log :debug "Initializing SDK module: Pub/Sub")
-  (let [module-shutdown< (a/chan 1024)]
-    (u/start-simple-consumer! module-shutdown< module-shutdown-handler)
-    {:shutdown module-shutdown<}))
+(defn publish
+  ([publish-details]
+   (let [{:keys [topics response error callback]} publish-details
+         topics (if (string? topics) (conj #{} topics) topics)
+         all-topics (all-topics)
+         subscriptions-to-publish (reduce-kv
+                                   (fn [subs-to-pub topic subscriptions]
+                                     (if (some #(= topic %) all-topics)
+                                       (merge subs-to-pub subscriptions)))
+                                   {}
+                                   @sdk-subscriptions)
+         subscription-callbacks (vals subscriptions-to-publish)
+         topics (iu/camelify topics)
+         error (iu/camelify error)
+         response (iu/camelify response)]
+     (doseq [cb subscription-callbacks]
+       (doseq [t topics]
+         (cb error t response)))
+     (when callback (callback error topics response)))))

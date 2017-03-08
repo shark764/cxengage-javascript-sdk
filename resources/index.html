@@ -1,504 +1,532 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-  </head>
-  <body>
-    <script src="main.js" type="text/javascript"></script>
-    <script src="js/jquery.js" type="text/javascript"></script>
-    <script src="js/lodash.js" type="text/javascript"></script>
-    <script src="js/moment.js" type="text/javascript"></script>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Next</title>
+</head>
+<body>
+  <script src="main.js"></script>
+  <script src="js/jquery.js" type="text/javascript"></script>
+  <script src="js/lodash.js" type="text/javascript"></script>
+  <script src="js/moment.js" type="text/javascript"></script>
 
-    <div id="login">
-      <h1>Login</h1>
-      <p>Username</p>
-      <input type="text" id="username" value="sstiles@serenova.com" />
-      <p>Password</p>
-      <input type="password" id="password" value="DevProfile1!">
+  <div id="login-screen" style="display: block;">
+    <input type="text" id="username" name="username" value="">
+    <br><br>
+    <input type="password" id="password" name="password" value="">
+    <br><br>
+    <button onclick="login()">Log In </button>
+  </div>
+
+  <div id="tenant-select-screen" style="display: none;">
+    <select name="tenantSelect" id="tenantSelect"></select>
+    <br><br><br><br>
+    <button onclick="selectActiveTenant()">Pick Your Tenant </button>
+  </div>
+
+  <div id="agent-screen" style="display: none;">
+    <div class="state-controls">
+      <h2>Agent State Controls</h2>
+      <select disabled name="extension-select" id="extension-select"></select>
+      <br><br>
+      <button id="esbutton" disabled onclick="selectExtension()">select extension</button>
       <br>
       <br>
-      <button onclick="login()">Log in</button>
+      <button id="ready" disabled onclick="goReady()">Go Ready</button>
+      <button id="notready" disabled onclick="goNotReady()">Go Not Ready</button>
+      <button id="offline" disabled onclick="goOffline()">Log out</button>
+      <br>
+      <br>
+      <button disabled onclick="goInbound()">Go Inbound</button>
+      <button disabled onclick="goOutbound()">Go Outbound</button>
     </div>
-
-    <div id="tenantSelect" style="display: none;">
-      <h1>Tenant Select</h1>
-      <select id="tenantList"></select>
-      <button onclick="selectTenant()">Select tenant</button>
-    </div>
-
-    <div id="toolbar" style="display: none;">
-      <h1>Toolbar</h1>
-      <button style="display: none;" id="logout" onclick="logout()">Logout</button>
-
-      <h2>Agent State</h2>
-      <h3 style="display: none;" id="currentState">Current state: <span></span></h3>
-      <button style="display: none;" id="ready" onclick="changePresenceState('ready')">Go ready</button>
-      <button style="display: none;" id="notready" onclick="changePresenceState('notready')">Go not ready</button>
-      <button style="display: none;" id="offline" onclick="changePresenceState('offline')">Go offline</button>
-      <button id="inbound" onclick="inbound()" disabled="true">Inbound</button>
-      <button id="outbound" onclick="outbound()" disabled="true">Outbound</button>
-
-      <h2>Voice Interaction</h2>
-      <button id="answerPhone" onclick="answerPhone()" disabled="true">Answer phone <span></span></button>
-      <button id="hangupPhone" onclick="hangupPhone()" disabled="true">Hangup phone</button>
-      <button id="endwrapup" onclick="endWrapup()" disabled="true">End wrapup</button>
-      <div id="phoneControls" style="display:none;">
-        <button id="mute" onclick="toggleMute()">Mute</button>
-        <button id="hold" onclick="toggleHold()">Hold</button>
-        <button id="recording" onclick="toggleRecording()">Start Recording</button>
-        <button id="wrapup" onclick="toggleWrapup()">Wrapup Off</button>
+    <hr>
+    <div class="call-controls" style="display: none;">
+      <h2>Phone Interaction <span></span></h2>
+      <div style="width:350px; text-align: center;">
+        <button id="answerPhone" disabled onclick="acceptCall()">answer call <span></span></button>
+        <button id="rejectPhone" disabled onclick="endCall()">reject call <span></span></button>
+        <button id="hangupPhone" disabled onclick="endCall()">hangup phone</button>
       </div>
-      <div id="phoneDetails"></div>
-
-      <h2>Messaging Interactions</h2>
-      <div id="msgingWindows"></div>
+      <div class="aux">
+        <br><br>
+        <div style="width:350px; text-align: center;" class="hold">
+          <button class="on" id="holdCall" disabled style="float: left;" onclick="holdCall()">hold call</button>
+          <pre style="display: inline;"><--></pre>
+          <button class="off" id="resumeCall" disabled style="float: right;" onclick="resumeCall()">resume call</button>
+        </div>
+        <br><br>
+        <div style="width:350px; text-align: center;" class="recording">
+          <button class="on" id="startRecordingCall" disabled style="float: left;" onclick="startRecordingCall()">start recording call</button>
+          <pre style="display: inline;"><--></pre>
+          <button class="off" id="stopRecordingCall" disabled style="float: right;" onclick="stopRecordingCall()">stop recording call</button>
+        </div>
+        <br><br>
+        <div style="width:350px; text-align: center;" class="mute">
+          <button class="on" id="muteCall" disabled style="float: left;" onclick="muteCall()">mute your voice</button>
+          <pre style="display: inline;"><--></pre>
+          <button class="off" id="unmuteCall" disabled style="float: right;" onclick="unmuteCall()">unmute your voice</button>
+        </div>
+        <br><br>
+        <div style="width:350px; text-align: center;" class="focus">
+          <button class="on" id="focusCall" disabled style="float: left;" onclick="focusCall()">focus call</button>
+          <pre style="display: inline;"><--></pre>
+          <button class="off" id="unfocusCall" disabled style="float: right;" onclick="unfocusCall()">unfocus call</button>
+        </div>
+      </div>
     </div>
+    <br><br>
+    <hr>
+    <div class="messaging-controls" style="display: none;">
+      <h2>Messaging Interactions</h2>
+    </div>
+    <hr>
+    <img src="https://unequivocallyawkward.files.wordpress.com/2015/01/bruh.jpg" alt="BRUH">
+  </div>
 
-    <script>
+  <script>
+    var SDK = cxengage_javascript_sdk.core.initialize({
+      "environment":"dev",
+      "baseUrl":"https://dev-api.cxengagelabs.net/v1/",
+      "logLevel":"debug"
+    });
 
-    var sdk = cxengage_javascript_sdk.core.init({ "env":"dev", "baseUrl":"https://dev-api.cxengagelabs.net/v1", "logLevel":"debug", "blastSqsOutput":true });
-    var tenantList = [];
-    var interactions = [];
-    var activeTenant = null;
-    var agentId = null;
-    var sessionId = null;
-    var isMuted = false;
-    var isOnHold = false;
-    var isRecording = false;
-    var voiceInteractionId = null;
-    var voiceTimer = null;
-    var currentState = 'offline';
-    var availableStates = ['notready'];
-    var wrapupEnabled = false;
+    var state = {
+      voiceinteractionId:'',
+      voiceAccepted:false,
+      interactions:{}
+    };
+    var messagingTimers = {};
+    var onCallTimer;
+    var timeOnCall = 0;
+    var voiceTimer;
 
-    function switchScreens (newScreen) {
-      var screens = ['login', 'tenantSelect', 'toolbar'];
-      var hideScreens = _.filter(screens, function(i) { return i !== newScreen });
-      _.each(hideScreens, function(i) { $('#' + i).hide(); });
-      $('#' + newScreen).show();
-    }
+    SDK.subscribe('cxengage', function(error, topic, response) {
+      console.log('\n\n');
+      console.info('<--- SDK PUBSUB FOR `' + topic + '` RECEIVED -->', response);
 
-    function changePresenceState(state) {
-      if (state == 'ready') {
-        sdk.session.goReady({extensionId: extensionId});
-      } else if (state == 'notready') {
-        sdk.session.goNotReady();
-      } else if (state == 'offline') {
-        sdk.session.goOffline();
-      } else {
-        console.warn('Unknown state');
+      switch(topic) {
+        case 'cxengage/authentication/login-response':
+          handleLogin(error, topic, response);
+          break;
+        case 'cxengage/session/tenant-list':
+          handleTenantList(error, topic, response);
+          break;
+        case 'cxengage/session/extension-list':
+          handleExtensionList(error, topic, response);
+          break;
+        case 'cxengage/session/started':
+          handleSessionStart(error, topic, response);
+          break;
+        case 'cxengage/session/started':
+          handleSessionEnd(error, topic, response);
+          break;
+        case 'cxengage/session/state-change-response':
+          handleStateChange(error, topic, response);
+          break;
+        case 'cxengage/interactions/work-offer-received':
+          handleWorkOffer(error, topic, response);
+          break;
+        case 'cxengage/interactions/work-rejected-received':
+          handleWorkRejected(error, topic, response);
+          break;
+        case 'cxengage/interactions/work-accepted-received':
+          handleWorkAccepted(error, topic, response);
+          break;
+        case 'cxengage/interactions/voice/customer-hold-received':
+          handleButtonSwitch(error, topic, response, 'hold', 'on');
+          break;
+        case 'cxengage/interactions/voice/customer-resume-received':
+          handleButtonSwitch(error, topic, response, 'hold', 'off');
+          break;
+        case 'cxengage/interactions/voice/resource-mute-received':
+          handleButtonSwitch(error, topic, response, 'mute', 'on');
+          break;
+        case 'cxengage/interactions/voice/resource-unmute-received':
+          handleButtonSwitch(error, topic, response, 'mute', 'off');
+          break;
+        case 'cxengage/interactions/voice/start-recording-acknowledged':
+          handleButtonSwitch(error, topic, response, 'recording', 'on');
+          break;
+        case 'cxengage/interactions/voice/stop-recording-acknowledged':
+          handleButtonSwitch(error, topic, response, 'recording', 'off');
+          break;
+        case 'cxengage/interactions/focus-acknowledged':
+          handleButtonSwitch(error, topic, response, 'focus', 'on');
+          break;
+        case 'cxengage/interactions/unfocus-acknowledged':
+          handleButtonSwitch(error, topic, response, 'focus', 'off');
+          break;
+        case 'cxengage/interactions/work-ended-received':
+          handleWorkEnded(error, topic, response);
+          break;
+        case 'cxengage/interactions/messaging/new-message-received':
+          handleNewMessagingMessage(error, topic, response);
+          break;
+        case 'cxengage/interactions/messaging/history-received':
+          $('#' + response[0].to).show().css({display:'inline-block'});
+          _.each(response, function(msg) {
+            handleNewMessagingMessage(error, topic, msg);
+          });
+          break;
+        case 'cxengage/capabilities/voice-available':
+          handleVoiceEnabled(error, topic, response);
+          break;
+        case 'cxengage/capabilities/messaging-available':
+          handleMessagingEnabled(error, topic, response);
+          break;
+        default:
+          console.warn('no handler written yet for ', topic);
+          break;
       }
-    }
+      console.log('\n\n');
+    });
 
-    function updatePresenceState(state, availableStates) {
-      $('#currentState span').text(state).show();
-      currentState = state;
-      availableStates = availableStates;
-      _.each(availableStates, function(s) {
-        $('#' + s).show();
+    /*
+     *
+     * Pub/sub handlers
+     *
+     */
+
+    var handleButtonSwitch = function(error, topic, response, buttonGroup, onOff) {
+      var x = onOff === 'on' ? 'off' : 'on';
+      $('.' + buttonGroup + ' button').attr('disabled', 'disabled');
+      $('.' + buttonGroup + ' button.' + x).removeAttr('disabled');
+    };
+
+    var handleStateChange = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      var newState = response.state;
+      var states = ["ready", "notready", "offline"];
+      _.each(states, function(s) {
+        if (newState === s) {
+          $('#' + newState).attr('disabled', 'disabled');
+        } else {
+          $('#' + s).removeAttr('disabled');
+        }
       });
-      $('#' + state).hide();
-    }
 
-    function toggleMute() {
-        if(isMuted) {
-          sdk.interactions.voice.unmute({interactionId: voiceInteractionId});
-        } else {
-          sdk.interactions.voice.mute({interactionId: voiceInteractionId});
-        }
-    }
-
-    function toggleHold() {
-        if(isOnHold) {
-          sdk.interactions.voice.resume({interactionId: voiceInteractionId});
-        } else {
-          sdk.interactions.voice.hold({interactionId: voiceInteractionId});
-        }
-    }
-
-    function toggleRecording() {
-        if(isRecording) {
-          sdk.interactions.voice.endRecording({interactionId: voiceInteractionId});
-        } else {
-          sdk.interactions.voice.startRecording({interactionId: voiceInteractionId});
-        }
-    }
-
-    function toggleWrapup() {
-      if(wrapupEnabled) {
-        sdk.interactions.disableWrapup({interactionId: voiceInteractionId});
+      if (newState === 'notready') {
+        $('#extension-select, #esbutton').removeAttr('disabled');
       } else {
-        sdk.interactions.enableWrapup({interactionId: voiceInteractionId});
+        $('#extension-select, #esbutton').attr('disabled','disabled');
       }
-    }
+    };
 
-    function endWrapup() {
-      if(wrapupEnabled) {
-        sdk.interactions.endWrapup({interactionId: voiceInteractionId});
-      } else {
-        console.log("Wrapup is disabled!!!!!");
+    var handleVoiceEnabled = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      $('.call-controls').show();
+      SDK = serenova.cxengage.api;
+    };
+
+    var handleMessagingEnabled = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      $('.messaging-controls').show();
+      SDK = serenova.cxengage.api;
+    };
+
+    var handleNewMessagingMessage = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      console.log(response);
+      if ($('#' + response.id).length === 0) {
+        var fromName = (response.metadata && response.metadata.firstName) === 'Agent' ? 'Agent' : response.from;
+        $('#' + response.to + ' ul').append('<li id='+response.id+'><strong>'+fromName+':</strong> '+response.body.text+'</li>')
       }
-    }
+    };
 
-    function outbound() {
-      sdk.session.setDirectionOutbound();
-    }
-
-    function inbound() {
-      sdk.session.setDirectionInbound();
-    }
-
-    function answerPhone() {
-        $('#answerPhone').attr('disabled', 'disabled');
-        $('#hangupPhone').removeAttr('disabled');
-        $('#phoneControls').css('display', 'block');
+    var handleWorkEnded = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      state.interactions[response.interactionId].ended = true;
+      if (response.interactionId === state.voiceInteractionId) {
+        $('.call-controls button.off').attr('disabled', 'disabled');
+        $('.call-controls button span').text('');
+        $('.call-controls h2 span').text('');
+        $('.call-controls .aux button').attr('disabled', 'disabled');
+        clearInterval(onCallTimer);
         clearInterval(voiceTimer);
-        $('#answerPhone span').text('');
-        acceptInteraction(voiceInteractionId);
-    }
+        state.voiceAccepted = false;
+        setTimeout(function(){
+          $('#answerPhone span, #rejectPhone span').text('');
+        }, 2000);
+      } else {
+        clearInterval(messagingTimers[response.interactionId]);
+        $('#' + response.interactionId).remove();
+      }
+    };
 
-    function hangupPhone() {
-      $('#hangupPhone').attr('disabled', 'disabled');
-      $('#phoneControls').css('display', 'none');
-      endInteraction(voiceInteractionId);
-    }
+    var handleExtensionList = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      state.extensionId = response.activeExtension.value;
+      populateExtensionsDropdown(response.extensions);
+    };
 
-    function addVoiceInteraction(interaction) {
-      var voiceWindow = $('#voiceDetails');
-      voiceInteractionId = interaction.interactionId;
-      var timeout = Math.floor((new Date(interaction.timeout).getTime() - new Date().getTime()) / 1000);
+    var handleTenantList = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      populateTenantsDropdown(response);
+    };
 
-      $('#answerPhone').removeAttr('disabled');
+    var handleLogin = function(error, topic, response) {
+      switchScreens('tenant-select-screen');
+    };
 
-      var x = setInterval(function() {
-        var timeLeft = timeout--;
-        $('#answerPhone span').text('(' + timeLeft + 's remaining)');
-        if (timeLeft == 1) {
-          $('#answerPhone').attr('disabled','disabled');
+    var handleSessionStart = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      switchScreens('agent-screen');
+    };
+
+    var handleSessionEnd = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      location.reload(true);
+    };
+
+    var handleWorkAccepted = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      if (response.interactionId === state.voiceInteractionId) {
+        state.voiceAccepted = true;
+        $('#answerPhone, #rejectPhone').attr('disabled', 'disabled');
+        $('#hangupPhone').removeAttr('disabled');
+        $('#answerPhone span, #rejectPhone span').text('');
+        $('.call-controls .aux button.on').removeAttr('disabled');
+        timeOnCall = 0;
+        onCallTimer = setInterval(function() {
+          timeOnCall = timeOnCall + 1;
+          $('.call-controls h2 span').text(' (call duration: ' + timeOnCall + 's)');
+        }, 1000);
+      } else {
+        $('#' + response.interactionId + ' #acceptRejectArea').remove();
+        $('#' + response.interactionId + ' #responseArea').show();
+      }
+    };
+
+    var handleWorkRejected = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      state.voiceAccepted = false;
+      state.interactions[response.interactionId].ended = true;
+      clearInterval(messagingTimers[response.interactionId]);
+      if (response.interactionId === state.voiceInteractionId) {
+        $('#answerPhone span, #rejectPhone span').text('');
+        $('#answerPhone, #rejectPhone').attr('disabled', 'disabled');
+        $('.call-controls .aux button').attr('disabled', 'disabled');
+
+        setTimeout(function(){
+          $('#answerPhone span, #rejectPhone span').text('');
+        }, 2000);
+      } else {
+        $('#' + response.interactionId).remove();
+      }
+    };
+
+    var handleWorkOffer = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      state.interactions[response.interactionId] = {};
+      state.interactions[response.interactionId].ended = false;
+      if (response.channelType === 'voice') {
+        initializeVoiceInteraction(response);
+      } else if (response.channelType === 'messaging' || response.channelType === 'sms') {
+        initializeMessagingInteraction(response);
+      } else {
+        console.error ('Unknown channel type');
+      }
+    };
+
+    /*
+     *
+     * UI functions
+     *
+     */
+
+    var switchScreens = function(screen) {
+      var screens = ['login-screen','tenant-select-screen','agent-screen'];
+      _.each(screens, function(s) {
+        if (s !== screen) {
+          $('#' + s).hide();
+        } else {
+          $('#' + s).show();
         }
-        if (timeLeft == 0) {
-          clearInterval(x);
-        }
-      }, 1000);
-      voiceTimer = x;
+      })
+    };
 
-      var initialMessagingHTML = 'BOOP';
-      voiceWindow.append(initialMessagingHTML);
-
-    }
-
-    function addMessagingInteraction(interaction) {
-      if ($('#' + interaction.interactionId).find().length === 0) {
-        var msgingWindows = $('#msgingWindows');
-        var iid = interaction.interactionId;
-        var timeout = Math.floor((new Date(interaction.timeout).getTime() - new Date().getTime()) / 1000);
-
-        var x = setInterval(function() {
+    var initializeMessagingInteraction = function(workOffer) {
+      if ($('#' + workOffer.interactionId).find().length === 0) {
+        var msgingWindows = $('.messaging-controls');
+        console.log('asfdasdfasdfsafd');
+        var iid = workOffer.interactionId;
+        var timeout = Math.floor((new Date(workOffer.timeout).getTime() - new Date().getTime()) / 1000);
+        messagingTimers[workOffer.interactionId] = setInterval(function() {
           var timeLeft = timeout--;
-          $('#' + iid + ' .acceptBtn span').text('(' + timeLeft + 's remaining)');
+          $('#' + iid + ' .acceptBtn span, #' + iid + ' .rejectBtn span').text('(' + timeLeft + 's remaining)');
           if (timeLeft == 1) {
             $('#' + iid + ' .acceptBtn').attr('disabled','disabled');
           }
           if (timeLeft == 0) {
-            clearInterval(x);
+            clearInterval(messagingTimers[workOffer.interactionId]);
           }
         }, 1000);
-
-        console.log(x);
-
-        var initialMessagingHTML = '<div style="margin: 20px; vertical-align: top; padding: 10px; display: inline-block; max-width: 300px; border: 2px solid #000000;" id="' + iid + '">\
+        var initialMessagingHTML = '<div style="margin: 20px; vertical-align: top; padding: 10px; display: none; max-width: 300px; border: 2px solid #000000;" id="' + iid + '">\
           <strong style="width: 100%; text-align: center;">' + iid + '</strong><br><br>\
-          <strong>Type:</strong> ' + interaction.channelType + '<br>\
-          <strong>Direction:</strong> ' + interaction.direction + '<br>\
+          <strong>Type:</strong> ' + workOffer.channelType + '<br>\
           <p><strong>Messages:</strong></p>\
           <ul style="list-style: none; padding: 0; margin: 0;"></ul>\
           <div id="acceptRejectArea">\
-            <button class="acceptBtn" onclick="acceptInteraction(\''+iid+'\')">Accept Interaction <span></span></button>\
+            <button class="acceptBtn" onclick="acceptMessagingInteraction(\''+iid+'\')">Accept Messaging Interaction <span></span></button>\
+            <button class="rejectBtn" onclick="rejectMessagingInteraction(\''+iid+'\')">Reject Messaging Interaction <span></span></button>\
           </div>\
           <div style="display: none;" id="responseArea">\
             <input class="msgText" type="text"></input>\
             <button onclick="sendMessage(\'' + iid + '\')">Send Message</button><br>\
-            <button onclick="endInteraction(\'' + iid + '\')">End Chat</button><br>\
+            <button onclick="endMessagingInteraction(\'' + iid + '\')">End Chat</button><br>\
           </div>\
         </div>';
         msgingWindows.append(initialMessagingHTML);
       }
-    }
+    };
 
-    function sendMessage(iid) {
-      var contents = $('#' + iid + ' .msgText').val();
-      if (contents.length !== 0) {
-        sdk.interactions.messaging.sendMessage({message:contents,interactionId:iid});
-        $('#' + iid + ' .msgText').val('');
-      }
-    }
+    var initializeVoiceInteraction = function(workOffer) {
+      state.voiceInteractionId = workOffer.interactionId;
+      var timeout = Math.floor((new Date(workOffer.timeout).getTime() - new Date().getTime()) / 1000);
+      $('#answerPhone').removeAttr('disabled');
+      $('#rejectPhone').removeAttr('disabled');
+      $('#answerPhone span, #rejectPhone span').text('(' + (timeout + 1) + 's remaining)');
+      voiceTimer = setInterval(function() {
+        var timeLeft = timeout--;
+        if (timeLeft == 0) {
+          console.log('clearing interval 1');
+          clearInterval(voiceTimer);
+          return;
+        }
+        if (state.voiceAccepted == true) {
+          console.log('clearing interval 2');
+          clearInterval(voiceTimer);
+          return;
+        }
+        if (state.interactions[workOffer.interactionId].ended == true) {
+          console.log('clearing interval 3');
+          clearInterval(voiceTimer);
+        }
+        $('#answerPhone span, #rejectPhone span').text('(' + timeLeft + 's remaining)');
+        if (timeLeft == 1) {
+          $('#answerPhone').attr('disabled','disabled');
+          $('#rejectPhone').attr('disabled','disabled');
+          $('#acceptPhone span, #rejectPhone span').text('');
+        }
+      }, 1000);
+    };
 
-    function handleWorkAccepted(message) {
-      var iid = message.interactionId;
-      $('#' + iid + ' #acceptRejectArea').hide();
-      $('#' + iid + ' #responseArea').show();
-    }
-
-    function endInteraction(iid) {
-      sdk.interactions.end({interactionId:iid});
-    }
-
-    function handleWorkEnded(message) {
-      var iid = message.interactionId;
-      if ($('#' + iid).length) {
-        $('#' + iid).remove();
-      } else {
-        $('#answerPhone span').text('');
-      }
-    }
-
-    function handleWorkRejected(message) {
-      var iid = message.interactionId;
-      $('#' + iid).remove();
-    }
-
-    function acceptInteraction(iid) {
-      sdk.interactions.accept({interactionId: iid});
-    }
-
-    function addInteraction(interaction) {
-      interactions.push(interaction);
-
-      if (interaction.channelType === 'sms' || interaction.channelType === 'messaging') {
-        addMessagingInteraction(interaction);
-      }
-      if (interaction.channelType === 'voice') {
-        addVoiceInteraction(interaction);
-      }
-    }
-
-    function appendMessageImpl(to,mid,person,msg) {
-      if ($('#' + mid).find().length === 0) {
-        $('#' + to + ' ul').append('<li id="'+mid+'">\
-          <p><strong>' + person + '</strong>: ' + msg + '</p>\
-        </li>');
-      }
-    }
-
-    function appendSingleMessage(m) {
-      var person = m.from == agentId ? 'Agent' : 'Customer';
-      var msg = m.body.text;
-      var mid = m.id;
-      var to = m.to;
-      appendMessageImpl(to,mid,person,msg);
-    }
-
-    function appendNewMessages(messages) {
-      _.each(messages, function(m) {
-        var person = m.payload.from == agentId ? 'Agent' : 'Customer';
-        var msg = m.payload.body.text;
-        var mid = m.payload.id;
-        var to = m.channelId;
-        appendMessageImpl(to,mid,person,msg);
+    var populateExtensionsDropdown = function(extensions) {
+      $('#extension-select option').remove();
+      _.each(extensions, function(e) {
+        $('#extension-select').append('<option value="' + e.value + '">' + e.description + '</option>');
       });
-    }
+    };
 
-    sdk.subscribe('cxengage', function(error, topic, response) {
-      // console.info('Pub/sub message received from SDK:', topic);
-      // console.info(response);
-      switch (topic) {
-        case 'cxengage/errors':
-          console.log("Got us an error: " + response);
-          break;
+    var populateTenantsDropdown = function(tenants) {
+      $('#tenantSelect option').remove();
+      _.each(tenants, function(t) {
+        if (t.tenantId === '3b639eb0-febc-11e6-98a7-36051d50f3bf') {
+          $('#tenantSelect').append('<option value="' + t.tenantId + '" selected="selected">' + t.tenantName + '</option>');
+        } else {
+          $('#tenantSelect').append('<option value="' + t.tenantId + '">' + t.tenantName + '</option>');
+        }
+      });
+    };
 
-        case 'cxengage/authentication/login':
-          tenantList = response.tenants;
-          agentId = response.userId;
-          _.each(tenantList, function(t) {
-            if (t.tenantId === '7db68260-6889-11e6-bab5-2a8ecd302b89') {
-              $('#tenantList').append('<option value="' + t.tenantId + '" selected="selected">' + t.tenantName + '</option>');
-            } else {
-              $('#tenantList').append('<option value="' + t.tenantId + '">' + t.tenantName + '</option>');
-            }
-          });
-          switchScreens('tenantSelect');
-          break;
+    /*
+     *
+     * button handlers
+     *
+     */
 
-        case 'cxengage/interactions/work-rejected':
-          handleWorkRejected(response);
-          break;
+    var acceptMessagingInteraction = function(miid) {
+      SDK.interactions.accept({interactionId:miid});
+    };
+    var rejectMessagingInteraction = function(miid) {
+      SDK.interactions.reject({interactionId:miid});
+    };
+    var sendMessage = function(miid) {
+      SDK.interactions.messaging.sendMessage({interactionId:miid,message:$('#' + miid + ' .msgText').val()})
+      $('#' + miid + ' .msgText').val('');
+    };
+    var endMessagingInteraction = function(miid) {
+      SDK.interactions.end({interactionId:miid});
+    };
 
-        case 'cxengage/interactions/work-ended':
-          handleWorkEnded(response);
-          $('#endwrapup').attr('disabled', 'disabled');
-          break;
+    var selectActiveTenant = function() {
+      var tid = $('#tenantSelect').val();
+      SDK.session.setActiveTenant({tenantId:tid});
+    };
 
-        case 'cxengage/messaging/new-message-received':
-          appendSingleMessage(response);
-          break;
+    var selectExtension = function() {
+      state.extensionId = $('#extension-select').val();
+    };
 
-        case 'cxengage/session/state-changed':
-          if (response != null)
-            updatePresenceState(response.state, response.availableStates);
-          else
-            console.log(response);
-          break;
+    var goReady = function() {
+      SDK.session.goReady({ extensionValue: state.extensionId });
+    };
 
-        case 'cxengage/interactions/work-accepted':
-          handleWorkAccepted(response);
-          break;
+    var goNotReady = function() {
+      SDK.session.goNotReady();
+    };
 
-        case 'cxengage/interactions/work-offer':
-          addInteraction(response);
-          break;
+    var goOffline = function() {
+      SDK.session.end();
+    };
 
-        case 'cxengage/messaging/history':
-          appendNewMessages(response);
-          break;
+    var goInbound = function() {
+      SDK.session.setDirection({direction:'inbound'});
+    };
 
-        case 'cxengage/voice/extensions-response':
-          extensionId = response.activeExtension.value;
-          break;
+    var goOutbound = function() {
+      SDK.session.setDirection({direction:'outbound'});
+    };
 
-        case 'cxengage/session/started':
-          if (response != null) {
-            sessionId = response.sessionId;
-            switchScreens('toolbar');
-          }
-          else {
-            console.log("Broke something");
-          }
-          $('#outbound').removeAttr('disabled');
-          $('#inbound').removeAttr('disabled');
-          break;
+    var acceptCall = function() {
+      SDK.interactions.accept({ interactionId: state.voiceInteractionId });
+    };
 
-        case 'cxengage/session/direction-changed':
-          if(response.newDirection == "inbound") {
-            $('#inbound').attr('disabled', 'disabled');
-            $('#outbound').removeAttr('disabled');
-          } else if (response.newDirection == "outbound") {
-            $('#outbound').attr('disabled', 'disabled');
-            $('#inbound').removeAttr('disabled');
-          } else {
-            console.log("I don't know that interaction direction!!!");
-          }
-          break;
+    var endCall = function() {
+      SDK.interactions.end({ interactionId: state.voiceInteractionId });
+    };
 
-        case 'cxengage/session/active-tenant-set':
-          activeTenant = response.tenantId;
-          break;
+    var focusCall = function() {
+      SDK.interactions.focus({interactionId:state.voiceInteractionId});
+    };
 
-        case 'cxengage/voice/hold-started':
-          isOnHold = true;
-          $('#hold').text('Resume');
-          break;
+    var unfocusCall = function() {
+      SDK.interactions.unfocus({interactionId:state.voiceInteractionId});
+    };
 
-        case 'cxengage/voice/hold-ended':
-          isOnHold = false;
-          $('#hold').text('Hold');
-          break;
+    var holdCall = function() {
+      SDK.interactions.voice.hold({interactionId:state.voiceInteractionId});
+    };
 
-        case 'cxengage/voice/mute-started':
-          isMuted = true;
-          $('#mute').text('Unmute');
-          break;
+    var resumeCall = function() {
+      SDK.interactions.voice.resume({interactionId:state.voiceInteractionId});
+    };
 
-        case 'cxengage/voice/mute-ended':
-          isMuted = false;
-          $('#mute').text('Mute');
-          break;
+    var startRecordingCall = function() {
+      SDK.interactions.voice.startRecording({interactionId:state.voiceInteractionId});
+    };
 
-        case 'cxengage/voice/recording-started':
-          isRecording = true;
-          $('#recording').text('End Recording');
-          break;
+    var stopRecordingCall = function() {
+      SDK.interactions.voice.stopRecording({interactionId:state.voiceInteractionId});
+    };
 
-        case 'cxengage/voice/recording-ended':
-          isRecording = false;
-          $('#recording').text('Start Recording');
-          break;
+    var muteCall = function() {
+      SDK.interactions.voice.mute({interactionId:state.voiceInteractionId});
+    };
 
-        case 'cxengage/interactions/wrapup-off':
-          wrapupEnabled = false;
-          $('#wrapup').text('Wrapup Off');
-          break;
+    var unmuteCall = function() {
+      SDK.interactions.voice.unmute({interactionId:state.voiceInteractionId});
+    };
 
-        case 'cxengage/interactions/wrapup-on':
-          wrapupEnabled = true;
-          $('#wrapup').text('Wrapup On');
-          break;
-
-        case 'cxengage/interactions/wrapup-end':
-          console.log(response);
-
-        case 'cxengage/interactions/wrapup-details':
-          if (response.wrapupEnabled == null) {
-            wrapupEnabled = false;
-            $('#wrapup').text('Wrapup Off');
-          } else {
-            wrapupEnabled = true;
-            $('#wrapup').text('Wrapup On');
-          }
-          console.log(response);
-          break;
-
-        case 'cxengage/interactions/wrapup-started':
-          console.log(response);
-          $('#endwrapup').removeAttr('disabled');
-          break;
-
-        case 'cxengage/contacts/get-response':
-          console.log("Contacts response: " + response);
-          break;
-
-        case 'cxengage/contacts/search-response':
-          console.log("Contacts response: " + response);
-          break;
-
-        case 'cxengage/contacts/create-response':
-          console.log("Contacts response: " + response);
-          break;
-
-        case 'cxengage/contacts/update-response':
-          console.log("Contacts response: " + response);
-          break;
-
-        case 'cxengage/contacts/delete-response':
-          console.log("Contacts response: " + response);
-          break;
-
-        case 'cxengage/contacts/list-attributes-response':
-          console.log("Attributes: " + response);
-          break;
-
-        case 'cxengage/contacts/get-layout-response':
-          console.log("layout: " + response);
-          break;
-
-        case 'cxengage/contacts/list-layouts-response':
-          console.log("Layouts: " + response);
-          break;
-
-        case 'cxengage/authentication/logout':
-          location.reload();
-          break;
-
-        default:
-          console.warn('No handler yet for this pubsub msg');
-          break;
+    var login = function() {
+      var params = {
+        username: $('#username').val(),
+        password: $('#password').val()
       }
-    });
 
-    function login() {
-      sdk.auth.login({ username: $('#username').val(), password:$('#password').val() });
-    }
-
-    function logout() {
-      sdk.auth.logout();
-    }
-
-    function selectTenant() {
-      $('#logout').show();
-      var selectedTenantId = $('#tenantList').val();
-      sdk.session.setActiveTenant({tenantId:selectedTenantId});
-    }
-
-    </script>
-  </body>
+      SDK.authentication.login(params);
+    };
+  </script>
+</body>
 </html>

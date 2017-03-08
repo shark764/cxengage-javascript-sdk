@@ -1,41 +1,17 @@
 (ns cxengage-javascript-sdk.domain.errors)
 
-(defn error [code msg]
-  (js/console.info (str code ": " msg))
-  (clj->js {:code code
-            :message msg}))
+(defn error [error]
+  (js/console.error ">>>ERROR<<<" (clj->js (:error error)) (clj->js (:data error)))
+  error)
 
-(defn invalid-params-err
-  ([] (invalid-params-err nil))
-  ([msg]
-   (let [code 1000
-         msg (or msg "Invalid arguments passed to SDK function.")]
-     (error code msg))))
-
-(defn invalid-sdk-state-err
-  ([] (invalid-sdk-state-err nil))
-  ([msg]
-   (let [code 1100
-         msg (or msg "SDK is in an invalid state to perform this action.")]
-     (error code msg))))
-
-(defn subscription-topic-not-recognized-err
-  ([] (subscription-topic-not-recognized-err nil))
-  ([msg]
-   (let [code 1200
-         msg (or msg "Unknown subscription topic.")]
-     (error code msg))))
-
-(defn sdk-request-error
-  ([] (sdk-request-error nil))
-  ([msg]
-   (let [code 1300
-         msg (or msg "SDK failed to retrieve requested information or state from server.")]
-     (error code msg))))
-
-(defn insufficient-permissions-err
-  ([] (insufficient-permissions-err nil))
-  ([msg]
-   (let [code 1400
-         msg (or msg "Resource does not have the sufficient permissions.")]
-     (error code msg))))
+(defn wrong-number-of-args-error [] (error {:code 1000 :error "Incorrect number of arguments passed to SDK fn."}))
+(defn missing-required-permissions-error [] (error {:code 1003 :error "Missing required permissions"}))
+(defn invalid-args-error [spec-explanation]
+  (error {:code 1001 :error "Invalid arguments passed to SDK fn." :data spec-explanation}))
+(defn api-error [error] (merge (error {:code 1002 :error "API returned an error."} error)))
+(defn no-entity-found-for-specified-id [entity entity-id]
+  (error {:code 1004 :error (str "No " entity " found by that ID") :data entity-id}))
+(defn no-microphone-access-error [err]
+  (error {:code 7000 :error (str "No access to microphone: " (.-message err))}))
+(defn not-a-valid-extension [] {:code 5000 :error "that isn't a valid extension."})
+(defn invalid-logging-level-specified-error [] "Invalid logging level specified.")

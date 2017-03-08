@@ -1,8 +1,18 @@
 # Change Log
 
 ## [Unreleased]
+* added support of screen pop type url
+* started checking for microphone access prior to starting twilio module
+* added DTMF signaling capability
+* refactored all modules in accordance with new module system
+* refactored many public-facing responses & pubsub topics
+* made all SDK init parameters optional with defaults
+* added send-script sqs listener
+* added interaction-focus & interaction-unfocus api fns
 * added twilio init missing-required-integration error
 * added ability to publish to multiple topics at once
+* added get-all contacts fn
+
 
 ## [1.4.2]
 * update lumbajack dep to fix compilation bug

@@ -3,161 +3,198 @@
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.api.interactions :as int]
-            [cxengage-javascript-sdk.module-gateway :as mg]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.pubsub :as pubsub :refer [sdk-response sdk-error-response]]
-            [cxengage-javascript-sdk.domain.errors :as err]))
+            [cxengage-javascript-sdk.domain.errors :as err]
+            [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.modules.messaging :as messaging]))
+
+;; TODO: make these better? in a module
+
+(defn get-messaging-history [tenant-id interaction-id]
+  (let [history-request {:method :get
+                         :url (str (state/get-base-api-url) "messaging/tenants/" tenant-id "/channels/" interaction-id "/history")}]
+    (go (let [history-response (a/<! (iu/api-request history-request))
+              {:keys [api-response status]} history-response
+              {:keys [result]} api-response]
+          (if (not= status 200)
+            (e/api-error result)
+            (do (state/add-messages-to-history! interaction-id result)
+                (p/publish {:topics (p/get-topic :messaging-history-received)
+                            :response (state/get-interaction-messaging-history interaction-id)})))))))
+
+(defn get-messaging-metadata [tenant-id interaction-id]
+  (let [metadata-request {:method :get
+                          :url (str (state/get-base-api-url) "messaging/tenants/" tenant-id "/channels/" interaction-id)}]
+    (go (let [metadata-response (a/<! (iu/api-request metadata-request))
+              {:keys [api-response status]} metadata-response
+              {:keys [result]} api-response]
+          (if (not= status 200)
+            (e/api-error result)
+            (do (state/add-messaging-interaction-metadata! result)
+                (get-messaging-history tenant-id interaction-id)))))))
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
-  (let [{:keys [channelType interactionId]} message]
-    (when (or (= channelType "sms")
-              (= channelType "messaging"))
-      (let [history-result-chan (a/promise-chan)
-            {:keys [tenantId interactionId]} message
-            history-req (iu/base-module-request
-                         :MESSAGING/GET_HISTORY
-                         {:tenantId tenantId
-                          :interactionId interactionId})
-            metadata-req (iu/base-module-request
-                          :MESSAGING/GET_CHANNEL_METADATA
-                          {:tenantId tenantId
-                           :interactionId interactionId})]
-
-        (go (let [metadata-response (a/<! (mg/send-module-message metadata-req))]
-              (state/add-messaging-interaction-metadata! metadata-response)
-              (let [{:keys [result status]} (a/<! (mg/send-module-message history-req))
-                    history result
-                    history-pubsub-topic "cxengage/messaging/history"]
-                (if (not= status 200)
-                  (let [err-msg (err/sdk-request-error (str "Failed to get the message history for this interaction. Status: " status))]
-                    (do (sdk-error-response history-pubsub-topic err-msg)
-                        (sdk-error-response "cxengage/errors/error" err-msg)))
-                  (do (sdk-response history-pubsub-topic (state/insert-fb-name-to-messages history interactionId))
-                      (state/add-messages-to-history! interactionId history)))))))))
-  (sdk-response "cxengage/interactions/work-offer" message))
+  (let [{:keys [channel-type interaction-id]} message]
+    (when (or (= channel-type "sms")
+              (= channel-type "messaging"))
+      (let [{:keys [tenant-id interaction-id]} message]
+        (get-messaging-metadata tenant-id interaction-id))))
+  (p/publish {:topics (p/get-topic :work-offer-received)
+              :response message})
+  nil)
 
 (defn handle-new-messaging-message [payload]
   (let [payload (-> (.-payloadString payload)
                     (js/JSON.parse)
-                    (js->clj :keywordize-keys true))
-        interactionId (:to payload)
-        channelId (:id payload)
-        from (:from payload)
-        payload (if (= (:channelType (state/get-active-interaction interactionId)) "sms") (merge payload {:from (str "+" from)}) payload)]
-    (sdk-response "cxengage/messaging/new-message-received" payload)
-    (state/add-messages-to-history! interactionId [{:payload payload}])))
+                    (iu/kebabify))
+        interaction-id (:to payload)
+        channel-id (:id payload)
+        from (:from payload)]
+    (p/publish {:topics (p/get-topic :new-message-received)
+                :response (:payload (state/augment-messaging-payload {:payload payload}))})
+    (state/add-messages-to-history! interaction-id [{:payload payload}])))
 
 (defn handle-resource-state-change [message]
   (state/set-user-session-state! message)
-  (sdk-response "cxengage/session/state-changed" (select-keys message [:state :availableStates :direction])))
+  (if (not= (:state message) "offline")
+    (p/publish {:topics (p/get-topic :presence-state-changed)
+                :response (select-keys message [:state :available-states :direction])})
+    (p/publish {:topics (p/get-topic :session-ended)
+                :response true})))
 
 (defn handle-work-initiated [message]
-  (sdk-response "cxengage/interactions/work-initiated" message))
+  (p/publish {:topics (p/get-topic :work-initiated-received)
+              :response message}))
 
 (defn handle-work-rejected [message]
-  (let [{:keys [interactionId]} message]
-    (state/transition-interaction! :pending :past interactionId)
-    (sdk-response "cxengage/interactions/work-rejected" {:interactionId interactionId})))
+  (let [{:keys [interaction-id]} message]
+    (state/transition-interaction! :pending :past interaction-id)
+    (p/publish {:topics (p/get-topic :work-rejected-received)
+                :response {:interaction-id interaction-id}})))
 
 (defn handle-custom-fields [message]
-  (let [{:keys [interactionId]} message
-        custom-field-details (:customFields message)]
-    (state/add-interaction-custom-field-details! custom-field-details interactionId)))
+  (let [{:keys [interaction-id]} message
+        custom-field-details (:custom-fields message)]
+    (state/add-interaction-custom-field-details! custom-field-details interaction-id)
+    (p/publish {:topics (p/get-topic :custom-fields-received)
+                :response custom-field-details})))
 
 (defn handle-disposition-codes [message]
-  (let [{:keys [interactionId]} message
-        disposition-code-details (:dispositionCodes message)]
-    (state/add-interaction-disposition-code-details! disposition-code-details interactionId)))
+  (let [{:keys [interaction-id]} message
+        disposition-code-details (:disposition-codes message)]
+    (state/add-interaction-disposition-code-details! disposition-code-details interaction-id)
+    (p/publish {:topics (p/get-topic :disposition-codes-received)
+                :response disposition-code-details})))
 
 (defn handle-session-start [message]
-  nil)
-
-(defn handle-login [message]
   nil)
 
 (defn handle-interaction-heartbeat [message]
   nil)
 
 (defn handle-work-accepted [message]
-  (let [{:keys [interactionId tenantId]} message
-        interaction (state/get-pending-interaction interactionId)
-        channel-type (get interaction :channelType)]
-    (state/transition-interaction! :pending :active interactionId)
+  (let [{:keys [interaction-id tenant-id]} message
+        interaction (state/get-pending-interaction interaction-id)
+        channel-type (get interaction :channel-type)]
+    (state/transition-interaction! :pending :active interaction-id)
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
-      (a/put! (mg/>get-publication-channel) {:type :MQTT/SUBSCRIBE_TO_INTERACTION
-                                             :tenantId tenantId
-                                             :interactionId interactionId}))
-    (sdk-response "cxengage/interactions/work-accepted" {:interactionId interactionId}) ))
+      (messaging/subscribe-to-messaging-interaction
+       {:tenant-id tenant-id
+        :interaction-id interaction-id
+        :env (state/get-env)}))
+    (p/publish {:topics (p/get-topic :work-accepted-received)
+                :response {:interaction-id interaction-id}}) ))
 
 (defn handle-work-ended [message]
-  (let [{:keys [interactionId]} message
-        interaction (state/get-pending-interaction interactionId)
-        channel-type (get interaction :channelType)]
+  (let [{:keys [interaction-id]} message
+        interaction (state/get-interaction interaction-id)
+        channel-type (get interaction :channel-type)]
     (when (= channel-type "voice")
       (let [connection (state/get-twilio-device)]
         (.disconnectAll connection)))
-    (state/transition-interaction! :active :past interactionId)
-    (sdk-response "cxengage/interactions/work-ended" {:interactionId interactionId})))
+    (state/transition-interaction! :active :past interaction-id)
+    (p/publish {:topics (p/get-topic :work-ended-received)
+                :response {:interaction-id interaction-id}})))
 
 (defn handle-wrapup [message]
-  (let [wrapup-details (select-keys message [:wrapupTime :wrapupEnabled :wrapupUpdateAllowed :targetWrapupTime])
-        {:keys [interactionId]} message]
-    (do (state/add-interaction-wrapup-details! wrapup-details interactionId)
-        (sdk-response "cxengage/interactions/wrapup-details" wrapup-details))))
+  (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
+        {:keys [interaction-id]} message]
+    (do (state/add-interaction-wrapup-details! wrapup-details interaction-id)
+        (p/publish {:topics (p/get-topic :wrapup-details-received)
+                    :response (assoc wrapup-details :interaction-id interaction-id)}))))
 
 (defn handle-customer-hold [message]
-  (let [{:keys [interactionId resourceId]} message]
-    (sdk-response "cxengage/voice/hold-started" {:interactionId interactionId
-                                                 :resourceId resourceId})))
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (p/get-topic :customer-hold)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-customer-resume [message]
-  (let [{:keys [interactionId resourceId]} message]
-    (sdk-response "cxengage/voice/hold-ended" {:interactionId interactionId
-                                               :resourceId resourceId})))
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (p/get-topic :customer-resume)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-resource-mute [message]
-  (let [{:keys [interactionId resourceId]} message]
-    (sdk-response "cxengage/voice/mute-started" {:interactionId interactionId
-                                                 :resourceId resourceId})))
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (p/get-topic :resource-muted)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-resource-unmute [message]
-  (let [{:keys [interactionId resourceId]} message]
-    (sdk-response "cxengage/voice/mute-ended" {:interactionId interactionId
-                                               :resourceId resourceId})))
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (p/get-topic :resource-unmuted)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-recording-start [message]
-  (let [{:keys [interactionId resourceId]} message]
-    (sdk-response "cxengage/voice/recording-started" {:interactionId interactionId
-                                                      :resourceId resourceId})))
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (p/get-topic :recording-started)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-recording-stop [message]
-  (let [{:keys [interactionId resourceId]} message]
-    (sdk-response "cxengage/voice/recording-ended" {:interactionId interactionId
-                                                    :resourceId resourceId})))
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (p/get-topic :recording-ended)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
 (defn handle-transfer-connected [message]
-  (let [{:keys [interactionId resourceId]} message]
-    (sdk-response "cxengage/voice/transfer-connected" {:interactionId interactionId
-                                                       :resourceId resourceId})))
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (p/get-topic :transfer-connected)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
 
+(defn handle-script-received [message]
+  (let [{:keys [interaction-id resource-id script]} message]
+    (state/add-script-to-interaction! interaction-id script)
+    (p/publish {:topics (p/get-topic :script-received)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id
+                           :script script}})))
 (defn handle-generic [message]
   nil)
 
 (defn handle-screen-pop [message]
-  nil)
+  (let [{:keys [pop-uri pop-type interaction-id]} message]
+    (when (and pop-uri (or (= pop-type "external-url") (= pop-type "url")))
+      (p/publish {:topics (p/get-topic :url-pop-received)
+                  :response {:interaction-id interaction-id
+                             :pop-uri pop-uri}}))))
 
 (defn handle-wrapup-started
   [message]
-  (let [{:keys [interactionId]} message
-        wrapup-details (state/get-interaction-wrapup-details interactionId)]
-    (when (:wrapupEnabled wrapup-details)
-      (sdk-response "cxengage/interactions/wrapup-started" {:interactionId interactionId}))))
+  (let [{:keys [interaction-id]} message
+        wrapup-details (state/get-interaction-wrapup-details interaction-id)]
+    (when (:wrapup-enabled wrapup-details)
+      (p/publish {:topics (p/get-topic :wrapup-started)
+                  :response {:interaction-id interaction-id}}))))
 
 (defn msg-router [message]
-  (let [handling-fn (case (:msg-type message)
+  (let [handling-fn (case (:sdk-msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
                       :INTERACTIONS/WORK_OFFER_RECEIVED handle-work-offer
                       :INTERACTIONS/WORK_REJECTED_RECEIVED handle-work-rejected
@@ -170,8 +207,6 @@
                       :INTERACTIONS/WRAP_UP_STARTED handle-wrapup-started
                       :INTERACTIONS/SCREEN_POP_RECEIVED handle-screen-pop
                       :INTERACTIONS/GENERIC_AGENT_NOTIFICATION handle-generic
-                      :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
-                      :SESSION/START_SESSION_RESPONSE handle-session-start
                       :INTERACTIONS/CUSTOMER_HOLD_RECEIVED handle-customer-hold
                       :INTERACTIONS/CUSTOMER_RESUME_RECEIVED handle-customer-resume
                       :INTERACTIONS/RESOURCE_MUTE_RECEIVED handle-resource-mute
@@ -179,24 +214,34 @@
                       :INTERACTIONS/RECORDING_START_RECEIVED handle-recording-start
                       :INTERACTIONS/RECORDING_STOP_RECEIVED handle-recording-stop
                       :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED handle-transfer-connected
-                      :AUTH/LOGIN_RESPONSE handle-login
+                      :INTERACTIONS/SCRIPT_RECEIVED handle-script-received
+                      :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
+                      :SESSION/START_SESSION_RESPONSE handle-session-start
                       nil)]
-    (when (and (get message :actionId)
-               (not= (get message :interactionId) "00000000-0000-0000-0000-000000000000"))
-      (let [ack-msg (select-keys message [:actionId :subId :resourceId :tenantId :interactionId])]
-        (log :debug (str "Acknowledging receipt of flow action: " (or (:notificationType message) (:type message))))
-        (when (or (:notificationType message) (:type message))
-          (mg/send-module-message (iu/base-module-request
-                                   :INTERACTIONS/ACKNOWLEDGE_FLOW_ACTION
-                                   ack-msg)))))
+    (when (and (get message :action-id)
+               (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000"))
+      (js/console.log (str "Acknowledging receipt of flow action: "
+                           (or (:notification-type message) (:type message))))
+      (when (or (:notification-type message) (:type message))
+        (let [{:keys [action-id sub-id resource-id tenant-id interaction-id]} message
+              ack-request {:method :post
+                           :body {:source "client"
+                                  :sub-id sub-id
+                                  :update {:resource-id resource-id}}
+                           :url (str (state/get-base-api-url) "tenants/" tenant-id
+                                     "/interactions/" interaction-id "/actions/" action-id)}]
+          (go (let [ack-response (a/<! (iu/api-request ack-request))
+                    {:keys [api-response status]} ack-response]
+                (when (not= status 200)
+                  (js/console.error "Failed to acknowledge flow action")))))))
     (if handling-fn
       (handling-fn message)
-      (log :debug (str "Temporarily ignoring msg 'cuz handler isnt written yet: " (:msg-type message)) message))
+      (js/console.warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))
     nil))
 
 (defn infer-notification-type [message]
-  (let [{:keys [notificationType]} message]
-    (let [inferred-notification-type (case notificationType
+  (let [{:keys [notification-type]} message]
+    (let [inferred-notification-type (case notification-type
                                        "work-rejected" :INTERACTIONS/WORK_REJECTED_RECEIVED
                                        "work-initiated" :INTERACTIONS/WORK_INITIATED_RECEIVED
                                        "work-ended" :INTERACTIONS/WORK_ENDED_RECEIVED
@@ -215,30 +260,31 @@
                                        "recording-stop" :INTERACTIONS/RECORDING_STOP_RECEIVED
                                        "transfer-connected" :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
-      (merge {:msg-type inferred-notification-type} message))))
+      (merge {:sdk-msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
-  (when (state/get-blast-sqs-output)
-    (log :debug "[BLAST SQS OUTPUT] Message received:" message))
-  (let [cljsd-msg (js->clj message :keywordize-keys true)
-        sessionId (or (get cljsd-msg :sessionId)
-                      (get-in cljsd-msg [:resource :sessionId]))
+  (when true #_(state/get-blast-sqs-output)
+        (js/console.warn "[BLAST SQS OUTPUT] Message received:" (iu/kebabify message)))
+  (let [cljsd-msg (iu/kebabify message)
+        session-id (or (get cljsd-msg :session-id)
+                       (get-in cljsd-msg [:resource :session-id]))
         inferred-msg (case (:type cljsd-msg)
-                       "resource-state-change" (merge {:msg-type :SESSION/CHANGE_STATE_RESPONSE} cljsd-msg)
-                       "work-offer" (merge {:msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
+                       "resource-state-change" (merge {:sdk-msg-type :SESSION/CHANGE_STATE_RESPONSE} cljsd-msg)
+                       "work-offer" (merge {:sdk-msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
+                       "send-script" (merge {:sdk-msg-type :INTERACTIONS/SCRIPT_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
-    (if (not= (state/get-session-id) sessionId)
-      (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
-                          (state/get-session-id) " - Session ID on message received: " sessionId))
+    (if (not= (state/get-session-id) session-id)
+      (do (js/console.warn (str "Received a message from a different session than the current one. Current session ID: "
+                                (state/get-session-id) " - Session ID on message received: " session-id))
           nil)
       (if inferred-msg
         (msg-router inferred-msg)
-        (do (log :warn "Unable to infer message type from sqs")
+        (do (js/console.warn "Unable to infer message type from sqs")
             nil)))))
 
-(defn mqtt-msg-router [message]
+(defn messaging-msg-router [message]
   (handle-new-messaging-message message))
 
 (defn twilio-msg-router [message type]
-  (log :warn "message in twilio msg router" message))
+  (js/console.warn "message in twilio msg router" message))

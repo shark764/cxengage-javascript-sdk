@@ -1,17 +1,21 @@
 (ns cxengage-javascript-sdk.state
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [lumbajack.core]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cljs.core.async :as a]
-            [cljs.spec :as s]))
+            [cljs.spec :as s]
+            [cljs-uuid-utils.core :as id]))
 
 (def initial-state {:authentication {}
                     :user {}
                     :session {}
-                    :config {:api-url "https://api.cxengage.net/v1/"
-                             :consumer-type :js}
+                    :config {}
                     :interactions {:pending {}
                                    :active {}
-                                   :past {}}})
+                                   :past {}}
+                    :logs {:unsaved-logs []
+                           :saved-logs []
+                           :valid-levels [:debug :info :warn :error :fatal]}})
 
 (defonce sdk-state
   (atom initial-state))
@@ -20,7 +24,10 @@
   (reset! sdk-state initial-state))
 
 (defn get-state []
-  sdk-state)
+  @sdk-state)
+
+(defn get-state-js []
+  (clj->js @sdk-state))
 
 (defn set-base-api-url! [url]
   (swap! sdk-state assoc-in [:config :api-url] url))
@@ -45,6 +52,9 @@
 
 (defn get-blast-sqs-output []
   (get-in @sdk-state [:config :blast-sqs-output]))
+
+(defn get-config []
+  (get @sdk-state :config))
 
 ;;;;;;;;;;;
 ;; Interactions
@@ -76,25 +86,36 @@
   (let [location (find-interaction-location interaction-id)]
     (get-in @sdk-state [:interactions location interaction-id])))
 
-(defn insert-fb-name-to-messages [messages interaction-id]
-  (let [interaction (get-interaction interaction-id)
-        {:keys [channelType messaging-metadata]} interaction
-        {:keys [customerName]} messaging-metadata
-        messages (if (= channelType "messaging")
-                   (map #(assoc-in % [:payload :from] customerName) messages)
-                   messages)]
-    messages))
+(defn augment-messaging-payload [msg]
+  (let [{:keys [payload]} msg
+        {:keys [from id to]} payload
+        interaction (get-interaction to)
+        {:keys [channel-type messaging-metadata]} interaction
+        {:keys [customer-name]} messaging-metadata
+        payload (cond
+                  (and (= channel-type "sms")
+                       (nil? (id/valid-uuid? from))) (assoc-in msg [:payload :from] (str "+" from))
+                  (= channel-type "messaging") (assoc-in msg [:payload :from] customer-name)
+                  :else msg)]
+    payload))
 
 (defn add-messages-to-history! [interaction-id messages]
   (let [interaction-location (find-interaction-location interaction-id)
         old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
-        messages (insert-fb-name-to-messages messages interaction-id)
+        messages (->> messages
+                      (mapv augment-messaging-payload)
+                      (mapv #(dissoc % :channel-id :timestamp))
+                      (mapv :payload))
         new-msg-history (reduce conj old-msg-history messages)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)))
 
+(defn get-interaction-messaging-history [interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (get-in @sdk-state [:interactions interaction-location interaction-id :message-history])))
+
 (defn add-interaction! [type interaction]
-  (let [{:keys [interactionId]} interaction]
-    (swap! sdk-state assoc-in [:interactions type interactionId] interaction)))
+  (let [{:keys [interaction-id]} interaction]
+    (swap! sdk-state assoc-in [:interactions type interaction-id] interaction)))
 
 (defn add-interaction-custom-field-details! [custom-field-details interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
@@ -122,9 +143,15 @@
     (swap! sdk-state assoc-in [:interactions to] updated-interactions-to)))
 
 (defn add-messaging-interaction-metadata! [metadata]
-  (let [{:keys [interactionId]} metadata
-        interaction-location (find-interaction-location interactionId)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interactionId :messaging-metadata] metadata)))
+  (let [{:keys [id]} metadata
+        interaction-location (find-interaction-location id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location id :messaging-metadata] metadata)))
+
+(defn add-script-to-interaction! [interaction-id script]
+  (let [interaction-location (find-interaction-location interaction-id)
+        existing-scripts (or (get-in @sdk-state [:interactions interaction-location interaction-id :scripts]) [])
+        new-scripts (conj existing-scripts script)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :scripts] new-scripts)))
 
 ;;;;;;;;;;;
 ;; Auth
@@ -148,7 +175,7 @@
 
 (defn get-active-user-id
   []
-  (get-in @sdk-state [:user :userId]))
+  (get-in @sdk-state [:user :user-id]))
 
 ;;;;;;;;;;;;;;;;;;
 ;; Sessiony Things
@@ -156,6 +183,14 @@
 
 (defn get-user-tenants []
   (get-in @sdk-state [:user :tenants]))
+
+(defn get-tenant-permissions [tenant-id]
+  (let [tenants (get-in @sdk-state [:user :tenants])
+        permissions (->> tenants
+                         (filter #(= tenant-id (:tenant-id %)))
+                         (first)
+                         (:tenant-permissions))]
+    permissions))
 
 (defn get-session-details []
   (get @sdk-state :session))
@@ -166,7 +201,23 @@
 
 (defn set-config!
   [config]
-  (swap! sdk-state assoc :session (merge (get-session-details) config)))
+  (swap! sdk-state assoc-in [:session :config] config))
+
+(defn get-all-extensions []
+  (get-in @sdk-state [:session :config :extensions]))
+
+(defn get-all-integrations []
+  (get-in @sdk-state [:session :config :integrations]))
+
+(defn get-active-extension []
+  (get-in @sdk-state [:session :config :active-extension :value]))
+
+(defn get-extension-by-value [value]
+  (let [extensions (get-all-extensions)]
+    (first (filter #(= value (:value %)) extensions))))
+
+(defn get-integration-by-type [type]
+  (first (filter #(= (:type %) type) (get-all-integrations))))
 
 (defn set-active-tenant!
   [tenant-id]
@@ -178,7 +229,6 @@
 
 (defn get-active-tenant-region
   []
-  (log :debug (get :session @(get-state)))
   (get-in @sdk-state [:session :region]))
 
 (defn set-direction!
@@ -187,7 +237,7 @@
 
 (defn get-session-id
   []
-  (get-in @sdk-state [:session :sessionId]))
+  (get-in @sdk-state [:session :session-id]))
 
 (defn set-capacity!
   [capacity]
@@ -220,6 +270,47 @@
 (defn get-twilio-connection
   []
   (get-in @sdk-state [:interal :twilio-connection]))
+
+;;;;;;;;;;;
+;; Logging
+;;;;;;;;;;;
+
+(defn get-log-level []
+  (get-in @sdk-state [:config :log-level]))
+
+(defn set-valid-log-levels! [levels]
+  (swap! sdk-state assoc-in [:logs :valid-levels] levels))
+
+(defn get-valid-log-levels []
+  (get-in @sdk-state [:logs :valid-levels]))
+
+(defn set-log-level! [level levels]
+  (if (not= -1 (.indexOf (vec (keys levels)) level))
+    (let [idx {:fatal 1 :error 2 :warn 3 :info 4 :debug 5}
+          updated-valid-levels (take (or (get idx level) 0) (vec (reverse (keys levels))))]
+      (set-valid-log-levels! updated-valid-levels)
+      (js/console.log (str "%cSet log level to " level) (get levels :info))
+      (swap! sdk-state assoc-in [:config :log-level] level))
+    (js/console.log (str "%c" (e/invalid-logging-level-specified-error)) (get levels :error))))
+
+(defn get-saved-logs []
+  (get-in @sdk-state [:logs :saved-logs]))
+
+(defn get-unsaved-logs []
+  (get-in @sdk-state [:logs :unsaved-logs]))
+
+(defn append-logs!
+  [& logs]
+  (let [unsaved (get-unsaved-logs)
+        appended (into unsaved logs)]
+    (swap! sdk-state assoc-in [:logs :unsaved-logs] appended)))
+
+(defn save-logs []
+  (let [unsaved (get-unsaved-logs)
+        saved (get-saved-logs)
+        appended (into saved unsaved)]
+    (swap! sdk-state assoc-in [:logs :saved-logs] appended)
+    (swap! sdk-state assoc-in [:logs :unsaved-logs] [])))
 
 ;;;;;;;;;;;
 ;; Predicates
