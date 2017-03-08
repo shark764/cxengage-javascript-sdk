@@ -5,6 +5,7 @@
   <title>Next</title>
 </head>
 <body>
+  <!-- <script src="../release/cxengage-javascript-sdk.min.js"></script> -->
   <script src="main.js"></script>
   <script src="js/jquery.js" type="text/javascript"></script>
   <script src="js/lodash.js" type="text/javascript"></script>
@@ -85,7 +86,8 @@
   </div>
 
   <script>
-    var SDK = cxengage_javascript_sdk.core.initialize({
+  // var SDK = serenova.cxengage.initialize({
+  var SDK = cxengage_javascript_sdk.core.initialize({
       "environment":"dev",
       "baseUrl":"https://dev-api.cxengagelabs.net/v1/",
       "logLevel":"debug",
@@ -522,12 +524,10 @@
     };
 
     var login = function() {
-      var params = {
-        username: $('#username').val(),
-        password: $('#password').val()
-      }
+      var username = $('#username').val();
+      var password = $('#password').val();
 
-      SDK.authentication.login(params);
+      SDK.authentication.login({username:username,password:password});
     };
   </script>
 </body>
