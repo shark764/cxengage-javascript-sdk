@@ -1,7 +1,7 @@
 (ns cxengage-javascript-sdk.domain.errors)
 
 (defn error [error]
-  (log :error ">>>ERROR<<<" (clj->js (:error error)) (clj->js (:data error)))
+  (js/console.error ">>>ERROR<<<" (clj->js (:error error)) (clj->js (:data error)))
   error)
 
 (defn wrong-number-of-args-error [] (error {:code 1000 :error "Incorrect number of arguments passed to SDK fn."}))

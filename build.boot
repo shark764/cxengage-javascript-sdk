@@ -25,8 +25,8 @@
                  [camel-snake-kebab "0.4.0"]
                  [cljsjs/paho "1.0.1-0"]
 
-                 [org.serenova/cxengage-cljs-utils "1.0.0"]
-                 [org.serenova/lumbajack "1.0.1"]]
+                 [serenova/cxengage-cljs-utils "2.0.0"]
+                 [serenova/lumbajack "2.0.4-SNAPSHOT"]]
 
  :repositories #(apply conj %
                        [["releases" {:url "http://nexus.cxengagelabs.net/content/repositories/releases/"

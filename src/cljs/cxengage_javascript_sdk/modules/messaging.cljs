@@ -1,10 +1,10 @@
 (ns cxengage-javascript-sdk.modules.messaging
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljsjs.paho]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [cljs.core.async :as a]
+            [cxengage-javascript-sdk.helpers :refer [log]]
             [clojure.set :refer [rename-keys]]
             [cljs-time.core :as time]
             [cljs-time.format :as fmt]
@@ -237,5 +237,5 @@
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
             (register {:api {:interactions {:messaging {:send-message (partial send-message this)}}}
                        :module-name module-name})
-            (log :info "<----- Started " (name module-name) " module! ----->")))))
+            (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))))
   (stop [this]))

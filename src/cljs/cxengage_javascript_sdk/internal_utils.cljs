@@ -1,6 +1,5 @@
 (ns cxengage-javascript-sdk.internal-utils
-  (:require-macros [lumbajack.macros :refer [log]]
-                   [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [goog.crypt :as c]
             [ajax.core :as ajax]

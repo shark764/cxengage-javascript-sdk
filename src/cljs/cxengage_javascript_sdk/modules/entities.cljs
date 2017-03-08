@@ -1,11 +1,11 @@
 (ns cxengage-javascript-sdk.modules.entities
-  (:require-macros [lumbajack.macros :refer [log]]
-                   [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]))
@@ -134,5 +134,5 @@
                                     :get-contact-interaction (partial get-entity this :contact-interaction ::get-single-entity-params)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (log :info "<----- Started " (name module-name) " module! ----->")))
+      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
   (stop [this]))

@@ -1,6 +1,5 @@
 (ns cxengage-javascript-sdk.pubsub
-  (:require-macros [lumbajack.macros :refer [log]]
-                   [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [clojure.string :as string]
@@ -108,7 +107,7 @@
 (defn get-topic [k]
   (if-let [topic (get sdk-topics k)]
     topic
-    (log :error "NO TOPIC!!!!!!!!!!!!!!!!" k)))
+    (js/console.error "Topic not found in topic list" k)))
 
 (defn get-topic-permutations [topic]
   (let [parts (string/split topic #"/")]
@@ -140,7 +139,7 @@
       (e/invalid-args-error (s/explain-data ::subscribe-params params))
       (let [subscription-id (str (id/make-random-uuid))]
         (if-not (valid-topic? topic)
-          (log :error "(" topic ") is not a valid subscription topic.")
+          (js/console.error (str "(" topic ") is not a valid subscription topic."))
           (do (swap! sdk-subscriptions assoc-in [topic subscription-id] callback)
               subscription-id))))))
 
@@ -159,8 +158,9 @@
                       @sdk-subscriptions)]
     (reset! sdk-subscriptions new-sub-list)
     (if (= new-sub-list original-subs)
-      (log :error "Subscription ID not found")
-      (log :info "Successfully unsubscribed"))))
+      (js/console.error "Subscription ID not found")
+      (do (js/console.info "Successfully unsubscribed")
+          true))))
 
 (defn publish
   ([publish-details]

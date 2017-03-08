@@ -3,6 +3,7 @@
   (:require [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
             [cljs.core.async :as a]
+            [cxengage-javascript-sdk.helpers :refer [log]]
             [cljsjs.aws-sdk-js]
             [cxengage-cljs-utils.core :as cxu]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
@@ -79,6 +80,6 @@
         (if-not sqs-integration
           (a/put! core-messages< {:module-registration-status :failure :module module-name})
           (do (sqs-init* this sqs-integration on-msg-fn core-messages<)
-              (log :info "<----- Started " (name module-name) " module! ----->")
+              (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))
               (register {:module-name module-name}))))))
   (stop [this]))

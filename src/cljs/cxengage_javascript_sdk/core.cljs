@@ -67,9 +67,10 @@
 (s/def ::type #{:js :cljs})
 (s/def ::environment #{:dev :qe :staging :prod})
 (s/def ::log-level #{:debug :info :warn :error :fatal :off})
+(s/def ::blast-sqs-output boolean?)
 (s/def ::initialize-options
   (s/keys :req-un []
-          :opt-un [::consumer-type ::log-level ::environment ::base-url]))
+          :opt-un [::consumer-type ::log-level ::environment ::base-url ::blast-sqs-output]))
 
 (defn initialize
   ([] (initialize {}))
@@ -80,10 +81,11 @@
                      (assoc :base-url (or (:base-url options) "https://api.cxengage.net/v1/"))
                      (assoc :consumer-type (keyword (or (:consumer-type options) :js)))
                      (assoc :log-level (keyword (or (:log-level options) :info)))
+                     (assoc :blast-sqs-output (or (:blast-sqs-output options) false))
                      (assoc :environment (keyword (or (:environment options) :prod))))]
      (if-not (s/valid? ::initialize-options options)
        (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
-       (let [{:keys [log-level consumer-type base-url environment]} options
+       (let [{:keys [log-level consumer-type base-url environment blast-sqs-output]} options
              core (iu/camelify {:api {:subscribe pu/subscribe
                                       :publish pu/publish
                                       :unsubscribe pu/unsubscribe
@@ -95,6 +97,7 @@
          (state/set-consumer-type! consumer-type)
          (state/set-log-level! log-level l/levels)
          (state/set-env! environment)
+         (state/set-blast-sqs-output! blast-sqs-output)
          (aset js/window "serenova" #js {"cxengage" core})
          (start-base-modules module-comm-chan)
          (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))

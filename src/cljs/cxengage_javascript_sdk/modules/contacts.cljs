@@ -1,9 +1,9 @@
 (ns cxengage-javascript-sdk.modules.contacts
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cxengage-cljs-utils.core :as cxu]
+            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
@@ -254,5 +254,5 @@
                                     :get-layout (partial get-layout this)
                                     :list-layouts (partial list-layouts this)}}
                  :module-name module-name})
-      (log :info "<----- Started " (name module-name) " module! ----->")))
+      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
   (stop [this]))

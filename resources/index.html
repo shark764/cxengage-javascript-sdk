@@ -88,7 +88,8 @@
     var SDK = cxengage_javascript_sdk.core.initialize({
       "environment":"dev",
       "baseUrl":"https://dev-api.cxengagelabs.net/v1/",
-      "logLevel":"debug"
+      "logLevel":"debug",
+      "blastSqsOutput": true
     });
 
     var state = {
@@ -102,8 +103,8 @@
     var voiceTimer;
 
     SDK.subscribe('cxengage', function(error, topic, response) {
-      console.log('\n\n');
-      console.info('<--- SDK PUBSUB FOR `' + topic + '` RECEIVED -->', response);
+      // console.log('\n\n');
+      // console.info('<--- SDK PUBSUB FOR `' + topic + '` RECEIVED -->', response);
 
       switch(topic) {
         case 'cxengage/authentication/login-response':
@@ -176,10 +177,10 @@
           handleMessagingEnabled(error, topic, response);
           break;
         default:
-          console.warn('no handler written yet for ', topic);
+          // console.warn('no handler written yet for ', topic);
           break;
       }
-      console.log('\n\n');
+      // console.log('\n\n');
     });
 
     /*

@@ -1,6 +1,5 @@
 (ns cxengage-javascript-sdk.modules.voice
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljsjs.paho]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
@@ -9,6 +8,7 @@
             [cljs-time.core :as time]
             [cljs-time.format :as fmt]
             [cljs-time.instant]
+            [cxengage-javascript-sdk.helpers :refer [log]]
             [goog.crypt :as c]
             [cljs-uuid-utils.core :as id]
             [cxengage-cljs-utils.core :as cxu]
@@ -181,7 +181,7 @@
                               (js/Twilio.Device.error handle-twilio-error)
                               (p/publish {:topics (p/get-topic :voice-enabled)
                                           :response true})
-                              (log :info "<----- Started voice module! ----->"))
+                              (log :info "<----- Started voice SDK module! ----->"))
                             (do (a/<! (a/timeout 250))
                                 (recur))))))]
     (-> js/navigator
