@@ -67,7 +67,7 @@
                  ;; Generic Interaction Topics
                  :work-offer-received "cxengage/interactions/work-offer-received"
                  :screen-pop-received "cxengage/interactions/url-pop-received"
-                 :work-initiated-received "cxengage/interactions/work-initiated"
+                 :work-initiated-received "cxengage/interactions/work-initiated-received"
                  :disposition-codes-received "cxengage/interactions/disposition-codes-received"
                  :custom-fields-received "cxengage/interactions/custom-fields-received"
                  :work-accepted-received "cxengage/interactions/work-accepted-received"
@@ -85,6 +85,7 @@
                  :disable-wrapup-acknowledged "cxengage/interactions/disable-wrapup-acknowledged"
                  :end-wrapup-acknowledged "cxengage/interactions/end-wrapup-acknowledged"
                  :wrapup-started "cxengage/interactions/wrapup-started"
+                 :wrapup-ended "cxengage/interactions/wrapup-ended"
 
                  ;; Voice Interaction Topics
                  :hold-acknowledged "cxengage/interactions/voice/hold-acknowledged"

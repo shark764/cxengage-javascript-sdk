@@ -176,7 +176,7 @@
           handleMessagingEnabled(error, topic, response);
           break;
         default:
-          // console.warn('no handler written yet for ', topic);
+          console.warn('no handler written yet for ', topic);
           break;
       }
     });
@@ -349,7 +349,6 @@
     var initializeMessagingInteraction = function(workOffer) {
       if ($('#' + workOffer.interactionId).find().length === 0) {
         var msgingWindows = $('.messaging-controls');
-        console.log('asfdasdfasdfsafd');
         var iid = workOffer.interactionId;
         var timeout = Math.floor((new Date(workOffer.timeout).getTime() - new Date().getTime()) / 1000);
         state.messagingTimers[workOffer.interactionId] = setInterval(function() {

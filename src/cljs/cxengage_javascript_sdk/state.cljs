@@ -105,7 +105,11 @@
                       (mapv augment-messaging-payload)
                       (mapv #(dissoc % :channel-id :timestamp))
                       (mapv :payload))
-        new-msg-history (reduce conj old-msg-history messages)]
+        new-msg-history (reduce conj old-msg-history messages)
+        new-msg-history (reduce (fn [acc msg]
+                                  (if (= 0 (count (filter #(= (:id msg) (:id %)) old-msg-history)))
+                                    (conj acc msg)
+                                    acc)) old-msg-history messages)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)))
 
 (defn get-interaction-messaging-history [interaction-id]

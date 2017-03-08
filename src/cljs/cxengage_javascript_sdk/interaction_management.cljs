@@ -119,13 +119,6 @@
     (p/publish {:topics (p/get-topic :work-ended-received)
                 :response {:interaction-id interaction-id}})))
 
-(defn handle-wrapup [message]
-  (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
-        {:keys [interaction-id]} message]
-    (do (state/add-interaction-wrapup-details! wrapup-details interaction-id)
-        (p/publish {:topics (p/get-topic :wrapup-details-received)
-                    :response (assoc wrapup-details :interaction-id interaction-id)}))))
-
 (defn handle-customer-hold [message]
   (let [{:keys [interaction-id resource-id]} message]
     (p/publish {:topics (p/get-topic :customer-hold)
@@ -185,13 +178,26 @@
                   :response {:interaction-id interaction-id
                              :pop-uri pop-uri}}))))
 
+(defn handle-wrapup [message]
+  (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
+        {:keys [interaction-id]} message]
+    (do (state/add-interaction-wrapup-details! wrapup-details interaction-id)
+        (p/publish {:topics (p/get-topic :wrapup-details-received)
+                    :response (assoc wrapup-details :interaction-id interaction-id)}))))
+
 (defn handle-wrapup-started
   [message]
   (let [{:keys [interaction-id]} message
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
-    (when (:wrapup-enabled wrapup-details)
-      (p/publish {:topics (p/get-topic :wrapup-started)
-                  :response {:interaction-id interaction-id}}))))
+    (p/publish {:topics (p/get-topic :wrapup-started)
+                :response {:interaction-id interaction-id}})))
+
+(defn handle-wrapup-ended
+  [message]
+  (let [{:keys [interaction-id]} message
+        wrapup-details (state/get-interaction-wrapup-details interaction-id)]
+    (p/publish {:topics (p/get-topic :wrapup-ended)
+                :response {:interaction-id interaction-id}})))
 
 (defn msg-router [message]
   (let [handling-fn (case (:sdk-msg-type message)
