@@ -137,7 +137,7 @@
         module-state @(:state module)
         resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
-        topic (p/get-topic :session-start-response)
+        topic (p/get-topic :session-started)
         start-session-url (str api-url (get-in module-state [:urls :start-session]))
         start-session-request {:method :post
                                :url (iu/build-api-url-with-params
@@ -179,6 +179,8 @@
                 (a/put! (:core-messages< module) :config-ready)
                 (p/publish {:topics topic
                             :response result})
+                (p/publish {:topics (p/get-topic :extension-list)
+                            :response (select-keys result [:active-extension :extensions])})
                 (start-session* module)))))
     nil))
 
@@ -209,7 +211,7 @@
   ([module params]
    (let [params (iu/extract-params params)
          {:keys [direction callback]} params
-         topic (p/get-topic :asdf)
+         topic (p/get-topic :set-direction-response)
          api-url (get-in module [:config :api-url])
          tenant-id (state/get-active-tenant-id)
          resource-id (state/get-active-user-id)
@@ -236,9 +238,9 @@
                                :error (e/api-error "api error")
                                :callback callback})
                    (p/publish {:topics topic
-                               :response (select-keys result [:session-id])
-                               :callback callback}))))
-           nil)))))
+                               :response (assoc (select-keys result [:session-id]) :direction direction)
+                               :callback callback})
+           nil))))))))
 
 (defn set-active-tenant
   ([module] (e/wrong-number-of-args-error))
@@ -288,7 +290,7 @@
       (register {:api {module-name {:set-active-tenant (partial set-active-tenant this)
                                     :go-ready (partial change-presence-state this "ready")
                                     :go-not-ready (partial change-presence-state this "notready")
-                                    :go-offline (partial change-presence-state this "offline")
+                                    :end (partial change-presence-state this "offline")
                                     :set-direction (partial set-direction this)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success :module module-name})

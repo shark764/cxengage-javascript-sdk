@@ -19,19 +19,20 @@
                  :login-response "cxengage/authentication/login-response"
 
                  ;; Session Topics
-                 :active-tenant-set "cxengage/session/active-tenant-set"
-                 :config-response "cxengage/session/config-response"
+                 :active-tenant-set "cxengage/session/set-active-tenant-response"
+                 :config-response "cxengage/session/config-details"
                  :presence-state-changed "cxengage/session/state-change-response"
                  :presence-state-change-request-acknowledged "cxengage/session/state-change-request-acknowledged"
                  :presence-heartbeats-response "cxengage/session/session-heartbeat-response"
-                 :session-start-response "cxengage/session/session-started-response"
-
+                 :session-started "cxengage/session/started"
+                 :set-direction-response "cxengage/session/set-direction-response"
+                 :extension-list "cxengage/session/extension-list"
+                 :tenant-list "cxengage/session/tenant-list"
+                 :session-ended "cxengage/session/ended"
 
                  ;; Generic Interaction Topics
 
-
                  ;; Voice Interaction Topics
-
 
                  ;; Messaging Interaction Topics
                  })

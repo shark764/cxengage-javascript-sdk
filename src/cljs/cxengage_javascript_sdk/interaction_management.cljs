@@ -58,8 +58,11 @@
 
 (defn handle-resource-state-change [message]
   (state/set-user-session-state! message)
-  (p/publish {:topics (p/get-topic :presence-state-changed)
-              :response (select-keys message [:state :available-states :direction])}))
+  (if (not= (:state message) "offline")
+    (p/publish {:topics (p/get-topic :presence-state-changed)
+                :response (select-keys message [:state :available-states :direction])})
+    (p/publish {:topics (p/get-topic :session-ended)
+                :response true})))
 
 (defn handle-work-initiated [message]
   (p/publish {:topics (p/get-topic :asdf)

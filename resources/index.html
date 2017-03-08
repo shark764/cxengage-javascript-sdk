@@ -10,6 +10,72 @@
   <script src="js/lodash.js" type="text/javascript"></script>
   <script src="js/moment.js" type="text/javascript"></script>
 
+  <div id="login-screen" style="display: block;">
+    <input type="text" id="username" name="username" value="sstiles@liveopscloud.com">
+    <br><br>
+    <input type="password" id="password" name="password" value="DevProfile1!">
+    <br><br>
+    <button onclick="login()">Log In </button>
+  </div>
+
+  <div id="tenant-select-screen" style="display: none;">
+    <select name="tenantSelect" id="tenantSelect"></select>
+    <br><br><br><br>
+    <button onclick="selectActiveTenant()">Pick Your Tenant </button>
+  </div>
+
+  <div id="agent-screen" style="display: none;">
+    <div class="state-controls">
+      <h2>Agent State Controls</h2>
+      <select disabled name="extension-select" id="extension-select"></select>
+      <br><br>
+      <button disabled onclick="selectExtension()">select extension</button>
+      <br>
+      <br>
+      <button id="ready" disabled onclick="goReady()">Go Ready</button>
+      <button id="notready" disabled onclick="goNotReady()">Go Not Ready</button>
+      <button id="offline" disabled onclick="goOffline()">Log out</button>
+      <br>
+      <br>
+      <button disabled onclick="goInbound()">Go Inbound</button>
+      <button disabled onclick="goOutbound()">Go Outbound</button>
+    </div>
+    <hr>
+    <div class="call-controls">
+      <h2>Phone Interaction</h2>
+      <div style="width:350px; text-align: center;">
+        <button disabled style="float: left;" onclick="()">answer phone</button>
+        <pre style="display: inline;"><--></pre>
+        <button disabled style="float: right;" onclick="()">hangup phone</button>
+      </div>
+      <br><br>
+      <div style="width:350px; text-align: center;">
+        <button disabled style="float: left;" onclick="()">hold call</button>
+        <pre style="display: inline;"><--></pre>
+        <button disabled style="float: right;" onclick="()">resume call</button>
+      </div>
+      <br><br>
+      <div style="width:350px; text-align: center;">
+        <button disabled style="float: left;" onclick="()">start recording call</button>
+        <pre style="display: inline;"><--></pre>
+        <button disabled style="float: right;" onclick="()">stop recording call</button>
+      </div>
+      <br><br>
+      <div style="width:350px; text-align: center;">
+        <button disabled style="float: left;" onclick="()">mute your voice</button>
+        <pre style="display: inline;"><--></pre>
+        <button disabled style="float: right;" onclick="()">unmute your voice</button>
+      </div>
+    </div>
+    <br><br>
+    <hr>
+    <div class="messaging-controls">
+      <h2>Messaging Interactions</h2>
+    </div>
+    <hr>
+    <img src="https://unequivocallyawkward.files.wordpress.com/2015/01/bruh.jpg" alt="BRUH">
+  </div>
+
   <script>
     var SDK = cxengage_javascript_sdk.core.initialize({
       "environment":"dev",
@@ -17,15 +83,161 @@
       "logLevel":"debug"
     });
 
-    SDK.authentication.login({username:'',password:''});
+    var state = {};
 
-    setTimeout(function() {
-      SDK.session.setActiveTenant({tenantId:''});
-    }, 3000);
+    SDK.subscribe('cxengage', function(error, topic, response) {
+      console.log('\n\n');
+      console.info('<--- SDK PUBSUB FOR `' + topic + '` RECEIVED -->', response);
 
-    setTimeout(function() {
-      SDK.session.goReady({extensionValue:''});
-    }, 5500);
+      switch(topic) {
+        case 'cxengage/authentication/login-response':
+          handleLogin(error, topic, response);
+          break;
+        case 'cxengage/session/tenant-list':
+          handleTenantList(error, topic, response);
+          break;
+        case 'cxengage/session/extension-list':
+          handleExtensionList(error, topic, response);
+          break;
+        case 'cxengage/session/started':
+          handleSessionStart(error, topic, response);
+          break;
+        case 'cxengage/session/started':
+          handleSessionEnd(error, topic, response);
+          break;
+        case 'cxengage/session/state-change-response':
+          handleStateChange(error, topic, response);
+          break;
+        default:
+          console.warn('no handler written yet for ', topic);
+          break;
+      }
+      console.log('\n\n');
+    });
+
+    /*
+     *
+     * Pub/sub handlers
+     *
+     */
+
+    var handleStateChange = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      var newState = response.state;
+      var states = ["ready", "notready", "offline"];
+      _.each(states, function(s) {
+        if (newState === s) {
+          $('#' + newState).attr('disabled', 'disabled');
+        } else {
+          $('#' + s).removeAttr('disabled');
+        }
+      });
+    };
+
+    var handleExtensionList = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      state.extensionId = response.activeExtension.value;
+      populateExtensionsDropdown(response.extensions);
+    };
+
+    var handleTenantList = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      populateTenantsDropdown(response);
+    };
+
+    var handleLogin = function(error, topic, response) {
+      switchScreens('tenant-select-screen');
+    };
+
+    var handleSessionStart = function(error, topic, response) {
+      if (error) return console.error('uh oh');
+      switchScreens('agent-screen');
+    };
+
+    var handleSessionEnd = function(error, topic, message) {
+      if (error) return console.error('uh oh');
+      location.reload(true);
+    };
+
+    /*
+     *
+     * UI functions
+     *
+     */
+
+    var switchScreens = function(screen) {
+      var screens = ['login-screen','tenant-select-screen','agent-screen'];
+      _.each(screens, function(s) {
+        if (s !== screen) {
+          $('#' + s).hide();
+        } else {
+          $('#' + s).show();
+        }
+      })
+    };
+
+    var populateExtensionsDropdown = function(extensions) {
+      $('#extension-select option').remove();
+      _.each(extensions, function(e) {
+        $('#extension-select').append('<option value="' + e.value + '">' + e.description + '</option>');
+      });
+    };
+
+    var populateTenantsDropdown = function(tenants) {
+      $('#tenantSelect option').remove();
+      _.each(tenants, function(t) {
+        if (t.tenantId === '3b639eb0-febc-11e6-98a7-36051d50f3bf') {
+          $('#tenantSelect').append('<option value="' + t.tenantId + '" selected="selected">' + t.tenantName + '</option>');
+        } else {
+          $('#tenantSelect').append('<option value="' + t.tenantId + '">' + t.tenantName + '</option>');
+        }
+      });
+    };
+
+    /*
+     *
+     * button handlers
+     *
+     */
+
+    var selectActiveTenant = function() {
+      var tid = $('#tenantSelect').val();
+      SDK.session.setActiveTenant({tenantId:tid});
+    };
+
+    var selectExtension = function() {
+      state.extensionId = $('#extension-select').val();
+    };
+
+    var goReady = function() {
+      SDK.session.goReady({ extensionValue: state.extensionId });
+    };
+
+    var goNotReady = function() {
+      SDK.session.goNotReady();
+    };
+
+    var goOffline = function() {
+      SDK.session.end();
+    };
+
+    var goInbound = function() {
+      SDK.session.setDirection({direction:'inbound'});
+    };
+
+    var goOutbound = function() {
+      SDK.session.setDirection({direction:'outbound'});
+    };
+
+
+    var login = function() {
+      var params = {
+        username: $('#username').val(),
+        password: $('#password').val()
+      }
+
+      SDK.authentication.login(params);
+    };
   </script>
 </body>
 </html>
