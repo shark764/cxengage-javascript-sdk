@@ -32,8 +32,18 @@
                  :tenant-list "cxengage/session/tenant-list"
                  :session-ended "cxengage/session/ended"
 
+                 ;; Contact topics
+                 :get-contact "cxengage/contacts/get-contact-response"
+                 :get-contacts "cxengage/contacts/get-contacts-response"
+                 :search-contacts "cxengage/contacts/search-contacts-response"
+                 :create-contact "cxengage/contacts/create-contact-response"
+                 :update-contact "cxengage/contacts/update-contact-response"
+                 :delete-contact "cxengage/contacts/delete-contact-response"
+                 :list-attributes "cxengage/contacts/list-attributes-response"
+                 :get-layout "cxengage/contacts/get-layout-response"
+                 :list-layouts "cxengage/contacts/list-layouts-response"
+
                  ;; CRUD topics
-                 :contact-response "cxengage/entities/contacts-response"
                  :get-queue-response "cxengage/entities/get-queue-response"
                  :get-queues-response "cxengage/entities/get-queues-response"
                  :get-transfer-list-response "cxengage/entities/get-transfer-list-response"
@@ -53,7 +63,6 @@
                  :logs-dumped "cxengage/logging/logs-dumped"
                  :log-level-set "cxengage/logging/log-level-set"
                  :logs-saved "cxengage/logging/logs-saved"
-
 
                  ;; Generic Interaction Topics
                  :work-offer-received "cxengage/interactions/work-offer-received"

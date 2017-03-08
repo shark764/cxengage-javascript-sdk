@@ -105,9 +105,6 @@
     };
 
     SDK.subscribe('cxengage', function(error, topic, response) {
-      // console.log('\n\n');
-      // console.info('<--- SDK PUBSUB FOR `' + topic + '` RECEIVED -->', response);
-
       switch(topic) {
         case 'cxengage/authentication/login-response':
           handleLogin(error, topic, response);
@@ -182,7 +179,6 @@
           // console.warn('no handler written yet for ', topic);
           break;
       }
-      // console.log('\n\n');
     });
 
     /*
