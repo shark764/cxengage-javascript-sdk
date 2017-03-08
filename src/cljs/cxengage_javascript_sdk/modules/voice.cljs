@@ -178,6 +178,8 @@
                               (js/Twilio.Device.offline update-twilio-connection)
                               (js/Twilio.Device.disconnect update-twilio-connection)
                               (js/Twilio.Device.error handle-twilio-error)
+                              (p/publish {:topics (p/get-topic :voice-enabled)
+                                          :response true})
                               (js/console.info "<----- Started voice module! ----->"))
                             (do (a/<! (a/timeout 250))
                                 (recur))))))]

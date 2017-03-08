@@ -117,7 +117,9 @@
 (defn on-connect [done-init<]
   (js/console.log "Mqtt client connected")
   (a/put! done-init< {:module-registration-status :success
-                      :module :mqtt}))
+                      :module :mqtt})
+  (p/publish {:topics (p/get-topic :messaging-enabled)
+              :response true}))
 
 (defn on-failure [done-init< msg]
   (js/console.log "Mqtt Client failed to connect")

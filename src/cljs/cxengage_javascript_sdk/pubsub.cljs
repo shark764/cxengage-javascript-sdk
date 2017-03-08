@@ -14,7 +14,10 @@
 
 (def sdk-subscriptions (atom {}))
 
-(def sdk-topics {
+(def sdk-topics {;; Misc Topics
+                 :voice-enabled "cxengage/capabilities/voice-available"
+                 :messaging-enabled "cxengage/capabilities/messaging-available"
+
                  ;; Authentication Topics
                  :login-response "cxengage/authentication/login-response"
 
