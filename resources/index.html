@@ -11,9 +11,9 @@
   <script src="js/moment.js" type="text/javascript"></script>
 
   <div id="login-screen" style="display: block;">
-    <input type="text" id="username" name="username" value="">
+    <input type="text" id="username" name="username" value="sstiles@liveopscloud.com">
     <br><br>
-    <input type="password" id="password" name="password" value="">
+    <input type="password" id="password" name="password" value="DevProfile1!">
     <br><br>
     <button onclick="login()">Log In </button>
   </div>
@@ -95,12 +95,12 @@
     var state = {
       voiceinteractionId:'',
       voiceAccepted:false,
-      interactions:{}
+      interactions:{},
+      messagingTimers:{},
+      onCallTimer:undefined,
+      timeOnCall:0,
+      voiceTimer:undefined
     };
-    var messagingTimers = {};
-    var onCallTimer;
-    var timeOnCall = 0;
-    var voiceTimer;
 
     SDK.subscribe('cxengage', function(error, topic, response) {
       // console.log('\n\n');
@@ -244,14 +244,14 @@
         $('.call-controls h2 span').text('');
         $('.call-controls #hangupPhone').attr('disabled', 'disabled');
         $('.call-controls .aux button').attr('disabled', 'disabled');
-        clearInterval(onCallTimer);
-        clearInterval(voiceTimer);
+        clearInterval(state.onCallTimer);
+        clearInterval(state.voiceTimer);
         state.voiceAccepted = false;
         setTimeout(function(){
           $('#answerPhone span, #rejectPhone span').text('');
         }, 2000);
       } else {
-        clearInterval(messagingTimers[response.interactionId]);
+        clearInterval(state.messagingTimers[response.interactionId]);
         $('#' + response.interactionId).remove();
       }
     };
@@ -289,10 +289,10 @@
         $('#hangupPhone').removeAttr('disabled');
         $('#answerPhone span, #rejectPhone span').text('');
         $('.call-controls .aux button.on').removeAttr('disabled');
-        timeOnCall = 0;
-        onCallTimer = setInterval(function() {
-          timeOnCall = timeOnCall + 1;
-          $('.call-controls h2 span').text(' (call duration: ' + timeOnCall + 's)');
+        state.timeOnCall = 0;
+        state.onCallTimer = setInterval(function() {
+          state.timeOnCall = state.timeOnCall + 1;
+          $('.call-controls h2 span').text(' (call duration: ' + state.timeOnCall + 's)');
         }, 1000);
       } else {
         $('#' + response.interactionId + ' #acceptRejectArea').remove();
@@ -304,7 +304,7 @@
       if (error) return console.error('uh oh');
       state.voiceAccepted = false;
       state.interactions[response.interactionId].ended = true;
-      clearInterval(messagingTimers[response.interactionId]);
+      clearInterval(state.messagingTimers[response.interactionId]);
       if (response.interactionId === state.voiceInteractionId) {
         $('#answerPhone span, #rejectPhone span').text('');
         $('#answerPhone, #rejectPhone').attr('disabled', 'disabled');
@@ -354,14 +354,14 @@
         console.log('asfdasdfasdfsafd');
         var iid = workOffer.interactionId;
         var timeout = Math.floor((new Date(workOffer.timeout).getTime() - new Date().getTime()) / 1000);
-        messagingTimers[workOffer.interactionId] = setInterval(function() {
+        state.messagingTimers[workOffer.interactionId] = setInterval(function() {
           var timeLeft = timeout--;
           $('#' + iid + ' .acceptBtn span, #' + iid + ' .rejectBtn span').text('(' + timeLeft + 's remaining)');
           if (timeLeft == 1) {
             $('#' + iid + ' .acceptBtn').attr('disabled','disabled');
           }
           if (timeLeft == 0) {
-            clearInterval(messagingTimers[workOffer.interactionId]);
+            clearInterval(state.messagingTimers[workOffer.interactionId]);
           }
         }, 1000);
         var initialMessagingHTML = '<div style="margin: 20px; vertical-align: top; padding: 10px; display: none; max-width: 300px; border: 2px solid #000000;" id="' + iid + '">\
@@ -389,21 +389,21 @@
       $('#answerPhone').removeAttr('disabled');
       $('#rejectPhone').removeAttr('disabled');
       $('#answerPhone span, #rejectPhone span').text('(' + (timeout + 1) + 's remaining)');
-      voiceTimer = setInterval(function() {
+      state.voiceTimer = setInterval(function() {
         var timeLeft = timeout--;
         if (timeLeft == 0) {
           console.log('clearing interval 1');
-          clearInterval(voiceTimer);
+          clearInterval(state.voiceTimer);
           return;
         }
         if (state.voiceAccepted == true) {
           console.log('clearing interval 2');
-          clearInterval(voiceTimer);
+          clearInterval(state.voiceTimer);
           return;
         }
         if (state.interactions[workOffer.interactionId].ended == true) {
           console.log('clearing interval 3');
-          clearInterval(voiceTimer);
+          clearInterval(state.voiceTimer);
         }
         $('#answerPhone span, #rejectPhone span').text('(' + timeLeft + 's remaining)');
         if (timeLeft == 1) {
