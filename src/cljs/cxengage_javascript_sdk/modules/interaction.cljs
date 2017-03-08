@@ -18,7 +18,7 @@
           :opt-un [::specs/callback]))
 
 (s/def ::contact-operation-params
-  (s/keys :req-un [::specs/interaction-id :specs/contact-id]
+  (s/keys :req-un [::specs/interaction-id ::specs/contact-id]
           :opt-un [::specs/callback]))
 
 (defn send-interrupt
@@ -29,8 +29,8 @@
      (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
    (let [client-params (iu/extract-params client-params)
-         {:keys [callback interaction-id contact-id disposition]} client-params
-         {:keys [sub-id action-id channel-type resource-id tenant-id resource direction channel-type]} (state/get-interaction interaction-id)
+         {:keys [callback interaction-id contact-id]} client-params
+         {:keys [sub-id action-id channel-type resource-id tenant-id resource direction channel-type timeout timeout-end]} (state/get-interaction interaction-id)
          {:keys [extension role-id session-id work-offer-id]} resource
          basic-interrupt-body {:resource-id (state/get-active-user-id)}
          detailed-interaction-interrupt-body {:tenant-id tenant-id
@@ -52,12 +52,13 @@
                                      :topic (p/get-topic :interaction-accept-acknowledged)
                                      :interrupt-body basic-interrupt-body
                                      :on-confirm-fn (fn []
-                                                      (when (= channel-type "voice")
-                                                        (let [connection (state/get-twilio-connection)]
-                                                          (.accept connection)))
-                                                      (when (or (= channel-type "sms")
-                                                                (= channel-type "messaging"))
-                                                        (int/get-messaging-history tenant-id interaction-id)))}
+                                                      (when-not (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
+                                                        (when (= channel-type "voice")
+                                                          (let [connection (state/get-twilio-connection)]
+                                                            (.accept connection)))
+                                                        (when (or (= channel-type "sms")
+                                                                  (= channel-type "messaging"))
+                                                          (int/get-messaging-history tenant-id interaction-id))))}
                             :focus {:validation ::generic-interaction-fn-params
                                     :interrupt-type "interaction-focused"
                                     :topic (p/get-topic :interaction-focus-acknowledged)
