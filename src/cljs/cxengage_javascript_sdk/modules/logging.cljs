@@ -47,7 +47,7 @@
   ([module params]
    (let [module-state @(:state module)
          {:keys [callback] :as params} (iu/extract-params params)
-         topic ""]
+         topic (p/get-topic :asdf)]
      (if-not (s/valid? ::dump-logs-params params)
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data ::dump-logs-params params))
@@ -69,7 +69,7 @@
      (set-level module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [{:keys [level callback] :as params} (iu/extract-params params)
-         topic ""
+         topic (p/get-topic :asdf)
          level (keyword level)]
      (if-not (s/valid? ::set-level-params params)
        (p/publish {:topics topic
@@ -104,7 +104,7 @@
                              :device "client"
                              :app-id (str (uuid/make-random-squuid))
                              :app-name "CxEngage Javascript SDK"}}
-         topic ""]
+         topic (p/get-topic :asdf)]
      (if-not (s/valid? ::save-logs-params params)
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data ::save-logs-params params))

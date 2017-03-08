@@ -20,7 +20,7 @@
           (if (not= status 200)
             (e/api-error result)
             (do (state/add-messages-to-history! interaction-id result)
-                (p/publish {:topics "cxengage/messaging/history"
+                (p/publish {:topics (p/get-topic :asdf)
                             :response (state/get-interaction-messaging-history interaction-id)})))))))
 
 (defn get-messaging-metadata [tenant-id interaction-id]
@@ -41,7 +41,7 @@
               (= channel-type "messaging"))
       (let [{:keys [tenant-id interaction-id]} message]
         (get-messaging-metadata tenant-id interaction-id))))
-  (p/publish {:topics "cxengage/interactions/work-offer"
+  (p/publish {:topics (p/get-topic :asdf)
               :response message})
   nil)
 
@@ -52,23 +52,23 @@
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (p/publish {:topics "cxengage/messaging/new-message-received"
+    (p/publish {:topics (p/get-topic :asdf)
                 :respones (state/augment-messaging-payload {:payload payload})})
     (state/add-messages-to-history! interaction-id [{:payload payload}])))
 
 (defn handle-resource-state-change [message]
   (state/set-user-session-state! message)
-  (p/publish {:topics "cxengage/session/state-changed"
+  (p/publish {:topics (p/get-topic :presence-state-changed)
               :response (select-keys message [:state :available-states :direction])}))
 
 (defn handle-work-initiated [message]
-  (p/publish {:topics "cxengage/interactions/work-initiated"
+  (p/publish {:topics (p/get-topic :asdf)
               :response message}))
 
 (defn handle-work-rejected [message]
   (let [{:keys [interaction-id]} message]
     (state/transition-interaction! :pending :past interaction-id)
-    (p/publish {:topics "cxengage/interactions/work-rejected"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id}})))
 
 (defn handle-custom-fields [message]
@@ -98,7 +98,7 @@
        {:tenant-id tenant-id
         :interaction-id interaction-id
         :env (state/get-env)}))
-    (p/publish {:topics "cxengage/interactions/work-accepted"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id}}) ))
 
 (defn handle-work-ended [message]
@@ -109,62 +109,62 @@
       (let [connection (state/get-twilio-device)]
         (.disconnectAll connection)))
     (state/transition-interaction! :active :past interaction-id)
-    (p/publish {:topics "cxengage/interactions/work-ended"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id}})))
 
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
         {:keys [interaction-id]} message]
     (do (state/add-interaction-wrapup-details! wrapup-details interaction-id)
-        (p/publish {:topics "cxengage/interactions/wrapup-details"
+        (p/publish {:topics (p/get-topic :asdf)
                     :response wrapup-details}))))
 
 (defn handle-customer-hold [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics "cxengage/voice/hold-started"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-customer-resume [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics "cxengage/voice/hold-ended"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-resource-mute [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics "cxengage/voice/mute-started"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-resource-unmute [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics "cxengage/voice/mute-ended"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-recording-start [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics "cxengage/voice/recording-started"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-recording-stop [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics "cxengage/voice/recording-ended"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-transfer-connected [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics "cxengage/voice/transfer-connected"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-script-received [message]
   (let [{:keys [interaction-id resource-id script]} message]
     (state/add-script-to-interaction! interaction-id script)
-    (p/publish {:topics "cxengage/interactions/script-received"
+    (p/publish {:topics (p/get-topic :asdf)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id
                            :script script}})))
@@ -174,7 +174,7 @@
 (defn handle-screen-pop [message]
   (let [{:keys [pop-uri pop-type interaction-id]} message]
     (when (and pop-uri (or (= pop-type "external-url") (= pop-type "url")))
-      (p/publish {:topics "cxengage/interactions/screen-pop/uri"
+      (p/publish {:topics (p/get-topic :asdf)
                   :response {:interaction-id interaction-id
                              :pop-uri pop-uri}}))))
 
@@ -183,7 +183,7 @@
   (let [{:keys [interaction-id]} message
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
     (when (:wrapup-enabled wrapup-details)
-      (p/publish {:topics "cxengage/interactions/wrapup-started"
+      (p/publish {:topics (p/get-topic :asdf)
                   :response {:interaction-id interaction-id}}))))
 
 (defn msg-router [message]

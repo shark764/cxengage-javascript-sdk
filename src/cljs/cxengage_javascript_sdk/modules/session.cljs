@@ -25,7 +25,7 @@
                                  heartbeat-url
                                  {:tenant-id tenant-id
                                   :resource-id resource-id})}
-        topic ""]
+        topic (p/get-topic :presence-heartbeats-response)]
     (go-loop []
       (if (= "offline" (state/get-user-session-state))
         (do (js/console.info "Session is now offline; ceasing future heartbeats.")
@@ -88,7 +88,7 @@
          {:keys [extension-value callback]} params
          active-extension-value (state/get-active-extension)
          extensions (state/get-all-extensions)
-         topic ""
+         topic (p/get-topic :presence-state-change-request-acknowledged)
          new-extension (state/get-extension-by-value extension-value)
          validation-spec (cond
                            (= state "ready") ::go-ready-params
@@ -96,7 +96,9 @@
                            (= state "offline") ::go-offline-params
                            :else ::go-ready-params)]
      (if (not (s/valid? validation-spec params))
-       (p/publish (e/invalid-args-error (s/explain-data validation-spec params)))
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data validation-spec params))
+                   :callback callback})
        (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
              change-state-request {:method :post
                                    :url (iu/build-api-url-with-params
@@ -116,11 +118,15 @@
                                              :resource-id resource-id})
                                       :body {:activeExtension new-extension}}]
              (if (nil? new-extension)
-               (p/publish (e/not-a-valid-extension))
+               (p/publish {:topics topic
+                           :error (e/not-a-valid-extension)
+                           :callback callback})
                (do (go (let [user-update-response (a/<! (iu/api-request user-update-request))
                              {:keys [api-response status]} user-update-response]
                          (if (not= status 200)
-                           (p/publish (e/api-error "failed to set user extension"))
+                           (p/publish {:topics topic
+                                       :error (e/api-error "failed to set user extension")
+                                       :callback callback})
                            (change-presence-state-impl* change-state-request topic callback))))
                    nil)))
            (do (change-presence-state-impl* change-state-request topic callback)
@@ -131,7 +137,7 @@
         module-state @(:state module)
         resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
-        topic ""
+        topic (p/get-topic :session-start-response)
         start-session-url (str api-url (get-in module-state [:urls :start-session]))
         start-session-request {:method :post
                                :url (iu/build-api-url-with-params
@@ -162,7 +168,7 @@
                               config-url
                               {:tenant-id tenant-id
                                :resource-id resource-id})}
-        topic ""]
+        topic (p/get-topic :config-response)]
     (go (let [config-response (a/<! (iu/api-request config-request))
               {:keys [api-response status]} config-response
               {:keys [result]} api-response]
@@ -203,7 +209,7 @@
   ([module params]
    (let [params (iu/extract-params params)
          {:keys [direction callback]} params
-         topic ""
+         topic (p/get-topic :asdf)
          api-url (get-in module [:config :api-url])
          tenant-id (state/get-active-tenant-id)
          resource-id (state/get-active-user-id)
@@ -245,7 +251,7 @@
          module-state @(:state module)
          {:keys [tenant-id callback]} params
          tenant-permissions (state/get-tenant-permissions tenant-id)
-         topic ""]
+         topic (p/get-topic :active-tenant-set)]
      (if-let [error (cond
                       (not (s/valid? ::set-active-tenant-params params))
                       (e/invalid-args-error (s/explain-data ::set-active-tenant-params params))

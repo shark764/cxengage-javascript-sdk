@@ -27,7 +27,7 @@
    (let [params (iu/extract-params params)
          module-state @(:state module)
          {:keys [username password callback]} params
-         pubsub-topic (p/get-topic :login)]
+         pubsub-topic (p/get-topic :login-response)]
      (if (not (s/valid? ::login-params params))
        (p/publish {:topics pubsub-topic
                    :error (e/invalid-args-error (s/explain-data ::login-params params))

@@ -106,7 +106,7 @@
 (defn send-message-impl
   [payload topic callback]
   (let [msg (Paho.MQTT.Message. payload)
-        topic ""]
+        topic (p/get-topic :asdf)]
     (set! (.-destinationName msg) topic)
     (set! (.-qos msg) 1)
     (.send (get-mqtt-client) msg)
@@ -197,7 +197,7 @@
    (let [module-state @(:state module)
          params (iu/extract-params params)
          {:keys [interaction-id callback]} params
-         topic ""
+         topic (p/get-topic :asdf)
          tenant-id (state/get-active-tenant-id)
          payload (assoc params
                         :resource-id (state/get-active-user-id)

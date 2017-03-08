@@ -51,49 +51,49 @@
          interrupt-params (case type
                             :hold {:validation ::generic-voice-interaction-fn-params
                                    :interrupt-type "customer-hold"
-                                   :topic ""
+                                   :topic (p/get-topic :asdf)
                                    :interrupt-body simple-interrupt-body}
                             :resume {:validation ::generic-voice-interaction-fn-params
                                      :interrupt-type "customer-resume"
-                                     :topic ""
+                                     :topic (p/get-topic :asdf)
                                      :interrupt-body simple-interrupt-body}
                             :mute {:validation ::generic-voice-interaction-fn-params
                                    :interrupt-type "mute-resource"
-                                   :topic ""
+                                   :topic (p/get-topic :asdf)
                                    :interrupt-body simple-interrupt-body}
                             :unmute {:validation ::generic-voice-interaction-fn-params
                                      :interrupt-type "unmute-resource"
-                                     :topic ""
+                                     :topic (p/get-topic :asdf)
                                      :interrupt-body simple-interrupt-body}
                             :start-recording {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "recording-start"
-                                              :topic ""
+                                              :topic (p/get-topic :asdf)
                                               :interrupt-body simple-interrupt-body}
                             :stop-recording {:validation ::generic-voice-interaction-fn-params
                                              :interrupt-type "recording-stop"
-                                             :topic ""
+                                             :topic (p/get-topic :asdf)
                                              :interrupt-body simple-interrupt-body}
                             :transfer-to-resource {:validation ::resource-transfer-params
                                                    :interrupt-type "customer-transfer"
-                                                   :topic ""
+                                                   :topic (p/get-topic :asdf)
                                                    :interrupt-body {:transfer-resource-id resource-id
                                                                     :resource-id (state/get-active-user-id)
                                                                     :transfer-type transfer-type}}
                             :transfer-to-queue {:validation ::queue-transfer-params
                                                 :interrupt-type "customer-transfer"
-                                                :topic ""
+                                                :topic (p/get-topic :asdf)
                                                 :interrupt-body {:transfer-queue-id queue-id
                                                                  :resource-id (state/get-active-user-id)
                                                                  :transfer-type transfer-type}}
                             :transfer-to-extension {:validation ::extension-transfer-params
                                                     :interrupt-type "customer-transfer"
-                                                    :topic ""
+                                                    :topic (p/get-topic :asdf)
                                                     :interrupt-body {:transfer-extension (state/get-extension-by-value extension-value)
                                                                      :resource-id (state/get-active-user-id)
                                                                      :transfer-type transfer-type}}
                             :cancel-transfer {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "cancel-transfer"
-                                              :topic ""
+                                              :topic (p/get-topic :asdf)
                                               :interrupt-body simple-interrupt-body})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
        (p/publish {:topic (:topic interrupt-params)
@@ -120,7 +120,7 @@
   ([module params]
    (let [params (iu/extract-params params)
          {:keys [phone-number callback]} params
-         topic ""
+         topic (p/get-topic :asdf)
          api-url (get-in module [:config :api-url])
          dial-url (str api-url "tenants/tenant-id/interactions")
          tenant-id (state/get-active-tenant-id)
@@ -202,7 +202,7 @@
    (let [connection (state/get-twilio-connection)
          {:keys [interaction-id digit callback] :as params} (iu/extract-params params)
          module-state @(:state module)
-         topic ""]
+         topic (p/get-topic :asdf)]
      (if-not (s/valid? ::send-digits-params params)
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data ::send-digits-params params))

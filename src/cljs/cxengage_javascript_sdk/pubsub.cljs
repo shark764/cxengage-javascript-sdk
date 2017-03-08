@@ -14,67 +14,32 @@
 
 (def sdk-subscriptions (atom {}))
 
-(def sdk-topics {:voice-enabled "cxengage/features/voice-enabled"
-                 :messaging-enabled "cxengage/features/messaging-enabled"
-                 :login "cxengage/authentication/login"
-                 :logout "cxengage/authentication/logout"
-                 :work-offer "cxengage/interactions/work-offer"
-                 :work-accepted "cxengage/interactions/work-accepted"
-                 :work-ended "cxengage/interactions/work-ended"
-                 :work-initiated "cxengage/interactions/work-initiated"
-                 :accept-response "cxengage/interactions/accept-response"
-                 :end-response "cxengage/interactions/end-response"
-                 :work-rejected "cxengage/interactions/work-rejected"
-                 :contact-unassigned "cxengage/interactions/contact-unassigned"
-                 :contact-assigned "cxengage/interactions/contact-assigned"
-                 :wrapup-details "cxengage/interactions/wrapup-details"
-                 :wrapup-started "cxengage/interactions/wrapup-started"
-                 :wrapup-on "cxengage/interactions/wrapup-on"
-                 :wrapup-off "cxengage/interactions/wrapup-off"
-                 :wrapup-end "cxengage/interactions/wrapup-end"
-                 :screen-pop-uri "cxengage/interactions/screen-pop/uri"
-                 :send-message-response "cxengage/messaging/send-message-response"
-                 :new-message-received "cxengage/messaging/new-message-received"
-                 :history "cxengage/messaging/history"
-                 :hold-started "cxengage/voice/hold-started"
-                 :hold-ended "cxengage/voice/hold-ended"
-                 :mute-started "cxengage/voice/mute-started"
-                 :mute-ended "cxengage/voice/mute-ended"
-                 :recording-started "cxengage/voice/recording-started"
-                 :recording-ended "cxengage/voice/recording-ended"
-                 :phone-controls-response "cxengage/voice/phone-controls-response"
-                 :transfer-response "cxengage/voice/transfer-response"
-                 :cancel-transfer-response "cxengage/voice/cancel-transfer-response"
-                 :transfer-connected "cxengage/voice/transfer-connected"
-                 :dial-response "cxengage/voice/dial-response"
-                 :extension-set "cxengage/voice/extension-set"
-                 :extensions-response "cxengage/voice/extensions-response"
-                 :get-user-response "cxengage/entities/get-user-response"
-                 :get-users-response "cxengage/entities/get-users-response"
-                 :get-queue-response "cxengage/entities/get-queue-response"
-                 :get-queues-response "cxengage/entities/get-queues-response"
-                 :get-transfer-list-response "cxengage/entities/get-transfer-list-response"
-                 :get-transfer-lists-response "cxengage/entities/get-transfer-lists-response"
+(def sdk-topics {
+                 ;; Authentication Topics
+                 :login-response "cxengage/authentication/login-response"
+
+                 ;; Session Topics
                  :active-tenant-set "cxengage/session/active-tenant-set"
-                 :started "cxengage/session/started"
-                 :state-changed "cxengage/session/state-changed"
-                 :direction-changed "cxengage/session/direction-changed"
-                 :get-response "cxengage/get-response"
-                 :search-response "cxengage/contacts/search-response"
-                 :create-response "cxengage/contacts/create-response"
-                 :update-response "cxengage/contacts/update-response"
-                 :delete-response "cxengage/contacts/delete-response"
-                 :list-attributes-response "cxengage/contacts/list-attributes-response"
-                 :get-layout-response "cxengage/contacts/get-layout-response"
-                 :list-layouts-response "cxengage/contacts/list-layouts-response"
-                 :polling-response "cxengage/reporting/polling-response"
-                 :available-stats-response "cxengage/reporting/available-stats-response"
-                 :check-capacity-response "cxengage/reporting/check-capacity-response"
-                 :fatal-error "cxengage/errors/fatal"
-                 :error-error "cxengage/errors/error"})
+                 :config-response "cxengage/session/config-response"
+                 :presence-state-changed "cxengage/session/state-change-response"
+                 :presence-state-change-request-acknowledged "cxengage/session/state-change-request-acknowledged"
+                 :presence-heartbeats-response "cxengage/session/session-heartbeat-response"
+                 :session-start-response "cxengage/session/session-started-response"
+
+
+                 ;; Generic Interaction Topics
+
+
+                 ;; Voice Interaction Topics
+
+
+                 ;; Messaging Interaction Topics
+                 })
 
 (defn get-topic [k]
-  (get sdk-topics k))
+  (if-let [topic (get sdk-topics k)]
+    topic
+    (js/console.error "NO TOPIC!!!!!!!!!!!!!!!!" k)))
 
 (defn get-topic-permutations [topic]
   (let [parts (string/split topic #"/")]
