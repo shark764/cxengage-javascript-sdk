@@ -108,7 +108,7 @@
 (defn get-topic [k]
   (if-let [topic (get sdk-topics k)]
     topic
-    (js/console.error "NO TOPIC!!!!!!!!!!!!!!!!" k)))
+    (log :error "NO TOPIC!!!!!!!!!!!!!!!!" k)))
 
 (defn get-topic-permutations [topic]
   (let [parts (string/split topic #"/")]
@@ -140,7 +140,7 @@
       (e/invalid-args-error (s/explain-data ::subscribe-params params))
       (let [subscription-id (str (id/make-random-uuid))]
         (if-not (valid-topic? topic)
-          (js/console.error "(" topic ") is not a valid subscription topic.")
+          (log :error "(" topic ") is not a valid subscription topic.")
           (do (swap! sdk-subscriptions assoc-in [topic subscription-id] callback)
               subscription-id))))))
 
@@ -159,8 +159,8 @@
                       @sdk-subscriptions)]
     (reset! sdk-subscriptions new-sub-list)
     (if (= new-sub-list original-subs)
-      (js/console.error "Subscription ID not found")
-      (js/console.info "Successfully unsubscribed"))))
+      (log :error "Subscription ID not found")
+      (log :info "Successfully unsubscribed"))))
 
 (defn publish
   ([publish-details]

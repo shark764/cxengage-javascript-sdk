@@ -254,5 +254,5 @@
                                     :get-layout (partial get-layout this)
                                     :list-layouts (partial list-layouts this)}}
                  :module-name module-name})
-      (js/console.info "<----- Started " (name module-name) " module! ----->")))
+      (log :info "<----- Started " (name module-name) " module! ----->")))
   (stop [this]))

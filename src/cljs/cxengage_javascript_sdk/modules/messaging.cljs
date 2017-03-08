@@ -97,7 +97,7 @@
 (defn subscribe
   [topic]
   (.subscribe (get-mqtt-client) topic #js {:qos 1})
-  (js/console.log (str "Subscribed to MQTT topic: " topic)))
+  (log :debug (str "Subscribed to MQTT topic: " topic)))
 
 (defn unsubscribe
   [topic]
@@ -115,20 +115,20 @@
                 :callback callback})))
 
 (defn on-connect [done-init<]
-  (js/console.log "Mqtt client connected")
+  (log :debug "Mqtt client connected")
   (a/put! done-init< {:module-registration-status :success
                       :module :mqtt})
   (p/publish {:topics (p/get-topic :messaging-enabled)
               :response true}))
 
 (defn on-failure [done-init< msg]
-  (js/console.log "Mqtt Client failed to connect")
+  (log :debug "Mqtt Client failed to connect")
   (a/put! done-init< {:module-registration-status :success
                       :module :mqtt
                       :message msg}))
 
 (defn disconnect [client]
-  (js/console.log "Disconnecting mqtt client")
+  (log :debug "Disconnecting mqtt client")
   (.disconnect client))
 
 (defn connect
@@ -136,7 +136,7 @@
   (let [mqtt (Paho.MQTT.Client. endpoint client-id)
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
-                                      (js/console.error "Mqtt Connection Lost" {:reasonCode reason-code
+                                      (log :error "Mqtt Connection Lost" {:reasonCode reason-code
                                                                                 :reasonMessage reason-message})))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
@@ -237,5 +237,5 @@
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
             (register {:api {:interactions {:messaging {:send-message (partial send-message this)}}}
                        :module-name module-name})
-            (js/console.info "<----- Started " (name module-name) " module! ----->")))))
+            (log :info "<----- Started " (name module-name) " module! ----->")))))
   (stop [this]))

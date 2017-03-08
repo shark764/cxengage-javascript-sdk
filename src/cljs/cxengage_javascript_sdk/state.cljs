@@ -289,9 +289,9 @@
     (let [idx {:fatal 1 :error 2 :warn 3 :info 4 :debug 5}
           updated-valid-levels (take (or (get idx level) 0) (vec (reverse (keys levels))))]
       (set-valid-log-levels! updated-valid-levels)
-      (js/console.log (str "%cSet log level to " level) (get levels :info))
+      (log :debug (str "%cSet log level to " level) (get levels :info))
       (swap! sdk-state assoc-in [:config :log-level] level))
-    (js/console.log (str "%c" (e/invalid-logging-level-specified-error)) (get levels :error))))
+    (log :debug (str "%c" (e/invalid-logging-level-specified-error)) (get levels :error))))
 
 (defn get-saved-logs []
   (get-in @sdk-state [:logs :saved-logs]))

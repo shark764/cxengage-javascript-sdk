@@ -43,11 +43,11 @@
                  {:keys [results]} api-response
                  next-polling-delay (or interval 3000)]
              (if (not= status 200)
-               (do (js/console.error "Batch request failed.")
+               (do (log :error "Batch request failed.")
                    (p/publish {:topics topic
                                :error (e/api-error api-response)
                                :callback callback}))
-               (do (js/console.info "Batch request received!")
+               (do (log :info "Batch request received!")
                    (p/publish {:topics topic
                                :response results
                                :callback callback})
@@ -68,5 +68,5 @@
       (register {:api {module-name {:start-polling (partial start-polling this)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (js/console.info "<----- Started " (name module-name) " module! ----->")))
+      (log :info "<----- Started " (name module-name) " module! ----->")))
   (stop [this]))

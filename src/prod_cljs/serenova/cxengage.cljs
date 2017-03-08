@@ -6,6 +6,6 @@
   (clj->js (state/get-state)))
 
 (defn ^:export initialize
-  ([] (js/console.error "Wrong # of arguments passed to cxengage.initialize()"))
-  ([params & rest] (js/console.error "Wrong # of arguments passed to cxengage.initialize()"))
+  ([] (log :error "Wrong # of arguments passed to cxengage.initialize()"))
+  ([params & rest] (log :error "Wrong # of arguments passed to cxengage.initialize()"))
   ([params] (c/initialize params)))

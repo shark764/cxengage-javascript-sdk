@@ -220,7 +220,7 @@
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000"))
-      (js/console.log (str "Acknowledging receipt of flow action: "
+      (log :debug (str "Acknowledging receipt of flow action: "
                            (or (:notification-type message) (:type message))))
       (when (or (:notification-type message) (:type message))
         (let [{:keys [action-id sub-id resource-id tenant-id interaction-id]} message
@@ -233,10 +233,10 @@
           (go (let [ack-response (a/<! (iu/api-request ack-request))
                     {:keys [api-response status]} ack-response]
                 (when (not= status 200)
-                  (js/console.error "Failed to acknowledge flow action")))))))
+                  (log :error "Failed to acknowledge flow action")))))))
     (if handling-fn
       (handling-fn message)
-      (js/console.warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))
+      (log :warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))
     nil))
 
 (defn infer-notification-type [message]
@@ -263,8 +263,8 @@
       (merge {:sdk-msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
-  (when true #_(state/get-blast-sqs-output)
-        (js/console.warn "[BLAST SQS OUTPUT] Message received:" (iu/kebabify message)))
+  (when (state/get-blast-sqs-output)
+        (log :warn "[BLAST SQS OUTPUT] Message received:" (iu/camelify message)))
   (let [cljsd-msg (iu/kebabify message)
         session-id (or (get cljsd-msg :session-id)
                        (get-in cljsd-msg [:resource :session-id]))
@@ -275,16 +275,16 @@
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (if (not= (state/get-session-id) session-id)
-      (do (js/console.warn (str "Received a message from a different session than the current one. Current session ID: "
+      (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
                                 (state/get-session-id) " - Session ID on message received: " session-id))
           nil)
       (if inferred-msg
         (msg-router inferred-msg)
-        (do (js/console.warn "Unable to infer message type from sqs")
+        (do (log :warn "Unable to infer message type from sqs")
             nil)))))
 
 (defn messaging-msg-router [message]
   (handle-new-messaging-message message))
 
 (defn twilio-msg-router [message type]
-  (js/console.warn "message in twilio msg router" message))
+  (log :warn "message in twilio msg router" message))

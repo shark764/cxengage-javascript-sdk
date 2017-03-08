@@ -12,7 +12,7 @@
   [response<]
   (fn [err data]
     (if err
-      (js/console.error err)
+      (log :error err)
       (go
         (>! response< (->> data
                            js->clj
@@ -40,7 +40,7 @@
                          :ReceiptHandle receipt-handle})]
     (.deleteMessage sqs params (fn [err data]
                                  (when err
-                                   (js/console.error err))))))
+                                   (log :error err))))))
 
 (defn sqs-init*
   [module integration on-received done-init<]
@@ -79,6 +79,6 @@
         (if-not sqs-integration
           (a/put! core-messages< {:module-registration-status :failure :module module-name})
           (do (sqs-init* this sqs-integration on-msg-fn core-messages<)
-              (js/console.info "<----- Started " (name module-name) " module! ----->")
+              (log :info "<----- Started " (name module-name) " module! ----->")
               (register {:module-name module-name}))))))
   (stop [this]))

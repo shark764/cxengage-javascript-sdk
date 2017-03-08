@@ -156,11 +156,12 @@
   (state/set-twilio-connection connection))
 
 (defn handle-twilio-error [script config error]
-  (js/console.error error script config))
+  (log :error error script config))
 
 (defn ^:private twilio-init
   [config done-init<]
-  (let [script-init (fn [& args]
+  (let [audio-params (iu/camelify {"audio" true})
+        script-init (fn [& args]
                       (let [{:keys [js-api-url credentials]} config
                             {:keys [token]} credentials
                             script (js/document.createElement "script")
@@ -180,12 +181,12 @@
                               (js/Twilio.Device.error handle-twilio-error)
                               (p/publish {:topics (p/get-topic :voice-enabled)
                                           :response true})
-                              (js/console.info "<----- Started voice module! ----->"))
+                              (log :info "<----- Started voice module! ----->"))
                             (do (a/<! (a/timeout 250))
                                 (recur))))))]
     (-> js/navigator
         (.-mediaDevices)
-        (.getUserMedia (clj->js {:audio true}))
+        (.getUserMedia audio-params)
         (.then script-init)
         (.catch (fn [err] (e/no-microphone-access-error err))))))
 

@@ -12,7 +12,7 @@
 
 (defn start-heartbeats*
   [module]
-  (js/console.info "Sending heartbeats...")
+  (log :info "Sending heartbeats...")
   (let [session-id (state/get-session-id)
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
@@ -28,17 +28,17 @@
         topic (p/get-topic :presence-heartbeats-response)]
     (go-loop []
       (if (= "offline" (state/get-user-session-state))
-        (do (js/console.info "Session is now offline; ceasing future heartbeats.")
+        (do (log :info "Session is now offline; ceasing future heartbeats.")
             nil)
         (let [{:keys [api-response status]} (a/<! (iu/api-request heartbeat-request))
               {:keys [result]} api-response
               next-heartbeat-delay (* 1000 (or (:heartbeatDelay api-response) 30))]
           (if (not= status 200)
-            (do (js/console.error "Heartbeat failed; ceasing future heartbeats.")
+            (do (log :error "Heartbeat failed; ceasing future heartbeats.")
                 (p/publish {:topics topic
                             :error (e/api-error "no more heartbeats")})
                 nil)
-            (do (js/console.info "Heartbeat sent!")
+            (do (log :info "Heartbeat sent!")
                 (p/publish {:topics topic
                             :response result})
                 (a/<! (a/timeout next-heartbeat-delay))
@@ -294,5 +294,5 @@
                                     :set-direction (partial set-direction this)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (js/console.info "<----- Started " (name module-name) " module! ----->")))
+      (log :info "<----- Started " (name module-name) " module! ----->")))
   (stop [this]))
