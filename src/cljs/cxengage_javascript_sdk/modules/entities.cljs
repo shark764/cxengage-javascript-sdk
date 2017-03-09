@@ -110,6 +110,10 @@
   {:module-name :entities
    :urls {:user "tenants/tenant-id/users/entity-id"
           :users "tenants/tenant-id/users"
+          :queue "tenants/tenant-id/queues/entity-id"
+          :queues "tenants/tenant-id/queues"
+          :transfer-list "tenants/tenant-id/transfer-lists/entity-id"
+          :transfer-lists "tenants/tenant-id/transfer-lists"
           :capacity "tenants/tenant-id/users/entity-id/realtime-statistics/capacity"
           :available-stats "tenants/tenant-id/realtime-statistics/available?client=toolbar"
           :contact-history "tenants/tenant-id/contacts/entity-id/interactions"
@@ -126,7 +130,7 @@
                                           :queues (partial get-entity this :queues ::get-all-entity-params)
                                           :queue (partial get-entity this :queue ::get-single-entity-params)
                                           :transfer-lists (partial get-entity this :transfer-lists ::get-all-entity-params)
-                                          :transfer-list (partial get-entity this :transfer-lists ::get-single-entity-params)}
+                                          :transfer-list (partial get-entity this :transfer-list ::get-single-entity-params)}
                                     :update {:user (partial put-entity this :user)}}
                        :reporting  {:get-capacity (partial get-entity this :capacity ::get-single-entity-params)
                                     :get-available-stats (partial get-entity this :available-stats ::get-all-entity-params)
