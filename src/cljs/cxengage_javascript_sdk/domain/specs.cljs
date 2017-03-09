@@ -27,8 +27,7 @@
 (s/def ::username string?)
 (s/def ::password string?)
 (s/def ::message string?)
-(s/def ::query (s/coll-of (s/or :keyword keyword?
-                                :string string?)))
+(s/def ::query map?)
 (s/def ::attributes map?)
 (s/def ::wrapup string?)
 
