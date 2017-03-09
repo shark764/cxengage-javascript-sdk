@@ -109,7 +109,7 @@
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data ::save-logs-params params))
                    :callback callback})
-       (do (go (let [save-response (a/<! (iu/api-request request-map))
+       (do (go (let [save-response (a/<! (iu/api-request request-map true))
                      {:keys [status api-response]} save-response
                      {:keys [result]} api-response]
                  (if (not= 200)

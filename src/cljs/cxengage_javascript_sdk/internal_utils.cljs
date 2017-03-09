@@ -49,22 +49,25 @@
                            (kebabify))]
       {:api-response api-response :status status})))
 
-(defn api-request [request-map]
-  (let [response-channel (a/promise-chan)
-        {:keys [method url body]} request-map
-        request (merge {:uri url
-                        :method method
-                        :timeout 30000
-                        :handler #(let [normalized-response (normalize-response-stucture %)]
-                                    (a/put! response-channel normalized-response))
-                        :format (ajax/json-request-format)
-                        :response-format (ajax/json-response-format {:keywords? true})}
-                       (when body
-                         {:params body})
-                       (when-let [token (state/get-token)]
-                         {:headers {"Authorization" (str "Token " token)}}))]
-    (ajax/ajax-request request)
-    response-channel))
+(defn api-request
+  ([request-map]
+   (api-request request-map false))
+  ([request-map preserve-casing]
+   (let [response-channel (a/promise-chan)
+         {:keys [method url body]} request-map
+         request (merge {:uri url
+                         :method method
+                         :timeout 30000
+                         :handler #(let [normalized-response (normalize-response-stucture %)]
+                                     (a/put! response-channel normalized-response))
+                         :format (ajax/json-request-format)
+                         :response-format (ajax/json-response-format {:keywords? true})}
+                        (when body
+                          {:params (if preserve-casing body (camelify body))})
+                        (when-let [token (state/get-token)]
+                          {:headers {"Authorization" (str "Token " token)}}))]
+     (ajax/ajax-request request)
+     response-channel)))
 
 (defn format-response [response]
   (if (= :cljs (state/get-consumer-type))

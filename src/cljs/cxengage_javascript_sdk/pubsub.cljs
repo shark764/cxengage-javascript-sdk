@@ -174,6 +174,8 @@
 
 (defn publish
   ([publish-details]
+   (publish publish-details false))
+  ([publish-details preserve-casing]
    (let [{:keys [topics response error callback]} publish-details
          topics (if (string? topics) (conj #{} topics) topics)
          all-topics (all-topics)
@@ -186,7 +188,7 @@
          subscription-callbacks (vals subscriptions-to-publish)
          topics (iu/camelify topics)
          error (iu/camelify error)
-         response (iu/camelify response)]
+         response (if preserve-casing (clj->js response) (iu/camelify response))]
      (doseq [cb subscription-callbacks]
        (doseq [t topics]
          (cb error t response)))

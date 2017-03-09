@@ -1,15 +1,17 @@
 (ns cxengage-javascript-sdk.modules.contacts
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cxengage-cljs-utils.core :as cxu]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [lumbajack.core :as jack]
+            [camel-snake-kebab.core :as camel]
+            [camel-snake-kebab.extras :refer [transform-keys]]
             [cxengage-javascript-sdk.state :as state]
             [cljs-uuid-utils.core :as uuid]))
 
@@ -57,8 +59,8 @@
 
 
 (s/def ::get-contact-params
-  (s/keys :req-un [:specs/contact-id]
-          :opt-un [:specs/callback]))
+  (s/keys :req-un [::specs/contact-id]
+          :opt-un [::specs/callback]))
 
 (defn get-contact
   ([module] (e/wrong-number-of-args-error))
@@ -76,7 +78,7 @@
 
 (s/def ::get-contacts-params
   (s/keys :req-un []
-          :opt-un [:specs/callback]))
+          :opt-un [::specs/callback]))
 
 (defn get-contacts
   ([module] (e/wrong-number-of-args-error))
@@ -92,8 +94,8 @@
      (contact-request url nil method params :get-contacts ::get-contacts-params module))))
 
 (s/def ::search-contacts-params
-  (s/keys :req-un [:specs/query]
-          :opt-un [:specs/callback]))
+  (s/keys :req-un [::specs/query]
+          :opt-un [::specs/callback]))
 
 (defn search-contacts
   ([module] (e/wrong-number-of-args-error))
@@ -110,8 +112,8 @@
      (contact-request url nil method params :search-contacts ::search-contacts-params module query))))
 
 (s/def ::create-contact-params
-  (s/keys :req-un [:specs/attributes]
-          :opt-un [:specs/callback]))
+  (s/keys :req-un [::specs/attributes]
+          :opt-un [::specs/callback]))
 
 (defn create-contact
   ([module] (e/wrong-number-of-args-error))
@@ -129,9 +131,9 @@
 
 
 (s/def ::update-contact-params
-  (s/keys :req-un [:specs/contact-id
-                   :specs/attributes]
-          :opt-un [:specs/callback]))
+  (s/keys :req-un [::specs/contact-id
+                   ::specs/attributes]
+          :opt-un [::specs/callback]))
 
 (defn update-contact
   ([module] (e/wrong-number-of-args-error))
@@ -149,8 +151,8 @@
      (contact-request url body method params :update-contact ::update-contact-params module))))
 
 (s/def ::delete-contact-params
-  (s/keys :req-un [:specs/contact-id]
-          :opt-un [:specs/callback]))
+  (s/keys :req-un [::specs/contact-id]
+          :opt-un [::specs/callback]))
 
 (defn delete-contact
   ([module] (e/wrong-number-of-args-error))
@@ -168,7 +170,7 @@
 
 (s/def ::list-attributes-params
   (s/keys :req-un []
-          :opt-un [:specs/callback]))
+          :opt-un [::specs/callback]))
 
 (defn list-attributes
   ([module]
@@ -182,12 +184,37 @@
          {:keys [callback] :as params} (iu/extract-params params)
          url {:base :multiple-attribute-url
               :params {:tenant-id (state/get-active-tenant-id)}}
-         method :get]
-     (contact-request url nil method params :list-attributes ::list-attributes-params module))))
+         method :get
+         module-state @(:state module)
+         api-url (get-in module [:config :api-url])
+         base-url (str api-url (get-in module-state [:urls (:base url)]))
+         request-url (iu/build-api-url-with-params
+                      base-url
+                      (:params url))
+         topic (p/get-topic :list-attributes)]
+     (if-not (s/valid? ::list-attributes-params params)
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::list-attributes-params params))
+                   :callback callback})
+       (let [request-map {:url request-url
+                          :method method}]
+         (go (let [response (a/<! (iu/api-request request-map true))
+                   {:keys [status api-response]} response
+                   {:keys [result]} api-response
+                   result (transform-keys camel/->camelCase result)
+                   result (mapv #(assoc %1 :label (transform-keys camel/->kebab-case (:label %1))) result)]
+               (if (not= status 200)
+                 (p/publish {:topics topic
+                             :error (e/api-error api-response)
+                             :callback callback})
+                 (p/publish {:topics topic
+                             :response result
+                             :callback callback} true))))
+         nil)))))
 
 (s/def ::get-layout-params
-  (s/keys :req-un [:specs/layout-id]
-          :opt-un [:specs/callback]))
+  (s/keys :req-un [::specs/layout-id]
+          :opt-un [::specs/callback]))
 
 (defn get-layout
   ([module] (e/wrong-number-of-args-error))
@@ -205,7 +232,7 @@
 
 (s/def ::list-layouts-params
   (s/keys :req-un []
-          :opt-un [:specs/callback]))
+          :opt-un [::specs/callback]))
 
 (defn list-layouts
   ([module]
@@ -254,5 +281,5 @@
                                     :get-layout (partial get-layout this)
                                     :list-layouts (partial list-layouts this)}}
                  :module-name module-name})
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+      (log :info "<----- Started " (name module-name) " module! ----->")))
   (stop [this]))
