@@ -169,6 +169,9 @@
             handleNewMessagingMessage(error, topic, msg);
           });
           break;
+        case 'cxengage/contacts/list-attributes-response':
+          console.log(response);
+          break;
         case 'cxengage/capabilities/voice-available':
           handleVoiceEnabled(error, topic, response);
           break;
