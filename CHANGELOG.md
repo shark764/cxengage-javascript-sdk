@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* fixed transfer to extension
 * added queues/transfer-lists to entities module
 * added support of screen pop type url
 * started checking for microphone access prior to starting twilio module

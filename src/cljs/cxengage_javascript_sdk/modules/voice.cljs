@@ -26,7 +26,7 @@
           :opt-un [::specs/callback]))
 
 (s/def ::extension-transfer-params
-  (s/keys :req-un [::specs/interaction-id ::specs/extension-value ::specs/transfer-type]
+  (s/keys :req-un [::specs/interaction-id ::specs/transfer-extension ::specs/transfer-type]
           :opt-un [::specs/callback]))
 
 (s/def ::queue-transfer-params
@@ -45,7 +45,7 @@
      (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
    (let [client-params (iu/extract-params client-params)
-         {:keys [callback interaction-id resource-id queue-id extension-value transfer-type]} client-params
+         {:keys [callback interaction-id resource-id queue-id transfer-extension transfer-type]} client-params
          transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
          simple-interrupt-body {:resource-id (state/get-active-user-id)}
          interrupt-params (case type
@@ -88,7 +88,7 @@
                             :transfer-to-extension {:validation ::extension-transfer-params
                                                     :interrupt-type "customer-transfer"
                                                     :topic (p/get-topic :customer-transfer-acknowledged)
-                                                    :interrupt-body {:transfer-extension (state/get-extension-by-value extension-value)
+                                                    :interrupt-body {:transfer-extension transfer-extension
                                                                      :resource-id (state/get-active-user-id)
                                                                      :transfer-type transfer-type}}
                             :cancel-transfer {:validation ::generic-voice-interaction-fn-params

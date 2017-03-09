@@ -12,6 +12,7 @@
 (s/def ::queue-id ::uuid)
 (s/def ::resource-id ::uuid)
 (s/def ::transfer-type #{"cold" "warm"})
+(s/def ::transfer-extension map?)
 (s/def ::contactId ::uuid)
 (s/def ::contact-id ::uuid)
 (s/def ::layoutId ::uuid)
