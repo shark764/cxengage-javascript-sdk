@@ -87,6 +87,12 @@
                  :wrapup-started "cxengage/interactions/wrapup-started"
                  :wrapup-ended "cxengage/interactions/wrapup-ended"
 
+                 ;; Email Interaction Topics
+                 :artifact-received "cxengage/interactions/email/get-artifact-response"
+                 :plain-body-received "cxengage/interactions/email/plain-body-received"
+                 :html-body-received "cxengage/interactions/email/html-body-received"
+                 :details-received "cxengage/interactions/email-details-received"
+
                  ;; Voice Interaction Topics
                  :hold-acknowledged "cxengage/interactions/voice/hold-acknowledged"
                  :resume-acknowledged "cxengage/interactions/voice/resume-acknowledged"

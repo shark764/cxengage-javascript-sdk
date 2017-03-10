@@ -1,6 +1,7 @@
 (ns cxengage-javascript-sdk.interaction-management
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as a]
+            [clojure.string :as s :refer [starts-with?]]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.internal-utils :as iu]
@@ -34,13 +35,60 @@
             (do (state/add-messaging-interaction-metadata! result)
                 (get-messaging-history tenant-id interaction-id)))))))
 
+(defn get-email-artifact-data [tenant-id interaction-id artifact-id]
+  (let [artifact-request {:method :get
+                          :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/artifacts/" artifact-id)}]
+    (log :debug artifact-request)
+    (go (let [artifact-response (a/<! (iu/api-request artifact-request))
+              {:keys [status api-response]} artifact-response]
+          (if (not= status 200)
+            (p/publish {:topics (p/get-topic :email-artifact-received)
+                        :response api-response})
+            (do (log :debug artifact-response)
+                (state/add-email-artifact-data interaction-id api-response)))))))
+
+(defn get-email-bodies [interaction-id]
+  (let [interaction (state/get-interaction interaction-id)
+        tenant-id (state/get-active-tenant-id)
+        manifest-id (get-in interaction [:email-artifact :manifest-id])
+        files (get-in interaction [:email-artifact :files])
+        manifest-url (:url (first (filter #(= (:artifact-file-id %) manifest-id) files)))
+        manifest-request (iu/api-request {:method :get
+                                          :url manifest-url})]
+    (go (let [manifest-response (a/<! manifest-request)
+              manifest-body (js/JSON.parse (:api-response manifest-response))
+              plain-body-url (:url (first (filter #(and (= (:filename %) "body")
+                                                        (starts-with? (:content-type %) "text/plain")) files)))
+              html-body-url (:url (first (filter #(and (= (:filename %) "body")
+                                                       (starts-with? (:content-type %) "text/html")) files)))
+              plain-body-request (iu/api-request {:method :get
+                                                  :url plain-body-url})
+              html-body-request (iu/api-request {:method :get
+                                                 :url html-body-url})]
+          (let [plain-body-response (a/<! plain-body-request)
+                html-body-response (a/<! html-body-request)
+                plain-body (:api-response plain-body-response)
+                html-body (:api-response html-body-response)]
+            (p/publish {:topics (p/get-topic :plain-body-received)
+                        :response {:interaction-id interaction-id
+                                   :body plain-body}})
+            (p/publish {:topics (p/get-topic :html-body-received)
+                        :response {:interaction-id interaction-id
+                                   :body html-body}})
+            (p/publish {:topics (p/get-topic :details-received)
+                        :response {:interaction-id interaction-id
+                                   :body manifest-body}}))))))
+
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
   (let [{:keys [channel-type interaction-id]} message]
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
       (let [{:keys [tenant-id interaction-id]} message]
-        (get-messaging-metadata tenant-id interaction-id))))
+        (get-messaging-metadata tenant-id interaction-id)))
+    (when (= channel-type "email")
+      (let [{:keys [tenant-id interaction-id artifact-id]} message]
+        (get-email-artifact-data tenant-id interaction-id artifact-id))))
   (p/publish {:topics (p/get-topic :work-offer-received)
               :response message})
   nil)
@@ -106,6 +154,8 @@
        {:tenant-id tenant-id
         :interaction-id interaction-id
         :env (state/get-env)}))
+    (when (= channel-type "email")
+      (get-email-bodies interaction-id))
     (p/publish {:topics (p/get-topic :work-accepted-received)
                 :response {:interaction-id interaction-id}}) ))
 
@@ -228,7 +278,7 @@
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000"))
       (log :debug (str "Acknowledging receipt of flow action: "
-                           (or (:notification-type message) (:type message))))
+                       (or (:notification-type message) (:type message))))
       (when (or (:notification-type message) (:type message))
         (let [{:keys [action-id sub-id resource-id tenant-id interaction-id]} message
               ack-request {:method :post
@@ -271,7 +321,7 @@
 
 (defn sqs-msg-router [message]
   (when (state/get-blast-sqs-output)
-        (log :warn "[BLAST SQS OUTPUT] Message received:" (iu/camelify message)))
+    (log :warn "[BLAST SQS OUTPUT] Message received:" (iu/camelify message)))
   (let [cljsd-msg (iu/kebabify message)
         session-id (or (get cljsd-msg :session-id)
                        (get-in cljsd-msg [:resource :session-id]))
@@ -283,7 +333,7 @@
                        nil)]
     (if (not= (state/get-session-id) session-id)
       (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
-                                (state/get-session-id) " - Session ID on message received: " session-id))
+                          (state/get-session-id) " - Session ID on message received: " session-id))
           nil)
       (if inferred-msg
         (msg-router inferred-msg)

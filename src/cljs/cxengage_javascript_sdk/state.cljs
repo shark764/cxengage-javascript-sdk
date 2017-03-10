@@ -156,6 +156,10 @@
         new-scripts (conj existing-scripts script)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :scripts] new-scripts)))
 
+(defn add-email-artifact-data [interaction-id artifact-data]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact] artifact-data)))
+
 ;;;;;;;;;;;
 ;; Auth
 ;;;;;;;;;;;

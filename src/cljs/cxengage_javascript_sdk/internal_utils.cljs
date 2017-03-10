@@ -40,14 +40,15 @@
       note-id (clojure.string/replace #"note-id" note-id))))
 
 (defn normalize-response-stucture
-  [[ok? response] preserve-casing?]
+  [[ok? response] preserve-casing? manifest-endpoint?]
   (if (and (false? ok?)
            (= (:status response) 200))
     {:api-response nil :status 200}
     (let [status (if ok? 200 (get response :status))
-          response (if preserve-casing? response (kebabify response))
-          api-response (-> response
-                           (dissoc :status))]
+          response (if (or preserve-casing? manifest-endpoint?) response (kebabify response))
+          api-response (if (map? response)
+                         (dissoc response :status)
+                         response)]
       {:api-response api-response :status status})))
 
 (defn api-request
@@ -56,17 +57,24 @@
   ([request-map preserve-casing?]
    (let [response-channel (a/promise-chan)
          {:keys [method url body]} request-map
+         manifest-endpoint? (if url
+                              (not= -1 (.indexOf url "artifacts.s3"))
+                              false)
          request (merge {:uri url
                          :method method
                          :timeout 30000
-                         :handler #(let [normalized-response (normalize-response-stucture % preserve-casing?)]
+                         :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? manifest-endpoint?)]
                                      (a/put! response-channel normalized-response))
                          :format (ajax/json-request-format)
-                         :response-format (ajax/json-response-format {:keywords? true})}
+                         :response-format (if manifest-endpoint?
+                                            (ajax/text-response-format)
+                                            (ajax/json-response-format {:keywords? true}))}
                         (when body
                           {:params (if preserve-casing? body (camelify body))})
                         (when-let [token (state/get-token)]
-                          {:headers {"Authorization" (str "Token " token)}}))]
+                          (if manifest-endpoint?
+                            {}
+                            {:headers {"Authorization" (str "Token " token)}})))]
      (ajax/ajax-request request)
      response-channel)))
 
