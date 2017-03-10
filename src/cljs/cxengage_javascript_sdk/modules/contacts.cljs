@@ -40,7 +40,7 @@
                                :callback callback})
                    (p/publish {:topics topic
                                :response result
-                               :callback callback}))))
+                               :callback callback} true))))
            nil))))
   ([url body method preserve-casing?]
    (let [request-map {:url url

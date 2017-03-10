@@ -1,6 +1,9 @@
 # Change Log
 
-## [Unreleased]
+## [2.0.1]
+* fix casing on all contact-related endpoint outputs
+
+## [2.0.0]
 * added interaction notes api
 * fixed transfer to extension
 * added queues/transfer-lists to entities module
