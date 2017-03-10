@@ -16,9 +16,9 @@
             [cljs-uuid-utils.core :as uuid]))
 
 (defn contact-request
-  ([url body method params topic-key spec module]
-   (contact-request url body method params topic-key spec module nil))
-  ([url body method params topic-key spec module query]
+  ([url body method params topic-key spec module preserve-casing?]
+   (contact-request url body method params topic-key spec module preserve-casing? nil))
+  ([url body method params topic-key spec module preserve-casing? query]
    (let [api-url (get-in module [:config :api-url])
          {:keys [callback]} params
          module-state @(:state module)
@@ -31,7 +31,7 @@
        (p/publish {:topics topic
                    :error (e/invalid-args-error (s/explain-data spec params))
                    :callback callback})
-       (do (go (let [response (a/<! (contact-request request-url body method))
+       (do (go (let [response (a/<! (contact-request request-url body method preserve-casing?))
                      {:keys [status api-response]} response
                      {:keys [result]} api-response]
                  (if (not= status 200)
@@ -42,12 +42,12 @@
                                :response result
                                :callback callback}))))
            nil))))
-  ([url body method]
+  ([url body method preserve-casing?]
    (let [request-map {:url url
                       :method method}]
      (cond-> request-map
        body (assoc :body body)
-       true (iu/api-request)))))
+       true (iu/api-request preserve-casing?)))))
 
 (defn get-query-str
   [query]
@@ -74,7 +74,7 @@
               :params {:tenant-id (state/get-active-tenant-id)
                        :contact-id contact-id}}
          method :get]
-     (contact-request url nil method params :get-contact ::get-contact-params module))))
+     (contact-request url nil method params :get-contact ::get-contact-params module true))))
 
 (s/def ::get-contacts-params
   (s/keys :req-un []
@@ -91,7 +91,7 @@
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get]
-     (contact-request url nil method params :get-contacts ::get-contacts-params module))))
+     (contact-request url nil method params :get-contacts ::get-contacts-params module true))))
 
 (s/def ::search-contacts-params
   (s/keys :req-un [::specs/query]
@@ -109,7 +109,7 @@
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get
          query (get-query-str query)]
-     (contact-request url nil method params :search-contacts ::search-contacts-params module query))))
+     (contact-request url nil method params :search-contacts ::search-contacts-params module true query))))
 
 (s/def ::create-contact-params
   (s/keys :req-un [::specs/attributes]
@@ -127,7 +127,7 @@
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :post
          body {:attributes attributes}]
-     (contact-request url body method params :create-contact ::create-contact-params module))))
+     (contact-request url body method params :create-contact ::create-contact-params module true))))
 
 
 (s/def ::update-contact-params
@@ -148,7 +148,7 @@
                        :contact-id contact-id}}
          method :put
          body {:attributes attributes}]
-     (contact-request url body method params :update-contact ::update-contact-params module))))
+     (contact-request url body method params :update-contact ::update-contact-params module true))))
 
 (s/def ::delete-contact-params
   (s/keys :req-un [::specs/contact-id]
@@ -166,7 +166,7 @@
               :params {:tenant-id (state/get-active-tenant-id)
                        :contact-id contact-id}}
          method :delete]
-     (contact-request url nil method params :delete-contact ::delete-contact-params module))))
+     (contact-request url nil method params :delete-contact ::delete-contact-params module true))))
 
 (s/def ::list-attributes-params
   (s/keys :req-un []
@@ -200,10 +200,7 @@
                           :method method}]
          (go (let [response (a/<! (iu/api-request request-map true))
                    {:keys [status api-response]} response
-                   {:keys [result]} api-response
-                   ;;result (transform-keys camel/->camelCase result)
-                   ;;result (mapv #(assoc %1 :label (transform-keys camel/->kebab-case (:label %1))) result)
-                   ]
+                   {:keys [result]} api-response]
                (if (not= status 200)
                  (p/publish {:topics topic
                              :error (e/api-error api-response)
@@ -229,7 +226,7 @@
               :params {:tenant-id (state/get-active-tenant-id)
                        :layout-id layout-id}}
          method :get]
-     (contact-request url nil method params :get-layout ::get-layout-params module))))
+     (contact-request url nil method params :get-layout ::get-layout-params module true))))
 
 (s/def ::list-layouts-params
   (s/keys :req-un []
@@ -248,7 +245,7 @@
          url {:base :single-layout-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get]
-     (contact-request url nil method params :list-layouts ::list-layouts-params module))))
+     (contact-request url nil method params :list-layouts ::list-layouts-params module true))))
 
 (def initial-state
   {:module-name :contacts

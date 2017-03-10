@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added interaction notes api
 * fixed transfer to extension
 * added queues/transfer-lists to entities module
 * added support of screen pop type url
@@ -14,7 +15,6 @@
 * added twilio init missing-required-integration error
 * added ability to publish to multiple topics at once
 * added get-all contacts fn
-
 
 ## [1.4.2]
 * update lumbajack dep to fix compilation bug
