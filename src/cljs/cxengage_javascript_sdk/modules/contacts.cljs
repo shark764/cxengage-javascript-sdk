@@ -201,8 +201,9 @@
          (go (let [response (a/<! (iu/api-request request-map true))
                    {:keys [status api-response]} response
                    {:keys [result]} api-response
-                   result (transform-keys camel/->camelCase result)
-                   result (mapv #(assoc %1 :label (transform-keys camel/->kebab-case (:label %1))) result)]
+                   ;;result (transform-keys camel/->camelCase result)
+                   ;;result (mapv #(assoc %1 :label (transform-keys camel/->kebab-case (:label %1))) result)
+                   ]
                (if (not= status 200)
                  (p/publish {:topics topic
                              :error (e/api-error api-response)
@@ -281,5 +282,5 @@
                                     :get-layout (partial get-layout this)
                                     :list-layouts (partial list-layouts this)}}
                  :module-name module-name})
-      (log :info "<----- Started " (name module-name) " module! ----->")))
+      (log :info (str "<----- Started " (name module-name) " module! ----->"))))
   (stop [this]))
