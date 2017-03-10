@@ -30,6 +30,9 @@
 (s/def ::query map?)
 (s/def ::attributes map?)
 (s/def ::wrapup string?)
+(s/def ::note-id ::uuid)
+(s/def ::title string?)
+(s/def ::body string?)
 
 (s/def ::level #{"debug" "info" "warn" "error" "fatal"})
 (s/def ::digit #{"0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "*" "#"})

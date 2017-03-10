@@ -26,7 +26,7 @@
        (transform-keys camel/->kebab-case)))
 
 (defn build-api-url-with-params [url params]
-  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id interaction-id artifact-id]} params]
+  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id interaction-id artifact-id note-id]} params]
     (cond-> url
       tenant-id (clojure.string/replace #"tenant-id" (str tenant-id))
       resource-id (clojure.string/replace #"resource-id" (str resource-id))
@@ -36,34 +36,35 @@
       contact-id (clojure.string/replace #"contact-id" contact-id)
       layout-id (clojure.string/replace #"layout-id" layout-id)
       interaction-id (clojure.string/replace #"interaction-id" interaction-id)
-      artifact-id (clojure.string/replace #"artifact-id" artifact-id))))
+      artifact-id (clojure.string/replace #"artifact-id" artifact-id)
+      note-id (clojure.string/replace #"note-id" note-id))))
 
 (defn normalize-response-stucture
-  [[ok? response]]
+  [[ok? response] preserve-casing?]
   (if (and (false? ok?)
            (= (:status response) 200))
     {:api-response nil :status 200}
     (let [status (if ok? 200 (get response :status))
+          response (if preserve-casing? response (kebabify response))
           api-response (-> response
-                           (dissoc :status)
-                           (kebabify))]
+                           (dissoc :status))]
       {:api-response api-response :status status})))
 
 (defn api-request
   ([request-map]
    (api-request request-map false))
-  ([request-map preserve-casing]
+  ([request-map preserve-casing?]
    (let [response-channel (a/promise-chan)
          {:keys [method url body]} request-map
          request (merge {:uri url
                          :method method
                          :timeout 30000
-                         :handler #(let [normalized-response (normalize-response-stucture %)]
+                         :handler #(let [normalized-response (normalize-response-stucture % preserve-casing?)]
                                      (a/put! response-channel normalized-response))
                          :format (ajax/json-request-format)
                          :response-format (ajax/json-response-format {:keywords? true})}
                         (when body
-                          {:params (if preserve-casing body (camelify body))})
+                          {:params (if preserve-casing? body (camelify body))})
                         (when-let [token (state/get-token)]
                           {:headers {"Authorization" (str "Token " token)}}))]
      (ajax/ajax-request request)

@@ -129,6 +129,8 @@
                                           :user (partial get-entity this :user ::get-single-entity-params)
                                           :queues (partial get-entity this :queues ::get-all-entity-params)
                                           :queue (partial get-entity this :queue ::get-single-entity-params)
+                                          :notes (partial get-entity this :interactions ::get-all-entity-params)
+                                          :note (partial get-entity this :interaction ::get-single-entity-params)
                                           :transfer-lists (partial get-entity this :transfer-lists ::get-all-entity-params)
                                           :transfer-list (partial get-entity this :transfer-list ::get-single-entity-params)}
                                     :update {:user (partial put-entity this :user)}}
