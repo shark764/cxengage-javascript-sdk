@@ -76,7 +76,8 @@
 
 (defn handle-custom-fields [message]
   (let [{:keys [interaction-id]} message
-        custom-field-details (:custom-fields message)]
+        custom-field-details {:custom-fields (:custom-fields message)
+                              :interaction-id interaction-id}]
     (state/add-interaction-custom-field-details! custom-field-details interaction-id)
     (p/publish {:topics (p/get-topic :custom-fields-received)
                 :response custom-field-details})))

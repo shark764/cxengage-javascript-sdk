@@ -30,7 +30,7 @@
   ([module type client-params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (send-interrupt type module (merge (iu/extract-params client-params) {:callback (first others)}))))
+     (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
    (let [client-params (iu/extract-params client-params)
          {:keys [callback interaction-id contact-id]} client-params
