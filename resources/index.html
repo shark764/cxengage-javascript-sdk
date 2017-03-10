@@ -81,6 +81,11 @@
     <div class="messaging-controls" style="display: none;">
       <h2>Messaging Interactions</h2>
     </div>
+    <br><br>
+    <hr>
+    <div class="email-controls">
+      <h2>Email Interactions</h2>
+    </div>
     <hr>
     <img src="https://unequivocallyawkward.files.wordpress.com/2015/01/bruh.jpg" alt="BRUH">
   </div>
@@ -99,12 +104,16 @@
       voiceAccepted:false,
       interactions:{},
       messagingTimers:{},
+      emailTimers:{},
       onCallTimer:undefined,
       timeOnCall:0,
       voiceTimer:undefined
     };
 
     SDK.subscribe('cxengage', function(error, topic, response) {
+
+      if (error) { console.log('Error:', error); }
+
       switch(topic) {
         case 'cxengage/authentication/login-response':
           handleLogin(error, topic, response);
@@ -126,6 +135,12 @@
           break;
         case 'cxengage/interactions/work-offer-received':
           handleWorkOffer(error, topic, response);
+          break;
+        case 'cxengage/interactions/email/plain-body-received':
+          handleEmailPlainBody(response);
+          break;
+        case 'cxengage/interactions/email/html-body-received':
+          handleEmailHTMLBody(response);
           break;
         case 'cxengage/interactions/work-rejected-received':
           handleWorkRejected(error, topic, response);
@@ -194,6 +209,14 @@
       var x = onOff === 'on' ? 'off' : 'on';
       $('.' + buttonGroup + ' button').attr('disabled', 'disabled');
       $('.' + buttonGroup + ' button.' + x).removeAttr('disabled');
+    };
+
+    var handleEmailPlainBody = function(response) {
+      $('#' + response.interactionId + ' .plainBody').append(response.body);
+    };
+
+    var handleEmailHTMLBody = function(response) {
+      $('#' + response.interactionId + ' .htmlBody').append('<pre>'+response.body+'</pre>');
     };
 
     var handleStateChange = function(error, topic, response) {
@@ -323,10 +346,13 @@
       if (error) return console.error('uh oh');
       state.interactions[response.interactionId] = {};
       state.interactions[response.interactionId].ended = false;
+      console.log(response);
       if (response.channelType === 'voice') {
         initializeVoiceInteraction(response);
       } else if (response.channelType === 'messaging' || response.channelType === 'sms') {
         initializeMessagingInteraction(response);
+      } else if (response.channelType === 'email') {
+        initializeEmailInteraction(response);
       } else {
         console.error ('Unknown channel type');
       }
@@ -347,6 +373,44 @@
           $('#' + s).show();
         }
       })
+    };
+
+    var initializeEmailInteraction = function(workOffer) {
+      if ($('#' + workOffer.interactionId).find().length === 0) {
+        var emailWindows = $('.email-controls');
+        console.log(workOffer);
+        var iid = workOffer.interactionId;
+        console.log(iid);
+        var timeout = Math.floor((new Date(workOffer.timeout).getTime() - new Date().getTime()) / 1000);
+        console.log(timeout);
+        state.emailTimers[workOffer.interactionId] = setInterval(function() {
+          var timeLeft = timeout--;
+          $('#' + iid + ' .acceptBtn span, #' + iid + ' .rejectBtn span').text('(' + timeLeft + 's remaining)');
+          if (timeLeft == 1) {
+            $('#' + iid + ' .acceptBtn').attr('disabled','disabled');
+          }
+          if (timeLeft == 0) {
+            clearInterval(state.emailTimers[workOffer.interactionId]);
+          }
+        }, 1000);
+        var initialEmailHTML = '<div style="margin: 20px; vertical-align: top; padding: 10px; max-width: 300px; border: 2px solid #000000;" id="' + iid + '">\
+          <strong style="width: 100%; text-align: center;">' + iid + '</strong><br><br>\
+          <strong>Type:</strong> ' + workOffer.channelType + '<br>\
+          <strong>Subject:</strong> ' + workOffer.subject + '<br>\
+          <strong>From:</strong> ' + workOffer.customer + '<br>\
+          <ul style="list-style: none; padding: 0; margin: 0;"></ul>\
+          <div id="acceptRejectArea">\
+            <button class="acceptBtn" onclick="acceptEmailInteraction(\''+iid+'\')">Accept Email Interaction <span></span></button>\
+            <button class="rejectBtn" onclick="rejectEmailInteraction(\''+iid+'\')">Reject Email Interaction <span></span></button>\
+          </div>\
+          <div class="htmlBody"><strong>HTML Body</strong></div>\
+          <div class="plainBody"><strong>Plain Body</strong></div>\
+          <div style="display: none;" id="responseArea">\
+            <button onclick="endEmailInteraction(\'' + iid + '\')">End Chat</button><br>\
+          </div>\
+        </div>';
+        emailWindows.append(initialEmailHTML);
+      }
     };
 
     var initializeMessagingInteraction = function(workOffer) {
@@ -438,22 +502,33 @@
      *
      */
 
+    var acceptEmailInteraction = function(miid) {
+      SDK.interactions.accept({interactionId:miid});
+    };
+    var rejectEmailInteraction = function(miid) {
+      SDK.interactions.reject({interactionId:miid});
+    };
+    var endEmailInteraction = function(miid) {
+      SDK.interactions.end({interactionId:miid});
+    };
+
     var acceptMessagingInteraction = function(miid) {
       SDK.interactions.accept({interactionId:miid});
     };
     var rejectMessagingInteraction = function(miid) {
       SDK.interactions.reject({interactionId:miid});
     };
+    var endMessagingInteraction = function(miid) {
+      SDK.interactions.end({interactionId:miid});
+    };
     var sendMessage = function(miid) {
       SDK.interactions.messaging.sendMessage({interactionId:miid,message:$('#' + miid + ' .msgText').val()})
       $('#' + miid + ' .msgText').val('');
     };
-    var endMessagingInteraction = function(miid) {
-      SDK.interactions.end({interactionId:miid});
-    };
 
     var selectActiveTenant = function() {
       var tid = $('#tenantSelect').val();
+      console.log('TID', tid);
       SDK.session.setActiveTenant({tenantId:tid});
     };
 
