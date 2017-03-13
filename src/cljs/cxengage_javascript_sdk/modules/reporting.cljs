@@ -44,10 +44,7 @@
          (swap! module-state assoc :polling-started? true)
          (go-loop []
            (if (not (:polling-started? @module-state))
-             (do (p/publish {:topics (p/get-topic :polling-stopped)
-                             :response true
-                             :callback callback})
-                 nil)
+             nil
              (let [{:keys [api-response status]} (a/<! (iu/api-request polling-request))
                    {:keys [results]} api-response
                    next-polling-delay (or interval 3000)]
@@ -75,6 +72,9 @@
    (let [module-state (:state module)
          {:keys [callback]} params]
      (swap! module-state assoc :polling-started? false)
+     (p/publish {:topics (p/get-topic :polling-stopped)
+                 :response true
+                 :callback callback})
      nil)))
 
 (def initial-state
