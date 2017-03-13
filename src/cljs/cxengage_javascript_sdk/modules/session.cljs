@@ -87,9 +87,7 @@
          tenant-id (state/get-active-tenant-id)
          {:keys [extension-value callback]} params
          active-extension-value (state/get-active-extension)
-         extensions (state/get-all-extensions)
          topic (p/get-topic :presence-state-change-request-acknowledged)
-         new-extension (state/get-extension-by-value extension-value)
          validation-spec (cond
                            (= state "ready") ::go-ready-params
                            (= state "notready") ::go-not-ready-params
@@ -106,29 +104,47 @@
                                          {:tenant-id tenant-id
                                           :resource-id resource-id})
                                    :body {:session-id session-id
-                                          :state state}}]
-         (if (and (= state "ready")
-                  extension-value
-                  (not= active-extension-value extension-value))
-           (let [update-user-url (str api-url (get-in module-state [:urls :update-user]))
-                 user-update-request {:method :put
-                                      :url (iu/build-api-url-with-params
-                                            update-user-url
-                                            {:tenant-id tenant-id
-                                             :resource-id resource-id})
-                                      :body {:activeExtension new-extension}}]
-             (if (nil? new-extension)
-               (p/publish {:topics topic
-                           :error (e/not-a-valid-extension)
-                           :callback callback})
-               (do (go (let [user-update-response (a/<! (iu/api-request user-update-request))
-                             {:keys [api-response status]} user-update-response]
-                         (if (not= status 200)
-                           (p/publish {:topics topic
-                                       :error (e/api-error "failed to set user extension")
-                                       :callback callback})
-                           (change-presence-state-impl* change-state-request topic callback))))
-                   nil)))
+                                          :state state}}
+             config-url (str api-url (get-in module-state [:urls :config]))
+             config-request {:method :get
+                            :url (iu/build-api-url-with-params
+                                  config-url
+                                  {:tenant-id tenant-id
+                                   :resource-id resource-id})}]
+         (if (= state "ready")
+           (go (let [config-response (a/<! (iu/api-request config-request))
+                     {:keys [api-response status]} config-response
+                     {:keys [result]} api-response]
+                 (if (not= status 200)
+                   (p/publish {:topics topic
+                               :error (e/not-a-valid-extension)
+                               :callback callback})
+                   (do (state/set-config! result)
+                       (let [update-user-url (str api-url (get-in module-state [:urls :update-user]))
+                             new-extension (state/get-extension-by-value extension-value)
+                             extensions (state/get-all-extensions)
+                             user-update-request {:method :put
+                                                  :url (iu/build-api-url-with-params
+                                                        update-user-url
+                                                        {:tenant-id tenant-id
+                                                         :resource-id resource-id})
+                                                  :body {:activeExtension new-extension}}]
+                         (if (and extension-value
+                                  (not= active-extension-value extension-value)))
+                          (if (nil? new-extension)
+                             (p/publish {:topics topic
+                                         :error (e/not-a-valid-extension)
+                                         :callback callback})
+                             (do (go (let [user-update-response (a/<! (iu/api-request user-update-request))
+                                           {:keys [api-response status]} user-update-response]
+                                       (if (not= status 200)
+                                         (p/publish {:topics topic
+                                                     :error (e/api-error "failed to set user extension")
+                                                     :callback callback})
+                                         (change-presence-state-impl* change-state-request topic callback))))
+                                 nil))
+                          (do (change-presence-state-impl* change-state-request topic callback)
+                              nil))))))
            (do (change-presence-state-impl* change-state-request topic callback)
                nil)))))))
 
