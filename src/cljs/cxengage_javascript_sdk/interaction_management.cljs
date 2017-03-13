@@ -10,8 +10,6 @@
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.modules.messaging :as messaging]))
 
-;; TODO: make these better? in a module
-
 (defn get-messaging-history [tenant-id interaction-id]
   (let [history-request {:method :get
                          :url (str (state/get-base-api-url) "messaging/tenants/" tenant-id "/channels/" interaction-id "/history")}]
