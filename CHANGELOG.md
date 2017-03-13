@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* fixed updating user's extension
 * receiving incoming emails & broadcasting attachments, html body, plain text body
 * fixed wrap-up fns
 * added stop-polling API fn
