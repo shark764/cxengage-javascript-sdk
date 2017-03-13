@@ -21,10 +21,6 @@
   (s/keys :req-un [::specs/interaction-id :specs/contact-id]
           :opt-un [::specs/callback]))
 
-(s/def ::wrapup-params
-  (s/keys :req-un [::specs/interaction-id ::specs/wrapup]
-          :opt-un [::specs/callback]))
-
 (defn send-interrupt
   ([module type] (e/wrong-number-of-args-error))
   ([module type client-params & others]
@@ -78,15 +74,15 @@
                                        :interrupt-type "interaction-contact-deselected"
                                        :topic (p/get-topic :contact-unassignment-acknowledged)
                                        :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
-                            :enable-wrapup {:validation ::wrapup-params
+                            :enable-wrapup {:validation ::generic-interaction-fn-params
                                             :interrupt-type "wrapup-on"
                                             :topic (p/get-topic :enable-wrapup-acknowledged)
                                             :interrupt-body basic-interrupt-body}
-                            :disable-wrapup {:validation ::wrapup-params
+                            :disable-wrapup {:validation ::generic-interaction-fn-params
                                              :interrupt-type "wrapup-off"
                                              :topic (p/get-topic :disable-wrapup-acknowledged)
                                              :interrupt-body basic-interrupt-body}
-                            :end-wrapup {:validation ::wrapup-params
+                            :end-wrapup {:validation ::generic-interaction-fn-params
                                          :interrupt-type "wrapup-end"
                                          :topic (p/get-topic :end-wrapup-acknowledged)
                                          :interrupt-body basic-interrupt-body})]

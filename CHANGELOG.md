@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 * receiving incoming emails & broadcasting attachments, html body, plain text body
+* fixed wrap-up fns
+* added stop-polling API fn
 
 ## [2.0.1]
 * fix casing on all contact-related endpoint outputs
