@@ -107,17 +107,17 @@
                                           :state state}}
              config-url (str api-url (get-in module-state [:urls :config]))
              config-request {:method :get
-                            :url (iu/build-api-url-with-params
-                                  config-url
-                                  {:tenant-id tenant-id
-                                   :resource-id resource-id})}]
+                             :url (iu/build-api-url-with-params
+                                   config-url
+                                   {:tenant-id tenant-id
+                                    :resource-id resource-id})}]
          (if (= state "ready")
            (go (let [config-response (a/<! (iu/api-request config-request))
                      {:keys [api-response status]} config-response
                      {:keys [result]} api-response]
                  (if (not= status 200)
                    (p/publish {:topics topic
-                               :error (e/not-a-valid-extension)
+                               :error (e/api-error api-response)
                                :callback callback})
                    (do (state/set-config! result)
                        (let [update-user-url (str api-url (get-in module-state [:urls :update-user]))
@@ -130,8 +130,8 @@
                                                          :resource-id resource-id})
                                                   :body {:activeExtension new-extension}}]
                          (if (and extension-value
-                                  (not= active-extension-value extension-value)))
-                          (if (nil? new-extension)
+                                  (not= active-extension-value extension-value))
+                           (if (nil? new-extension)
                              (p/publish {:topics topic
                                          :error (e/not-a-valid-extension)
                                          :callback callback})
@@ -143,8 +143,8 @@
                                                      :callback callback})
                                          (change-presence-state-impl* change-state-request topic callback))))
                                  nil))
-                          (do (change-presence-state-impl* change-state-request topic callback)
-                              nil))))))
+                           (do (change-presence-state-impl* change-state-request topic callback)
+                               nil)))))))
            (do (change-presence-state-impl* change-state-request topic callback)
                nil)))))))
 
