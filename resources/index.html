@@ -201,6 +201,9 @@
         case 'cxengage/interactions/wrapup-started':
           console.log("Wrapup started " + response);
           break;
+        case 'cxengage/interactions/email/get-artifact-response':
+          console.log("The artifact file: " + response.artifactFile);
+          break;
         default:
           console.warn('no handler written yet for ', topic);
           break;
