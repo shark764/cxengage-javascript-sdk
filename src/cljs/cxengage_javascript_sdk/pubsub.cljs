@@ -71,6 +71,7 @@
                  :screen-pop-received "cxengage/interactions/url-pop-received"
                  :work-initiated-received "cxengage/interactions/work-initiated-received"
                  :disposition-codes-received "cxengage/interactions/disposition-codes-received"
+                 :disposition-code-changed "cxengage/interactions/disposition-code-changed"
                  :custom-fields-received "cxengage/interactions/custom-fields-received"
                  :work-accepted-received "cxengage/interactions/work-accepted-received"
                  :work-rejected-received "cxengage/interactions/work-rejected-received"

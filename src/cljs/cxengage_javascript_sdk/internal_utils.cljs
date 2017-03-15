@@ -120,7 +120,7 @@
                             :error (e/api-error api-response)
                             :callback callback})
                  (do (publish* {:topics topic
-                                :response {:interacton-id interaction-id}
+                                :response {:interaction-id interaction-id}
                                 :callback callback})
                      (when on-confirm-fn (on-confirm-fn))))))
          nil))))

@@ -85,6 +85,10 @@
   (let [location (find-interaction-location interaction-id)]
     (get-in @sdk-state [:interactions location interaction-id])))
 
+(defn get-interaction-disposition-codes [interaction-id]
+  (let [location (find-interaction-location interaction-id)]
+    (get-in @sdk-state [:interactions location interaction-id :disposition-code-details :dispositions])))
+
 (defn augment-messaging-payload [msg]
   (let [{:keys [payload]} msg
         {:keys [from id to]} payload

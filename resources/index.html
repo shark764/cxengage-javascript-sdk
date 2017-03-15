@@ -192,6 +192,15 @@
         case 'cxengage/capabilities/messaging-available':
           handleMessagingEnabled(error, topic, response);
           break;
+        case 'cxengage/interactions/disposition-code-changed':
+          console.log(response);
+          break;
+        case 'cxengage/interactions/disposition-codes-received':
+          console.log(response);
+          break;
+        case 'cxengage/interactions/wrapup-started':
+          console.log("Wrapup started " + response);
+          break;
         default:
           console.warn('no handler written yet for ', topic);
           break;

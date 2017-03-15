@@ -29,7 +29,7 @@
      (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
    (let [client-params (iu/extract-params client-params)
-         {:keys [callback interaction-id contact-id]} client-params
+         {:keys [callback interaction-id contact-id disposition]} client-params
          {:keys [sub-id action-id channel-type resource-id tenant-id resource direction channel-type]} (state/get-interaction interaction-id)
          {:keys [extension role-id session-id work-offer-id]} resource
          basic-interrupt-body {:resource-id (state/get-active-user-id)}
@@ -85,7 +85,12 @@
                             :end-wrapup {:validation ::generic-interaction-fn-params
                                          :interrupt-type "wrapup-end"
                                          :topic (p/get-topic :end-wrapup-acknowledged)
-                                         :interrupt-body basic-interrupt-body})]
+                                         :interrupt-body basic-interrupt-body}
+                            :select-disposition-code {:validation ::generic-interaction-fn-params
+                                                      :interrupt-type "disposition-select"
+                                                      :topic (p/get-topic :disposition-code-changed)
+                                                      :interrupt-body {:disposition disposition
+                                                                       :resource-id resource-id}})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
        (p/publish {:topics (:topic interrupt-params)
                    :error (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params))
@@ -165,12 +170,41 @@
                  (js/console.error note-response)
                  (if (not= status 200)
                    (p/publish {:topics topic
-                                :response (e/api-error "api returned error")
-                                :callback callback})
+                               :response (e/api-error "api returned error")
+                               :callback callback})
                    (p/publish {:topics topic
-                                :response api-response
-                                :callback callback}))))
+                               :response api-response
+                               :callback callback}))))
            nil)))))
+
+(s/def ::disposition-code-params
+  (s/keys :req-un [::specs/interaction-id ::specs/disposition-id]
+          :opt-un [::specs/callback]))
+
+(defn select-disposition-code
+  ([module]
+   (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (select-disposition-code module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [{:keys [interaction-id disposition-id callback] :as params} (iu/extract-params params)
+         dispositions (state/get-interaction-disposition-codes interaction-id)
+         dv (filterv #(= (:disposition-id %1) disposition-id) dispositions)
+         topic (p/get-topic :disposition-code-changed)]
+     (if-not (s/valid? ::disposition-code-params params)
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::disposition-code-params params))
+                   :callback callback})
+       (if (empty? dv)
+         (p/publish {:topics topic
+                     :error (e/incorrect-disposition-selected)
+                     :callback callback})
+         (let [disposition (first dv)
+               interrupt-disposition (merge disposition {:selected true})
+               params (merge params {:disposition interrupt-disposition})]
+           (send-interrupt module :select-disposition-code params)))))))
 
 (def initial-state
   {:module-name :interactions
@@ -196,7 +230,8 @@
                                     :createNote (partial note-action this :create)
                                     :updateNote (partial note-action this :update)
                                     :getNote (partial note-action this :get-one)
-                                    :getAllNotes (partial note-action this :get-all)}}
+                                    :getAllNotes (partial note-action this :get-all)
+                                    :selectDispositionCode (partial select-disposition-code this)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success
                               :module module-name})
