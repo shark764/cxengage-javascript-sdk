@@ -133,7 +133,7 @@
         disposition-code-details (:disposition-codes message)]
     (state/add-interaction-disposition-code-details! disposition-code-details interaction-id)
     (p/publish {:topics (p/get-topic :disposition-codes-received)
-                :response disposition-code-details})))
+                :response message})))
 
 (defn handle-session-start [message]
   nil)
