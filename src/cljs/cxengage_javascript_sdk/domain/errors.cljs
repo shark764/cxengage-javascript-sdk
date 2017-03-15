@@ -12,6 +12,8 @@
   {:code 1004 :error (str "No " entity " found by that ID") :data entity-id})
 (defn incorrect-disposition-selected []
   {:code 4001 :error "No disposition found by that ID"})
+(defn invalid-artifact-file []
+  {:code 4002 :error "No artifact file found by that ID"})
 (defn no-microphone-access-error [err]
   {:code 7000 :error (str "No access to microphone: " (.-message err))})
 (defn not-a-valid-extension []

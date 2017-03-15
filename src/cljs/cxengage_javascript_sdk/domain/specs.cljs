@@ -7,6 +7,8 @@
 (s/def ::tenantId ::uuid)
 (s/def ::tenant-id ::uuid)
 (s/def ::interactionId ::uuid)
+(s/def ::artifact-id ::uuid)
+(s/def ::artifact-file-id ::uuid)
 (s/def ::extensionId string?)
 (s/def ::extension-value (s/or ::uuid string?))
 (s/def ::queue-id ::uuid)

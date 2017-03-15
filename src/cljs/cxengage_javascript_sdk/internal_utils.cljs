@@ -26,7 +26,7 @@
        (transform-keys camel/->kebab-case)))
 
 (defn build-api-url-with-params [url params]
-  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id interaction-id artifact-id note-id]} params]
+  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id interaction-id artifact-id note-id artifact-file-id]} params]
     (cond-> url
       tenant-id (clojure.string/replace #"tenant-id" (str tenant-id))
       resource-id (clojure.string/replace #"resource-id" (str resource-id))
@@ -37,7 +37,8 @@
       layout-id (clojure.string/replace #"layout-id" layout-id)
       interaction-id (clojure.string/replace #"interaction-id" interaction-id)
       artifact-id (clojure.string/replace #"artifact-id" artifact-id)
-      note-id (clojure.string/replace #"note-id" note-id))))
+      note-id (clojure.string/replace #"note-id" note-id)
+      artifact-file-id (clojure.string/replace #"artifact-file-id" artifact-file-id))))
 
 (defn normalize-response-stucture
   [[ok? response] preserve-casing? manifest-endpoint?]
