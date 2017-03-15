@@ -121,7 +121,7 @@
                             :error (e/api-error api-response)
                             :callback callback})
                  (do (publish* {:topics topic
-                                :response {:interaction-id interaction-id}
+                                :response (merge {:interaction-id interaction-id} interrupt-body)
                                 :callback callback})
                      (when on-confirm-fn (on-confirm-fn))))))
          nil))))
