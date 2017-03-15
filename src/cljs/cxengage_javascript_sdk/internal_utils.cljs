@@ -47,7 +47,7 @@
         correct-date (- correct-date offset)]
     correct-date))
 
-(defn get-time-offset
+(defn update-local-time-offset
   [response]
   (let [timestamp (get-in response [:api-response :result :timestamp])
         local (js/Date.now)
@@ -81,6 +81,7 @@
                          :method method
                          :timeout 30000
                          :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? manifest-endpoint?)]
+                                     (update-local-time-offset normalized-response)
                                      (a/put! response-channel normalized-response))
                          :format (ajax/json-request-format)
                          :response-format (if manifest-endpoint?

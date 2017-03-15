@@ -15,8 +15,7 @@
                     :logs {:unsaved-logs []
                            :saved-logs []
                            :valid-levels [:debug :info :warn :error :fatal]}
-                    :time {:offset 0
-                           :timeout 0}})
+                    :time {:offset 0}})
 
 (defonce sdk-state
   (atom initial-state))
@@ -334,14 +333,6 @@
 (defn get-time-offset
   []
   (get-in @sdk-state [:time :offset]))
-
-(defn set-timeout!
-  [timeout]
-  (swap! sdk-state assoc-in [:time :timeout] timeout))
-
-(defn get-timeout
-  []
-  (get-in @sdk-state [:time :timeout]))
 
 ;;;;;;;;;;;
 ;; Predicates

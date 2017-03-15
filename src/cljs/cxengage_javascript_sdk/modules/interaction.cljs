@@ -29,7 +29,7 @@
      (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
    (let [client-params (iu/extract-params client-params)
-         {:keys [callback interaction-id contact-id]} client-params
+         {:keys [callback interaction-id contact-id disposition]} client-params
          {:keys [sub-id action-id channel-type resource-id tenant-id resource direction channel-type timeout timeout-end]} (state/get-interaction interaction-id)
          {:keys [extension role-id session-id work-offer-id]} resource
          basic-interrupt-body {:resource-id (state/get-active-user-id)}
