@@ -89,7 +89,7 @@
        (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output]} options
              core (iu/camelify {:api {:subscribe pu/subscribe
-                                      :publish pu/publish
+                                      :publish pu/js-publish
                                       :unsubscribe pu/unsubscribe
                                       :dump-state state/get-state-js}
                                 :modules {:register register-module
