@@ -56,41 +56,47 @@
         manifest-request (iu/api-request {:method :get
                                           :url manifest-url})]
     (go (let [manifest-response (a/<! manifest-request)
-              manifest-body (js/JSON.parse (:api-response manifest-response))
+              manifest-body (iu/kebabify (js/JSON.parse (:api-response manifest-response)))
               plain-body-url (:url (first (filter #(and (= (:filename %) "body")
                                                         (starts-with? (:content-type %) "text/plain")) files)))
               html-body-url (:url (first (filter #(and (= (:filename %) "body")
-                                                       (starts-with? (:content-type %) "text/html")) files)))
-              plain-body-request (iu/api-request {:method :get
-                                                  :url plain-body-url})
-              html-body-request (iu/api-request {:method :get
-                                                 :url html-body-url})]
-          (let [plain-body-response (a/<! plain-body-request)
-                html-body-response (a/<! html-body-request)
-                plain-body (:api-response plain-body-response)
-                html-body (:api-response html-body-response)]
-            (p/publish {:topics (p/get-topic :plain-body-received)
-                        :response {:interaction-id interaction-id
-                                   :body plain-body}})
-            (p/publish {:topics (p/get-topic :html-body-received)
-                        :response {:interaction-id interaction-id
-                                   :body html-body}})
-            (p/publish {:topics (p/get-topic :details-received)
-                        :response {:interaction-id interaction-id
-                                   :body (assoc manifest-body :artifact-id artifact-id)}}))))))
+                                                       (starts-with? (:content-type %) "text/html")) files)))]
+          (p/publish {:topics (p/get-topic :details-received)
+                      :response {:interaction-id interaction-id
+                                 :body (assoc manifest-body :artifact-id artifact-id)}})
+          (when plain-body-url
+            (let [plain-body-response (a/<! (iu/api-request {:method :get
+                                                             :url plain-body-url}))
+                  plain-body (:api-response plain-body-response)]
+              (p/publish {:topics (p/get-topic :plain-body-received)
+                          :response {:interaction-id interaction-id
+                                     :body plain-body}})))
+          (when html-body-url
+            (let [html-body-response (a/<! (iu/api-request {:method :get
+                                                            :url html-body-url}))
+                  html-body (:api-response html-body-response)]
+
+              (p/publish {:topics (p/get-topic :html-body-received)
+                          :response {:interaction-id interaction-id
+                                     :body html-body}})))))))
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
-  (let [{:keys [channel-type interaction-id]} message]
-    (when (or (= channel-type "sms")
-              (= channel-type "messaging"))
-      (let [{:keys [tenant-id interaction-id]} message]
-        (get-messaging-metadata tenant-id interaction-id)))
-    (when (= channel-type "email")
-      (let [{:keys [tenant-id interaction-id artifact-id]} message]
-        (get-email-artifact-data tenant-id interaction-id artifact-id))))
-  (p/publish {:topics (p/get-topic :work-offer-received)
-              :response message})
+  (let [{:keys [channel-type interaction-id timeout]} message
+        now (.getTime (js/Date.))
+        expiry (.getTime (js/Date. timeout))]
+    (if (> now expiry)
+      (log :warn "Received an expired work offer; doing nothing")
+      (do
+        (when (or (= channel-type "sms")
+                  (= channel-type "messaging"))
+          (let [{:keys [tenant-id interaction-id]} message]
+            (get-messaging-metadata tenant-id interaction-id)))
+        (when (= channel-type "email")
+          (let [{:keys [tenant-id interaction-id artifact-id]} message]
+            (get-email-artifact-data tenant-id interaction-id artifact-id)))
+        (p/publish {:topics (p/get-topic :work-offer-received)
+                    :response message}))))
   nil)
 
 (defn handle-new-messaging-message [payload]
