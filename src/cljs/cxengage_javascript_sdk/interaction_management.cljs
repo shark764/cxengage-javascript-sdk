@@ -154,6 +154,8 @@
         interaction (state/get-pending-interaction interaction-id)
         channel-type (get interaction :channel-type)]
     (state/transition-interaction! :pending :active interaction-id)
+    (p/publish {:topics (p/get-topic :work-accepted-received)
+                :response {:interaction-id interaction-id}})
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
       (messaging/subscribe-to-messaging-interaction
@@ -179,9 +181,9 @@
                  {:reply-interaction-id reply-interaction-id
                   :interaction-id interaction-id
                   :artifact (:api-response artifact-get-response)})
-                (p/publish "cxengage/interactions/email/received" (state/get-interaction interaction-id))
-                (get-email-bodies interaction-id))))))
-    (p/publish "cxengage/interactions/work-accepted-received" {:interaction-id interaction-id})))
+                (p/publish {:topics (p/get-topic :artifact-received)
+                            :response (:api-response artifact-get-response)})
+                (get-email-bodies interaction-id))))))))
 
 
 (defn handle-work-ended [message]

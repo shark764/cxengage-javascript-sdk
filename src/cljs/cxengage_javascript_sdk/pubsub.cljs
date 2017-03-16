@@ -91,7 +91,7 @@
                  :wrapup-ended "cxengage/interactions/wrapup-ended"
 
                  ;; Email Interaction Topics
-                 :artifact-received "cxengage/interactions/email/get-artifact-response"
+                 :artifact-received "cxengage/interactions/email/artifact-received"
                  :plain-body-received "cxengage/interactions/email/plain-body-received"
                  :html-body-received "cxengage/interactions/email/html-body-received"
                  :details-received "cxengage/interactions/email/details-received"
