@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
+            [cxengage-javascript-sdk.helpers :refer [log]]
             [clojure.string :as string]
             [clojure.set :as set]
             [cxengage-javascript-sdk.domain.protocols :as pr]
@@ -25,7 +26,7 @@
                  :config-response "cxengage/session/config-details"
                  :presence-state-changed "cxengage/session/state-change-response"
                  :presence-state-change-request-acknowledged "cxengage/session/state-change-request-acknowledged"
-                 :presence-heartbeats-response "cxengage/session/session-heartbeat-response"
+                 :presence-heartbeats-response "cxengage/session/heartbeat-response"
                  :session-started "cxengage/session/started"
                  :set-direction-response "cxengage/session/set-direction-response"
                  :extension-list "cxengage/session/extension-list"

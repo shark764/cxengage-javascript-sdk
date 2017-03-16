@@ -1,8 +1,8 @@
 (ns cxengage-javascript-sdk.modules.contacts
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
+            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
