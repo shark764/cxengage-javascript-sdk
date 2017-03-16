@@ -19,6 +19,7 @@
             [cxengage-javascript-sdk.modules.messaging :as messaging]
             [cxengage-javascript-sdk.modules.voice :as voice]
             [cxengage-javascript-sdk.modules.logging :as logging]
+            [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-cljs-utils.core :as cxu]
@@ -54,8 +55,9 @@
 (defn start-session-dependant-modules [comm<]
   (let [sqs-module (sqs/map->SQSModule. (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/sqs-msg-router))
         messaging-module (messaging/map->MessagingModule (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/messaging-msg-router))
-        voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [sqs-module messaging-module voice-module]]
+        voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))
+        email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [sqs-module messaging-module voice-module email-module]]
       (start-internal-module module))))
 
 (defn route-module-message [comm< m]
@@ -103,5 +105,5 @@
          (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
          (let [api (aget js/window "serenova" "cxengage" "api")]
            (if (= consumer-type :cljs)
-             (iu/kebabify api)
-             api)))))))
+             (iu/kebabify (aget js/window "serenova"))
+             (aget js/window "serenova" "cxengage" "api"))))))))

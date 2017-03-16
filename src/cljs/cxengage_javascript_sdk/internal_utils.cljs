@@ -79,6 +79,43 @@
      (ajax/ajax-request request)
      response-channel)))
 
+(defn file-api-request [request-map]
+  (let [response-channel (a/promise-chan)
+        {:keys [method url body]} request-map
+        request (merge {:uri url
+                        :method method
+                        :timeout 30000
+                        :handler #(let [normalized-response (normalize-response-stucture % false true)]
+                                    (a/put! response-channel normalized-response))
+                        :format (ajax/json-request-format)
+                        :response-format (ajax/json-response-format {:keywords? true})
+                        :body body}
+                       (when-let [token (state/get-token)]
+                         {:headers {"Authorization" (str "Token " token)}}))]
+    (ajax/ajax-request request)
+    response-channel))
+
+(defn get-artifact [interaction-id tenant-id artifact-id]
+  (let [url (str (state/get-base-api-url)
+                 (build-api-url-with-params
+                  "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
+                  {:tenant-id tenant-id
+                   :interaction-id interaction-id
+                   :artifact-id artifact-id}))
+        artifact-request {:method :get
+                          :url url}]
+    (api-request artifact-request)))
+
+(defn get-interaction-files [interaction-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        url (-> "tenants/tenant-id/interactions/interaction-id/artifacts"
+                (build-api-url-with-params {:interaction-id interaction-id
+                                            :tenant-id tenant-id})
+                (#(str (state/get-base-api-url) %)))
+        file-request {:method :get
+                      :url url}]
+    (api-request file-request)))
+
 (defn format-response [response]
   (if (= :cljs (state/get-consumer-type))
     response

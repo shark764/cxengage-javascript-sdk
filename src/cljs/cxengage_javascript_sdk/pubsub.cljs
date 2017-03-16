@@ -94,9 +94,10 @@
                  :artifact-received "cxengage/interactions/email/get-artifact-response"
                  :plain-body-received "cxengage/interactions/email/plain-body-received"
                  :html-body-received "cxengage/interactions/email/html-body-received"
-                 :details-received "cxengage/interactions/email-details-received"
+                 :details-received "cxengage/interactions/email/details-received"
 
                  ;; Voice Interaction Topics
+                 :recording-response "cxengage/interactions/voice/recording-received"
                  :hold-acknowledged "cxengage/interactions/voice/hold-acknowledged"
                  :resume-acknowledged "cxengage/interactions/voice/resume-acknowledged"
                  :mute-acknowledged "cxengage/interactions/voice/mute-acknowledged"
@@ -118,6 +119,7 @@
                  :transfer-connected "cxengage/interactions/voice/transfer-connected"
 
                  ;; Messaging Interaction Topics
+                 :transcript-response "cxengage/interactions/messaging/transcript-received"
                  :messaging-history-received "cxengage/interactions/messaging/history-received"
                  :send-message-acknowledged "cxengage/interactions/messaging/send-message-acknowledged"
                  :new-message-received "cxengage/interactions/messaging/new-message-received"

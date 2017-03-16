@@ -177,53 +177,6 @@
                                :callback callback}))))
            nil)))))
 
-(s/def ::get-artifact-file-params
-  (s/keys :req-un [::specs/interaction-id ::specs/artifact-id ::specs/artifact-file-id]
-          :opt-un [::specs/callback]))
-
-(defn get-artifact-file
-  ([module]
-   (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-artifact-file module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [{:keys [interaction-id artifact-id artifact-file-id callback] :as params} (iu/extract-params params)
-         api-url (get-in module [:config :api-url])
-         module-state @(:state module)
-         base-url (str api-url (get-in module-state [:urls :artifact-file]))
-         request-url (iu/build-api-url-with-params
-                      base-url
-                      {:tenant-id (state/get-active-tenant-id)
-                       :interaction-id interaction-id
-                       :artifact-id artifact-id})
-         topic (p/get-topic :artifact-received)]
-     (if-not (s/valid? ::get-artifact-file-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::get-artifact-file-params params))
-                   :callback callback})
-       (let [request-map {:url request-url
-                          :method :get}]
-         (go (let [response (a/<! (iu/api-request request-map))
-                   {:keys [status api-response]} response
-                   {:keys [files]} api-response]
-               (if (not= status 200)
-                 (p/publish {:topics topic
-                             :error (e/api-error api-response)
-                             :callback callback})
-                 (if-let [artifact-file (->> files
-                                             (filterv #(= (:artifact-file-id %1) artifact-file-id))
-                                             (peek))]
-                   (p/publish {:topics topic
-                               :response {:interaction-id interaction-id
-                                          :artifact-file artifact-file}
-                               :callback callback})
-                   (p/publish {:topics topic
-                               :error (e/invalid-artifact-file)
-                               :callback callback})))))
-         nil)))))
-
 (s/def ::disposition-code-params
   (s/keys :req-un [::specs/interaction-id ::specs/disposition-id]
           :opt-un [::specs/callback]))
@@ -279,10 +232,7 @@
                                     :updateNote (partial note-action this :update)
                                     :getNote (partial note-action this :get-one)
                                     :getAllNotes (partial note-action this :get-all)
-                                    :selectDispositionCode (partial select-disposition-code this)}
-                       :voice {:getRecording (partial get-artifact-file this)}
-                       :messaging {:getTranscript (partial get-artifact-file this)}
-                       :email {:getAttachment (partial get-artifact-file this)}}
+                                    :selectDispositionCode (partial select-disposition-code this)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success
                               :module module-name})
