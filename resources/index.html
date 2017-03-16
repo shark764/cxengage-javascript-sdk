@@ -123,6 +123,9 @@
         case 'cxengage/session/extension-list':
           handleExtensionList(error, topic, response);
           break;
+        case 'cxengage/interactions/email/attachment-list':
+          console.log('ATTACHMENT LIST:', response);
+          break;
         case 'cxengage/session/started':
           handleSessionStart(error, topic, response);
           break;
@@ -195,12 +198,6 @@
           break;
         case 'cxengage/capabilities/messaging-available':
           handleMessagingEnabled(error, topic, response);
-          break;
-        case 'cxengage/interactions/disposition-code-changed':
-          console.log(response);
-          break;
-        case 'cxengage/interactions/disposition-codes-received':
-          console.log(response);
           break;
         case 'cxengage/interactions/wrapup-started':
           console.log("Wrapup started " + response);

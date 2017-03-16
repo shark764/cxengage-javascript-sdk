@@ -91,6 +91,8 @@
                  :wrapup-ended "cxengage/interactions/wrapup-ended"
 
                  ;; Email Interaction Topics
+                 :attachment-received "cxengage/interactions/email/attachment-received"
+                 :attachment-list "cxengage/interactions/email/attachment-list"
                  :artifact-received "cxengage/interactions/email/artifact-received"
                  :plain-body-received "cxengage/interactions/email/plain-body-received"
                  :html-body-received "cxengage/interactions/email/html-body-received"
@@ -204,3 +206,7 @@
        (doseq [t topics]
          (cb error t response)))
      (when callback (callback error topics response)))))
+
+(defn js-publish [publish-details]
+  (let [details (iu/extract-params publish-details)]
+    (publish details false)))

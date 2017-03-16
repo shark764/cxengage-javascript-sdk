@@ -43,8 +43,7 @@
           (if (not= status 200)
             (p/publish {:topics (p/get-topic :email-artifact-received)
                         :response api-response})
-            (do (log :debug artifact-response)
-                (state/add-email-artifact-data interaction-id api-response)))))))
+            (state/add-email-artifact-data interaction-id api-response))))))
 
 (defn get-email-bodies [interaction-id]
   (let [interaction (state/get-interaction interaction-id)
@@ -52,6 +51,7 @@
         manifest-id (get-in interaction [:email-artifact :manifest-id])
         files (get-in interaction [:email-artifact :files])
         artifact-id (get-in interaction [:email-artifact :artifact-id])
+        attachments (filterv #(= (:filename %) "attachment") (get-in interaction [:email-artifact :files]))
         manifest-url (:url (first (filter #(= (:artifact-file-id %) manifest-id) files)))
         manifest-request (iu/api-request {:method :get
                                           :url manifest-url})]
@@ -71,6 +71,14 @@
               (p/publish {:topics (p/get-topic :plain-body-received)
                           :response {:interaction-id interaction-id
                                      :body plain-body}})))
+          (when (not= 0 (count attachments))
+            (let [attachments (mapv #(-> %
+                                         (dissoc :content-length)
+                                         (dissoc :filename)
+                                         (dissoc :url)
+                                         (assoc :artifact-id artifact-id)) attachments)]
+              (p/publish {:topics (p/get-topic :attachment-list)
+                          :response attachments})))
           (when html-body-url
             (let [html-body-response (a/<! (iu/api-request {:method :get
                                                             :url html-body-url}))

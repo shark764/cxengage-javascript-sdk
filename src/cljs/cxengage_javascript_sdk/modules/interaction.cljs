@@ -78,6 +78,10 @@
                                             :interrupt-type "wrapup-on"
                                             :topic (p/get-topic :enable-wrapup-acknowledged)
                                             :interrupt-body basic-interrupt-body}
+                            :deselect-disposition {:validation ::generic-interaction-fn-params
+                                                   :interrupt-type "disposition-select"
+                                                   :topic (p/get-topic :disposition-code-changed)
+                                                   :interrupt-body basic-interrupt-body}
                             :disable-wrapup {:validation ::generic-interaction-fn-params
                                              :interrupt-type "wrapup-off"
                                              :topic (p/get-topic :disable-wrapup-acknowledged)
@@ -232,7 +236,8 @@
                                     :updateNote (partial note-action this :update)
                                     :getNote (partial note-action this :get-one)
                                     :getAllNotes (partial note-action this :get-all)
-                                    :selectDispositionCode (partial select-disposition-code this)}}
+                                    :selectDispositionCode (partial select-disposition-code this)
+                                    :deselectDispositionCode (partial send-interrupt this :deselect-disposition)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success
                               :module module-name})
