@@ -2,7 +2,6 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [clojure.string :as string]
             [clojure.set :as set]
             [cxengage-javascript-sdk.domain.protocols :as pr]
