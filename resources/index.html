@@ -91,7 +91,7 @@
 
   <script>
   // var SDK = serenova.cxengage.initialize({
-  var SDK = cxengage_javascript_sdk.core.initialize({
+    var SDK = cxengage_javascript_sdk.core.initialize({
       "environment":"dev",
       "baseUrl":"https://dev-api.cxengagelabs.net/v1/",
       "logLevel":"debug",
@@ -168,6 +168,10 @@
         case 'cxengage/interactions/focus-acknowledged':
           handleButtonSwitch(error, topic, response, 'focus', 'on');
           break;
+        case 'cxengage/interactions/wrapup-started':
+          $('#' + response.interactionId + ' #responseArea').hide();
+          $('#' + response.interactionId).append('<button onclick="SDK.interactions.endWrapup({interactionId:\''+response.interactionId+'\'})">End Wrapup</button>');
+          break;
         case 'cxengage/interactions/unfocus-acknowledged':
           handleButtonSwitch(error, topic, response, 'focus', 'off');
           break;
@@ -201,6 +205,12 @@
         case 'cxengage/interactions/wrapup-started':
           console.log("Wrapup started " + response);
           break;
+        case 'cxengage/interactions/email/details-received':
+          console.log('EMAIL DETAILS RECEIVED:',response);
+          break;
+        case 'cxengage/interactions/email/artifact-received':
+          console.log('EMAIL ARTIFACT RECEIVED:',response);
+          break;
         case 'cxengage/interactions/email/get-artifact-response':
           console.log("The artifact file: " + response.artifactFile);
           break;
@@ -223,11 +233,11 @@
     };
 
     var handleEmailPlainBody = function(response) {
-      $('#' + response.interactionId + ' .plainBody').append(response.body);
+      $('#' + response.interactionId).append('<div><strong>PLAIN body</strong>'+response.body+'</div>');
     };
 
     var handleEmailHTMLBody = function(response) {
-      $('#' + response.interactionId + ' .htmlBody').append('<pre>'+response.body+'</pre>');
+      $('#' + response.interactionId).append('<div><strong>HTML body</strong><pre>'+response.body+'</pre></div>');
     };
 
     var handleStateChange = function(error, topic, response) {
@@ -411,10 +421,10 @@
             <button class="acceptBtn" onclick="acceptEmailInteraction(\''+iid+'\')">Accept Email Interaction <span></span></button>\
             <button class="rejectBtn" onclick="rejectEmailInteraction(\''+iid+'\')">Reject Email Interaction <span></span></button>\
           </div>\
-          <div class="htmlBody"><strong>HTML Body</strong></div>\
-          <div class="plainBody"><strong>Plain Body</strong></div>\
           <div style="display: none;" id="responseArea">\
-            <button onclick="endEmailInteraction(\'' + iid + '\')">End Chat</button><br>\
+            <textarea id="email-reply" />\
+            <button onclick="endEmailInteraction(\'' + iid + '\')">End Email</button><br>\
+            <button onclick="sendEmailReply(\'' + iid + '\')">Send Reply</button><br>\
           </div>\
         </div>';
         emailWindows.append(initialEmailHTML);
