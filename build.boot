@@ -26,7 +26,7 @@
                  [cljsjs/paho "1.0.1-0"]
 
                  [serenova/cxengage-cljs-utils "2.0.0"]
-                 [serenova/lumbajack "2.0.4-SNAPSHOT"]]
+                 [serenova/lumbajack "2.0.4"]]
 
  :repositories #(apply conj %
                        [["releases" {:url "http://nexus.cxengagelabs.net/content/repositories/releases/"
