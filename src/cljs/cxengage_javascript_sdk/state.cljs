@@ -160,6 +160,12 @@
         new-scripts (conj existing-scripts script)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :scripts] new-scripts)))
 
+(defn get-script [interaction-id script-id]
+  (let [interaction-location (find-interaction-location interaction-id)
+        scripts (or (get-in @sdk-state [:interactions interaction-location interaction-id :scripts]) [])
+        filtered-script (first (filterv #(= script-id (:id (js->clj (js/JSON.parse (:script %)) :keywordize-keys true))) scripts))]
+    filtered-script))
+
 (defn add-email-artifact-data [interaction-id artifact-data]
   (let [interaction-location (find-interaction-location interaction-id)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact] artifact-data)))

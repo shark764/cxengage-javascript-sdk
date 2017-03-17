@@ -45,7 +45,7 @@
          topic (p/get-topic (keyword (str "get-" (name entity-type) "-response")))]
      (if (not (s/valid? validation params))
        (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data validation params))
+                   :error (e/invalid-args-error "Arguments are invalid")
                    :callback callback})
        (let [api-url (str api-url (get-in module-state [:urls entity-type]))
              entity-get-request {:method :get
