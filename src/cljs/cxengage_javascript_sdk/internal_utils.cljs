@@ -41,6 +41,22 @@
       note-id (clojure.string/replace #"note-id" note-id)
       artifact-file-id (clojure.string/replace #"artifact-file-id" artifact-file-id))))
 
+(defn get-now
+  []
+  (let [offset (state/get-time-offset)
+        correct-date (js/Date.now)
+        correct-date (- correct-date offset)]
+    correct-date))
+
+(defn update-local-time-offset
+  [response]
+  (let [timestamp (get-in response [:api-response :result :timestamp])
+        local (js/Date.now)
+        server (js/Date.parse timestamp)
+        offset (- local server)]
+    (when timestamp
+      (state/set-time-offset! offset))))
+
 (defn normalize-response-stucture
   [[ok? response] preserve-casing? manifest-endpoint?]
   (if (and (false? ok?)
@@ -66,6 +82,7 @@
                          :method method
                          :timeout 30000
                          :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? manifest-endpoint?)]
+                                     (update-local-time-offset normalized-response)
                                      (a/put! response-channel normalized-response))
                          :format (ajax/json-request-format)
                          :response-format (if manifest-endpoint?

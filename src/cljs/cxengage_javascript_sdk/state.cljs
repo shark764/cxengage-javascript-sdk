@@ -14,7 +14,8 @@
                                    :past {}}
                     :logs {:unsaved-logs []
                            :saved-logs []
-                           :valid-levels [:debug :info :warn :error :fatal]}})
+                           :valid-levels [:debug :info :warn :error :fatal]}
+                    :time {:offset 0}})
 
 (defonce sdk-state
   (atom initial-state))
@@ -341,6 +342,18 @@
         appended (into saved unsaved)]
     (swap! sdk-state assoc-in [:logs :saved-logs] appended)
     (swap! sdk-state assoc-in [:logs :unsaved-logs] [])))
+
+;;;;;;;;;;;
+;; Time
+;;;;;;;;;;;
+
+(defn set-time-offset!
+  [offset]
+  (swap! sdk-state assoc-in [:time :offset] offset))
+
+(defn get-time-offset
+  []
+  (get-in @sdk-state [:time :offset]))
 
 ;;;;;;;;;;;
 ;; Predicates
