@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added send script functionality
 * added support for deselecting your disposition code
 * added support for artifacts
 * added support for disposition codes

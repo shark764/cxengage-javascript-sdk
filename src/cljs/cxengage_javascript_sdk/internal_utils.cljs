@@ -26,7 +26,7 @@
        (transform-keys camel/->kebab-case)))
 
 (defn build-api-url-with-params [url params]
-  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id interaction-id artifact-id note-id artifact-file-id]} params]
+  (let [{:keys [tenant-id resource-id session-id entity-id entity-sub-id contact-id layout-id interaction-id artifact-id note-id artifact-file-id action-id]} params]
     (cond-> url
       tenant-id (clojure.string/replace #"tenant-id" (str tenant-id))
       resource-id (clojure.string/replace #"resource-id" (str resource-id))
@@ -36,6 +36,7 @@
       contact-id (clojure.string/replace #"contact-id" contact-id)
       layout-id (clojure.string/replace #"layout-id" layout-id)
       interaction-id (clojure.string/replace #"interaction-id" interaction-id)
+      action-id (clojure.string/replace #"action-id" action-id)
       artifact-id (clojure.string/replace #"artifact-id" artifact-id)
       note-id (clojure.string/replace #"note-id" note-id)
       artifact-file-id (clojure.string/replace #"artifact-file-id" artifact-file-id))))

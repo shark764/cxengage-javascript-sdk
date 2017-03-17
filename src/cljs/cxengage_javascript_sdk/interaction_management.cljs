@@ -248,11 +248,14 @@
                            :resource-id resource-id}})))
 
 (defn handle-script-received [message]
-  (let [{:keys [interaction-id resource-id script]} message]
-    (state/add-script-to-interaction! interaction-id script)
+  (let [{:keys [interaction-id sub-id action-id resource-id script]} message]
+    (state/add-script-to-interaction! interaction-id {:sub-id sub-id
+                                                      :action-id action-id
+                                                      :script script})
     (p/publish {:topics (p/get-topic :script-received)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id
+                           :sub-id sub-id
                            :script script}})))
 (defn handle-generic [message]
   nil)

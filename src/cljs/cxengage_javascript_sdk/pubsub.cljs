@@ -89,6 +89,7 @@
                  :end-wrapup-acknowledged "cxengage/interactions/end-wrapup-acknowledged"
                  :wrapup-started "cxengage/interactions/wrapup-started"
                  :wrapup-ended "cxengage/interactions/wrapup-ended"
+                 :send-script "cxengage/interactions/send-script"
 
                  ;; Email Interaction Topics
                  :attachment-received "cxengage/interactions/email/attachment-received"
