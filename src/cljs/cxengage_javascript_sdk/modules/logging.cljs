@@ -31,7 +31,7 @@
       (when (state/get-unsaved-logs)
         (state/append-logs! {:data data :level level}))
       nil)
-    (jack/log* :error (str (e/invalid-logging-level-specified-error) " Correct values are: " (str/join ", " (vec (state/get-valid-log-levels)))))))
+    nil))
 
 (s/def ::dump-logs-params
   (s/keys :req-un []

@@ -25,7 +25,7 @@
                  :config-response "cxengage/session/config-details"
                  :presence-state-changed "cxengage/session/state-change-response"
                  :presence-state-change-request-acknowledged "cxengage/session/state-change-request-acknowledged"
-                 :presence-heartbeats-response "cxengage/session/session-heartbeat-response"
+                 :presence-heartbeats-response "cxengage/session/heartbeat-response"
                  :session-started "cxengage/session/started"
                  :set-direction-response "cxengage/session/set-direction-response"
                  :extension-list "cxengage/session/extension-list"
@@ -89,14 +89,18 @@
                  :end-wrapup-acknowledged "cxengage/interactions/end-wrapup-acknowledged"
                  :wrapup-started "cxengage/interactions/wrapup-started"
                  :wrapup-ended "cxengage/interactions/wrapup-ended"
+                 :send-script "cxengage/interactions/send-script"
 
                  ;; Email Interaction Topics
-                 :artifact-received "cxengage/interactions/email/get-artifact-response"
+                 :attachment-received "cxengage/interactions/email/attachment-received"
+                 :attachment-list "cxengage/interactions/email/attachment-list"
+                 :artifact-received "cxengage/interactions/email/artifact-received"
                  :plain-body-received "cxengage/interactions/email/plain-body-received"
                  :html-body-received "cxengage/interactions/email/html-body-received"
-                 :details-received "cxengage/interactions/email-details-received"
+                 :details-received "cxengage/interactions/email/details-received"
 
                  ;; Voice Interaction Topics
+                 :recording-response "cxengage/interactions/voice/recording-received"
                  :hold-acknowledged "cxengage/interactions/voice/hold-acknowledged"
                  :resume-acknowledged "cxengage/interactions/voice/resume-acknowledged"
                  :mute-acknowledged "cxengage/interactions/voice/mute-acknowledged"
@@ -118,6 +122,7 @@
                  :transfer-connected "cxengage/interactions/voice/transfer-connected"
 
                  ;; Messaging Interaction Topics
+                 :transcript-response "cxengage/interactions/messaging/transcript-received"
                  :messaging-history-received "cxengage/interactions/messaging/history-received"
                  :send-message-acknowledged "cxengage/interactions/messaging/send-message-acknowledged"
                  :new-message-received "cxengage/interactions/messaging/new-message-received"
@@ -202,3 +207,7 @@
        (doseq [t topics]
          (cb error t response)))
      (when callback (callback error topics response)))))
+
+(defn js-publish [publish-details]
+  (let [details (iu/extract-params publish-details)]
+    (publish details false)))

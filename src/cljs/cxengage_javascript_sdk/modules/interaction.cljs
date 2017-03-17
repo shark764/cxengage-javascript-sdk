@@ -79,6 +79,10 @@
                                             :interrupt-type "wrapup-on"
                                             :topic (p/get-topic :enable-wrapup-acknowledged)
                                             :interrupt-body basic-interrupt-body}
+                            :deselect-disposition {:validation ::generic-interaction-fn-params
+                                                   :interrupt-type "disposition-select"
+                                                   :topic (p/get-topic :disposition-code-changed)
+                                                   :interrupt-body basic-interrupt-body}
                             :disable-wrapup {:validation ::generic-interaction-fn-params
                                              :interrupt-type "wrapup-off"
                                              :topic (p/get-topic :disable-wrapup-acknowledged)
@@ -178,53 +182,6 @@
                                :callback callback}))))
            nil)))))
 
-(s/def ::get-artifact-file-params
-  (s/keys :req-un [::specs/interaction-id ::specs/artifact-id ::specs/artifact-file-id]
-          :opt-un [::specs/callback]))
-
-(defn get-artifact-file
-  ([module]
-   (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-artifact-file module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [{:keys [interaction-id artifact-id artifact-file-id callback] :as params} (iu/extract-params params)
-         api-url (get-in module [:config :api-url])
-         module-state @(:state module)
-         base-url (str api-url (get-in module-state [:urls :artifact-file]))
-         request-url (iu/build-api-url-with-params
-                      base-url
-                      {:tenant-id (state/get-active-tenant-id)
-                       :interaction-id interaction-id
-                       :artifact-id artifact-id})
-         topic (p/get-topic :artifact-received)]
-     (if-not (s/valid? ::get-artifact-file-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::get-artifact-file-params params))
-                   :callback callback})
-       (let [request-map {:url request-url
-                          :method :get}]
-         (go (let [response (a/<! (iu/api-request request-map))
-                   {:keys [status api-response]} response
-                   {:keys [files]} api-response]
-               (if (not= status 200)
-                 (p/publish {:topics topic
-                             :error (e/api-error api-response)
-                             :callback callback})
-                 (if-let [artifact-file (->> files
-                                             (filterv #(= (:artifact-file-id %1) artifact-file-id))
-                                             (peek))]
-                   (p/publish {:topics topic
-                               :response {:interaction-id interaction-id
-                                          :artifact-file artifact-file}
-                               :callback callback})
-                   (p/publish {:topics topic
-                               :error (e/invalid-artifact-file)
-                               :callback callback})))))
-         nil)))))
-
 (s/def ::disposition-code-params
   (s/keys :req-un [::specs/interaction-id ::specs/disposition-id]
           :opt-un [::specs/callback]))
@@ -254,11 +211,85 @@
                params (merge params {:disposition interrupt-disposition})]
            (send-interrupt module :select-disposition-code params)))))))
 
+(defn modify-elements [elements]
+  (let [updated-elements (reduce
+                           (fn [acc element]
+                             (assoc acc (get element :name) element))
+                           {}
+                           elements)]
+   (clojure.walk/keywordize-keys updated-elements)))
+
+(defn add-answers-to-elements [elements answers]
+  (let [updated-elements (reduce-kv
+                               (fn [acc element-name element-value]
+                                 (assoc acc element-name (assoc element-value :value (get-in answers [element-name :value]))))
+                               {}
+                               elements)]
+   updated-elements))
+
+(s/def ::script-params
+ (s/keys :req-un [::specs/interaction-id ::specs/answers ::specs/script-id]
+         :opt-un [::specs/callback]))
+
+(defn send-script
+ ([module] (e/wrong-number-of-args-error))
+ ([module client-params & others]
+  (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (send-script module (merge (iu/extract-params client-params) {:callback (first others)}))))
+ ([module client-params]
+  (let [params (iu/extract-params client-params)
+        module-state @(:state module)
+        {:keys [answers script-id interaction-id callback]} params
+        original-script (state/get-script interaction-id script-id)
+        {:keys [sub-id script action-id]} original-script
+        parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
+        elements (modify-elements (:elements parsed-script))
+        topic (p/get-topic :send-script)
+        api-url (get-in module [:config :api-url])
+        script-url (str api-url (get-in module-state [:urls :send-script]))
+        updated-answers (reduce-kv
+                         (fn [acc input-name input-value]
+                           (assoc acc input-name {:value (or input-value nil) :text (get-in elements [input-name :text])}))
+                         {}
+                         answers)
+        final-elements (add-answers-to-elements elements updated-answers)
+        script-update {:resource-id (state/get-active-user-id)
+                       :script-response {(keyword (:name parsed-script)) {:elements final-elements
+                                                                          :id (:id parsed-script)
+                                                                          :name (:name parsed-script)}}}
+        script-body {:source "client"
+                     :sub-id (:sub-id original-script)
+                     :update (merge script-update updated-answers)}
+        script-request {:method :post
+                        :url (iu/build-api-url-with-params
+                              script-url
+                              {:tenant-id (state/get-active-tenant-id)
+                               :interaction-id interaction-id
+                               :action-id action-id})
+                        :body script-body}]
+    (if-not (s/valid? ::script-params params)
+      (p/publish {:topics topic
+                  :error (e/invalid-args-error "Invalid Arguments")
+                  :callback callback})
+      (do (go (let [script-response (a/<! (iu/api-request script-request))
+                    {:keys [status api-response]} script-response
+                    {:keys [result]} api-response]
+                (if (not= status 200)
+                  (p/publish {:topics topic
+                              :error (e/api-error "api error")
+                              :callback callback})
+                  (p/publish {:topics topic
+                              :response result
+                              :callback callback}))))
+        nil)))))
+
 (def initial-state
   {:module-name :interactions
    :urls {:note "tenants/tenant-id/interactions/interaction-id/notes/note-id"
           :notes "tenants/tenant-id/interactions/interaction-id/notes"
-          :artifact-file "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"}})
+          :artifact-file "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
+          :send-script "tenants/tenant-id/interactions/interaction-id/actions/action-id"}})
 
 (defrecord InteractionModule [config state core-messages<]
   pr/SDKModule
@@ -280,10 +311,9 @@
                                     :updateNote (partial note-action this :update)
                                     :getNote (partial note-action this :get-one)
                                     :getAllNotes (partial note-action this :get-all)
-                                    :selectDispositionCode (partial select-disposition-code this)}
-                       :voice {:getRecording (partial get-artifact-file this)}
-                       :messaging {:getTranscript (partial get-artifact-file this)}
-                       :email {:getAttachment (partial get-artifact-file this)}}
+                                    :selectDispositionCode (partial select-disposition-code this)
+                                    :deselectDispositionCode (partial send-interrupt this :deselect-disposition)
+                                    :sendScript (partial send-script this)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success
                               :module module-name})

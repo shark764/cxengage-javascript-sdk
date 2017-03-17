@@ -1,12 +1,17 @@
 # Change Log
 
 ## [Unreleased]
+* added send script functionality
+* added support for deselecting your disposition code
 * added support for artifacts
-* added support for disposition codes 
+* added support for disposition codes
 * fixed updating user's extension
 * receiving incoming emails & broadcasting attachments, html body, plain text body
 * fixed wrap-up fns
 * added stop-polling API fn
+* added getRecordings & getTranscripts
+* include artifact id on email response so they can get attachments
+* added getAttachmentUrl
 
 ## [2.0.1]
 * fix casing on all contact-related endpoint outputs

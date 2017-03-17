@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as a]
             [clojure.string :as s :refer [starts-with?]]
+            [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.internal-utils :as iu]
@@ -42,53 +43,68 @@
           (if (not= status 200)
             (p/publish {:topics (p/get-topic :email-artifact-received)
                         :response api-response})
-            (do (log :debug artifact-response)
-                (state/add-email-artifact-data interaction-id api-response)))))))
+            (state/add-email-artifact-data interaction-id api-response))))))
 
 (defn get-email-bodies [interaction-id]
   (let [interaction (state/get-interaction interaction-id)
         tenant-id (state/get-active-tenant-id)
         manifest-id (get-in interaction [:email-artifact :manifest-id])
         files (get-in interaction [:email-artifact :files])
+        artifact-id (get-in interaction [:email-artifact :artifact-id])
+        attachments (filterv #(= (:filename %) "attachment") (get-in interaction [:email-artifact :files]))
         manifest-url (:url (first (filter #(= (:artifact-file-id %) manifest-id) files)))
         manifest-request (iu/api-request {:method :get
                                           :url manifest-url})]
     (go (let [manifest-response (a/<! manifest-request)
-              manifest-body (js/JSON.parse (:api-response manifest-response))
+              manifest-body (iu/kebabify (js/JSON.parse (:api-response manifest-response)))
               plain-body-url (:url (first (filter #(and (= (:filename %) "body")
                                                         (starts-with? (:content-type %) "text/plain")) files)))
               html-body-url (:url (first (filter #(and (= (:filename %) "body")
-                                                       (starts-with? (:content-type %) "text/html")) files)))
-              plain-body-request (iu/api-request {:method :get
-                                                  :url plain-body-url})
-              html-body-request (iu/api-request {:method :get
-                                                 :url html-body-url})]
-          (let [plain-body-response (a/<! plain-body-request)
-                html-body-response (a/<! html-body-request)
-                plain-body (:api-response plain-body-response)
-                html-body (:api-response html-body-response)]
-            (p/publish {:topics (p/get-topic :plain-body-received)
-                        :response {:interaction-id interaction-id
-                                   :body plain-body}})
-            (p/publish {:topics (p/get-topic :html-body-received)
-                        :response {:interaction-id interaction-id
-                                   :body html-body}})
-            (p/publish {:topics (p/get-topic :details-received)
-                        :response {:interaction-id interaction-id
-                                   :body manifest-body}}))))))
+                                                       (starts-with? (:content-type %) "text/html")) files)))]
+          (p/publish {:topics (p/get-topic :details-received)
+                      :response {:interaction-id interaction-id
+                                 :body (assoc manifest-body :artifact-id artifact-id)}})
+          (when plain-body-url
+            (let [plain-body-response (a/<! (iu/api-request {:method :get
+                                                             :url plain-body-url}))
+                  plain-body (:api-response plain-body-response)]
+              (p/publish {:topics (p/get-topic :plain-body-received)
+                          :response {:interaction-id interaction-id
+                                     :body plain-body}})))
+          (when (not= 0 (count attachments))
+            (let [attachments (mapv #(-> %
+                                         (dissoc :content-length)
+                                         (dissoc :filename)
+                                         (dissoc :url)
+                                         (assoc :artifact-id artifact-id)) attachments)]
+              (p/publish {:topics (p/get-topic :attachment-list)
+                          :response attachments})))
+          (when html-body-url
+            (let [html-body-response (a/<! (iu/api-request {:method :get
+                                                            :url html-body-url}))
+                  html-body (:api-response html-body-response)]
+
+              (p/publish {:topics (p/get-topic :html-body-received)
+                          :response {:interaction-id interaction-id
+                                     :body html-body}})))))))
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
-  (let [{:keys [channel-type interaction-id]} message]
-    (when (or (= channel-type "sms")
-              (= channel-type "messaging"))
-      (let [{:keys [tenant-id interaction-id]} message]
-        (get-messaging-metadata tenant-id interaction-id)))
-    (when (= channel-type "email")
-      (let [{:keys [tenant-id interaction-id artifact-id]} message]
-        (get-email-artifact-data tenant-id interaction-id artifact-id))))
-  (p/publish {:topics (p/get-topic :work-offer-received)
-              :response message})
+  (let [{:keys [channel-type interaction-id timeout]} message
+        now (.getTime (js/Date.))
+        expiry (.getTime (js/Date. timeout))]
+    (if (> now expiry)
+      (log :warn "Received an expired work offer; doing nothing")
+      (do
+        (when (or (= channel-type "sms")
+                  (= channel-type "messaging"))
+          (let [{:keys [tenant-id interaction-id]} message]
+            (get-messaging-metadata tenant-id interaction-id)))
+        (when (= channel-type "email")
+          (let [{:keys [tenant-id interaction-id artifact-id]} message]
+            (get-email-artifact-data tenant-id interaction-id artifact-id)))
+        (p/publish {:topics (p/get-topic :work-offer-received)
+                    :response message}))))
   nil)
 
 (defn handle-new-messaging-message [payload]
@@ -146,6 +162,8 @@
         interaction (state/get-pending-interaction interaction-id)
         channel-type (get interaction :channel-type)]
     (state/transition-interaction! :pending :active interaction-id)
+    (p/publish {:topics (p/get-topic :work-accepted-received)
+                :response {:interaction-id interaction-id}})
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
       (messaging/subscribe-to-messaging-interaction
@@ -153,9 +171,28 @@
         :interaction-id interaction-id
         :env (state/get-env)}))
     (when (= channel-type "email")
-      (get-email-bodies interaction-id))
-    (p/publish {:topics (p/get-topic :work-accepted-received)
-                :response {:interaction-id interaction-id}}) ))
+      (let [reply-interaction-id (str (id/make-random-uuid))
+            api-url (state/get-base-api-url)
+            artifact-url (iu/build-api-url-with-params
+                          (str api-url "tenants/tenant-id/interactions/interaction-id/artifacts")
+                          {:tenant-id tenant-id
+                           :interaction-id interaction-id})
+            artifact-request {:method :post
+                              :url artifact-url
+                              :body {:artifactType "email"}}]
+        (go (let [artifact-create-response (a/<! (iu/api-request artifact-request))
+                  {:keys [api-response status]} artifact-create-response
+                  {:keys [artifact-id]} api-response]
+              (let [artifact-get-response (a/<! (iu/api-request {:method :get
+                                                                 :url (str artifact-url "/" artifact-id)}))]
+                (state/add-email-reply-details-to-interaction
+                 {:reply-interaction-id reply-interaction-id
+                  :interaction-id interaction-id
+                  :artifact (:api-response artifact-get-response)})
+                (p/publish {:topics (p/get-topic :artifact-received)
+                            :response (:api-response artifact-get-response)})
+                (get-email-bodies interaction-id))))))))
+
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message
@@ -211,11 +248,14 @@
                            :resource-id resource-id}})))
 
 (defn handle-script-received [message]
-  (let [{:keys [interaction-id resource-id script]} message]
-    (state/add-script-to-interaction! interaction-id script)
+  (let [{:keys [interaction-id sub-id action-id resource-id script]} message]
+    (state/add-script-to-interaction! interaction-id {:sub-id sub-id
+                                                      :action-id action-id
+                                                      :script script})
     (p/publish {:topics (p/get-topic :script-received)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id
+                           :sub-id sub-id
                            :script script}})))
 (defn handle-generic [message]
   nil)

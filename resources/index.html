@@ -12,6 +12,7 @@
   <script src="js/moment.js" type="text/javascript"></script>
 
   <div id="login-screen" style="display: block;">
+    <!-- <input type="text" id="username" name="username" value="sstiles@serenova.com"> -->
     <input type="text" id="username" name="username" value="sstiles@liveopscloud.com">
     <br><br>
     <input type="password" id="password" name="password" value="DevProfile1!">
@@ -86,16 +87,15 @@
     <div class="email-controls">
       <h2>Email Interactions</h2>
     </div>
-    <hr>
-    <img src="https://unequivocallyawkward.files.wordpress.com/2015/01/bruh.jpg" alt="BRUH">
   </div>
 
   <script>
   // var SDK = serenova.cxengage.initialize({
-  var SDK = cxengage_javascript_sdk.core.initialize({
+    var SDK = cxengage_javascript_sdk.core.initialize({
       "environment":"dev",
       "baseUrl":"https://dev-api.cxengagelabs.net/v1/",
-      "logLevel":"debug"
+      "logLevel":"debug",
+      "blastSqsOutput": true
     });
 
     var state = {
@@ -122,6 +122,9 @@
           break;
         case 'cxengage/session/extension-list':
           handleExtensionList(error, topic, response);
+          break;
+        case 'cxengage/interactions/email/attachment-list':
+          console.log('ATTACHMENT LIST:', response);
           break;
         case 'cxengage/session/started':
           handleSessionStart(error, topic, response);
@@ -168,6 +171,10 @@
         case 'cxengage/interactions/focus-acknowledged':
           handleButtonSwitch(error, topic, response, 'focus', 'on');
           break;
+        case 'cxengage/interactions/wrapup-started':
+          $('#' + response.interactionId + ' #responseArea').hide();
+          $('#' + response.interactionId).append('<button onclick="SDK.interactions.endWrapup({interactionId:\''+response.interactionId+'\'})">End Wrapup</button>');
+          break;
         case 'cxengage/interactions/unfocus-acknowledged':
           handleButtonSwitch(error, topic, response, 'focus', 'off');
           break;
@@ -192,14 +199,14 @@
         case 'cxengage/capabilities/messaging-available':
           handleMessagingEnabled(error, topic, response);
           break;
-        case 'cxengage/interactions/disposition-code-changed':
-          console.log(response);
-          break;
-        case 'cxengage/interactions/disposition-codes-received':
-          console.log(response);
-          break;
         case 'cxengage/interactions/wrapup-started':
           console.log("Wrapup started " + response);
+          break;
+        case 'cxengage/interactions/email/details-received':
+          console.log('EMAIL DETAILS RECEIVED:',response);
+          break;
+        case 'cxengage/interactions/email/artifact-received':
+          console.log('EMAIL ARTIFACT RECEIVED:',response);
           break;
         case 'cxengage/interactions/email/get-artifact-response':
           console.log("The artifact file: " + response.artifactFile);
@@ -223,11 +230,11 @@
     };
 
     var handleEmailPlainBody = function(response) {
-      $('#' + response.interactionId + ' .plainBody').append(response.body);
+      $('#' + response.interactionId).append('<div><strong>PLAIN body</strong>'+response.body+'</div>');
     };
 
     var handleEmailHTMLBody = function(response) {
-      $('#' + response.interactionId + ' .htmlBody').append('<pre>'+response.body+'</pre>');
+      $('#' + response.interactionId).append('<div><strong>HTML body</strong><pre>'+response.body+'</pre></div>');
     };
 
     var handleStateChange = function(error, topic, response) {
@@ -389,11 +396,8 @@
     var initializeEmailInteraction = function(workOffer) {
       if ($('#' + workOffer.interactionId).find().length === 0) {
         var emailWindows = $('.email-controls');
-        console.log(workOffer);
         var iid = workOffer.interactionId;
-        console.log(iid);
         var timeout = Math.floor((new Date(workOffer.timeout).getTime() - new Date().getTime()) / 1000);
-        console.log(timeout);
         state.emailTimers[workOffer.interactionId] = setInterval(function() {
           var timeLeft = timeout--;
           $('#' + iid + ' .acceptBtn span, #' + iid + ' .rejectBtn span').text('(' + timeLeft + 's remaining)');
@@ -414,10 +418,10 @@
             <button class="acceptBtn" onclick="acceptEmailInteraction(\''+iid+'\')">Accept Email Interaction <span></span></button>\
             <button class="rejectBtn" onclick="rejectEmailInteraction(\''+iid+'\')">Reject Email Interaction <span></span></button>\
           </div>\
-          <div class="htmlBody"><strong>HTML Body</strong></div>\
-          <div class="plainBody"><strong>Plain Body</strong></div>\
           <div style="display: none;" id="responseArea">\
-            <button onclick="endEmailInteraction(\'' + iid + '\')">End Chat</button><br>\
+            <textarea id="email-reply" />\
+            <button onclick="endEmailInteraction(\'' + iid + '\')">End Email</button><br>\
+            <button onclick="sendEmailReply(\'' + iid + '\')">Send Reply</button><br>\
           </div>\
         </div>';
         emailWindows.append(initialEmailHTML);
@@ -499,6 +503,7 @@
     var populateTenantsDropdown = function(tenants) {
       $('#tenantSelect option').remove();
       _.each(tenants, function(t) {
+        // if (t.tenantId === 'b1095ee0-eeed-11e6-b864-e898003f3411') {
         if (t.tenantId === '3b639eb0-febc-11e6-98a7-36051d50f3bf') {
           $('#tenantSelect').append('<option value="' + t.tenantId + '" selected="selected">' + t.tenantName + '</option>');
         } else {
@@ -512,7 +517,6 @@
      * button handlers
      *
      */
-
     var acceptEmailInteraction = function(miid) {
       SDK.interactions.accept({interactionId:miid});
     };
@@ -522,7 +526,6 @@
     var endEmailInteraction = function(miid) {
       SDK.interactions.end({interactionId:miid});
     };
-
     var acceptMessagingInteraction = function(miid) {
       SDK.interactions.accept({interactionId:miid});
     };
@@ -536,81 +539,61 @@
       SDK.interactions.messaging.sendMessage({interactionId:miid,message:$('#' + miid + ' .msgText').val()})
       $('#' + miid + ' .msgText').val('');
     };
-
     var selectActiveTenant = function() {
       var tid = $('#tenantSelect').val();
-      console.log('TID', tid);
       SDK.session.setActiveTenant({tenantId:tid});
     };
-
     var selectExtension = function() {
       state.extensionId = $('#extension-select').val();
     };
-
     var goReady = function() {
       SDK.session.goReady({ extensionValue: state.extensionId });
     };
-
     var goNotReady = function() {
       SDK.session.goNotReady();
     };
-
     var goOffline = function() {
       SDK.session.end();
     };
-
     var goInbound = function() {
       SDK.session.setDirection({direction:'inbound'});
     };
-
     var goOutbound = function() {
       SDK.session.setDirection({direction:'outbound'});
     };
-
     var acceptCall = function() {
       SDK.interactions.accept({ interactionId: state.voiceInteractionId });
     };
-
     var endCall = function() {
       SDK.interactions.end({ interactionId: state.voiceInteractionId });
     };
-
     var focusCall = function() {
       SDK.interactions.focus({interactionId:state.voiceInteractionId});
     };
-
     var unfocusCall = function() {
       SDK.interactions.unfocus({interactionId:state.voiceInteractionId});
     };
-
     var holdCall = function() {
       SDK.interactions.voice.hold({interactionId:state.voiceInteractionId});
     };
-
     var resumeCall = function() {
       SDK.interactions.voice.resume({interactionId:state.voiceInteractionId});
     };
-
     var startRecordingCall = function() {
       SDK.interactions.voice.startRecording({interactionId:state.voiceInteractionId});
     };
-
     var stopRecordingCall = function() {
       SDK.interactions.voice.stopRecording({interactionId:state.voiceInteractionId});
     };
-
     var muteCall = function() {
       SDK.interactions.voice.mute({interactionId:state.voiceInteractionId});
     };
-
     var unmuteCall = function() {
       SDK.interactions.voice.unmute({interactionId:state.voiceInteractionId});
     };
-
     var login = function() {
       var username = $('#username').val();
       var password = $('#password').val();
-
       SDK.authentication.login({username:username,password:password});
     };
   </script>
