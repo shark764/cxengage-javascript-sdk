@@ -98,6 +98,8 @@
                  :plain-body-received "cxengage/interactions/email/plain-body-received"
                  :html-body-received "cxengage/interactions/email/html-body-received"
                  :details-received "cxengage/interactions/email/details-received"
+                 :add-attachment "cxengage/interactions/email/attachment-added"
+                 :remove-attachment "cxengage/interactions/email/attachment-removed"
 
                  ;; Voice Interaction Topics
                  :recording-response "cxengage/interactions/voice/recording-received"
