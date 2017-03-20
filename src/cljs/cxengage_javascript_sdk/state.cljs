@@ -172,10 +172,13 @@
         email-artifact-data (assoc-in artifact-data [:reply :attachments] {})]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact] email-artifact-data)))
 
-(defn add-email-reply-details-to-interaction [email-reply-details]
-  (let [{:keys [interaction-id]} email-reply-details
-        interaction-location (find-interaction-location interaction-id)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-reply-details] email-reply-details)))
+(defn store-email-reply-artifact-id [artifact-id interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact :reply :artifact-id] artifact-id)))
+
+(defn get-reply-artifact-id-by-interaction-id [interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (get-in @sdk-state [:interactions interaction-location interaction-id :email-artifact :reply :artifact-id])))
 
 (defn get-all-reply-email-attachments [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
@@ -187,6 +190,14 @@
         attachments (get-all-reply-email-attachments interaction-id)
         new-attachments (dissoc attachments attachment-id)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact :reply :attachments] new-attachments)))
+
+(defn get-email-reply-to-id [interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (get-in @sdk-state [:interactions interaction-location interaction-id :email-artifact :manifest-details :id])))
+
+(defn add-email-manifest-details [interaction-id manifest]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact :manifest-details] manifest)))
 
 (defn add-attachment-to-reply [file-info]
   (let [{:keys [interaction-id attachment-id file]} file-info

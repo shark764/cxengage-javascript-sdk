@@ -99,19 +99,23 @@
 
 (defn file-api-request [request-map]
   (let [response-channel (a/promise-chan)
-        {:keys [method url body]} request-map
+        {:keys [method url body callback]} request-map
         request (merge {:uri url
                         :method method
                         :timeout 30000
                         :handler #(let [normalized-response (normalize-response-stucture % false true)]
-                                    (a/put! response-channel normalized-response))
+                                    (if callback
+                                      (callback normalized-response)
+                                      (a/put! response-channel normalized-response)))
                         :format (ajax/json-request-format)
                         :response-format (ajax/json-response-format {:keywords? true})
                         :body body}
                        (when-let [token (state/get-token)]
                          {:headers {"Authorization" (str "Token " token)}}))]
     (ajax/ajax-request request)
-    response-channel))
+    (if callback
+      nil
+      response-channel)))
 
 (defn get-artifact [interaction-id tenant-id artifact-id]
   (let [url (str (state/get-base-api-url)

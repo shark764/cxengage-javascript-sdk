@@ -23,6 +23,7 @@
                  [cljsjs/aws-sdk-js "2.2.41-4"]
                  [binaryage/devtools "0.9.1"]
                  [camel-snake-kebab "0.4.0"]
+                 [funcool/promesa "1.8.0"]
                  [cljsjs/paho "1.0.1-0"]
 
                  [serenova/cxengage-cljs-utils "2.0.0"]

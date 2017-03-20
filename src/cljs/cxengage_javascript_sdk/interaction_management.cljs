@@ -60,10 +60,12 @@
               plain-body-url (:url (first (filter #(and (= (:filename %) "body")
                                                         (starts-with? (:content-type %) "text/plain")) files)))
               html-body-url (:url (first (filter #(and (= (:filename %) "body")
-                                                       (starts-with? (:content-type %) "text/html")) files)))]
+                                                       (starts-with? (:content-type %) "text/html")) files)))
+              manifest-body (assoc manifest-body :artifact-id artifact-id)]
           (p/publish {:topics (p/get-topic :details-received)
                       :response {:interaction-id interaction-id
-                                 :body (assoc manifest-body :artifact-id artifact-id)}})
+                                 :body manifest-body}})
+          (state/add-email-manifest-details interaction-id manifest-body)
           (when plain-body-url
             (let [plain-body-response (a/<! (iu/api-request {:method :get
                                                              :url plain-body-url}))
@@ -171,8 +173,7 @@
         :interaction-id interaction-id
         :env (state/get-env)}))
     (when (= channel-type "email")
-      (let [reply-interaction-id (str (id/make-random-uuid))
-            api-url (state/get-base-api-url)
+      (let [api-url (state/get-base-api-url)
             artifact-url (iu/build-api-url-with-params
                           (str api-url "tenants/tenant-id/interactions/interaction-id/artifacts")
                           {:tenant-id tenant-id
@@ -180,19 +181,12 @@
             artifact-request {:method :post
                               :url artifact-url
                               :body {:artifactType "email"}}]
+        ;;(aset js/window "IID" interaction-id)
         (go (let [artifact-create-response (a/<! (iu/api-request artifact-request))
                   {:keys [api-response status]} artifact-create-response
                   {:keys [artifact-id]} api-response]
-              (let [artifact-get-response (a/<! (iu/api-request {:method :get
-                                                                 :url (str artifact-url "/" artifact-id)}))]
-                (state/add-email-reply-details-to-interaction
-                 {:reply-interaction-id reply-interaction-id
-                  :interaction-id interaction-id
-                  :artifact (:api-response artifact-get-response)})
-                (p/publish {:topics (p/get-topic :artifact-received)
-                            :response (:api-response artifact-get-response)})
-                (get-email-bodies interaction-id))))))))
-
+              (state/store-email-reply-artifact-id artifact-id interaction-id)
+              (get-email-bodies interaction-id)))))))
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message
