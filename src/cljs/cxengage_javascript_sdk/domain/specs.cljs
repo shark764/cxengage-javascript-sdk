@@ -11,6 +11,7 @@
 (s/def ::artifact-id ::uuid)
 (s/def ::artifact-file-id ::uuid)
 (s/def ::script-id ::uuid)
+(s/def ::attachment-id ::uuid)
 (s/def ::answers map?)
 (s/def ::extensionId string?)
 (s/def ::extension-value (s/or ::uuid string?))

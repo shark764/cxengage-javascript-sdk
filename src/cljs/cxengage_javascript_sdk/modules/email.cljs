@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
+            [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
@@ -71,6 +72,56 @@
                        :callback callback})))
      nil)))
 
+(s/def ::add-attachment-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(defn add-attachment
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (add-attachment module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [params (iu/extract-params params)
+         {:keys [interaction-id file callback]} params
+         attachment-id (id/uuid-string (id/make-random-uuid))]
+     (if-not (s/valid? ::add-attachment-params params)
+       (p/publish {:topics (p/get-topic :add-attachment)
+                   :response (e/invalid-args-error "invalid args")
+                   :callback callback})
+       (do (state/add-attachment-to-reply {:interaction-id interaction-id
+                                           :attachment-id attachment-id
+                                           :file file})
+           (p/publish {:topics (p/get-topic :add-attachment)
+                       :response {:interaction-id interaction-id :attachment-id attachment-id}
+                       :callback callback})
+           nil)))))
+
+(s/def ::remove-attachment-params
+  (s/keys :req-un [::specs/attachment-id ::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(defn remove-attachment
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (remove-attachment module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [params (iu/extract-params params)
+         {:keys [interaction-id attachment-id callback]} params]
+     (if-not (s/valid? ::remove-attachment-params params)
+       (p/publish {:topics (p/get-topic :remove-attachment)
+                   :response (e/invalid-args-error "invalid args")
+                   :callback callback})
+       (do (state/remove-attachment-from-reply {:interaction-id interaction-id
+                                                :attachment-id attachment-id})
+           (p/publish {:topics (p/get-topic :remove-attachment)
+                       :response {:interaction-id interaction-id}
+                       :callback callback})
+           nil)))))
+
 (def initial-state
   {:module-name :email})
 
@@ -80,14 +131,13 @@
     (reset! (:state this) initial-state)
     (let [register (aget js/window "serenova" "cxengage" "modules" "register")
           module-name (get @(:state this) :module-name)
-          ;;email-integration (state/get-integration-by-type "email")
           email-integration true]
       (if-not email-integration
         (a/put! core-messages< {:module-registration-status :failure
                                 :module module-name})
-        (do (register {:api {:interactions {:email {;;:add-attachment (partial attachment-operation this :add)
-                                                    ;;:remove-attachment (partial attachment-operation this :remove)
-                                                    :getAttachmentUrl (partial get-attachment-url this)}}}
+        (do (register {:api {:interactions {:email {:add-attachment (partial add-attachment this)
+                                                    :remove-attachment (partial remove-attachment this)
+                                                    :get-attachment-url (partial get-attachment-url this)}}}
                        :module-name module-name})
             (js/console.info "<----- Started " (name module-name) " module! ----->")))))
   (stop [this]))

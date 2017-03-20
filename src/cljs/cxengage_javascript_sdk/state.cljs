@@ -168,23 +168,32 @@
     filtered-script))
 
 (defn add-email-artifact-data [interaction-id artifact-data]
-  (let [interaction-location (find-interaction-location interaction-id)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact] artifact-data)))
+  (let [interaction-location (find-interaction-location interaction-id)
+        email-artifact-data (assoc-in artifact-data [:reply :attachments] {})]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact] email-artifact-data)))
 
 (defn add-email-reply-details-to-interaction [email-reply-details]
   (let [{:keys [interaction-id]} email-reply-details
         interaction-location (find-interaction-location interaction-id)]
-   (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-reply-details] email-reply-details)))
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-reply-details] email-reply-details)))
 
-(defn get-all-email-attachments [interaction-id]
+(defn get-all-reply-email-attachments [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
-    (get-in @sdk-state assoc-in [:interactions interaction-location interaction-id :email-reply-details :attachments])))
+    (get-in @sdk-state [:interactions interaction-location interaction-id :email-artifact :reply :attachments])))
 
-(defn add-attachment-details-to-interaction [interaction-id attachment-details]
-  (let [interaction-location (find-interaction-location interaction-id)
-        all-current-attachments (get-all-email-attachments interaction-id)
-        new-attachments (conj all-current-attachments attachment-details)]
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-reply-details :attachments] new-attachments)))
+(defn remove-attachment-from-reply [file-info]
+  (let [{:keys [interaction-id attachment-id]} file-info
+        interaction-location (find-interaction-location interaction-id)
+        attachments (get-all-reply-email-attachments interaction-id)
+        new-attachments (dissoc attachments attachment-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact :reply :attachments] new-attachments)))
+
+(defn add-attachment-to-reply [file-info]
+  (let [{:keys [interaction-id attachment-id file]} file-info
+        interaction-location (find-interaction-location interaction-id)
+        attachments (get-all-reply-email-attachments interaction-id)
+        new-attachments (assoc attachments attachment-id file)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact :reply :attachments] new-attachments)))
 
 ;;;;;;;;;;;
 ;; Auth
@@ -290,19 +299,19 @@
 
 (defn set-twilio-device
   [device]
-  (swap! sdk-state assoc-in [:interal :twilio-device] device))
+  (swap! sdk-state assoc-in [:internal :twilio-device] device))
 
 (defn get-twilio-device
   []
-  (get-in @sdk-state [:interal :twilio-device]))
+  (get-in @sdk-state [:internal :twilio-device]))
 
 (defn set-twilio-connection
   [connection]
-  (swap! sdk-state assoc-in [:interal :twilio-connection] connection))
+  (swap! sdk-state assoc-in [:internal :twilio-connection] connection))
 
 (defn get-twilio-connection
   []
-  (get-in @sdk-state [:interal :twilio-connection]))
+  (get-in @sdk-state [:internal :twilio-connection]))
 
 ;;;;;;;;;;;
 ;; Logging
