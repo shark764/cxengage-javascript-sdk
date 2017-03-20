@@ -59,7 +59,7 @@
 
 
 (s/def ::get-contact-params
-  (s/keys :req-un [::specs/contact-id]
+  (s/keys :req-un [::specs/contactId]
           :opt-un [::specs/callback]))
 
 (defn get-contact
@@ -69,10 +69,10 @@
      (e/wrong-number-of-args-error)
      (get-contact module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [contact-id callback] :as params} (iu/extract-params params)
+   (let [{:keys [contactId callback] :as params} (iu/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
-                       :contact-id contact-id}}
+                       :contact-id contactId}}
          method :get]
      (contact-request url nil method params :get-contact ::get-contact-params module true))))
 
@@ -81,7 +81,8 @@
           :opt-un [::specs/callback]))
 
 (defn get-contacts
-  ([module] (e/wrong-number-of-args-error))
+  ([module]
+   (get-contacts module {}))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
@@ -104,7 +105,7 @@
      (e/wrong-number-of-args-error)
      (search-contacts module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [query callback] :as params} (iu/extract-params params)
+   (let [{:keys [query callback] :as params} (iu/extract-params params true)
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get
@@ -122,7 +123,7 @@
      (e/wrong-number-of-args-error)
      (create-contact module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [attributes callback] :as params} (iu/extract-params params)
+   (let [{:keys [attributes callback] :as params} (iu/extract-params params true)
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :post
@@ -131,7 +132,7 @@
 
 
 (s/def ::update-contact-params
-  (s/keys :req-un [::specs/contact-id
+  (s/keys :req-un [::specs/contactId
                    ::specs/attributes]
           :opt-un [::specs/callback]))
 
@@ -142,16 +143,16 @@
      (e/wrong-number-of-args-error)
      (update-contact module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [attributes contact-id callback] :as params} (iu/extract-params params)
+   (let [{:keys [attributes contactId callback] :as params} (iu/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
-                       :contact-id contact-id}}
+                       :contact-id contactId}}
          method :put
          body {:attributes attributes}]
      (contact-request url body method params :update-contact ::update-contact-params module true))))
 
 (s/def ::delete-contact-params
-  (s/keys :req-un [::specs/contact-id]
+  (s/keys :req-un [::specs/contactId]
           :opt-un [::specs/callback]))
 
 (defn delete-contact
@@ -161,10 +162,10 @@
      (e/wrong-number-of-args-error)
      (delete-contact module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [contact-id callback] :as params} (iu/extract-params params)
+   (let [{:keys [contactId callback] :as params} (iu/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
-                       :contact-id contact-id}}
+                       :contact-id contactId}}
          method :delete]
      (contact-request url nil method params :delete-contact ::delete-contact-params module true))))
 
@@ -181,7 +182,7 @@
      (list-attributes module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [params (if (fn? params) {:callback params} params)
-         {:keys [callback] :as params} (iu/extract-params params)
+         {:keys [callback] :as params} (iu/extract-params params true)
          url {:base :multiple-attribute-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get
@@ -211,7 +212,7 @@
          nil)))))
 
 (s/def ::get-layout-params
-  (s/keys :req-un [::specs/layout-id]
+  (s/keys :req-un [::specs/layoutId]
           :opt-un [::specs/callback]))
 
 (defn get-layout
@@ -221,10 +222,10 @@
      (e/wrong-number-of-args-error)
      (get-layout module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [layout-id callback] :as params} (iu/extract-params params)
+   (let [{:keys [layoutId callback] :as params} (iu/extract-params params true)
          url {:base :single-layout-url
               :params {:tenant-id (state/get-active-tenant-id)
-                       :layout-id layout-id}}
+                       :layout-id layoutId}}
          method :get]
      (contact-request url nil method params :get-layout ::get-layout-params module true))))
 
@@ -241,8 +242,8 @@
      (list-layouts module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [params (if (fn? params) {:callback params} params)
-         {:keys [callback] :as params} (iu/extract-params params)
-         url {:base :single-layout-url
+         {:keys [callback] :as params} (iu/extract-params params true)
+         url {:base :multiple-layout-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get]
      (contact-request url nil method params :list-layouts ::list-layouts-params module true))))
@@ -260,8 +261,8 @@
    :urls {:single-contact-url "tenants/tenant-id/contacts/contact-id"
           :multiple-contact-url "tenants/tenant-id/contacts"
           :multiple-attribute-url "tenants/tenant-id/contacts/attributes"
-          :single-layout-url "tenants/tenant-id/contacts/layouts"
-          :multiple-layout-url "tenants/tenant-id/contacts/layouts/layout-id"}})
+          :multiple-layout-url "tenants/tenant-id/contacts/layouts"
+          :single-layout-url "tenants/tenant-id/contacts/layouts/layout-id"}})
 
 (defrecord ContactsModule [config state]
   pr/SDKModule

@@ -139,10 +139,15 @@
     response
     (clj->js response)))
 
-(defn extract-params [params]
-  (if (= :cljs (state/get-consumer-type))
-    params
-    (kebabify params)))
+(defn extract-params
+  ([params]
+   (extract-params params false))
+  ([params preserve-casing?]
+   (if preserve-casing?
+     (js->clj params :keywordize-keys true)
+     (if (= :cljs (state/get-consumer-type))
+       params
+       (kebabify params)))))
 
 (defn base-module-request
   ([type]
