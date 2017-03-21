@@ -67,7 +67,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (get-contact module (merge (iu/extract-params params) {:callback (first others)}))))
+     (get-contact module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [{:keys [contactId callback] :as params} (iu/extract-params params true)
          url {:base :single-contact-url
@@ -86,7 +86,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (get-contacts module (merge (iu/extract-params params) {:callback (first others)}))))
+     (get-contacts module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [{:keys [callback] :as params} (iu/extract-params params)
          url {:base :multiple-contact-url
@@ -103,7 +103,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (search-contacts module (merge (iu/extract-params params) {:callback (first others)}))))
+     (search-contacts module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [{:keys [query callback] :as params} (iu/extract-params params true)
          url {:base :multiple-contact-url
@@ -121,7 +121,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (create-contact module (merge (iu/extract-params params) {:callback (first others)}))))
+     (create-contact module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [{:keys [attributes callback] :as params} (iu/extract-params params true)
          url {:base :multiple-contact-url
@@ -141,7 +141,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (update-contact module (merge (iu/extract-params params) {:callback (first others)}))))
+     (update-contact module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [{:keys [attributes contactId callback] :as params} (iu/extract-params params true)
          url {:base :single-contact-url
@@ -160,7 +160,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (delete-contact module (merge (iu/extract-params params) {:callback (first others)}))))
+     (delete-contact module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [{:keys [contactId callback] :as params} (iu/extract-params params true)
          url {:base :single-contact-url
@@ -179,7 +179,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (list-attributes module (merge (iu/extract-params params) {:callback (first others)}))))
+     (list-attributes module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [params (if (fn? params) {:callback params} params)
          {:keys [callback] :as params} (iu/extract-params params true)
@@ -220,7 +220,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (get-layout module (merge (iu/extract-params params) {:callback (first others)}))))
+     (get-layout module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [{:keys [layoutId callback] :as params} (iu/extract-params params true)
          url {:base :single-layout-url
@@ -239,7 +239,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (list-layouts module (merge (iu/extract-params params) {:callback (first others)}))))
+     (list-layouts module (merge (iu/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [params (if (fn? params) {:callback params} params)
          {:keys [callback] :as params} (iu/extract-params params true)
