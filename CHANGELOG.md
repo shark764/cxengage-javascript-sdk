@@ -2,8 +2,12 @@
 
 ## [Unreleased]
 * broke cancel-transfer into three functions (resource/queue/extension)
+
+## [2.2.0]
 * fixed transfer cancel interrupt
 * added email reply functionality (& attachment add/remove)
+* fixed bugs with interaction notes
+* fixed bugs with contact endpoints
 
 ## [2.1.0]
 * added send script functionality
