@@ -45,7 +45,7 @@
      (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
    (let [client-params (iu/extract-params client-params)
-         {:keys [callback interaction-id resource-id queue-id transfer-extension transfer-resource-id  transfer-type]} client-params
+         {:keys [callback interaction-id resource-id queue-id transfer-extension transfer-resource-id transfer-queue-id transfer-type]} client-params
          transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
          simple-interrupt-body {:resource-id (state/get-active-user-id)}
          interrupt-params (case type
@@ -91,12 +91,24 @@
                                                     :interrupt-body {:transfer-extension transfer-extension
                                                                      :resource-id (state/get-active-user-id)
                                                                      :transfer-type transfer-type}}
-                            :cancel-transfer {:validation ::generic-voice-interaction-fn-params
-                                              :interrupt-type "transfer-cancel"
-                                              :topic (p/get-topic :cancel-transfer-acknowledged)
-                                              :interrupt-body {:transfer-resource-id transfer-resource-id
-                                                               :resource-id (state/get-active-user-id)
-                                                               :transfer-type transfer-type}})]
+                            :cancel-resource-transfer {:validation ::generic-voice-interaction-fn-params
+                                                       :interrupt-type "transfer-cancel"
+                                                       :topic (p/get-topic :cancel-transfer-acknowledged)
+                                                       :interrupt-body {:transfer-resource-id transfer-resource-id
+                                                                        :resource-id (state/get-active-user-id)
+                                                                        :transfer-type transfer-type}}
+                            :cancel-queue-transfer {:validation ::generic-voice-interaction-fn-params
+                                                    :interrupt-type "transfer-cancel"
+                                                    :topic (p/get-topic :cancel-transfer-acknowledged)
+                                                    :interrupt-body {:transfer-queue-id transfer-queue-id
+                                                                     :resource-id (state/get-active-user-id)
+                                                                     :transfer-type transfer-type}}
+                            :cancel-extension-transfer {:validation ::generic-voice-interaction-fn-params
+                                                        :interrupt-type "transfer-cancel"
+                                                        :topic (p/get-topic :cancel-transfer-acknowledged)
+                                                        :interrupt-body {:transfer-extension transfer-extension
+                                                                         :resource-id (state/get-active-user-id)
+                                                                         :transfer-type transfer-type}})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
        (p/publish {:topic (:topic interrupt-params)
                    :error (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params))
@@ -283,7 +295,9 @@
                                                     :transferToResource (partial send-interrupt this :transfer-to-resource)
                                                     :transferToQueue (partial send-interrupt this :transfer-to-queue)
                                                     :transferToExtension (partial send-interrupt this :transfer-to-extension)
-                                                    :cancel-transfer (partial send-interrupt this :cancel-transfer)
+                                                    :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
+                                                    :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
+                                                    :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
                                                     :dial (partial dial this)
                                                     :send-digits (partial send-digits this)
                                                     :get-recordings (partial get-recordings this)}}}

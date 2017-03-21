@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* broke cancel-transfer into three functions (resource/queue/extension)
 * fixed transfer cancel interrupt
 * added email reply functionality (& attachment add/remove)
 
