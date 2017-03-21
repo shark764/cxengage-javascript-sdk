@@ -80,6 +80,8 @@
                                           :pseudo-names true
                                           :output-wrapper true
                                           :source-map true
+                                          :language-in :ecmascript5
+                                          :language-out :ecmascript5
                                           :verbose true}})
   (comp (cljs)))
 
