@@ -118,7 +118,7 @@
 
 (s/def ::create-note-params
   (s/keys :req-un [::specs/interaction-id ::specs/title ::specs/body]
-          :opt-un [::specs/callback ::specs/contact-id]))
+          :opt-un [::specs/callback ::specs/contact-id ::specs/tenant-id ::specs/resource-id]))
 
 (defn note-action
   ([module action] (e/wrong-number-of-args-error))
@@ -132,6 +132,7 @@
          api-url (get-in module [:config :api-url])
          {:keys [callback interaction-id note-id]} params
          params (assoc params :resource-id (state/get-active-user-id))
+         params (assoc params :tenant-id (state/get-active-tenant-id))
          validation (case action
                       :get-one ::get-one-note-params
                       :get-all ::get-all-notes-params
@@ -168,11 +169,10 @@
          contact-note-request (if body
                                 (assoc contact-note-request :body body)
                                 contact-note-request)]
-     (if-not (s/valid? validation client-params)
-       (e/invalid-args-error (s/explain-data validation client-params))
+     (if-not (s/valid? validation params)
+       (e/invalid-args-error (s/explain-data validation params))
        (do (go (let [note-response (a/<! (iu/api-request contact-note-request))
                      {:keys [status api-response]} note-response]
-                 (js/console.error note-response)
                  (if (not= status 200)
                    (p/publish {:topics topic
                                :response (e/api-error "api returned error")
