@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added email reply functionality (& attachment add/remove)
 
 ## [2.1.0]
 * added send script functionality
