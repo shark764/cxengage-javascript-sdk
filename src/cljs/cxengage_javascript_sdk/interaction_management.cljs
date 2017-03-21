@@ -365,7 +365,7 @@
                        nil)]
     (if (not= (state/get-session-id) session-id)
       (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
-                          (state/get-session-id) " - Session ID on message received: " session-id))
+                          (state/get-session-id) " - Session ID on message received: " session-id " Message type: " (:sdk-msg-type inferred-msg)))
           nil)
       (if inferred-msg
         (msg-router inferred-msg)
