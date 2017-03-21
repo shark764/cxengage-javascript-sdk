@@ -1,13 +1,14 @@
 # Change Log
 
 ## [Unreleased]
-* broke cancel-transfer into three functions (resource/queue/extension)
 
 ## [2.2.0]
+* broke cancel-transfer into three functions (resource/queue/extension)
 * fixed transfer cancel interrupt
 * added email reply functionality (& attachment add/remove)
 * fixed bugs with interaction notes
 * fixed bugs with contact endpoints
+* better output on receiving messages from old sessions
 
 ## [2.1.0]
 * added send script functionality
