@@ -38,7 +38,7 @@
                 (p/publish {:topics topic
                             :error (e/api-error "no more heartbeats")})
                 nil)
-            (do (log :info "Heartbeat sent!")
+            (do (log :debug "Heartbeat sent!")
                 (p/publish {:topics topic
                             :response result})
                 (a/<! (a/timeout next-heartbeat-delay))
