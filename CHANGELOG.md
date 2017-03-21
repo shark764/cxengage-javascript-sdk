@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* fix send script
 
 ## [2.2.0]
 * broke cancel-transfer into three functions (resource/queue/extension)

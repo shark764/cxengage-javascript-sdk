@@ -308,7 +308,8 @@
                       :SESSION/START_SESSION_RESPONSE handle-session-start
                       nil)]
     (when (and (get message :action-id)
-               (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000"))
+               (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
+               (not= (get message :type) "send-script"))
       (log :debug (str "Acknowledging receipt of flow action: "
                        (or (:notification-type message) (:type message))))
       (when (or (:notification-type message) (:type message))
