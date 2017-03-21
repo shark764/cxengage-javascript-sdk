@@ -280,7 +280,7 @@
                               :error (e/api-error "api error")
                               :callback callback})
                   (p/publish {:topics topic
-                              :response result
+                              :response interaction-id
                               :callback callback}))))
         nil)))))
 
