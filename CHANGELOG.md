@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* fixed transfer cancel interrupt
 * added email reply functionality (& attachment add/remove)
 
 ## [2.1.0]
