@@ -231,7 +231,7 @@
                       :response (e/api-error "api returned error")
                       :callback callback})
           (p/publish {:topics (p/get-topic :recording-response)
-                      :response api-response
+                      :response (:files api-response)
                       :callback callback})))))
 
 (defn get-recordings
