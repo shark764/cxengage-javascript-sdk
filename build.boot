@@ -98,7 +98,8 @@
 
 (deftask test-once []
   (comp (testing*)
-        (test-cljs :js-env :phantom)))
+        (test-cljs :js-env :phantom
+                   :exit? true)))
 
 (deftask test []
   (comp (testing*)
