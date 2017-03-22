@@ -43,7 +43,8 @@
           (if (not= status 200)
             (p/publish {:topics (p/get-topic :email-artifact-received)
                         :response api-response})
-            (state/add-email-artifact-data interaction-id api-response))))))
+            (do (log :debug (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
+                (state/add-email-artifact-data interaction-id api-response)))))))
 
 (defn get-email-bodies [interaction-id]
   (let [interaction (state/get-interaction interaction-id)
@@ -55,6 +56,7 @@
         manifest-url (:url (first (filter #(= (:artifact-file-id %) manifest-id) files)))
         manifest-request (iu/api-request {:method :get
                                           :url manifest-url})]
+    (log :debug (str "[Email Processing] Fetching email manifest: " manifest-url))
     (go (let [manifest-response (a/<! manifest-request)
               manifest-body (iu/kebabify (js/JSON.parse (:api-response manifest-response)))
               plain-body-url (:url (first (filter #(and (= (:filename %) "body")
@@ -62,6 +64,7 @@
               html-body-url (:url (first (filter #(and (= (:filename %) "body")
                                                        (starts-with? (lower-case (:content-type %)) "text/html")) files)))
               manifest-body (assoc manifest-body :artifact-id artifact-id)]
+          (log :debug (str "[Email Processing] Email manifest received: " (js/JSON.stringify (clj->js manifest-body) nil 2)))
           (p/publish {:topics (p/get-topic :details-received)
                       :response {:interaction-id interaction-id
                                  :body manifest-body}})
@@ -70,6 +73,7 @@
             (let [plain-body-response (a/<! (iu/api-request {:method :get
                                                              :url plain-body-url}))
                   plain-body (:api-response plain-body-response)]
+              (log :debug (str "[Email Processing] Email plain body received: " plain-body))
               (p/publish {:topics (p/get-topic :plain-body-received)
                           :response {:interaction-id interaction-id
                                      :body plain-body}})))
@@ -79,13 +83,14 @@
                                          (dissoc :filename)
                                          (dissoc :url)
                                          (assoc :artifact-id artifact-id)) attachments)]
+              (log :debug (str "[Email Processing] Attachment list received: " (js/JSON.stringify (clj->js attachments) nil 2)))
               (p/publish {:topics (p/get-topic :attachment-list)
                           :response attachments})))
           (when html-body-url
             (let [html-body-response (a/<! (iu/api-request {:method :get
                                                             :url html-body-url}))
                   html-body (:api-response html-body-response)]
-
+              (log :debug (str "[Email Processing] HTML body received: " html-body))
               (p/publish {:topics (p/get-topic :html-body-received)
                           :response {:interaction-id interaction-id
                                      :body html-body}})))))))
@@ -93,7 +98,7 @@
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
   (let [{:keys [channel-type interaction-id timeout]} message
-        now (.getTime (js/Date.))
+        now (iu/get-now)
         expiry (.getTime (js/Date. timeout))]
     (if (> now expiry)
       (log :warn "Received an expired work offer; doing nothing")

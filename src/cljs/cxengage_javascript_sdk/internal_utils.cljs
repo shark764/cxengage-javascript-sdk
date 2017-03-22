@@ -50,11 +50,10 @@
 
 (defn update-local-time-offset
   [response]
-  (let [timestamp (get-in response [:api-response :result :timestamp])
-        local (js/Date.now)
-        server (js/Date.parse timestamp)
-        offset (- local server)]
-    (when timestamp
+  (when-let [timestamp (get-in response [:api-response :result :timestamp])]
+    (let [local (js/Date.now)
+          server (js/Date.parse timestamp)
+          offset (- local server)]
       (state/set-time-offset! offset))))
 
 (defn normalize-response-stucture
