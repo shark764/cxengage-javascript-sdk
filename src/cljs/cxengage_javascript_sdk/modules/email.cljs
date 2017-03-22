@@ -206,7 +206,7 @@
              all-req-promises (all all-req-promises)]
          (then all-req-promises
                (fn [results]
-                 (log :debug "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (clj->js results))
+                 (log :debug "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (clj->js results) nil 2))
                  (let [in-reply-to-id (state/get-email-reply-to-id interaction-id)
                        manifest-map {:attachments (build-attachments results)
                                      :cc cc
@@ -218,6 +218,7 @@
                                      :subject subject
                                      :to to}
                        manifest-string (js/JSON.stringify (iu/camelify manifest-map))
+                       _ (log :debug "[Email Processing] Manifest we're creating:" manifest-string)
                        form-data (doto (js/FormData.)
                                    (.append "manifest.json"
                                             (js/Blob. (clj->js [manifest-string]) #js {"type" "application/json"})
@@ -226,7 +227,7 @@
                                                 :url artifact-url
                                                 :body form-data}]
                    (go (let [manifest-response (a/<! (iu/file-api-request create-manifest-request))
-                             _ (log :debug "[Email Processing] Manifest creation response:" manifest-response)
+                             _ (log :debug "[Email Processing] Manifest creation response:" (clj->js manifest-response))
                              {:keys [api-response status]} manifest-response
                              manifest-id (get api-response :manifest.json)
                              artifact-update-request {:method :put
@@ -234,7 +235,7 @@
                                                       :body {:manifest-id manifest-id
                                                              :artifactType "email"}}
                              artifact-update-response (a/<! (iu/api-request artifact-update-request))
-                             _ (log :debug "[Email Processing] Artifact update response:" artifact-update-response)
+                             _ (log :debug "[Email Processing] Artifact update response:" (clj->js artifact-update-response))
                              flow-url (-> (state/get-base-api-url)
                                           (str "tenants/tenant-id/interactions/interaction-id/interrupts")
                                           (iu/build-api-url-with-params
