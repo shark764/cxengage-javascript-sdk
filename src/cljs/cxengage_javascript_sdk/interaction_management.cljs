@@ -1,7 +1,7 @@
 (ns cxengage-javascript-sdk.interaction-management
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as a]
-            [clojure.string :as s :refer [starts-with?]]
+            [clojure.string :as s :refer [starts-with? lower-case]]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.helpers :refer [log]]
@@ -58,9 +58,9 @@
     (go (let [manifest-response (a/<! manifest-request)
               manifest-body (iu/kebabify (js/JSON.parse (:api-response manifest-response)))
               plain-body-url (:url (first (filter #(and (= (:filename %) "body")
-                                                        (starts-with? (:content-type %) "text/plain")) files)))
+                                                        (starts-with? (lower-case (:content-type %)) "text/plain")) files)))
               html-body-url (:url (first (filter #(and (= (:filename %) "body")
-                                                       (starts-with? (:content-type %) "text/html")) files)))
+                                                       (starts-with? (lower-case (:content-type %)) "text/html")) files)))
               manifest-body (assoc manifest-body :artifact-id artifact-id)]
           (p/publish {:topics (p/get-topic :details-received)
                       :response {:interaction-id interaction-id
