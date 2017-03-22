@@ -55,6 +55,7 @@
      (add-attachment module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [params (iu/extract-params params)
+         _ (log :debug "[Attachment Processing] Params from client adding attachment:" params)
          {:keys [interaction-id file callback]} params
          attachment-id (id/uuid-string (id/make-random-uuid))]
      (if-not (s/valid? ::add-attachment-params params)
