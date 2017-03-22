@@ -79,7 +79,7 @@
                               false)
          request (merge {:uri url
                          :method method
-                         :timeout 30000
+                         :timeout 120000
                          :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? manifest-endpoint?)]
                                      (update-local-time-offset normalized-response)
                                      (a/put! response-channel normalized-response))
@@ -101,7 +101,7 @@
         {:keys [method url body callback]} request-map
         request (merge {:uri url
                         :method method
-                        :timeout 30000
+                        :timeout 120000
                         :handler #(let [normalized-response (normalize-response-stucture % false true)]
                                     (if callback
                                       (callback normalized-response)
