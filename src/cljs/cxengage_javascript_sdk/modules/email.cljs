@@ -171,7 +171,10 @@
                                                              (js/Blob. (clj->js [html-body]) #js {"type" "text/html"})
                                                              "htmlBody"))
 
-                                                  :else (doto (js/FormData.) (.append (.-name file) file (.-name file))))
+                                                  :else (do (log :debug "[Email Processing] Name property on attachment file passed:" (.-name file))
+                                                            (log :debug "[Email Processing] File passed:" file)
+                                                            (doto (js/FormData.) (.append (.-name file) file (.-name file)))))
+
                                                 filename (cond
                                                            (= attachment-type :plain-text-body) :plainTextBody
                                                            (= attachment-type :html-body) :htmlBody
@@ -180,11 +183,18 @@
                                                                (= attachment-type :plain-text-body) "text/plain"
                                                                (= attachment-type :html-body) "text/html"
                                                                :else (.-type file))]
+                                            (log :debug "[Email Processing] File name:" filename)
+                                            (log :debug "[Email Processing] File content-type:" content-type)
+                                            (log :debug "[Email Processing] Form data:" form-data)
+                                            (log :debug "[Email Processing] Attachment Type:" attachment-type)
+                                            (log :debug "[Email Processing] Artifact URL:" artifact-url)
                                             (iu/file-api-request
                                              {:method :post
                                               :url artifact-url
                                               :body form-data
                                               :callback (fn [{:keys [api-response status]} response]
+                                                          (log :debug "[Email Processing] API response for file upload:" api-response)
+                                                          (log :debug "[Email Processing] String'd filename:" (name filename))
                                                           (resolve {:artifact-file-id (get api-response filename)
                                                                     :filename (name filename)
                                                                     :content-type content-type}))}))))))
@@ -212,6 +222,7 @@
                                                 :url artifact-url
                                                 :body form-data}]
                    (go (let [manifest-response (a/<! (iu/file-api-request create-manifest-request))
+                             _ (log :debug "[Email Processing] Manifest creation response:" manifest-response)
                              {:keys [api-response status]} manifest-response
                              manifest-id (get api-response :manifest.json)
                              artifact-update-request {:method :put
@@ -219,6 +230,7 @@
                                                       :body {:manifest-id manifest-id
                                                              :artifactType "email"}}
                              artifact-update-response (a/<! (iu/api-request artifact-update-request))
+                             _ (log :debug "[Email Processing] Artifact update response:" artifact-update-response)
                              flow-url (-> (state/get-base-api-url)
                                           (str "tenants/tenant-id/interactions/interaction-id/interrupts")
                                           (iu/build-api-url-with-params

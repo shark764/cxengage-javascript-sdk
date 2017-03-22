@@ -35,9 +35,9 @@
                 (get-messaging-history tenant-id interaction-id)))))))
 
 (defn get-email-artifact-data [tenant-id interaction-id artifact-id]
+  (log :debug "[Email Processing] Tenant, Interaction, and Artifact IDs from work offer:" tenant-id interaction-id artifact-id)
   (let [artifact-request {:method :get
                           :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/artifacts/" artifact-id)}]
-    (log :debug artifact-request)
     (go (let [artifact-response (a/<! (iu/api-request artifact-request))
               {:keys [status api-response]} artifact-response]
           (if (not= status 200)
