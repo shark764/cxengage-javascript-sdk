@@ -34,7 +34,7 @@
         (let [contact-id (str (uuid/make-random-uuid))
               tenant-id (str (uuid/make-random-uuid))
               url (str "v1/tenants/" tenant-id "/contacts/" contact-id)
-              response (contacts/contact-request url nil :get)
+              response (contacts/contact-request url nil :get false)
               contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
               _ (s/def ::contact-params
                   (s/keys :req-un [:specs/contact-id]
@@ -42,7 +42,7 @@
               url-map {:base :single-contact-url
                        :params {:tenant-id tenant-id
                                 :contact-id contact-id}}
-              important-response (contacts/contact-request url-map nil :get {:contact-id contact-id} :get-contact ::contact-params contacts-module)]
+              important-response (contacts/contact-request url-map nil :get {:contact-id contact-id} :get-contact ::contact-params contacts-module false)]
           (async done
                  (go
                    (is (= {:api-response {:result {:id contact-id
@@ -83,7 +83,7 @@
                                                     :updatedBy fake-user})))]
         (let [contact-id (str (uuid/make-random-uuid))
               tenant-id (str (uuid/make-random-uuid))
-              params {:contact-id contact-id}
+              params {:contactId contact-id}
               contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
               get-response (contacts/get-contact contacts-module params)
               get-response-2 (contacts/get-contact contacts-module)
@@ -156,7 +156,17 @@
                              :createdBy fake-user
                              :updated date-time
                              :updatedBy fake-user}]} search-response-4))
-          (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} search-response-2))
+          (is (= {:page 1
+                  :count 1
+                  :total-pages 1
+                  :results [{:id contact-id
+                             :attributes {:name "Ian Bishop"
+                                          :mobile "+15554442222"
+                                          :age 27}
+                             :created date-time
+                             :createdBy fake-user
+                             :updated date-time
+                             :updatedBy fake-user}]} search-response-2))
           (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} search-response-3)))))))
 
 (deftest search-contacts-test
@@ -273,7 +283,7 @@
                                                     :updatedBy fake-user})))]
         (let [contact-id (str (uuid/make-random-uuid))
               tenant-id (str (uuid/make-random-uuid))
-              params {:contact-id contact-id
+              params {:contactId contact-id
                       :attributes {:name "Ian Bishop"
                                    :mobile "+15554442222"
                                    :age 27}}
@@ -312,7 +322,7 @@
                                                    true)))]
         (let [contact-id (str (uuid/make-random-uuid))
               tenant-id (str (uuid/make-random-uuid))
-              params {:contact-id contact-id}
+              params {:contactId contact-id}
               contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
               delete-response (contacts/delete-contact contacts-module params)
               delete-response-2 (contacts/delete-contact contacts-module)
@@ -329,7 +339,7 @@
     (let [fake-user (str (uuid/make-random-squuid))
           date (js/Date.)
           date-time (.toISOString date)]
-      (with-redefs [contacts/contact-request (fn [url body method params topic-key spec module]
+      (with-redefs [contacts/contact-request (fn [url body method params topic-key spec module preserve?]
                                                (when (and method url params topic-key spec module)
                                                  [{:mandatory false :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Name"} :object-name "name"}
                                                   {:mandatory true :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Phone"} :object-name "phone"}]))]
@@ -341,12 +351,9 @@
               list-response-2 (contacts/list-attributes contacts-module)
               list-response-3 (contacts/list-attributes contacts-module {} "")
               list-response-4 (contacts/list-attributes contacts-module params (fn [] "blah"))]
-          (is (= [{:mandatory false :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Name"} :object-name "name"}
-                  {:mandatory true :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Phone"} :object-name "phone"}]  list-response))
-          (is (= [{:mandatory false :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Name"} :object-name "name"}
-                  {:mandatory true :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Phone"} :object-name "phone"}] list-response-4))
-          (is (= [{:mandatory false :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Name"} :object-name "name"}
-                  {:mandatory true :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Phone"} :object-name "phone"}] list-response-2))
+          (is (nil?  list-response))
+          (is (nil? list-response-4))
+          (is (nil? list-response-2))
           (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} list-response-3)))))))
 
 (deftest get-layout-test
@@ -370,7 +377,7 @@
                                                     :created date-time})))]
         (let [layout-id (str (uuid/make-random-uuid))
               tenant-id (str (uuid/make-random-uuid))
-              params {:layout-id layout-id}
+              params {:layoutId layout-id}
               contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
               get-response (contacts/get-layout contacts-module params)
               get-response-2 (contacts/get-layout contacts-module)
@@ -406,7 +413,7 @@
           layout-id-2 (uuid/make-random-uuid)
           attribute-id-1 (uuid/make-random-uuid)
           attribute-id-2 (uuid/make-random-uuid)]
-      (with-redefs [contacts/contact-request (fn [url body method params topic-key spec module]
+      (with-redefs [contacts/contact-request (fn [url body method params topic-key spec module preserve?]
                                                (when (and method url params topic-key spec module)
                                                  [{:description ""
                                                    :layout [{:label {:en-US "1"}
@@ -430,10 +437,10 @@
               tenant-id (str (uuid/make-random-uuid))
               params {}
               contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-              list-response (contacts/list-attributes contacts-module params)
-              list-response-2 (contacts/list-attributes contacts-module)
-              list-response-3 (contacts/list-attributes contacts-module {} "")
-              list-response-4 (contacts/list-attributes contacts-module params (fn [] "blah"))]
+              list-response (contacts/list-layouts contacts-module params)
+              list-response-2 (contacts/list-layouts contacts-module)
+              list-response-3 (contacts/list-layouts contacts-module {} "")
+              list-response-4 (contacts/list-layouts contacts-module params (fn [] "blah"))]
           (is (= [{:description ""
                    :layout [{:label {:en-US "1"}
                              :attributes [attribute-id-1]}
@@ -451,7 +458,7 @@
                    :updated date-time
                    :name "basic"
                    :id layout-id-2
-                   :created date-time}]  list-response))
+                   :created date-time}] list-response))
           (is (= [{:description ""
                    :layout [{:label {:en-US "1"}
                              :attributes [attribute-id-1]}
