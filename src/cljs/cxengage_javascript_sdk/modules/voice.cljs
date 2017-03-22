@@ -179,14 +179,15 @@
                       (let [{:keys [js-api-url credentials]} config
                             {:keys [token]} credentials
                             script (js/document.createElement "script")
-                            body (.-body js/document)]
+                            body (.-body js/document)
+                            debug-twilio? (= (state/get-log-level) :debug)]
                         (.setAttribute script "type" "text/javascript")
                         (.setAttribute script "src" js-api-url)
                         (.appendChild body script)
                         (go-loop []
                           (if (aget js/window "Twilio")
                             (do
-                              (state/set-twilio-device (js/Twilio.Device.setup token))
+                              (state/set-twilio-device (js/Twilio.Device.setup token #js {"debug" debug-twilio?}))
                               (js/Twilio.Device.incoming update-twilio-connection)
                               (js/Twilio.Device.ready update-twilio-connection)
                               (js/Twilio.Device.cancel update-twilio-connection)
