@@ -66,7 +66,7 @@
                                            :attachment-id attachment-id
                                            :file file})
            (p/publish {:topics (p/get-topic :add-attachment)
-                       :response {:interaction-id interaction-id :attachment-id attachment-id}
+                       :response {:interaction-id interaction-id :attachment-id attachment-id :filename (.-name file)}
                        :callback callback})
            nil)))))
 
@@ -106,9 +106,11 @@
           :opt-un [::callback]))
 
 (defn html-body-id [files]
+  (log :debug "[Email Processing] Files when building html body id" files)
   (:artifact-file-id (first (filter #(= (:filename %) "htmlBody") files))))
 
 (defn plain-body-id [files]
+  (log :debug "[Email Processing] Files when building plain body id" files)
   (:artifact-file-id (first (filter #(= (:filename %) "plainTextBody") files))))
 
 (defn build-attachments [files]
@@ -204,6 +206,7 @@
              all-req-promises (all all-req-promises)]
          (then all-req-promises
                (fn [results]
+                 (log :debug "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (clj->js results))
                  (let [in-reply-to-id (state/get-email-reply-to-id interaction-id)
                        manifest-map {:attachments (build-attachments results)
                                      :cc cc
