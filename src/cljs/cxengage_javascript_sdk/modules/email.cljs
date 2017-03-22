@@ -90,7 +90,7 @@
        (do (state/remove-attachment-from-reply {:interaction-id interaction-id
                                                 :attachment-id attachment-id})
            (p/publish {:topics (p/get-topic :remove-attachment)
-                       :response {:interaction-id interaction-id}
+                       :response {:interaction-id interaction-id :attachment-id attachment-id}
                        :callback callback})
            nil)))))
 
