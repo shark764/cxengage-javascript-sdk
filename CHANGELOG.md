@@ -5,6 +5,7 @@
 * account for time offset on work offers (like we do elsewhere)
 * return interaction-id as result for send script
 * added twilio debugging when log level is debug
+* fixed jenkins build job to fail when tests fail
 
 ## [2.2.0]
 * broke cancel-transfer into three functions (resource/queue/extension)
