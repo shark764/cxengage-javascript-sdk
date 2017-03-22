@@ -121,9 +121,10 @@
       (if (or (= (:filename file) "htmlBody")
               (= (:filename file) "plainTextBody"))
         nil
-        {:filename (:filename file)
-         :headers [{:content-type (:content-type file)}]
-         :artifact-file-id (:artifact-file-id file)}))
+        (do (log :debug "file in build attachments:" file)
+            {:filename (:filename file)
+             :headers [{:content-type (:content-type file)}]
+             :artifact-file-id (:artifact-file-id file)})))
     files)))
 
 (defn send-reply
