@@ -198,8 +198,9 @@
                                               :body form-data
                                               :callback (fn [{:keys [api-response status]} response]
                                                           (log :debug "[Email Processing] API response for file upload:" api-response)
+                                                          (log :debug "[Email Processing] Filename from API response" filename)
                                                           (log :debug "[Email Processing] String'd filename:" (name filename))
-                                                          (resolve {:artifact-file-id (get api-response filename)
+                                                          (resolve {:artifact-file-id (first (vals api-response))
                                                                     :filename (name filename)
                                                                     :content-type content-type}))}))))))
                                []
