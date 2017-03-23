@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [2.2.1]
 * fixed send script (filtering them in the catch-all flow action acknowledgement)
 * account for time offset on work offers (like we do elsewhere)
 * return interaction-id as result for send script
