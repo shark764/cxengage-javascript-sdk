@@ -287,7 +287,7 @@
 (def initial-state
   {:module-name :interactions
    :urls {:note "tenants/tenant-id/interactions/interaction-id/notes/note-id"
-          :notes "tenants/tenant-id/interactions/interaction-id/notes"
+          :notes "tenants/tenant-id/interactions/interaction-id/notes?contents=true"
           :artifact-file "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
           :send-script "tenants/tenant-id/interactions/interaction-id/actions/action-id"}})
 
