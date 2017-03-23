@@ -7,6 +7,7 @@
 * added twilio debugging when log level is debug
 * fixed jenkins build job to fail when tests fail
 * changed resource mute broadcast to account for inconsistencies in what flow returns
+* added ARTIFACTS_CREATE_ALL as a required permission for login to desktop
 
 ## [2.2.0]
 * broke cancel-transfer into three functions (resource/queue/extension)
