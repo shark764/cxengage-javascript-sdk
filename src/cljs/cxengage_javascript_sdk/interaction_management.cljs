@@ -217,16 +217,24 @@
                            :resource-id resource-id}})))
 
 (defn handle-resource-mute [message]
-  (let [{:keys [interaction-id resource-id]} message]
+  (let [{:keys [interaction-id muted-resources resource-id]} message
+        muted-resources (if (or (nil? muted-resources)
+                                (empty? muted-resources))
+                          [resource-id]
+                          muted-resources)]
     (p/publish {:topics (p/get-topic :resource-muted)
                 :response {:interaction-id interaction-id
-                           :resource-id resource-id}})))
+                           :muted-resources muted-resources}})))
 
 (defn handle-resource-unmute [message]
-  (let [{:keys [interaction-id resource-id]} message]
+  (let [{:keys [interaction-id muted-resources resource-id]} message
+        muted-resources (if (or (nil? muted-resources)
+                                (empty? muted-resources))
+                          [resource-id]
+                          muted-resources)]
     (p/publish {:topics (p/get-topic :resource-unmuted)
                 :response {:interaction-id interaction-id
-                           :resource-id resource-id}})))
+                           :muted-resources muted-resources}})))
 
 (defn handle-recording-start [message]
   (let [{:keys [interaction-id resource-id]} message]
@@ -256,6 +264,7 @@
                            :resource-id resource-id
                            :sub-id sub-id
                            :script script}})))
+
 (defn handle-generic [message]
   nil)
 
@@ -358,8 +367,6 @@
       (merge {:sdk-msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
-  (when (state/get-blast-sqs-output)
-    (log :warn "[BLAST SQS OUTPUT] Message received:" (iu/camelify message)))
   (let [cljsd-msg (iu/kebabify message)
         session-id (or (get cljsd-msg :session-id)
                        (get-in cljsd-msg [:resource :session-id]))
@@ -369,6 +376,8 @@
                        "send-script" (merge {:sdk-msg-type :INTERACTIONS/SCRIPT_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
+    (when (state/get-blast-sqs-output)
+      (log :warn (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (iu/camelify message)))
     (if (not= (state/get-session-id) session-id)
       (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
                           (state/get-session-id) " - Session ID on message received: " session-id " Message type: " (:sdk-msg-type inferred-msg)))
