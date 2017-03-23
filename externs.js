@@ -37,3 +37,8 @@ Twilio.Device.disconnect = function() {};
  * @return {Object}
  */
 Twilio.Device.disconnectAll = function() {};
+
+/**
+* @return {Object}
+*/
+Twilio.Device.sendDigits = function() {};
