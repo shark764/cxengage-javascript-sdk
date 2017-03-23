@@ -9,6 +9,7 @@
 * changed resource mute broadcast to account for inconsistencies in what flow returns
 * added ARTIFACTS_CREATE_ALL as a required permission for login to desktop
 * added query parameter to get all notes endpoint to retrieve bodies as well
+* re-add auto-holding on warm transfer
 
 ## [2.2.0]
 * broke cancel-transfer into three functions (resource/queue/extension)
