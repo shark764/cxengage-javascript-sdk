@@ -40,6 +40,8 @@
 (s/def ::title string?)
 (s/def ::body string?)
 (s/def ::disposition-id ::uuid)
+(s/def ::stat-id ::uuid)
+(s/def ::stats map?)
 
 (s/def ::level #{"debug" "info" "warn" "error" "fatal"})
 (s/def ::digit #{"0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "*" "#"})

@@ -57,9 +57,9 @@
                  :get-available-stats-response "cxengage/reporting/get-available-stats-response"
                  :get-contact-history-response "cxengage/reporting/get-contact-interaction-history-response"
                  :get-contact-interaction-response "cxengage/reporting/get-contact-interactions-response"
-                 :polling-started "cxengage/reporting/polling-started"
-                 :polling-stopped "cxengage/reporting/polling-stopped"
                  :batch-response "cxengage/reporting/batch-response"
+                 :add-stat "cxengage/reporting/stat-subscription-added"
+                 :remove-stat "cxengage/reporting/stat-subscription-removed"
 
                  ;; Logging
                  :logs-dumped "cxengage/logging/logs-dumped"
