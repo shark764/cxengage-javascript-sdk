@@ -95,7 +95,8 @@
         {:keys [from id to]} payload
         interaction (get-interaction to)
         {:keys [channel-type messaging-metadata]} interaction
-        {:keys [customer-name]} messaging-metadata
+        {:keys [metadata]} messaging-metadata
+        {:keys [customer-name]} metadata
         payload (cond
                   (and (= channel-type "sms")
                        (nil? (id/valid-uuid? from))) (assoc-in msg [:payload :from] (str "+" from))
