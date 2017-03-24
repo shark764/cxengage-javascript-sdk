@@ -60,6 +60,8 @@
                  :batch-response "cxengage/reporting/batch-response"
                  :add-stat "cxengage/reporting/stat-subscription-added"
                  :remove-stat "cxengage/reporting/stat-subscription-removed"
+                 :polling-started "cxengage/reporting/polling-started"
+                 :polling-stopped "cxengage/reporting/polling-stopped"
 
                  ;; Logging
                  :logs-dumped "cxengage/logging/logs-dumped"
