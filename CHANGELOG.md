@@ -1,5 +1,7 @@
 # Change Log
 
+# [Unreleased]
+
 ## [2.3.0]
 * fixed messaging interaction customer name metadata
 * re-worked reporting api batch fns
