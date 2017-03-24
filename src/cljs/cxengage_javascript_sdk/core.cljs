@@ -47,17 +47,17 @@
         interaction-module (interaction/map->InteractionModule. (gen-new-initial-module-config comm<))
         entities-module (entities/map->EntitiesModule. (gen-new-initial-module-config comm<))
         contacts-module (contacts/map->ContactsModule. (gen-new-initial-module-config comm<))
-        logging-module (logging/map->LoggingModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [auth-module session-module interaction-module entities-module contacts-module logging-module]]
+        logging-module (logging/map->LoggingModule. (gen-new-initial-module-config comm<))
+        reporting-module (reporting/map->ReportingModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [auth-module session-module interaction-module entities-module contacts-module logging-module reporting-module]]
       (start-internal-module module))))
 
 (defn start-session-dependant-modules [comm<]
   (let [sqs-module (sqs/map->SQSModule. (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/sqs-msg-router))
         messaging-module (messaging/map->MessagingModule (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/messaging-msg-router))
         voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))
-        email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))
-        reporting-module (reporting/map->ReportingModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [sqs-module messaging-module voice-module email-module reporting-module]]
+        email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [sqs-module messaging-module voice-module email-module]]
       (start-internal-module module))))
 
 (defn route-module-message [comm< m]
