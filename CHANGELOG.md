@@ -2,6 +2,9 @@
 
 # [Unreleased]
 
+## [2.3.1]
+* temporarily re-add the old reporting pollers
+
 ## [2.3.0]
 * fixed messaging interaction customer name metadata
 * re-worked reporting api batch fns
