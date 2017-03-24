@@ -154,9 +154,10 @@
 (defn handle-disposition-codes [message]
   (let [{:keys [interaction-id]} message
         disposition-code-details (:disposition-codes message)]
-    (state/add-interaction-disposition-code-details! disposition-code-details interaction-id)
-    (p/publish {:topics (p/get-topic :disposition-codes-received)
-                :response message})))
+    (when disposition-code-details
+      (state/add-interaction-disposition-code-details! disposition-code-details interaction-id)
+      (p/publish {:topics (p/get-topic :disposition-codes-received)
+                  :response message}))))
 
 (defn handle-session-start [message]
   nil)

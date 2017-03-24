@@ -2,6 +2,9 @@
 
 # [Unreleased]
 
+## [2.3.2]
+* don't send disposition signal if none are present
+
 ## [2.3.1]
 * temporarily re-add the old reporting pollers
 
