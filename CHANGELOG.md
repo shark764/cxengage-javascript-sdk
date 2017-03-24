@@ -1,7 +1,8 @@
 # Change Log
 
-## [Unreleased]
+## [2.3.0]
 * fixed messaging interaction customer name metadata
+* re-worked reporting api batch fns
 
 ## [2.2.1]
 * fixed send script (filtering them in the catch-all flow action acknowledgement)

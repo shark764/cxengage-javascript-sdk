@@ -1,6 +1,6 @@
 {
   "name": "cxengage-javascript-sdk",
-  "version": "2.2.2-SNAPSHOT",
+  "version": "2.3.0",
   "description": "https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif",
   "main": "release/cxengage-javascript-sdk.min.js",
   "repository": {
