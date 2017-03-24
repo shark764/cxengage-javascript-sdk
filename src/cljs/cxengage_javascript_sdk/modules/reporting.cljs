@@ -111,7 +111,9 @@
     (let [register (aget js/window "serenova" "cxengage" "modules" "register")
           module-name (get @(:state this) :module-name)]
       (register {:api {module-name {:add-stat-subscription (partial add-stat-subscription this)
-                                    :remove-stat-subscription (partial remove-stat-subscription this)}}
+                                    :remove-stat-subscription (partial remove-stat-subscription this)
+                                    :start-polling (fn [] nil)
+                                    :stop-polling (fn [] nil)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success :module module-name})
       (start-polling this)
