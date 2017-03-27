@@ -47,17 +47,17 @@
         interaction-module (interaction/map->InteractionModule. (gen-new-initial-module-config comm<))
         entities-module (entities/map->EntitiesModule. (gen-new-initial-module-config comm<))
         contacts-module (contacts/map->ContactsModule. (gen-new-initial-module-config comm<))
-        logging-module (logging/map->LoggingModule. (gen-new-initial-module-config comm<))
-        reporting-module (reporting/map->ReportingModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [auth-module session-module interaction-module entities-module contacts-module logging-module reporting-module]]
+        logging-module (logging/map->LoggingModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [auth-module session-module interaction-module entities-module contacts-module logging-module]]
       (start-internal-module module))))
 
 (defn start-session-dependant-modules [comm<]
   (let [sqs-module (sqs/map->SQSModule. (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/sqs-msg-router))
         messaging-module (messaging/map->MessagingModule (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/messaging-msg-router))
         voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))
-        email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))]
-    (doseq [module [sqs-module messaging-module voice-module email-module]]
+        email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))
+        reporting-module (reporting/map->ReportingModule. (gen-new-initial-module-config comm<))]
+    (doseq [module [sqs-module messaging-module voice-module email-module reporting-module]]
       (start-internal-module module))))
 
 (defn route-module-message [comm< m]
@@ -72,7 +72,7 @@
 (s/def ::blast-sqs-output boolean?)
 (s/def ::initialize-options
   (s/keys :req-un []
-          :opt-un [::consumer-type ::log-level ::environment ::base-url ::blast-sqs-output]))
+          :opt-un [::consumer-type ::log-level ::environment ::base-url ::blast-sqs-output ::reporting-refresh-rate]))
 
 (defn initialize
   ([] (initialize {}))
@@ -81,13 +81,14 @@
    (let [options (iu/extract-params options)
          options (-> options
                      (assoc :base-url (or (:base-url options) "https://api.cxengage.net/v1/"))
+                     (assoc :reporting-refresh-rate (or (:reporting-refresh-rate options) 10000))
                      (assoc :consumer-type (keyword (or (:consumer-type options) :js)))
                      (assoc :log-level (keyword (or (:log-level options) :info)))
                      (assoc :blast-sqs-output (or (:blast-sqs-output options) false))
                      (assoc :environment (keyword (or (:environment options) :prod))))]
      (if-not (s/valid? ::initialize-options options)
        (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
-       (let [{:keys [log-level consumer-type base-url environment blast-sqs-output]} options
+       (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} options
              core (iu/camelify {:api {:subscribe pu/subscribe
                                       :publish pu/js-publish
                                       :unsubscribe pu/unsubscribe
@@ -98,6 +99,7 @@
          (state/set-base-api-url! base-url)
          (state/set-consumer-type! consumer-type)
          (state/set-log-level! log-level l/levels)
+         (state/set-reporting-refresh-rate! reporting-refresh-rate)
          (state/set-env! environment)
          (state/set-blast-sqs-output! blast-sqs-output)
          (aset js/window "serenova" #js {"cxengage" core})
