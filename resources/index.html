@@ -315,6 +315,7 @@
 
     var handleSessionStart = function(error, topic, response) {
       if (error) return console.error('uh oh');
+      state.currentUserId = response.resourceId;
       switchScreens('agent-screen');
     };
 
@@ -587,10 +588,10 @@
       SDK.interactions.voice.stopRecording({interactionId:state.voiceInteractionId});
     };
     var muteCall = function() {
-      SDK.interactions.voice.mute({interactionId:state.voiceInteractionId});
+      SDK.interactions.voice.mute({interactionId:state.voiceInteractionId,targetResourceId:state.currentUserId});
     };
     var unmuteCall = function() {
-      SDK.interactions.voice.unmute({interactionId:state.voiceInteractionId});
+      SDK.interactions.voice.unmute({interactionId:state.voiceInteractionId,targetResourceId:state.currentUserId});
     };
     var login = function() {
       var username = $('#username').val();
