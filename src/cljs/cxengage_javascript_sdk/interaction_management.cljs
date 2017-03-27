@@ -228,14 +228,8 @@
                            :muted-resources muted-resources}})))
 
 (defn handle-resource-unmute [message]
-  (let [{:keys [interaction-id muted-resources resource-id]} message
-        muted-resources (if (or (nil? muted-resources)
-                                (empty? muted-resources))
-                          [resource-id]
-                          muted-resources)]
-    (p/publish {:topics (p/get-topic :resource-unmuted)
-                :response {:interaction-id interaction-id
-                           :muted-resources muted-resources}})))
+  (p/publish {:topics (p/get-topic :resource-unmuted)
+              :response message}))
 
 (defn handle-recording-start [message]
   (let [{:keys [interaction-id resource-id]} message]
@@ -268,6 +262,10 @@
 
 (defn handle-generic [message]
   nil)
+
+(defn handle-resource-added [message]
+  (p/publish {:topics (p/get-topic :resource-added)
+              :response message}))
 
 (defn handle-screen-pop [message]
   (let [{:keys [pop-uri pop-type interaction-id]} message]
@@ -321,6 +319,7 @@
                       :INTERACTIONS/SCRIPT_RECEIVED handle-script-received
                       :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
                       :SESSION/START_SESSION_RESPONSE handle-session-start
+                      :INTERACTIONS/RESOURCE_ADDED handle-resource-added
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
@@ -363,6 +362,7 @@
                                        "resource-unmute" :INTERACTIONS/RESOURCE_UNMUTE_RECEIVED
                                        "recording-start" :INTERACTIONS/RECORDING_START_RECEIVED
                                        "recording-stop" :INTERACTIONS/RECORDING_STOP_RECEIVED
+                                       "resource-added" :INTERACTIONS/RESOURCE_ADDED
                                        "transfer-connected" :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:sdk-msg-type inferred-notification-type} message))))
@@ -378,7 +378,7 @@
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (when (state/get-blast-sqs-output)
-      (log :warn (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (iu/camelify message)))
+      (log :debug (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (iu/camelify message)))
     (if (not= (state/get-session-id) session-id)
       (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
                           (state/get-session-id) " - Session ID on message received: " session-id " Message type: " (:sdk-msg-type inferred-msg)))

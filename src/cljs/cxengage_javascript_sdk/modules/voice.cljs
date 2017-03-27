@@ -45,9 +45,11 @@
      (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
    (let [client-params (iu/extract-params client-params)
-         {:keys [callback interaction-id resource-id queue-id transfer-extension transfer-resource-id transfer-queue-id transfer-type]} client-params
+         {:keys [callback interaction-id resource-id target-resource-id queue-id transfer-extension transfer-resource-id transfer-queue-id transfer-type]} client-params
          transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
          simple-interrupt-body {:resource-id (state/get-active-user-id)}
+         target-interrupt-body {:resource-id (state/get-active-user-id)
+                                :target-resource target-resource-id}
          interrupt-params (case type
                             :hold {:validation ::generic-voice-interaction-fn-params
                                    :interrupt-type "customer-hold"
@@ -60,11 +62,11 @@
                             :mute {:validation ::generic-voice-interaction-fn-params
                                    :interrupt-type "mute-resource"
                                    :topic (p/get-topic :mute-acknowledged)
-                                   :interrupt-body simple-interrupt-body}
+                                   :interrupt-body target-interrupt-body}
                             :unmute {:validation ::generic-voice-interaction-fn-params
                                      :interrupt-type "unmute-resource"
                                      :topic (p/get-topic :unmute-acknowledged)
-                                     :interrupt-body simple-interrupt-body}
+                                     :interrupt-body target-interrupt-body}
                             :start-recording {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "recording-start"
                                               :topic (p/get-topic :recording-start-acknowledged)

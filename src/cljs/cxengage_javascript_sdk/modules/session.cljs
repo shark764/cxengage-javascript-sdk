@@ -162,13 +162,14 @@
                                       :resource-id resource-id})}]
     (go (let [start-session-response (a/<! (iu/api-request start-session-request))
               {:keys [status api-response]} start-session-response
-              {:keys [result]} api-response]
+              {:keys [result]} api-response
+              pubsub-response (assoc result :resource-id (state/get-active-user-id))]
           (if (not= status 200)
             (p/publish {:topics topic
                         :error (e/api-error api-response)})
             (do (state/set-session-details! result)
                 (p/publish {:topics topic
-                            :response result})
+                            :response pubsub-response})
                 (change-presence-state module "notready" {})
                 (start-heartbeats* module)))))
     nil))

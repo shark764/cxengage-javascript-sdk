@@ -1,6 +1,10 @@
 # Change Log
 
-# [Unreleased]
+## [3.0.0]
+* added resource-added signal
+* broadcast resource id on session start
+* altered parameters to mute & unmute to require targetResourceId
+* change blast SQS output to debug level logging
 
 ## [2.3.2]
 * don't send disposition signal if none are present
