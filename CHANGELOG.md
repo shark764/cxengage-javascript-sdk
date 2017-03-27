@@ -1,5 +1,7 @@
 # Change Log
 
+## [Unreleased]
+
 ## [3.0.0]
 * added resource-added signal
 * broadcast resource id on session start
