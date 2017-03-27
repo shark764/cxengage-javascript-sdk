@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+* Remove old reporting stuff
+* Make reporting module use user-passed refresh rate
 
 ## [3.0.0]
 * added resource-added signal
