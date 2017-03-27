@@ -53,7 +53,7 @@
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
-     (add-stat-subscription module (merge (iu/extract-params params {:callback (first others)})))))
+     (add-stat-subscription module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [params (iu/extract-params params)
          module-state (:state module)
