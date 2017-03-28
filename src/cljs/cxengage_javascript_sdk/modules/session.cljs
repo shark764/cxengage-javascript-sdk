@@ -344,7 +344,7 @@
                             :body direction-body}]
      (if-not (s/valid? ::set-direction-params params)
        (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::dial-params params))
+                   :error (e/invalid-args-error (s/explain-data ::set-direction-params params))
                    :callback callback})
        (do (go (let [set-direction-response (a/<! (iu/api-request direction-request))
                      {:keys [status api-response]} set-direction-response
