@@ -67,6 +67,18 @@
                                      :interrupt-type "unmute-resource"
                                      :topic (p/get-topic :unmute-acknowledged)
                                      :interrupt-body target-interrupt-body}
+                            :resource-hold {:validation ::generic-voice-interaction-fn-params
+                                            :interrupt-type "resource-hold"
+                                            :topic (p/get-topic :resource-resume-acknowledged)
+                                            :interrupt-body target-interrupt-body}
+                            :resource-resume {:validation ::generic-voice-interaction-fn-params
+                                              :interrupt-type "resource-resume"
+                                              :topic (p/get-topic :resource-hold-acknowledged)
+                                              :interrupt-body target-interrupt-body}
+                            :remove-resource {:validation ::generic-voice-interaction-fn-params
+                                              :interrupt-type "remove-resource"
+                                              :topic (p/get-topic :resource-removed-acknowledged)
+                                              :interrupt-body target-interrupt-body}
                             :start-recording {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "recording-start"
                                               :topic (p/get-topic :recording-start-acknowledged)
@@ -290,20 +302,23 @@
         (a/put! core-messages< {:module-registration-status :failure
                                 :module module-name})
         (do (twilio-init twilio-integration core-messages<)
-            (register {:api {:interactions {:voice {:hold (partial send-interrupt this :hold)
-                                                    :resume (partial send-interrupt this :resume)
+            (register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
+                                                    :customer-resume (partial send-interrupt this :resume)
                                                     :mute (partial send-interrupt this :mute)
                                                     :unmute (partial send-interrupt this :unmute)
                                                     :start-recording (partial send-interrupt this :start-recording)
                                                     :stop-recording (partial send-interrupt this :stop-recording)
-                                                    :transferToResource (partial send-interrupt this :transfer-to-resource)
-                                                    :transferToQueue (partial send-interrupt this :transfer-to-queue)
-                                                    :transferToExtension (partial send-interrupt this :transfer-to-extension)
+                                                    :transfer-to-resource (partial send-interrupt this :transfer-to-resource)
+                                                    :transfer-to-queue (partial send-interrupt this :transfer-to-queue)
+                                                    :transfer-to-extension (partial send-interrupt this :transfer-to-extension)
                                                     :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
                                                     :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
                                                     :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
                                                     :dial (partial dial this)
                                                     :send-digits (partial send-digits this)
-                                                    :get-recordings (partial get-recordings this)}}}
+                                                    :get-recordings (partial get-recordings this)
+                                                    :resource-remove (partial send-interrupt this :remove-resource)
+                                                    :resource-hold (partial send-interrupt this :resource-hold)
+                                                    :resource-resume (partial send-interrupt this :resource-resume)}}}
                        :module-name module-name})))))
   (stop [this]))
