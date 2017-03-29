@@ -93,6 +93,7 @@
                  :wrapup-ended "cxengage/interactions/wrapup-ended"
                  :send-script "cxengage/interactions/send-script"
                  :resource-added "cxengage/interactions/resource-added"
+                 :resource-removed "cxengage/interactions/resource-removed"
 
                  ;; Email Interaction Topics
                  :attachment-received "cxengage/interactions/email/attachment-received"
