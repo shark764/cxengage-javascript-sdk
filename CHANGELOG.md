@@ -5,6 +5,7 @@
 * remove old reporting stuff
 * make reporting module use user-passed refresh rate
 * added resource hold/resume and remove resource
+* broke change state out into 3 separate functions internally
 * added resource-removed handler
 * perform a one-off batch request any time a stat is added to the sub list
 
