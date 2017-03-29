@@ -3,6 +3,7 @@
 ## [Unreleased]
 * Remove old reporting stuff
 * Make reporting module use user-passed refresh rate
+* added resource hold/resume and remove resource
 
 ## [3.0.0]
 * added resource-added signal

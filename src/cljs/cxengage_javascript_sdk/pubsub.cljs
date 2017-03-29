@@ -125,6 +125,9 @@
                  :dial-send-acknowledged "cxengage/interactions/voice/dial-send-acknowledged"
                  :send-digits-acknowledged "cxengage/interactions/voice/send-digits-acknowledged"
                  :transfer-connected "cxengage/interactions/voice/transfer-connected"
+                 :resource-hold-acknowledged "cxengage/interactions/voice/resource-hold-acknowledged"
+                 :resource-resume-acknowledged "cxengage/interactions/voice/resource-resume-acknowledged"
+                 :resource-removed-acknowledged "cxengage/interactions/voice/resource-removed-acknowledged"
 
                  ;; Messaging Interaction Topics
                  :transcript-response "cxengage/interactions/messaging/transcript-received"
