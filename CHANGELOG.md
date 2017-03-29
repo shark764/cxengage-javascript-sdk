@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* renamed SDK.voice.hold & SDK.voice.resume to SDK.voice.customerHold & SDK.voice.customerResume in accordance with new resource-specific controls
 * remove old reporting stuff
 * make reporting module use user-passed refresh rate
 * added resource hold/resume and remove resource
