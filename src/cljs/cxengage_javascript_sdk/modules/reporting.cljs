@@ -57,7 +57,6 @@
   ([module params]
    (let [params (iu/extract-params params)
          module-state (:state module)
-         api-url (get-in module [:config :api-url])
          {:keys [callback]} params
          tenant-id (st/get-active-tenant-id)
          topic (p/get-topic :add-stat)
@@ -72,6 +71,20 @@
          (p/publish {:topics topic
                      :response {:stat-id stat-id}
                      :callback callback})
+         (go (let [batch-url (str (st/get-base-api-url) (get-in @module-state [:urls :batch]))
+                   polling-request {:method :post
+                                    :body {:requests (:statistics @module-state)}
+                                    :url (iu/build-api-url-with-params
+                                          batch-url
+                                          {:tenant-id tenant-id})}
+                   {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
+                   {:keys [results]} api-response
+                   batch-topic (p/get-topic :batch-response)]
+               (if (not= status 200)
+                 (p/publish {:topics batch-topic
+                             :error (e/api-error "api returned an error")})
+                 (p/publish {:topics batch-topic
+                             :response results}))))
          nil)))))
 
 (s/def ::remove-statistics-params

@@ -1,9 +1,10 @@
 # Change Log
 
 ## [Unreleased]
-* Remove old reporting stuff
-* Make reporting module use user-passed refresh rate
+* remove old reporting stuff
+* make reporting module use user-passed refresh rate
 * added resource hold/resume and remove resource
+* perform a one-off batch request any time a stat is added to the sub list
 
 ## [3.0.0]
 * added resource-added signal
