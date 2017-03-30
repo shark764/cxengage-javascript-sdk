@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* changed build-api-url-with-params fn to use any kv pair to replace in the url
 * renamed SDK.voice.hold & SDK.voice.resume to SDK.voice.customerHold & SDK.voice.customerResume in accordance with new resource-specific controls
 * remove old reporting stuff
 * make reporting module use user-passed refresh rate
