@@ -94,6 +94,8 @@
                  :send-script "cxengage/interactions/send-script"
                  :resource-added "cxengage/interactions/resource-added"
                  :resource-removed "cxengage/interactions/resource-removed"
+                 :resource-hold "cxengage/interactions/resource-hold"
+                 :resource-resume "cxengage/interactions/resource-resume"
 
                  ;; Email Interaction Topics
                  :attachment-received "cxengage/interactions/email/attachment-received"

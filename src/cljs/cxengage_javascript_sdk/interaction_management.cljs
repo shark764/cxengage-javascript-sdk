@@ -271,6 +271,14 @@
   (p/publish {:topics (p/get-topic :resource-removed)
               :response message}))
 
+(defn handle-resource-hold [message]
+  (p/publish {:topics (p/get-topic :resource-hold)
+              :response message}))
+
+(defn handle-resource-resume [message]
+  (p/publish {:topics (p/get-topic :resource-resume)
+              :response message}))
+
 (defn handle-screen-pop [message]
   (let [{:keys [pop-uri pop-type interaction-id]} message]
     (when (and pop-uri (or (= pop-type "external-url") (= pop-type "url")))
@@ -325,6 +333,8 @@
                       :SESSION/START_SESSION_RESPONSE handle-session-start
                       :INTERACTIONS/RESOURCE_ADDED handle-resource-added
                       :INTERACTIONS/RESOURCE_REMOVED handle-resource-removed
+                      :INTERACTIONS/RESOURCE_HOLD handle-resource-hold
+                      :INTERACTIONS/RESOURCE_RESUME handle-resource-resume
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
@@ -369,6 +379,8 @@
                                        "recording-stop" :INTERACTIONS/RECORDING_STOP_RECEIVED
                                        "resource-added" :INTERACTIONS/RESOURCE_ADDED
                                        "resource-removed" :INTERACTIONS/RESOURCE_REMOVED
+                                       "resource-hold" :INTERACTIONS/RESOURCE_HOLD
+                                       "resource-resume" :INTERACTIONS/RESOURCE_RESUME
                                        "transfer-connected" :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:sdk-msg-type inferred-notification-type} message))))

@@ -9,6 +9,7 @@
 * broke change state out into 3 separate functions internally
 * added resource-removed handler
 * perform a one-off batch request any time a stat is added to the sub list
+* added resource-hold/resume handlers
 
 ## [3.0.0]
 * added resource-added signal
