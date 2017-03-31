@@ -258,19 +258,19 @@
   nil)
 
 (defn handle-resource-added [message]
-  (p/publish {:topics (p/get-topic :resource-added)
+  (p/publish {:topics (p/get-topic :resource-added-received)
               :response message}))
 
 (defn handle-resource-removed [message]
-  (p/publish {:topics (p/get-topic :resource-removed)
+  (p/publish {:topics (p/get-topic :resource-removed-received)
               :response message}))
 
 (defn handle-resource-hold [message]
-  (p/publish {:topics (p/get-topic :resource-hold)
+  (p/publish {:topics (p/get-topic :resource-hold-received)
               :response message}))
 
 (defn handle-resource-resume [message]
-  (p/publish {:topics (p/get-topic :resource-resume)
+  (p/publish {:topics (p/get-topic :resource-resume-received)
               :response message}))
 
 (defn handle-screen-pop [message]

@@ -92,10 +92,10 @@
                  :wrapup-started "cxengage/interactions/wrapup-started"
                  :wrapup-ended "cxengage/interactions/wrapup-ended"
                  :send-script "cxengage/interactions/send-script"
-                 :resource-added "cxengage/interactions/resource-added"
-                 :resource-removed "cxengage/interactions/resource-removed"
-                 :resource-hold "cxengage/interactions/resource-hold"
-                 :resource-resume "cxengage/interactions/resource-resume"
+                 :resource-added-received "cxengage/interactions/resource-added-received"
+                 :resource-removed-received "cxengage/interactions/resource-removed-received"
+                 :resource-hold-received "cxengage/interactions/resource-hold-received"
+                 :resource-resume-received "cxengage/interactions/resource-resume-received"
 
                  ;; Email Interaction Topics
                  :attachment-received "cxengage/interactions/email/attachment-received"
@@ -130,6 +130,7 @@
                  :transfer-connected "cxengage/interactions/voice/transfer-connected"
                  :resource-hold-acknowledged "cxengage/interactions/voice/resource-hold-acknowledged"
                  :resource-resume-acknowledged "cxengage/interactions/voice/resource-resume-acknowledged"
+                 :resume-all-acknowledged "cxengage/interactions/voice/resume-all-acknowledged"
                  :resource-removed-acknowledged "cxengage/interactions/voice/resource-removed-acknowledged"
 
                  ;; Messaging Interaction Topics
