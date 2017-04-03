@@ -221,7 +221,7 @@
   (let [{:keys [interaction-id muted-resources resource-id]} message
         muted-resources (if (or (nil? muted-resources)
                                 (empty? muted-resources))
-                          [resource-id]
+                          []
                           muted-resources)]
     (p/publish {:topics (p/get-topic :resource-muted)
                 :response {:interaction-id interaction-id
