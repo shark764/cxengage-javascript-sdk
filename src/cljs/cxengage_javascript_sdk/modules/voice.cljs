@@ -127,10 +127,10 @@
        (p/publish {:topic (:topic interrupt-params)
                    :error (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params))
                    :callback callback})
-       (do (when (and (= transfer-type "warm-transfer")
-                      (or (= type :transfer-to-resource)
-                          (= type :transfer-to-queue)
-                          (= type :transfer-to-extension)))
+       (do #_(when (and (= transfer-type "warm-transfer")
+                        (or (= type :transfer-to-resource)
+                            (= type :transfer-to-queue)
+                            (= type :transfer-to-extension)))
                (send-interrupt module :hold {:interaction-id interaction-id}))
            (iu/send-interrupt* module (assoc interrupt-params
                                              :interaction-id interaction-id
