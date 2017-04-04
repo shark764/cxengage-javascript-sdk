@@ -69,12 +69,16 @@
                                      :interrupt-body target-interrupt-body}
                             :resource-hold {:validation ::generic-voice-interaction-fn-params
                                             :interrupt-type "resource-hold"
-                                            :topic (p/get-topic :resource-resume-acknowledged)
+                                            :topic (p/get-topic :resource-hold-acknowledged)
                                             :interrupt-body target-interrupt-body}
                             :resource-resume {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "resource-resume"
-                                              :topic (p/get-topic :resource-hold-acknowledged)
+                                              :topic (p/get-topic :resource-resume-acknowledged)
                                               :interrupt-body target-interrupt-body}
+                            :resume-all {:validation ::generic-voice-interaction-fn-params
+                                         :interrupt-type "resume-all"
+                                         :topic (p/get-topic :resume-all-acknowledged)
+                                         :interrupt-body simple-interrupt-body}
                             :remove-resource {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "remove-resource"
                                               :topic (p/get-topic :resource-removed-acknowledged)
@@ -319,6 +323,7 @@
                                                     :get-recordings (partial get-recordings this)
                                                     :resource-remove (partial send-interrupt this :remove-resource)
                                                     :resource-hold (partial send-interrupt this :resource-hold)
-                                                    :resource-resume (partial send-interrupt this :resource-resume)}}}
+                                                    :resource-resume (partial send-interrupt this :resource-resume)
+                                                    :resume-all (partial send-interrupt this :resume-all)}}}
                        :module-name module-name})))))
   (stop [this]))

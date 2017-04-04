@@ -11,6 +11,7 @@
 * perform a one-off batch request any time a stat is added to the sub list
 * added resource-hold/resume handlers
 * removed current users id from muted resources by default (no longer need stop-gap)
+* added resume-all topics and handlers
 
 ## [3.0.0]
 * added resource-added signal
