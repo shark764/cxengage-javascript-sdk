@@ -218,14 +218,8 @@
                            :resource-id resource-id}})))
 
 (defn handle-resource-mute [message]
-  (let [{:keys [interaction-id muted-resources resource-id]} message
-        muted-resources (if (or (nil? muted-resources)
-                                (empty? muted-resources))
-                          []
-                          muted-resources)]
-    (p/publish {:topics (p/get-topic :resource-muted)
-                :response {:interaction-id interaction-id
-                           :muted-resources muted-resources}})))
+  (p/publish {:topics (p/get-topic :resource-muted)
+              :response message}))
 
 (defn handle-resource-unmute [message]
   (p/publish {:topics (p/get-topic :resource-unmuted)
