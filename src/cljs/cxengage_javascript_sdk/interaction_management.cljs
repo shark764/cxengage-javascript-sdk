@@ -166,12 +166,13 @@
   nil)
 
 (defn handle-work-accepted [message]
-  (let [{:keys [interaction-id tenant-id]} message
+  (let [{:keys [interaction-id tenant-id active-resources]} message
         interaction (state/get-pending-interaction interaction-id)
         channel-type (get interaction :channel-type)]
     (state/transition-interaction! :pending :active interaction-id)
     (p/publish {:topics (p/get-topic :work-accepted-received)
-                :response {:interaction-id interaction-id}})
+                :response {:interaction-id interaction-id
+                           :active-resources active-resources}})
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
       (messaging/subscribe-to-messaging-interaction
