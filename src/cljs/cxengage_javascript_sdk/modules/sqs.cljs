@@ -5,6 +5,7 @@
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cljsjs.aws-sdk-js]
+            [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-cljs-utils.core :as cxu]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]))
@@ -21,19 +22,35 @@
 
 (defn receive-message*
   [sqs queue-url]
-  (let [params (clj->js {:QueueUrl queue-url
-                         :MaxNumberOfMessages 1
-                         :WaitTimeSeconds 20})
-        response (a/promise-chan)]
-    (.receiveMessage sqs params (handle-response* response))
-    response))
+  (let [response (a/promise-chan)]
+    (if (state/get-session-expired)
+      (do (log :error "Session expired, shutting down SQS")
+          (go (a/>! response :shutdown))
+          response)
+      (let [params (clj->js {:QueueUrl queue-url
+                             :MaxNumberOfMessages 1
+                             :WaitTimeSeconds 20})]
+        (.receiveMessage sqs params (handle-response* response))
+        response))))
 
 (defn process-message*
   [{:keys [messages]} delete-message-fn]
   (when (seq messages)
-    (let [{:keys [receipt-handle body]} (first messages)]
-      (delete-message-fn receipt-handle)
-      body)))
+    (let [{:keys [receipt-handle body]} (first messages)
+          parsed-body (iu/kebabify (js/JSON.parse body))
+          session-id (or (get parsed-body :session-id)
+                         (get-in parsed-body [:resource :session-id]))
+          current-session-id (state/get-session-id)
+          msg-type (or (:notification-type parsed-body)
+                       (:type parsed-body))]
+      (if (not= (state/get-session-id) session-id)
+        (do (log :warn (str "Received a message from a different session than the current one."
+                            "Current session ID: " current-session-id
+                            " - Session ID on message received: " session-id
+                            " Message type: " msg-type))
+            nil)
+        (do (delete-message-fn receipt-handle)
+            body)))))
 
 (defn delete-message*
   [sqs {:keys [queue-url]} receipt-handle]
@@ -53,15 +70,15 @@
                           :sessionToken session-token
                           :region "us-east-1" ;;TODO: get from integration
                           :params {:QueueUrl queue-url}})
-        sqs (AWS.SQS. options)
-        shutdown< (a/chan)]
+        sqs (AWS.SQS. options)]
     (a/put! done-init< {:module-registration-status :success
                         :module (get @(:state module) :module-name)})
     (go-loop []
       (let [response< (receive-message* sqs queue-url)
-            [v c] (alts! [response< shutdown<])]
-        (if-not (= v :shutdown)
-          (let [message (process-message* v (partial delete-message* sqs queue-url))]
+            value (a/<! response<)]
+        (if (= value :shutdown)
+          nil
+          (let [message (process-message* value (partial delete-message* sqs queue-url))]
             (when (not= nil (js/JSON.parse message))
               (on-received (js/JSON.parse message)))
             (recur)))))))

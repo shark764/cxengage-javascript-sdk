@@ -279,5 +279,5 @@
                                                     :get-attachment-url (partial get-attachment-url this)
                                                     :send-reply (partial send-reply this)}}}
                        :module-name module-name})
-            (js/console.info "<----- Started " (name module-name) " module! ----->")))))
+            (log :info (str "<----- Started " (name module-name) " module! ----->"))))))
   (stop [this]))

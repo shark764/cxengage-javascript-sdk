@@ -35,6 +35,7 @@
               next-heartbeat-delay (* 1000 (or (:heartbeatDelay api-response) 30))]
           (if (not= status 200)
             (do (log :error "Heartbeat failed; ceasing future heartbeats.")
+                (state/set-session-expired! true)
                 (p/publish {:topics topic
                             :error (e/api-error "no more heartbeats")})
                 nil)
@@ -131,6 +132,7 @@
            (let [change-state-response (a/<! (iu/api-request change-state-request))
                  {:keys [api-response status]} change-state-response
                  {:keys [result]} api-response]
+             (state/set-session-expired! true)
              (if (not= status 200)
                (p/publish {:topics topic
                            :error (e/api-error api-response)
@@ -250,6 +252,7 @@
                 (p/publish {:topics topic
                             :response pubsub-response})
                 (go-not-ready module)
+                (state/set-session-expired! false)
                 (start-heartbeats* module)))))
     nil))
 
