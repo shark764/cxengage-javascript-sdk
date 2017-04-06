@@ -12,6 +12,7 @@
 * added resource-hold/resume handlers
 * removed current users id from muted resources by default (no longer need stop-gap)
 * added resume-all topics and handlers
+* added active-resources, customer-on-hold, and recording to work-accepted pubsub
 
 ## [3.0.0]
 * added resource-added signal
