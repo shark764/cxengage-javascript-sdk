@@ -394,14 +394,10 @@
                        nil)]
     (when (state/get-blast-sqs-output)
       (log :debug (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (iu/camelify message)))
-    (if (not= (state/get-session-id) session-id)
-      (do (log :warn (str "Received a message from a different session than the current one. Current session ID: "
-                          (state/get-session-id) " - Session ID on message received: " session-id " Message type: " (:sdk-msg-type inferred-msg)))
-          nil)
-      (if inferred-msg
-        (msg-router inferred-msg)
-        (do (log :warn "Unable to infer message type from sqs")
-            nil)))))
+    (if inferred-msg
+      (msg-router inferred-msg)
+      (do (log :warn "Unable to infer message type from sqs")
+          nil))))
 
 (defn messaging-msg-router [message]
   (handle-new-messaging-message message))

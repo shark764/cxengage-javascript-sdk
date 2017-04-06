@@ -241,6 +241,12 @@
 ;; Sessiony Things
 ;;;;;;;;;;;;;;;;;;
 
+(defn set-session-expired! [expired?]
+  (swap! sdk-state assoc-in [:session :expired?] expired?))
+
+(defn get-session-expired []
+  (get-in @sdk-state [:session :expired?]))
+
 (defn get-user-tenants []
   (get-in @sdk-state [:user :tenants]))
 

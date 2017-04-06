@@ -11,8 +11,11 @@
 * perform a one-off batch request any time a stat is added to the sub list
 * added resource-hold/resume handlers
 * removed current users id from muted resources by default (no longer need stop-gap)
-* added resume-all topics and handlers
+* added resume-all topics and API fn
 * added active-resources, customer-on-hold, and recording to work-accepted pubsub
+* fixed a critical bug where the email module startup log wasn't formatted correctly
+* fixed SQS stealing messages from other sessions
+* fixed getTranscripts interaction & tenant id parameters being swapped
 
 ## [3.0.0]
 * added resource-added signal

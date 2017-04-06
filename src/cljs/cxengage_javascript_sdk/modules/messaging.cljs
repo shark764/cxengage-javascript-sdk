@@ -216,7 +216,7 @@
      nil)))
 
 (defn get-transcript [interaction-id tenant-id artifact-id callback]
-  (go (let [transcript (a/<! (iu/get-artifact tenant-id interaction-id artifact-id))
+  (go (let [transcript (a/<! (iu/get-artifact interaction-id tenant-id artifact-id))
             {:keys [api-response status]} transcript]
         (if-not (= status 200)
           (p/publish {:topics (p/get-topic :transcript-response)
