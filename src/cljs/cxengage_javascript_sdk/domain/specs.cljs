@@ -30,6 +30,9 @@
 (s/def ::phone-number string?)
 (s/def ::callback (s/or :callback fn?
                         :callback nil?))
+(s/def ::reason string?)
+(s/def ::reason-id ::uuid)
+(s/def ::reason-list-id ::uuid)
 (s/def ::username string?)
 (s/def ::password string?)
 (s/def ::message string?)
