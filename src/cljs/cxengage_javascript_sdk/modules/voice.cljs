@@ -256,7 +256,7 @@
              (catch js/Object e (str "Caught: Invalid Dial-Tone Multiple Frequency signal: " e)))))))))
 
 (defn get-recording [interaction-id tenant-id artifact-id callback]
-  (go (let [audio-recording (a/<! (iu/get-artifact tenant-id interaction-id artifact-id))
+  (go (let [audio-recording (a/<! (iu/get-artifact interaction-id tenant-id artifact-id))
             {:keys [api-response status]} audio-recording]
         (if-not (= status 200)
           (p/publish {:topics (p/get-topic :recording-response)
