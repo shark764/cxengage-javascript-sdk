@@ -5,14 +5,20 @@
             [camel-snake-kebab.core :as k]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [lumbajack.core :as l]
+            [cxengage-cljs-utils.core :as cxu]
+
+            [cxengage-javascript-sdk.interaction-management :as int]
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.modules.authentication :as authentication]
+            [cxengage-javascript-sdk.internal-utils :as iu]
+
+            [cxengage-javascript-sdk.next-modules.authentication :as authentication]
+            [cxengage-javascript-sdk.next-modules.session :as session]
+
             [cxengage-javascript-sdk.modules.entities :as entities]
             [cxengage-javascript-sdk.modules.reporting :as reporting]
-            [cxengage-javascript-sdk.modules.session :as session]
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cxengage-javascript-sdk.modules.interaction :as interaction]
             [cxengage-javascript-sdk.modules.sqs :as sqs]
@@ -20,10 +26,7 @@
             [cxengage-javascript-sdk.modules.voice :as voice]
             [cxengage-javascript-sdk.modules.logging :as logging]
             [cxengage-javascript-sdk.modules.email :as email]
-            [cxengage-javascript-sdk.domain.errors :as e]
-            [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-cljs-utils.core :as cxu]
-            [cxengage-javascript-sdk.interaction-management :as int]))
+            [cxengage-javascript-sdk.domain.errors :as e]))
 
 (defn register-module [module]
   (let [{:keys [api module-name]} module
@@ -90,10 +93,12 @@
      (if-not (s/valid? ::initialize-options options)
        (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} options
+             module-comm-chan (a/chan 1024)
              core (iu/camelify {:api {:subscribe pu/subscribe
                                       :publish pu/js-publish
                                       :unsubscribe pu/unsubscribe
-                                      :dump-state state/get-state-js}
+                                      :dump-state state/get-state-js
+                                      :send-core-message #(a/put! module-comm-chan %)}
                                 :modules {:register register-module
                                           :start start-external-module}
                                 :internal {}})

@@ -112,7 +112,9 @@
 
     SDK.subscribe('cxengage', function(error, topic, response) {
 
-      if (error) { console.log('Error:', error); }
+      console.warn('Received pubsub for: ' + topic, error, response);
+
+      if (error) { return console.log('Error in things:', error, topic, response); }
 
       switch(topic) {
         case 'cxengage/authentication/login-response':

@@ -31,6 +31,16 @@
        (#(js->clj % :keywordize-keys true))
        (transform-keys camel/->kebab-case)))
 
+(defn api-url
+  ([url]
+   (str (state/get-base-api-url) url))
+  ([url params]
+   (reduce-kv
+    (fn [s k v]
+      (clojure.string/replace s (re-pattern (name k)) v))
+    (str (state/get-base-api-url) url)
+    params)))
+
 (defn build-api-url-with-params [url params]
   (reduce-kv (fn [s k v]
                (clojure.string/replace s (re-pattern (name k)) v)) url params))
@@ -158,7 +168,7 @@
      (js->clj params :keywordize-keys true)
      (if (= :cljs (state/get-consumer-type))
        params
-       (kebabify params)))))
+       (kebabify (js->clj params :keywordize-keys true))))))
 
 (defn base-module-request
   ([type]
@@ -206,11 +216,13 @@
   (let [hmac (doto (Hmac. (Sha256.) key)
                (.update msg))]
     (c/byteArrayToHex (.digest hmac))))
+
 (defn sha256
   [msg]
   (let [hash (doto (Sha256.)
                (.update msg))]
     (c/byteArrayToHex (.digest hash))))
+
 (defn get-signature-key
   [key date-stamp region-name service-name]
   (let [date-stamp (or date-stamp (js/Date.))

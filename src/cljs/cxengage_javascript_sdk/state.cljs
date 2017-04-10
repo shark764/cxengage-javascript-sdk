@@ -277,7 +277,7 @@
   (get-in @sdk-state [:session :config :integrations]))
 
 (defn get-active-extension []
-  (get-in @sdk-state [:session :config :active-extension :value]))
+  (get-in @sdk-state [:session :config :active-extension]))
 
 (defn get-all-reason-lists []
   (get-in @sdk-state [:session :config :reason-lists]))
