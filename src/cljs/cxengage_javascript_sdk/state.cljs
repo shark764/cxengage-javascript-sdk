@@ -278,6 +278,23 @@
 (defn get-active-extension []
   (get-in @sdk-state [:session :config :active-extension :value]))
 
+(defn get-all-reason-lists []
+  (get-in @sdk-state [:session :config :reason-lists]))
+
+(defn get-all-reason-codes-by-list [reason-list-id]
+  (let [reason-list (reduce (fn [acc x]
+                              (if (= (:id x) reason-list-id)
+                                (merge acc x)
+                                acc)) {} (get-all-reason-lists))
+        reason-codes (reduce (fn [acc x] (conj acc (select-keys x [:reason-id :name]))) [] (:reasons reason-list))]
+    reason-codes))
+
+(defn valid-reason-codes? [reason reason-id reason-list-id]
+  (let [reason-map {:reason-id reason-id
+                    :name reason}
+        found-reason (filterv #(= (:reason-id %1) reason-id) (get-all-reason-codes-by-list reason-list-id))]
+    (= reason-map (peek found-reason))))
+
 (defn get-extension-by-value [value]
   (let [extensions (get-all-extensions)]
     (first (filter #(= value (:value %)) extensions))))

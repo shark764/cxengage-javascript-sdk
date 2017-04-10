@@ -51,9 +51,13 @@
   (s/keys :req-un [::specs/extension-value]
           :opt-un [::specs/callback]))
 
+(s/def ::reason-info
+  (s/keys :req-un [::specs/reason ::specs/reason-id ::specs/reason-list-id]
+          :opt-un []))
+
 (s/def ::go-not-ready-params
   (s/keys :req-un []
-          :opt-un [::specs/callback]))
+          :opt-un [::reason-info ::specs/callback]))
 
 (s/def ::go-offline-params
   (s/keys :req-un []
@@ -73,32 +77,44 @@
          session-id (state/get-session-id)
          resource-id (state/get-active-user-id)
          tenant-id (state/get-active-tenant-id)
-         {:keys [callback]} params
-         topic (p/get-topic :presence-state-change-request-acknowledged)]
+         {:keys [reason-info callback]} params
+         {:keys [reason-id reason-list-id reason]} reason-info
+         topic (p/get-topic :presence-state-change-request-acknowledged)
+         state-lists (state/get-all-reason-codes-by-list reason-list-id)
+         valid-reasons? (cond
+                          (empty? state-lists) false
+                          (empty? (filterv #(= (:reason-id reason-id)) state-lists)) false
+                          :else true)]
      (if-not (s/valid? ::go-not-ready-params params)
        (p/publish {:topics topic
-                   :error (e/invalid-args-error "Invalid args.")
+                   :error (e/invalid-args-error "Invalid args. All three reason code parameters must be supplied.")
                    :callback (if (fn? callback) callback nil)})
-       (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
-             change-state-request {:method :post
-                                   :url (iu/build-api-url-with-params
-                                         change-state-url
-                                         {:tenant-id tenant-id
-                                          :resource-id resource-id})
-                                   :body {:session-id session-id
-                                          :state "notready"}}]
-         (go
-           (let [change-state-response (a/<! (iu/api-request change-state-request))
-                 {:keys [api-response status]} change-state-response
-                 {:keys [result]} api-response]
-             (if (not= status 200)
-               (p/publish {:topics topic
-                           :error (e/api-error api-response)
-                           :callback callback})
-               (p/publish {:topics topic
-                           :response result
-                           :callback callback}))))
-         nil)))))
+       (if (and (or reason-id reason-list-id reason) (not (state/valid-reason-codes? reason reason-id reason-list-id)))
+         (p/publish {:topics topic
+                     :error (e/invalid-args-error "Reason, Reason-id, and Reason-list-id must be correct values.")})
+         (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
+               body {:session-id session-id
+                     :state "notready"}
+               change-state-request {:method :post
+                                     :url (iu/build-api-url-with-params
+                                           change-state-url
+                                           {:tenant-id tenant-id
+                                            :resource-id resource-id})
+                                     :body (cond-> body
+                                             reason-info (assoc :reason reason :reason-id reason-id :reason-list-id reason-list-id))}]
+
+           (go
+             (let [change-state-response (a/<! (iu/api-request change-state-request))
+                   {:keys [api-response status]} change-state-response
+                   {:keys [result]} api-response]
+               (if (not= status 200)
+                 (p/publish {:topics topic
+                             :error (e/api-error api-response)
+                             :callback callback})
+                 (p/publish {:topics topic
+                             :response result
+                             :callback callback}))))
+           nil))))))
 
 (defn go-offline
   ([module] (go-offline module {}))
