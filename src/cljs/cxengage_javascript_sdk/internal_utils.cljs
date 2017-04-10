@@ -1,5 +1,5 @@
 (ns cxengage-javascript-sdk.internal-utils
-  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as a]
             [goog.crypt :as c]
             [ajax.core :as ajax]
@@ -56,33 +56,47 @@
                          response)]
       {:api-response api-response :status status})))
 
+(defn server-error?
+  [status]
+  (and (>= status 500) (< status 512) (not= status 509)))
+
 (defn api-request
   ([request-map]
    (api-request request-map false))
   ([request-map preserve-casing?]
-   (let [response-channel (a/promise-chan)
-         {:keys [method url body]} request-map
-         manifest-endpoint? (if url
-                              (not= -1 (.indexOf url "artifacts.s3"))
-                              false)
-         request (merge {:uri url
-                         :method method
-                         :timeout 120000
-                         :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? manifest-endpoint?)]
-                                     (update-local-time-offset normalized-response)
-                                     (a/put! response-channel normalized-response))
-                         :format (ajax/json-request-format)
-                         :response-format (if manifest-endpoint?
-                                            (ajax/text-response-format)
-                                            (ajax/json-response-format {:keywords? true}))}
-                        (when body
-                          {:params (if preserve-casing? body (camelify body))})
-                        (when-let [token (state/get-token)]
-                          (if manifest-endpoint?
-                            {}
-                            {:headers {"Authorization" (str "Token " token)}})))]
-     (ajax/ajax-request request)
-     response-channel)))
+   (let [resp-chan (a/promise-chan)]
+     (go-loop [timeout 1]
+       (let [response-channel (a/promise-chan)
+             {:keys [method url body]} request-map
+             manifest-endpoint? (if url
+                                  (not= -1 (.indexOf url "artifacts.s3"))
+                                  false)
+             request (merge {:uri url
+                             :method method
+                             :timeout 120000
+                             :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? manifest-endpoint?)]
+                                         (update-local-time-offset normalized-response)
+                                         (a/put! response-channel normalized-response))
+                             :format (ajax/json-request-format)
+                             :response-format (if manifest-endpoint?
+                                                (ajax/text-response-format)
+                                                (ajax/json-response-format {:keywords? true}))}
+                            (when body
+                              {:params (if preserve-casing? body (camelify body))})
+                            (when-let [token (state/get-token)]
+                              (if manifest-endpoint?
+                                {}
+                                {:headers {"Authorization" (str "Token " token)}})))]
+         (ajax/ajax-request request)
+         (let [response (a/<! response-channel)
+               {:keys [status]} response]
+           (if (and (server-error? status) (< timeout 4))
+             (do
+               (js/console.error (str "Received server error " status " retrying in " (* 3 timeout) " seconds."))
+               (a/<! (a/timeout (* 3000 timeout)))
+               (recur (inc timeout)))
+             (a/put! resp-chan response)))))
+     resp-chan)))
 
 (defn file-api-request [request-map]
   (let [response-channel (a/promise-chan)
