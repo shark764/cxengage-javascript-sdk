@@ -25,6 +25,7 @@
 * removed old reporting stuff
 * removed the ability to pass callbacks as a part of the params object (must be passed as a 2nd parameter)
 * removed current users id from muted resources by default (no longer need stop-gap)
+* added resource/tenant capacity function
 * added resource-removed handler
 * added resource-hold/resume handlers
 * added resume-all topics and API fn
@@ -39,7 +40,6 @@
 * fixed SQS stealing messages from other sessions
 * fixed getTranscripts interaction & tenant id parameters being swapped
 * changed change state out into 3 separate functions internally
-* changed build-api-url-with-params fn to use any kv pair to replace in the url
 * changed build-api-url-with-params fn to use any kv pair to replace in the url
 * migrated session & authentication modules to use the sdk macro
 
