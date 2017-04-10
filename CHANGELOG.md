@@ -6,9 +6,12 @@
 * added retry logic to api-request fn for http 5xx response codes
 * added support for reason codes when going not ready
 * renamed "goOffline" (in session) - changed to "logout" in authentication
+* fixed pub/sub system to only call callbacks for the subscribers whose topics match
+* removed the ability to pass callbacks as a part of the params object (must be passed as a 2nd parameter)
+* migrated session & authentication modules to use the sdk macro
 
 ## [4.1.0]
-* added support for Click-to-sms and send-sms-by-interrupt
+* added support for click-to-sms and send-sms-by-interrupt
 * fixed missing intermediary {internal} object on exposed global
 * verify if callbacks are fn's before attempting to call them
 
@@ -23,26 +26,19 @@
 * added support for reason codes when going not ready
 * changed build-api-url-with-params fn to use any kv pair to replace in the url
 * renamed SDK.voice.hold & SDK.voice.resume to SDK.voice.customerHold & SDK.voice.customerResume in accordance with new resource-specific controls
-* removed old reporting stuff
-* removed the ability to pass callbacks as a part of the params object (must be passed as a 2nd parameter)
-* removed current users id from muted resources by default (no longer need stop-gap)
-* added resource/tenant capacity function
-* added resource-removed handler
-* added resource-hold/resume handlers
-* added resume-all topics and API fn
+* remove old reporting stuff
+* make reporting module use user-passed refresh rate
 * added resource hold/resume and remove resource
+* broke change state out into 3 separate functions internally
+* added resource-removed handler
+* perform a one-off batch request any time a stat is added to the sub list
+* added resource-hold/resume handlers
+* removed current users id from muted resources by default (no longer need stop-gap)
+* added resume-all topics and API fn
 * added active-resources, customer-on-hold, and recording to work-accepted pubsub
-* added support for reason codes when going not ready
-* added retry logic to api-request fn for http 5xx response codes
-* added support for reason codes when going not ready
-* fixed reporting module refresh rate (use the user-passed refresh rate)
-* fixed stats (perform a one-off batch request any time a stat is added to the sub list)
 * fixed a critical bug where the email module startup log wasn't formatted correctly
 * fixed SQS stealing messages from other sessions
 * fixed getTranscripts interaction & tenant id parameters being swapped
-* changed change state out into 3 separate functions internally
-* changed build-api-url-with-params fn to use any kv pair to replace in the url
-* migrated session & authentication modules to use the sdk macro
 
 ## [3.0.0]
 * added resource-added signal
