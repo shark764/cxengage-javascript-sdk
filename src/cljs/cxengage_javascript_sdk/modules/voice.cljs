@@ -204,7 +204,9 @@
                         (.setAttribute script "src" js-api-url)
                         (.appendChild body script)
                         (go-loop []
-                          (if (aget js/window "Twilio")
+                          (if (and (aget js/window "Twilio")
+                                   (aget js/window "Twilio" "Device")
+                                   (aget js/window "Twilio" "Device" "setup"))
                             (do
                               (state/set-twilio-device (js/Twilio.Device.setup token #js {"debug" debug-twilio?}))
                               (js/Twilio.Device.incoming update-twilio-connection)
