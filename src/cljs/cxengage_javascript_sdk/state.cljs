@@ -126,7 +126,8 @@
 
 (defn get-interaction-messaging-history [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
-    (get-in @sdk-state [:interactions interaction-location interaction-id :message-history])))
+    (filter #(= (get % :type) "message")
+            (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]))))
 
 (defn add-interaction! [type interaction]
   (let [{:keys [interaction-id]} interaction]

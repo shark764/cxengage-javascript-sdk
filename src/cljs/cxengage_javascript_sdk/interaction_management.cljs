@@ -121,9 +121,11 @@
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (p/publish {:topics (p/get-topic :new-message-received)
-                :response (:payload (state/augment-messaging-payload {:payload payload}))})
-    (state/add-messages-to-history! interaction-id [{:payload payload}])))
+    (log :debug "[Messaging] payload prior to filtering:" payload)
+    (when (= (:type payload) "message")
+      (p/publish {:topics (p/get-topic :new-message-received)
+                  :response (:payload (state/augment-messaging-payload {:payload payload}))})
+      (state/add-messages-to-history! interaction-id [{:payload payload}]))))
 
 (defn handle-resource-state-change [message]
   (state/set-user-session-state! message)
