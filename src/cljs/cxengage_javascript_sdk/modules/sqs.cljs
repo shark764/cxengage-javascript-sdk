@@ -44,10 +44,10 @@
           msg-type (or (:notification-type parsed-body)
                        (:type parsed-body))]
       (if (not= (state/get-session-id) session-id)
-        (do (log :warn (str "Received a message from a different session than the current one."
-                            "Current session ID: " current-session-id
-                            " - Session ID on message received: " session-id
-                            " Message type: " msg-type))
+        (do #_(log :warn (str "Received a message from a different session than the current one."
+                              "Current session ID: " current-session-id
+                              " - Session ID on message received: " session-id
+                              " Message type: " msg-type))
             nil)
         (do (delete-message-fn receipt-handle)
             body)))))
