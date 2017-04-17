@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added retry logic to api-request fn for http 5xx response codes
 * added support for reason codes when going not ready
 * changed build-api-url-with-params fn to use any kv pair to replace in the url
 * renamed SDK.voice.hold & SDK.voice.resume to SDK.voice.customerHold & SDK.voice.customerResume in accordance with new resource-specific controls
