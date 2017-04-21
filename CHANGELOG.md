@@ -1,6 +1,9 @@
 # Change Log
 
 ## [Unreleased]
+* added resource/tenant capacity function
+* added retry logic to api-request fn for http 5xx response codes
+* added support for reason codes when going not ready
 * renamed "goOffline" (in session) - changed to "logout" in authentication
 
 ## [4.1.0]
@@ -36,6 +39,7 @@
 * fixed SQS stealing messages from other sessions
 * fixed getTranscripts interaction & tenant id parameters being swapped
 * changed change state out into 3 separate functions internally
+* changed build-api-url-with-params fn to use any kv pair to replace in the url
 * changed build-api-url-with-params fn to use any kv pair to replace in the url
 * migrated session & authentication modules to use the sdk macro
 
