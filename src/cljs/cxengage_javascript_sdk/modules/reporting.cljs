@@ -115,9 +115,51 @@
                      :callback callback})
          nil)))))
 
+
+(s/def ::get-capacity-params
+ (s/keys :req-un []
+         :opt-un [::specs/callback ::specs/resource-id]))
+
+(defn get-capacity
+ ([module]
+  (get-capacity module {}))
+ ([module params & others]
+  (if-not (fn? (js->clj (first others)))
+    (e/wrong-number-of-args-error)
+    (get-capacity module (merge (iu/extract-params params {:callback (first others)})))))
+ ([module params]
+  (let [params (iu/extract-params params)
+        module-state (:state module)
+        api-url (get-in module [:config :api-url])
+        tenant-id (st/get-active-tenant-id)
+        {:keys [resource-id callback]} params
+        url (if resource-id :capacity-tenant :capacity-user)
+        topic (p/get-topic :get-capacity-response)]
+    (if-not (s/valid? ::get-capacity-params params)
+      (p/publish {:topics topic
+                  :error (e/invalid-args-error (s/explain-data ::get-capacity-params params))
+                  :callback callback})
+      (go (let [capacity-url (str (st/get-base-api-url) (get-in @module-state [:urls url]))
+                capacity-request {:method :get
+                                  :url (iu/build-api-url-with-params
+                                        capacity-url
+                                        {:tenant-id tenant-id
+                                         :resource-id resource-id})}
+                {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
+                {:keys [results]} api-response
+                capacity-topic (p/get-topic :get-capacity)]
+            (if (not= status 200)
+              (p/publish {:topics capacity-topic
+                          :error (e/api-error "api returned an error")})
+              (p/publish {:topics capacity-topic
+                          :response results})))))
+    nil)))
+
 (def initial-state
   {:module-name :reporting
-   :urls {:batch "tenants/tenant-id/realtime-statistics/batch"}
+   :urls {:batch "tenants/tenant-id/realtime-statistics/batch"
+          :capacity-user "tenants/tenant-id/users/resource-id/realtime-statistics/resource-capacity"
+          :capacity-tenant "tenants/tenant-id/realtime-statistics/resource-capacity"}
    :polling-started? false
    :statistics {}})
 
@@ -128,7 +170,8 @@
     (let [register (aget js/window "serenova" "cxengage" "modules" "register")
           module-name (get @(:state this) :module-name)]
       (register {:api {module-name {:add-stat-subscription (partial add-stat-subscription this)
-                                    :remove-stat-subscription (partial remove-stat-subscription this)}}
+                                    :remove-stat-subscription (partial remove-stat-subscription this)
+                                    :get-capacity (partial get-capacity this)}}
                  :module-name module-name})
       (a/put! core-messages< {:module-registration-status :success :module module-name})
       (start-polling this)

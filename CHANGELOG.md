@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added resource/tenant capacity function
 * added retry logic to api-request fn for http 5xx response codes
 * added support for reason codes when going not ready
 * changed build-api-url-with-params fn to use any kv pair to replace in the url
