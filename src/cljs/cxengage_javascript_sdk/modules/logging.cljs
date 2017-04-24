@@ -94,7 +94,6 @@
          api-url (get-in module [:config :api-url])
          routes (get-in module-state [:urls :save-logs])
          base-url (str api-url routes)
-         topic (get-in module-state [:topcis :save-logs])
          logs (reduce (fn [acc x] (let [log (format-request-logs x)]
                                     (conj acc log))) [] (state/get-unsaved-logs))
          request-map {:url (iu/build-api-url-with-params base-url {:tenant-id (state/get-active-tenant-id)
@@ -112,7 +111,7 @@
        (do (go (let [save-response (a/<! (iu/api-request request-map true))
                      {:keys [status api-response]} save-response
                      {:keys [result]} api-response]
-                 (if (not= 200)
+                 (if (not= status 200)
                    (p/publish {:topics topic
                                :error (e/api-error api-response)
                                :callback callback})
