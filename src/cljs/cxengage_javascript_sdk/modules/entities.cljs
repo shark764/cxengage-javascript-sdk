@@ -114,7 +114,6 @@
           :queues "tenants/tenant-id/queues"
           :transfer-list "tenants/tenant-id/transfer-lists/entity-id"
           :transfer-lists "tenants/tenant-id/transfer-lists"
-          :capacity "tenants/tenant-id/users/entity-id/realtime-statistics/capacity"
           :available-stats "tenants/tenant-id/realtime-statistics/available?client=toolbar"
           :contact-history "tenants/tenant-id/contacts/entity-id/interactions"
           :contact-interaction "tenants/tenant-id/interactions/entity-id"}})
@@ -134,8 +133,7 @@
                                           :transfer-lists (partial get-entity this :transfer-lists ::get-all-entity-params)
                                           :transfer-list (partial get-entity this :transfer-list ::get-single-entity-params)}
                                     :update {:user (partial put-entity this :user)}}
-                       :reporting  {:get-capacity (partial get-entity this :capacity ::get-single-entity-params)
-                                    :get-available-stats (partial get-entity this :available-stats ::get-all-entity-params)
+                       :reporting  {:get-available-stats (partial get-entity this :available-stats ::get-all-entity-params)
                                     :get-contact-history (partial get-entity this :contact-history ::get-single-entity-params)
                                     :get-contact-interaction (partial get-entity this :contact-interaction ::get-single-entity-params)}}
                  :module-name module-name})
