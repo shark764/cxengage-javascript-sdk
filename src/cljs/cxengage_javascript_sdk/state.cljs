@@ -303,6 +303,12 @@
 (defn get-integration-by-type [type]
   (first (filter #(= (:type %) type) (get-all-integrations))))
 
+(defn update-integration [type integration]
+  (let [state-integrations (get-all-integrations)
+        other-integrations (filterv #(not= type (:type %1)) state-integrations)
+        new-integrations (conj other-integrations integration)]
+    (swap! sdk-state assoc-in [:session :config :integrations] new-integrations)))
+
 (defn set-active-tenant!
   [tenant-id]
   (swap! sdk-state assoc-in [:session :tenant-id] tenant-id))

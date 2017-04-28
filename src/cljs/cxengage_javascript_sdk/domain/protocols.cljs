@@ -2,4 +2,5 @@
 
 (defprotocol SDKModule
   (start [this] "")
-  (stop [this] ""))
+  (stop [this] "")
+  (refresh-integration [this] ""))

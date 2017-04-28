@@ -138,4 +138,5 @@
                                     :save-logs (partial save-logs this)
                                     :dump-logs (partial dump-logs this)}}
                  :module-name module-name})))
-  (stop [this]))
+  (stop [this])
+  (refresh-integration [this]))

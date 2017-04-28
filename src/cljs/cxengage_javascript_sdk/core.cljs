@@ -36,7 +36,8 @@
   (.start module (clj->js (state/get-config))))
 
 (defn start-internal-module [module]
-  (pr/start module))
+  (pr/start module)
+  (pr/refresh-integration module))
 
 (defn gen-new-initial-module-config [comm<]
   {:config (state/get-config) :state (atom {}) :core-messages< comm<})

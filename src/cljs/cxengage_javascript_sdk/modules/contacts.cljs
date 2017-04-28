@@ -281,4 +281,5 @@
                                     :list-layouts (partial list-layouts this)}}
                  :module-name module-name})
       (log :info (str "<----- Started " (name module-name) " module! ----->"))))
-  (stop [this]))
+  (stop [this])
+  (refresh-integration [this]))

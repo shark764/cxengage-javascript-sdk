@@ -8,6 +8,8 @@
   {:code 1001 :error "Invalid arguments passed to SDK fn." :data spec-explanation})
 (defn api-error [error]
   {:code 1002 :error "API returned an error."})
+(defn token-error [service]
+  {:code 1003 :error (str "Failed to refresh " service " token.")})
 (defn no-entity-found-for-specified-id [entity entity-id]
   {:code 1004 :error (str "No " entity " found by that ID") :data entity-id})
 (defn incorrect-disposition-selected []

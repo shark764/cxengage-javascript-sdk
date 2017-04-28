@@ -7,6 +7,8 @@
             [cljsjs.aws-sdk-js]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-cljs-utils.core :as cxu]
+            [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]))
 
@@ -85,7 +87,7 @@
 
 (def initial-state
   {:module-name :sqs
-   :urls {}})
+   :urls {:config "tenants/tenant-id/users/resource-id/config"}})
 
 (defrecord SQSModule [config state core-messages< on-msg-fn]
   pr/SDKModule
@@ -99,4 +101,39 @@
           (do (sqs-init* this sqs-integration on-msg-fn core-messages<)
               (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))
               (register {:module-name module-name}))))))
-  (stop [this]))
+  (stop [this])
+  (refresh-integration [this]
+    (go-loop []
+      (let [sqs-token-ttl (get-in (state/get-integration-by-type "sqs") [:credentials :ttl])
+            min-ttl (* sqs-token-ttl 500)];;refresh at half the ttl
+        (a/<! (a/timeout min-ttl))
+        (let [api-url (get-in this [:config :api-url])
+              module-state @(:state this)
+              resource-id (state/get-active-user-id)
+              tenant-id (state/get-active-tenant-id)
+              topic (p/get-topic :config-response)
+              config-url (str api-url (get-in module-state [:urls :config]))
+              config-request {:method :get
+                              :url (iu/build-api-url-with-params
+                                    config-url
+                                    {:tenant-id tenant-id
+                                     :resource-id resource-id})}
+              config-response (a/<! (iu/api-request config-request))
+              {:keys [status api-response]} config-response
+              {:keys [result]} api-response
+              {:keys [integrations]} result
+              sqs-integration (peek (filterv #(= (:type %) "sqs") integrations))]
+          (state/update-integration "sqs" sqs-integration)
+          (if (not= status 200)
+            (p/publish {:topics topic
+                        :error (e/token-error "SQS")})
+            (let [{:keys [queue credentials]} sqs-integration
+                  {:keys [access-key secret-key session-token]} credentials
+                  queue-url (:url queue)
+                  options (clj->js {:accessKeyId access-key
+                                    :secretAccessKey secret-key
+                                    :sessionToken session-token
+                                    :region "us-east-1"
+                                    :params {:QueueUrl queue-url}})
+                  sqs (AWS.SQS. options)])))
+        (recur)))))
