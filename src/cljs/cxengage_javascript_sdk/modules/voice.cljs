@@ -295,7 +295,8 @@
      nil)))
 
 (def initial-state
-  {:module-name :voice})
+  {:module-name :voice
+   :urls {:config "tenants/tenant-id/users/resource-id/config"}})
 
 (defrecord VoiceModule [config state core-messages<]
   pr/SDKModule
@@ -328,4 +329,32 @@
                                                     :resource-resume (partial send-interrupt this :resource-resume)
                                                     :resume-all (partial send-interrupt this :resume-all)}}}
                        :module-name module-name})))))
-  (stop [this]))
+  (stop [this])
+  (refresh-integration [this]
+    (go-loop []
+      (let [twilio-token-ttl (get-in (state/get-integration-by-type "twilio") [:credentials :ttl])
+            min-ttl (* twilio-token-ttl 500)]
+        (a/<! (a/timeout min-ttl))
+        (let [api-url (get-in this [:config :api-url])
+              module-state @(:state this)
+              resource-id (state/get-active-user-id)
+              tenant-id (state/get-active-tenant-id)
+              topic (p/get-topic :config-response)
+              config-url (str api-url (get-in module-state [:urls :config]))
+              config-request {:method :get
+                              :url (iu/build-api-url-with-params
+                                    config-url
+                                    {:tenant-id tenant-id
+                                     :resource-id resource-id})}
+              config-response (a/<! (iu/api-request config-request))
+              {:keys [status api-response]} config-response
+              {:keys [result]} api-response
+              {:keys [integrations]} result
+              twilio-integration (peek (filterv #(= (:type %1) "twilio") integrations))
+              twilio-token (get-in twilio-integration [:credentials :token])]
+          (state/update-integration "twilio" twilio-integration)
+          (if (not= status 200)
+            (p/publish {:topics topic
+                        :error (e/token-error "twilio")})
+            (state/set-twilio-device (js/Twilio.Device.setup twilio-token))))
+        (recur)))))

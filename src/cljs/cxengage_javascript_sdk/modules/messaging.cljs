@@ -277,4 +277,5 @@
                                                         :get-transcripts (partial get-transcripts this)}}}
                        :module-name module-name})
             (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))))
-  (stop [this]))
+  (stop [this])
+  (refresh-integration [this]))

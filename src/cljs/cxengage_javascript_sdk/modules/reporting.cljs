@@ -176,4 +176,5 @@
       (a/put! core-messages< {:module-registration-status :success :module module-name})
       (start-polling this)
       (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
-  (stop [this]))
+  (stop [this])
+  (refresh-integration [this]))
