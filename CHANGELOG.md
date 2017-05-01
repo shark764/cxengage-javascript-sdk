@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [4.0.0]
 * fixed refreshing of twilio and sqs tokens
 * added resource/tenant capacity function
 * added retry logic to api-request fn for http 5xx response codes
