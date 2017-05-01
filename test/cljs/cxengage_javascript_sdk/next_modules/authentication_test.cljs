@@ -6,25 +6,59 @@
             [cxengage-javascript-sdk.next-modules.authentication :as auth]
             [cljs.test :refer-macros [deftest is testing async use-fixtures]]))
 
-(deftest login-test
-  (testing "login successful"
+(def successful-login-response
+  {:status 200
+   :api-response {:result {:username "foo"
+                           :tenants ["baz" "bar"]}}})
+
+(deftest login-api--happy-test--login-response-pubsub
+  (testing "login function success - login response pubsub"
     (async done
-           (let [expected-response {:status 200
-                                    :api-response {:foo :bar}}]
-             (go (let [resp-chan (a/promise-chan)]
-                   (a/>! resp-chan expected-response)
-                   (set! iu/api-request (fn [_]
-                                          resp-chan))
-                   (p/subscribe "cxengage/authentication/login-response"
-                                (fn [error topic response]
-                                  (println "[[[[[[[[[[[[[[[" response error topic)
-                                  (is (= response expected-response))
-                                  (done)))
-                   (auth/login {:username "testuser@testemail.com"
-                                :password "testpassword"}))))))
+           (go (let [old iu/api-request
+                     resp-chan (a/promise-chan)
+                     pubsub-expected-response (get-in successful-login-response [:api-response :result])]
+                 (a/>! resp-chan successful-login-response)
+                 (set! iu/api-request (fn [_]
+                                        resp-chan))
+                 (p/subscribe "cxengage/authentication/login-response"
+                              (fn [error topic response]
+                                (is (= pubsub-expected-response (iu/kebabify response)))
+                                (set! iu/api-request old)
+                                (done)))
+                 (auth/login {:username "testuser@testemail.com"
+                              :password "testpassword"}))))))
 
+(deftest login-api--happy-test--tenant-list-pubsub
+  (testing "login function success - tenant list pubsub"
+    (async done
+           (go (let [old iu/api-request
+                     resp-chan (a/promise-chan)
+                     pubsub-expected-response (get-in successful-login-response [:api-response :result :tenants])]
+                 (a/>! resp-chan successful-login-response)
+                 (set! iu/api-request (fn [_]
+                                        resp-chan))
+                 (p/subscribe "cxengage/session/tenant-list"
+                              (fn [error topic response]
+                                (is (= pubsub-expected-response (iu/kebabify response)))
+                                (set! iu/api-request old)
+                                (done)))
+                 (auth/login {:username "testuser@testemail.com"
+                              :password "testpassword"}))))))
 
+(deftest login-api--sad-test--invalid-args-error
+  (testing "login function failure - wrong # of args"
+    (async done
+           (let [pubsub-expected-response {:code 1000, :error "Incorrect number of arguments passed to SDK fn."}]
+             (p/subscribe "cxengage/authentication/login-response"
+                          (fn [error topic response]
+                            (is (= pubsub-expected-response (iu/kebabify error)))
+                            (done)))
+             (auth/login {:username "testyoyoyoy"
+                          :password "oyoyoyoy"}
+                         (fn [] nil)
+                         "this should cause the fn to throw an error")))))
 
-  #_(testing "login fails with invalid" (is (= 1 1)))
-  #_(testing "login fails with invalid arguments" (is (= 1 1)))
-  #_(testing "login failed (some API error)" (is (= 1 1))))
+;; fail spec
+;; api error
+;; didn't pass a map
+;; did pass a callback, but it isnt a function

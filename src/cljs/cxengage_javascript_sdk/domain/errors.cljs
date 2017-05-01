@@ -4,8 +4,11 @@
   {:code 1000 :error "Incorrect number of arguments passed to SDK fn."})
 (defn missing-required-permissions-error []
   {:code 1003 :error "Missing required permissions"})
-(defn invalid-args-error [spec-explanation]
-  {:code 1001 :error "Invalid arguments passed to SDK fn." :data spec-explanation})
+(defn invalid-args-error
+  ([]
+   {:code 1001 :error "Invalid arguments passed to SDK fn."})
+  ([spec-explanation]
+   {:code 1001 :error "Invalid arguments passed to SDK fn." :data spec-explanation}))
 (defn api-error [error]
   {:code 1002 :error "API returned an error."})
 (defn token-error [service]
