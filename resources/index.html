@@ -110,115 +110,123 @@
       voiceTimer:undefined
     };
 
-    SDK.subscribe('cxengage', function(error, topic, response) {
-
-      console.warn('Received pubsub for: ' + topic, error, response);
-
-      if (error) { return console.log('Error in things:', error, topic, response); }
-
-      switch(topic) {
-        case 'cxengage/authentication/login-response':
-          handleLogin(error, topic, response);
-          break;
-        case 'cxengage/session/tenant-list':
-          handleTenantList(error, topic, response);
-          break;
-        case 'cxengage/session/extension-list':
-          handleExtensionList(error, topic, response);
-          break;
-        case 'cxengage/interactions/email/attachment-list':
-          console.log('ATTACHMENT LIST:', response);
-          break;
-        case 'cxengage/session/started':
-          handleSessionStart(error, topic, response);
-          break;
-        case 'cxengage/session/started':
-          handleSessionEnd(error, topic, response);
-          break;
-        case 'cxengage/session/state-change-response':
-          handleStateChange(error, topic, response);
-          break;
-        case 'cxengage/interactions/work-offer-received':
-          handleWorkOffer(error, topic, response);
-          break;
-        case 'cxengage/interactions/email/plain-body-received':
-          handleEmailPlainBody(response);
-          break;
-        case 'cxengage/interactions/email/html-body-received':
-          handleEmailHTMLBody(response);
-          break;
-        case 'cxengage/interactions/work-rejected-received':
-          handleWorkRejected(error, topic, response);
-          break;
-        case 'cxengage/interactions/work-accepted-received':
-          handleWorkAccepted(error, topic, response);
-          break;
-        case 'cxengage/interactions/voice/customer-hold-received':
-          handleButtonSwitch(error, topic, response, 'hold', 'on');
-          break;
-        case 'cxengage/interactions/voice/customer-resume-received':
-          handleButtonSwitch(error, topic, response, 'hold', 'off');
-          break;
-        case 'cxengage/interactions/voice/resource-mute-received':
-          handleButtonSwitch(error, topic, response, 'mute', 'on');
-          break;
-        case 'cxengage/interactions/voice/resource-unmute-received':
-          handleButtonSwitch(error, topic, response, 'mute', 'off');
-          break;
-        case 'cxengage/interactions/voice/start-recording-acknowledged':
-          handleButtonSwitch(error, topic, response, 'recording', 'on');
-          break;
-        case 'cxengage/interactions/voice/stop-recording-acknowledged':
-          handleButtonSwitch(error, topic, response, 'recording', 'off');
-          break;
-        case 'cxengage/interactions/focus-acknowledged':
-          handleButtonSwitch(error, topic, response, 'focus', 'on');
-          break;
-        case 'cxengage/interactions/wrapup-started':
-          $('#' + response.interactionId + ' #responseArea').hide();
-          $('#' + response.interactionId).append('<button onclick="SDK.interactions.endWrapup({interactionId:\''+response.interactionId+'\'})">End Wrapup</button>');
-          break;
-        case 'cxengage/interactions/unfocus-acknowledged':
-          handleButtonSwitch(error, topic, response, 'focus', 'off');
-          break;
-        case 'cxengage/interactions/work-ended-received':
-          handleWorkEnded(error, topic, response);
-          break;
-        case 'cxengage/interactions/messaging/new-message-received':
-          handleNewMessagingMessage(error, topic, response);
-          break;
-        case 'cxengage/interactions/messaging/history-received':
-          $('#' + response[0].to).show().css({display:'inline-block'});
-          _.each(response, function(msg) {
-            handleNewMessagingMessage(error, topic, msg);
-          });
-          break;
-        case 'cxengage/contacts/list-attributes-response':
-          console.log(response);
-          break;
-        case 'cxengage/capabilities/voice-available':
-          handleVoiceEnabled(error, topic, response);
-          break;
-        case 'cxengage/capabilities/messaging-available':
-          handleMessagingEnabled(error, topic, response);
-          break;
-        case 'cxengage/interactions/wrapup-started':
-          console.log("Wrapup started " + response);
-          break;
-        case 'cxengage/interactions/email/details-received':
-          console.log('EMAIL DETAILS RECEIVED:',response);
-          break;
-        case 'cxengage/interactions/email/artifact-received':
-          console.log('EMAIL ARTIFACT RECEIVED:',response);
-          break;
-        case 'cxengage/interactions/email/get-artifact-response':
-          console.log("The artifact file: " + response.artifactFile);
-          break;
-        default:
-          //console.warn('no handler written yet for ', topic);
-          break;
-      }
+    SDK.subscribe('cxengage/authentication/login-response', function(e,t,v) {
+      console.log('login response pubsub fired',e,t,v);
     });
+
+    SDK.subscribe('cxengage/session/tenant-list', function(e,t,v) {
+      console.log('tenant list pubsub fired',e,t,v);
+    });
+
+    // SDK.subscribe('cxengage', function(error, topic, response) {
+    //
+    //   console.warn('Received pubsub for: ' + topic, error, response);
+    //
+    //   if (error) { return console.log('Error in things:', error, topic, response); }
+    //
+    //   switch(topic) {
+    //     case 'cxengage/authentication/login-response':
+    //       handleLogin(error, topic, response);
+    //       break;
+    //     case 'cxengage/session/tenant-list':
+    //       handleTenantList(error, topic, response);
+    //       break;
+    //     case 'cxengage/session/extension-list':
+    //       handleExtensionList(error, topic, response);
+    //       break;
+    //     case 'cxengage/interactions/email/attachment-list':
+    //       console.log('ATTACHMENT LIST:', response);
+    //       break;
+    //     case 'cxengage/session/started':
+    //       handleSessionStart(error, topic, response);
+    //       break;
+    //     case 'cxengage/session/started':
+    //       handleSessionEnd(error, topic, response);
+    //       break;
+    //     case 'cxengage/session/state-change-response':
+    //       handleStateChange(error, topic, response);
+    //       break;
+    //     case 'cxengage/interactions/work-offer-received':
+    //       handleWorkOffer(error, topic, response);
+    //       break;
+    //     case 'cxengage/interactions/email/plain-body-received':
+    //       handleEmailPlainBody(response);
+    //       break;
+    //     case 'cxengage/interactions/email/html-body-received':
+    //       handleEmailHTMLBody(response);
+    //       break;
+    //     case 'cxengage/interactions/work-rejected-received':
+    //       handleWorkRejected(error, topic, response);
+    //       break;
+    //     case 'cxengage/interactions/work-accepted-received':
+    //       handleWorkAccepted(error, topic, response);
+    //       break;
+    //     case 'cxengage/interactions/voice/customer-hold-received':
+    //       handleButtonSwitch(error, topic, response, 'hold', 'on');
+    //       break;
+    //     case 'cxengage/interactions/voice/customer-resume-received':
+    //       handleButtonSwitch(error, topic, response, 'hold', 'off');
+    //       break;
+    //     case 'cxengage/interactions/voice/resource-mute-received':
+    //       handleButtonSwitch(error, topic, response, 'mute', 'on');
+    //       break;
+    //     case 'cxengage/interactions/voice/resource-unmute-received':
+    //       handleButtonSwitch(error, topic, response, 'mute', 'off');
+    //       break;
+    //     case 'cxengage/interactions/voice/start-recording-acknowledged':
+    //       handleButtonSwitch(error, topic, response, 'recording', 'on');
+    //       break;
+    //     case 'cxengage/interactions/voice/stop-recording-acknowledged':
+    //       handleButtonSwitch(error, topic, response, 'recording', 'off');
+    //       break;
+    //     case 'cxengage/interactions/focus-acknowledged':
+    //       handleButtonSwitch(error, topic, response, 'focus', 'on');
+    //       break;
+    //     case 'cxengage/interactions/wrapup-started':
+    //       $('#' + response.interactionId + ' #responseArea').hide();
+    //       $('#' + response.interactionId).append('<button onclick="SDK.interactions.endWrapup({interactionId:\''+response.interactionId+'\'})">End Wrapup</button>');
+    //       break;
+    //     case 'cxengage/interactions/unfocus-acknowledged':
+    //       handleButtonSwitch(error, topic, response, 'focus', 'off');
+    //       break;
+    //     case 'cxengage/interactions/work-ended-received':
+    //       handleWorkEnded(error, topic, response);
+    //       break;
+    //     case 'cxengage/interactions/messaging/new-message-received':
+    //       handleNewMessagingMessage(error, topic, response);
+    //       break;
+    //     case 'cxengage/interactions/messaging/history-received':
+    //       $('#' + response[0].to).show().css({display:'inline-block'});
+    //       _.each(response, function(msg) {
+    //         handleNewMessagingMessage(error, topic, msg);
+    //       });
+    //       break;
+    //     case 'cxengage/contacts/list-attributes-response':
+    //       console.log(response);
+    //       break;
+    //     case 'cxengage/capabilities/voice-available':
+    //       handleVoiceEnabled(error, topic, response);
+    //       break;
+    //     case 'cxengage/capabilities/messaging-available':
+    //       handleMessagingEnabled(error, topic, response);
+    //       break;
+    //     case 'cxengage/interactions/wrapup-started':
+    //       console.log("Wrapup started " + response);
+    //       break;
+    //     case 'cxengage/interactions/email/details-received':
+    //       console.log('EMAIL DETAILS RECEIVED:',response);
+    //       break;
+    //     case 'cxengage/interactions/email/artifact-received':
+    //       console.log('EMAIL ARTIFACT RECEIVED:',response);
+    //       break;
+    //     case 'cxengage/interactions/email/get-artifact-response':
+    //       console.log("The artifact file: " + response.artifactFile);
+    //       break;
+    //     default:
+    //       //console.warn('no handler written yet for ', topic);
+    //       break;
+    //   }
+    // });
 
     /*
      *

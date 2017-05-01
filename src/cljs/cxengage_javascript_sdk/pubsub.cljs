@@ -207,13 +207,7 @@
    (let [{:keys [topics response error callback]} publish-details
          topics (if (string? topics) (conj #{} topics) topics)
          all-topics (all-topics)
-         subscriptions-to-publish (reduce-kv
-                                   (fn [subs-to-pub topic subscriptions]
-                                     (if (some #(= topic %) all-topics)
-                                       (merge subs-to-pub subscriptions)))
-                                   {}
-                                   @sdk-subscriptions)
-         subscription-callbacks (vals subscriptions-to-publish)
+         subscription-callbacks (first (map vals (map #(get @sdk-subscriptions (name %)) topics)))
          topics (iu/camelify topics)
          error (iu/camelify error)
          response (if preserve-casing (clj->js response) (iu/camelify response))]

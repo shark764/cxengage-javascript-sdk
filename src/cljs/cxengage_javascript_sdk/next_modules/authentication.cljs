@@ -67,8 +67,10 @@
           (let [user-identity (:result api-response)
                 tenants (:tenants user-identity)]
             (state/set-user-identity! user-identity)
+            (js/console.info "publishing tenant list")
             (p/publish {:topics (p/get-topic :tenant-list)
                         :response tenants})
+            (js/console.info "publishing login response")
             (p/publish {:topics topic
                         :response user-identity
                         :callback callback})))))))
