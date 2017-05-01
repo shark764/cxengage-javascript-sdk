@@ -41,7 +41,7 @@
                               :body {:session-id session-id
                                      :state "offline"}}
         {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
-        new-state-data (:result api-resoinse)]
+        new-state-data (:result api-response)]
     (when (= status 200)
       (state/set-session-expired! true)
       (p/publish {:topics topic

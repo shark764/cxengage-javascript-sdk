@@ -361,7 +361,9 @@
           client-id (state/get-active-user-id)
           mqtt-integration (state/get-integration-by-type "messaging")
           mqtt-integration (->> (merge (select-keys mqtt-integration [:region :endpoint])
-                                       (select-keys (:credentials mqtt-integration) [:secret-key :access-key :session-token]))
+                                       (select-keys
+                                        (:credentials mqtt-integration)
+                                        [:secret-key :access-key :session-token]))
                                 (transform-keys camel/->kebab-case-keyword)
                                 (#(rename-keys % {:region :region-name})))]
       (if-not mqtt-integration
