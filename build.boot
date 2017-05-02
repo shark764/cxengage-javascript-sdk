@@ -10,24 +10,25 @@
                  [org.clojure/core.async "0.2.395"
                   :exclusions [org.clojure/tools.reader]]
 
+                 [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
+                 [com.cognitect/transit-cljs "0.8.239"]
+                 [com.andrewmcveigh/cljs-time "0.4.0"]
+                 [cljsjs/aws-sdk-js "2.2.41-4"]
+                 [binaryage/devtools "0.9.4"]
+                 [camel-snake-kebab "0.4.0"]
+                 [funcool/promesa "1.8.1"]
+                 [cljsjs/paho "1.0.1-0"]
+
+                 [serenova/cxengage-cljs-utils "2.0.0"]
+                 [serenova/lumbajack "2.0.4"]
+
                  [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
                  [com.cemerick/piggieback "0.2.1" :scope "test"]
-                 [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
                  [adzerk/boot-cljs-repl "0.3.2" :scope "test"]
                  [adzerk/boot-cljs "1.7.228-2" :scope "test"]
                  [adzerk/boot-reload "0.5.1" :scope "test"]
                  [pandeiro/boot-http "0.7.6" :scope "test"]
-                 [com.cognitect/transit-cljs "0.8.239"]
-                 [com.andrewmcveigh/cljs-time "0.4.0"]
-                 [weasel "0.7.0" :scope "test"]
-                 [cljsjs/aws-sdk-js "2.2.41-4"]
-                 [binaryage/devtools "0.9.1"]
-                 [camel-snake-kebab "0.4.0"]
-                 [funcool/promesa "1.8.0"]
-                 [cljsjs/paho "1.0.1-0"]
-
-                 [serenova/cxengage-cljs-utils "2.0.0"]
-                 [serenova/lumbajack "2.0.4"]]
+                 [weasel "0.7.0" :scope "test"]]
 
  :repositories #(apply conj %
                        [["releases" {:url "http://nexus.cxengagelabs.net/content/repositories/releases/"
