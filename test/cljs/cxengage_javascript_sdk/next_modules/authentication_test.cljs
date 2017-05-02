@@ -14,6 +14,7 @@
 (deftest login-api--happy-test--login-response-pubsub
   (testing "login function success - login response pubsub"
     (async done
+           (reset! p/sdk-subscriptions {})
            (go (let [old iu/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-login-response [:api-response :result])]
@@ -31,6 +32,7 @@
 (deftest login-api--happy-test--tenant-list-pubsub
   (testing "login function success - tenant list pubsub"
     (async done
+           (reset! p/sdk-subscriptions {})
            (go (let [old iu/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-login-response [:api-response :result :tenants])]
@@ -48,6 +50,7 @@
 (deftest login-api--sad-test--invalid-args-error
   (testing "login function failure - wrong # of args"
     (async done
+           (reset! p/sdk-subscriptions {})
            (let [pubsub-expected-response {:code 1000, :error "Incorrect number of arguments passed to SDK fn."}]
              (p/subscribe "cxengage/authentication/login-response"
                           (fn [error topic response]
