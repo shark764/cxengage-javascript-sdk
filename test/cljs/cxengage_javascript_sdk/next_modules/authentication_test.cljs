@@ -40,7 +40,7 @@
                  (set! iu/api-request (fn [_]
                                         resp-chan))
                  (p/subscribe "cxengage/session/tenant-list"
-                              (fn [error topic response]
+                              (fn foo [error topic response]
                                 (is (= pubsub-expected-response (iu/kebabify response)))
                                 (set! iu/api-request old)
                                 (done)))
@@ -53,7 +53,7 @@
            (reset! p/sdk-subscriptions {})
            (let [pubsub-expected-response {:code 1000, :error "Incorrect number of arguments passed to SDK fn."}]
              (p/subscribe "cxengage/authentication/login-response"
-                          (fn [error topic response]
+                          (fn bar [error topic response]
                             (is (= pubsub-expected-response (iu/kebabify error)))
                             (done)))
              (auth/login {:username "testyoyoyoy"

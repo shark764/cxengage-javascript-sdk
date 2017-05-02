@@ -26,7 +26,7 @@
 
 (s/def ::set-active-tenant-spec
   (s/keys :req-un [::specs/tenant-id]
-          :opt-un [:specs/callback]))
+          :opt-un [::specs/callback]))
 
 (def required-desktop-permissions
   #{"CONTACTS_CREATE"
@@ -55,9 +55,12 @@
                                      :state "notready"}}
         {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
         new-state-data (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response new-state-data
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error "failed to change presence state :("
                   :callback callback}))))
 
 (defn start-heartbeats* []
@@ -101,15 +104,18 @@
                                       :resource-id resource-id})}]
     (go (let [start-session-response (a/<! (iu/api-request start-session-request))
               {:keys [status api-response]} start-session-response
+              topic (p/get-topic :session-started)
               session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
-          (when (= status 200)
-            (state/set-session-details! session-details)
-            (p/publish {:topics (p/get-topic :session-started)
-                        :response session-details})
-            (go-not-ready)
-            (state/set-session-expired! false)
-            (start-heartbeats*))))
-    nil))
+          (if (= status 200)
+            (do (state/set-session-details! session-details)
+                (p/publish {:topics topic
+                            :response session-details})
+                (go-not-ready)
+                (state/set-session-expired! false)
+                (start-heartbeats*))
+            (p/publish {:topics topic
+                        :error "failed to start session cxengage session"}))
+          nil))))
 
 (defn get-config* []
   (let [resource-id (state/get-active-user-id)
@@ -123,14 +129,16 @@
     (go (let [config-response (a/<! (iu/api-request config-request))
               {:keys [api-response status]} config-response
               user-config (:result api-response)]
-          (when (= status 200)
+          (if (= status 200)
             (do (state/set-config! user-config)
                 (ih/send-core-message :config-ready)
                 (p/publish {:topics topic
                             :response user-config})
                 (p/publish {:topics (p/get-topic :extension-list)
                             :response (select-keys user-config [:active-extension :extensions])})
-                (start-session*)))))
+                (start-session*))
+            (p/publish {:topics topic
+                        :error "couldnt get config (non 200 resp), failed to start session"}))))
     nil))
 
 (def-sdk-fn set-active-tenant
@@ -199,8 +207,6 @@
         resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
         {:keys [callback topic extension-value]} params
-        active-extension (state/get-active-extension)
-        new-extension (state/get-extension-by-value extension-value)
         config-request {:method :get
                         :url (iu/api-url
                               "tenants/tenant-id/users/resource-id/config"
@@ -210,28 +216,33 @@
         user-config (:result api-response)]
     (when (= status 200)
       (state/set-config! user-config)
-      (if-not new-extension
-        (p/publish {:topics topic
-                    :error (e/not-a-valid-extension)
-                    :callback callback})
-        (if-not (= active-extension new-extension)
+      (let [new-extension (state/get-extension-by-value extension-value)
+            active-extension (state/get-active-extension)]
+        (if-not new-extension
+          (p/publish {:topics topic
+                      :error (e/not-a-valid-extension)
+                      :callback callback})
+          (if-not (= active-extension new-extension)
 
-          ;; Active extension was either nil, or didn't match the one they passed.
-          ;; Update their user prior to changing state, so they go ready with the
-          ;; correct extension.
-          (let [update-user-request {:method :put
-                                     :url (iu/api-url
-                                           "tenants/tenant-id/users/resource-id"
-                                           {:tenant-id tenant-id
-                                            :resource-id resource-id})
-                                     :body {:activeExtension new-extension}}
-                {:keys [status api-response]} (a/<! (iu/api-request update-user-request))]
-            (when (= status 200)
-              (go-ready* topic callback)))
+            ;; Active extension was either nil, or didn't match the one they passed.
+            ;; Update their user prior to changing state, so they go ready with the
+            ;; correct extension.
+            (let [update-user-request {:method :put
+                                       :url (iu/api-url
+                                             "tenants/tenant-id/users/resource-id"
+                                             {:tenant-id tenant-id
+                                              :resource-id resource-id})
+                                       :body {:activeExtension new-extension}}
+                  {:keys [status api-response]} (a/<! (iu/api-request update-user-request))]
+              (if (= status 200)
+                (go-ready* topic callback)
+                (p/publish {:topics topic
+                            :error "failed to update users extension, unable to go ready"
+                            :callback callback})))
 
-          ;;Their active extension and the extension they passed in are the same,
-          ;;no user update is necessary, simply go ready.
-          (go-ready* topic callback))))))
+            ;;Their active extension and the extension they passed in are the same,
+            ;;no user update is necessary, simply go ready.
+            (go-ready* topic callback)))))))
 
 (defrecord SessionModule [config state core-messages<]
   pr/SDKModule

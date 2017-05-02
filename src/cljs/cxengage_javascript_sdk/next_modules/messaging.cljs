@@ -100,6 +100,7 @@
                                                                  :session-token]))
                                 (transform-keys camel/->kebab-case-keyword)
                                 (#(rename-keys % {:region :region-name})))]
+      (log :debug mqtt-integration)
       (if-not mqtt-integration
         (a/put! core-messages< {:module-registration-status :failure
                                 :module module-name})
