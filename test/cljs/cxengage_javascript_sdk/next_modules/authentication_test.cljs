@@ -47,7 +47,7 @@
                  (auth/login {:username "testuser@testemail.com"
                               :password "testpassword"}))))))
 
-(deftest login-api--sad-test--invalid-args-error
+(deftest login-api--sad-test--invalid-args-error-1
   (testing "login function failure - wrong # of args"
     (async done
            (reset! p/sdk-subscriptions {})
@@ -61,7 +61,26 @@
                          (fn [] nil)
                          "this should cause the fn to throw an error")))))
 
-;; fail spec
-;; api error
-;; didn't pass a map
-;; did pass a callback, but it isnt a function
+(deftest login-api--sad-test--invalid-args-error-2
+  (testing "login function failure - didn't pass a map"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (let [pubsub-expected-response {:code 1001, :error "Invalid arguments passed to SDK fn."}]
+             (p/subscribe "cxengage/authentication/login-response"
+                          (fn [error topic response]
+                            (is (= pubsub-expected-response (iu/kebabify error)))
+                            (done)))
+             (auth/login "test")))))
+
+(deftest login-api--sad-test--invalid-args-error-3
+  (testing "login function failure - did pass a callback, but it isnt a function"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (let [pubsub-expected-response {:code 1001, :error "Invalid arguments passed to SDK fn."}]
+             (p/subscribe "cxengage/authentication/login-response"
+                          (fn [error topic response]
+                            (is (= pubsub-expected-response (iu/kebabify error)))
+                            (done)))
+             (auth/login {:username "testyoyoyoy"
+                          :password "oyoyoyoy"}
+                         "this should cause the fn to throw an error")))))

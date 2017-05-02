@@ -8,8 +8,7 @@
         (if-let [error# (cond
 
                           (or (> (count args#) 2))
-                          (do (js/console.info "[[[[[[[[[[[ ruh roh")
-                            (e/wrong-number-of-args-error))
+                          (e/wrong-number-of-args-error)
 
                           (and (first args#)
                                (not (map? (first args#))))
