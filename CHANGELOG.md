@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* fixed tenant/resource capacity
 
 ## [4.0.0]
 * fixed refreshing of twilio and sqs tokens
