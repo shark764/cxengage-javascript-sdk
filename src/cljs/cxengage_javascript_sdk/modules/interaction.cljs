@@ -11,7 +11,8 @@
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.interaction-management :as int]
             [cxengage-javascript-sdk.domain.errors :as e]
-            [cxengage-javascript-sdk.pubsub :as p]))
+            [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.interop-helpers :as ih]))
 
 (s/def ::generic-interaction-fn-params
   (s/keys :req-un [::specs/interaction-id]
@@ -213,76 +214,76 @@
 
 (defn modify-elements [elements]
   (let [updated-elements (reduce
-                           (fn [acc element]
-                             (assoc acc (get element :name) element))
-                           {}
-                           elements)]
-   (clojure.walk/keywordize-keys updated-elements)))
+                          (fn [acc element]
+                            (assoc acc (get element :name) element))
+                          {}
+                          elements)]
+    (clojure.walk/keywordize-keys updated-elements)))
 
 (defn add-answers-to-elements [elements answers]
   (let [updated-elements (reduce-kv
-                               (fn [acc element-name element-value]
-                                 (assoc acc element-name (assoc element-value :value (get-in answers [element-name :value]))))
-                               {}
-                               elements)]
-   updated-elements))
+                          (fn [acc element-name element-value]
+                            (assoc acc element-name (assoc element-value :value (get-in answers [element-name :value]))))
+                          {}
+                          elements)]
+    updated-elements))
 
 (s/def ::script-params
- (s/keys :req-un [::specs/interaction-id ::specs/answers ::specs/script-id]
-         :opt-un [::specs/callback]))
+  (s/keys :req-un [::specs/interaction-id ::specs/answers ::specs/script-id]
+          :opt-un [::specs/callback]))
 
 (defn send-script
- ([module] (e/wrong-number-of-args-error))
- ([module client-params & others]
-  (if-not (fn? (js->clj (first others)))
+  ([module] (e/wrong-number-of-args-error))
+  ([module client-params & others]
+   (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-args-error)
      (send-script module (merge (iu/extract-params client-params) {:callback (first others)}))))
- ([module client-params]
-  (let [params (iu/extract-params client-params)
-        module-state @(:state module)
-        {:keys [answers script-id interaction-id callback]} params
-        original-script (state/get-script interaction-id script-id)
-        {:keys [sub-id script action-id]} original-script
-        parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
-        elements (modify-elements (:elements parsed-script))
-        topic (p/get-topic :send-script)
-        api-url (get-in module [:config :api-url])
-        script-url (str api-url (get-in module-state [:urls :send-script]))
-        updated-answers (reduce-kv
-                         (fn [acc input-name input-value]
-                           (assoc acc input-name {:value (or input-value nil) :text (get-in elements [input-name :text])}))
-                         {}
-                         answers)
-        final-elements (add-answers-to-elements elements updated-answers)
-        script-update {:resource-id (state/get-active-user-id)
-                       :script-response {(keyword (:name parsed-script)) {:elements final-elements
-                                                                          :id (:id parsed-script)
-                                                                          :name (:name parsed-script)}}}
-        script-body {:source "client"
-                     :sub-id (:sub-id original-script)
-                     :update (merge script-update updated-answers)}
-        script-request {:method :post
-                        :url (iu/build-api-url-with-params
-                              script-url
-                              {:tenant-id (state/get-active-tenant-id)
-                               :interaction-id interaction-id
-                               :action-id action-id})
-                        :body script-body}]
-    (if-not (s/valid? ::script-params params)
-      (p/publish {:topics topic
-                  :error (e/invalid-args-error "Invalid Arguments")
-                  :callback callback})
-      (do (go (let [script-response (a/<! (iu/api-request script-request))
-                    {:keys [status api-response]} script-response
-                    {:keys [result]} api-response]
-                (if (not= status 200)
-                  (p/publish {:topics topic
-                              :error (e/api-error "api error")
-                              :callback callback})
-                  (p/publish {:topics topic
-                              :response interaction-id
-                              :callback callback}))))
-        nil)))))
+  ([module client-params]
+   (let [params (iu/extract-params client-params)
+         module-state @(:state module)
+         {:keys [answers script-id interaction-id callback]} params
+         original-script (state/get-script interaction-id script-id)
+         {:keys [sub-id script action-id]} original-script
+         parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
+         elements (modify-elements (:elements parsed-script))
+         topic (p/get-topic :send-script)
+         api-url (get-in module [:config :api-url])
+         script-url (str api-url (get-in module-state [:urls :send-script]))
+         updated-answers (reduce-kv
+                          (fn [acc input-name input-value]
+                            (assoc acc input-name {:value (or input-value nil) :text (get-in elements [input-name :text])}))
+                          {}
+                          answers)
+         final-elements (add-answers-to-elements elements updated-answers)
+         script-update {:resource-id (state/get-active-user-id)
+                        :script-response {(keyword (:name parsed-script)) {:elements final-elements
+                                                                           :id (:id parsed-script)
+                                                                           :name (:name parsed-script)}}}
+         script-body {:source "client"
+                      :sub-id (:sub-id original-script)
+                      :update (merge script-update updated-answers)}
+         script-request {:method :post
+                         :url (iu/build-api-url-with-params
+                               script-url
+                               {:tenant-id (state/get-active-tenant-id)
+                                :interaction-id interaction-id
+                                :action-id action-id})
+                         :body script-body}]
+     (if-not (s/valid? ::script-params params)
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error "Invalid Arguments")
+                   :callback callback})
+       (do (go (let [script-response (a/<! (iu/api-request script-request))
+                     {:keys [status api-response]} script-response
+                     {:keys [result]} api-response]
+                 (if (not= status 200)
+                   (p/publish {:topics topic
+                               :error (e/api-error "api error")
+                               :callback callback})
+                   (p/publish {:topics topic
+                               :response interaction-id
+                               :callback callback}))))
+           nil)))))
 
 (def initial-state
   {:module-name :interactions
@@ -295,28 +296,27 @@
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:accept (partial send-interrupt this :accept)
-                                    :end (partial send-interrupt this :end)
-                                    :reject (partial send-interrupt this :end)
-                                    :assignContact (partial send-interrupt this :assign)
-                                    :unassignContact (partial send-interrupt this :unassign)
-                                    :enableWrapup (partial send-interrupt this :enable-wrapup)
-                                    :disableWrapup (partial send-interrupt this :disable-wrapup)
-                                    :endWrapup (partial send-interrupt this :end-wrapup)
-                                    :focus (partial send-interrupt this :focus)
-                                    :unfocus (partial send-interrupt this :unfocus)
-                                    :createNote (partial note-action this :create)
-                                    :updateNote (partial note-action this :update)
-                                    :getNote (partial note-action this :get-one)
-                                    :getAllNotes (partial note-action this :get-all)
-                                    :selectDispositionCode (partial select-disposition-code this)
-                                    :deselectDispositionCode (partial send-interrupt this :deselect-disposition)
-                                    :sendScript (partial send-script this)}}
-                 :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success
-                              :module module-name})
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+    (let [module-name (get @(:state this) :module-name)]
+      (ih/register {:api {module-name {:accept (partial send-interrupt this :accept)
+                                       :end (partial send-interrupt this :end)
+                                       :reject (partial send-interrupt this :end)
+                                       :assignContact (partial send-interrupt this :assign)
+                                       :unassignContact (partial send-interrupt this :unassign)
+                                       :enableWrapup (partial send-interrupt this :enable-wrapup)
+                                       :disableWrapup (partial send-interrupt this :disable-wrapup)
+                                       :endWrapup (partial send-interrupt this :end-wrapup)
+                                       :focus (partial send-interrupt this :focus)
+                                       :unfocus (partial send-interrupt this :unfocus)
+                                       :createNote (partial note-action this :create)
+                                       :updateNote (partial note-action this :update)
+                                       :getNote (partial note-action this :get-one)
+                                       :getAllNotes (partial note-action this :get-all)
+                                       :selectDispositionCode (partial select-disposition-code this)
+                                       :deselectDispositionCode (partial send-interrupt this :deselect-disposition)
+                                       :sendScript (partial send-script this)}}
+                    :module-name module-name})
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

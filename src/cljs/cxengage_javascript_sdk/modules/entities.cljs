@@ -8,6 +8,7 @@
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
 (s/def ::get-all-entity-params
@@ -122,9 +123,8 @@
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:get {:users (partial get-entity this :users ::get-all-entity-params)
+    (let [module-name (get @(:state this) :module-name)]
+      (ih/register {:api {module-name {:get {:users (partial get-entity this :users ::get-all-entity-params)
                                           :user (partial get-entity this :user ::get-single-entity-params)
                                           :queues (partial get-entity this :queues ::get-all-entity-params)
                                           :queue (partial get-entity this :queue ::get-single-entity-params)
@@ -137,7 +137,8 @@
                                     :get-contact-history (partial get-entity this :contact-history ::get-single-entity-params)
                                     :get-contact-interaction (partial get-entity this :contact-interaction ::get-single-entity-params)}}
                  :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

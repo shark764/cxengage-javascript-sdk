@@ -1,6 +1,5 @@
 (ns cxengage-javascript-sdk.state
   (:require [lumbajack.core]
-            [cxengage-javascript-sdk.domain.errors :as e]
             [cljs.core.async :as a]
             [cljs.spec :as s]
             [cljs-uuid-utils.core :as id]))

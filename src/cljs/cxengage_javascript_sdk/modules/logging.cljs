@@ -6,6 +6,7 @@
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.state :as state]
@@ -132,11 +133,13 @@
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:set-level (partial set-level this)
+    (let [module-name (get @(:state this) :module-name)]
+      (ih/register {:api {module-name {:set-level (partial set-level this)
                                     :save-logs (partial save-logs this)
                                     :dump-logs (partial dump-logs this)}}
-                 :module-name module-name})))
+                 :module-name module-name})
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

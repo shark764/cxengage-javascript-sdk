@@ -5,6 +5,7 @@
             [ajax.core :as ajax]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]])
   (:import [goog.crypt Sha256 Hmac]))
@@ -181,9 +182,6 @@
        additional-params (merge additional-params)
        token (merge {:token token})))))
 
-(defn publish* [thing]
-  ((aget js/window "serenova" "cxengage" "api" "publish") thing))
-
 (defn send-interrupt*
   ([module params]
    (let [params (extract-params params)
@@ -198,12 +196,12 @@
      (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
                    {:keys [api-response status]} interrupt-response]
                (if (not= status 200)
-                 (publish* {:topics topic
-                            :error (e/api-error api-response)
-                            :callback callback})
-                 (do (publish* {:topics topic
-                                :response (merge {:interaction-id interaction-id} interrupt-body)
-                                :callback callback})
+                 (ih/publish {:topics topic
+                              :error (e/api-error api-response)
+                              :callback callback})
+                 (do (ih/publish {:topics topic
+                                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                                  :callback callback})
                      (when on-confirm-fn (on-confirm-fn))))))
          nil))))
 

@@ -80,8 +80,8 @@
       (ih/register {:api {module-name {:login login
                                        :logout logout}}
                     :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success
-                              :module module-name})
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

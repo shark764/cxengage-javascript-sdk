@@ -63,7 +63,7 @@
         (build*)))
 
 (deftask development* []
-  (set-env! :source-paths #(conj % "src/cljs" "src/dev_cljs"))
+  (set-env! :source-paths #(conj % "src/cljs" "src/dev_cljs" "src/prod_cljs"))
   (task-options! cljs {:compiler-options {:optimizations :none
                                           :source-map true
                                         ;:verbose true

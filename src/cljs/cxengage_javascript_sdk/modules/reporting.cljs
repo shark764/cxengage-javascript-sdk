@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
@@ -166,14 +167,14 @@
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:add-stat-subscription (partial add-stat-subscription this)
+    (let [module-name (get @(:state this) :module-name)]
+      (ih/register {:api {module-name {:add-stat-subscription (partial add-stat-subscription this)
                                     :remove-stat-subscription (partial remove-stat-subscription this)
                                     :get-capacity (partial get-capacity this)}}
                  :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success :module module-name})
       (start-polling this)
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

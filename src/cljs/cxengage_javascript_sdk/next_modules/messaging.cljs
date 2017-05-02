@@ -100,14 +100,16 @@
                                                                  :session-token]))
                                 (transform-keys camel/->kebab-case-keyword)
                                 (#(rename-keys % {:region :region-name})))]
-      (log :debug mqtt-integration)
       (if-not mqtt-integration
-        (a/put! core-messages< {:module-registration-status :failure
-                                :module module-name})
+        (ih/send-core-message {:type :module-registration-status
+                               :status :failure
+                               :module-name module-name})
         (do (ih/register
              {:api {:interactions {module-name {:send-message send-message
                                                 :get-transcripts get-transcripts}}}
               :module-name module-name})
-            (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))))
+            (ih/send-core-message {:type :module-registration-status
+                                   :status :success
+                                   :module-name module-name})))))
   (stop [this])
   (refresh-integration [this]))

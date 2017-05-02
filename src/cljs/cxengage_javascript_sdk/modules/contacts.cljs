@@ -8,6 +8,7 @@
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [lumbajack.core :as jack]
@@ -285,13 +286,12 @@
           :multiple-layout-url "tenants/tenant-id/contacts/layouts"
           :single-layout-url "tenants/tenant-id/contacts/layouts/layout-id"}})
 
-(defrecord ContactsModule [config state]
+(defrecord ContactsModule [config state core-messages<]
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:get (partial get-contact this)
+    (let [module-name (get @(:state this) :module-name)]
+      (ih/register {:api {module-name {:get (partial get-contact this)
                                     :get-all (partial get-contacts this)
                                     :search (partial search-contacts this)
                                     :create (partial create-contact this)
@@ -302,6 +302,8 @@
                                     :get-layout (partial get-layout this)
                                     :list-layouts (partial list-layouts this)}}
                  :module-name module-name})
-      (log :info (str "<----- Started " (name module-name) " module! ----->"))))
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

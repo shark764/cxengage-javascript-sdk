@@ -6,6 +6,7 @@
             [cxengage-javascript-sdk.helpers :refer [log]]
             [cljsjs.aws-sdk-js]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
@@ -94,14 +95,17 @@
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
+    (let [module-name (get @(:state this) :module-name)]
       (let [sqs-integration (state/get-integration-by-type "sqs")]
         (if-not sqs-integration
-          (a/put! core-messages< {:module-registration-status :failure :module module-name})
+          (ih/send-core-message {:type :module-registration-status
+                                 :status :failure
+                                 :module-name module-name})
           (do (sqs-init* this sqs-integration on-msg-fn core-messages<)
-              (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))
-              (register {:module-name module-name}))))))
+              (ih/register {:module-name module-name})
+              (ih/send-core-message {:type :module-registration-status
+                                     :status :success
+                                     :module-name module-name}))))))
   (stop [this])
   (refresh-integration [this]
     (go-loop []

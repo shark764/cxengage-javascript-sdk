@@ -131,7 +131,7 @@
               user-config (:result api-response)]
           (if (= status 200)
             (do (state/set-config! user-config)
-                (ih/send-core-message :config-ready)
+                (ih/send-core-message {:type :config-ready})
                 (p/publish {:topics topic
                             :response user-config})
                 (p/publish {:topics (p/get-topic :extension-list)
@@ -253,8 +253,8 @@
                                        :go-not-ready go-not-ready
                                        :set-direction set-direction}}
                     :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success
-                              :module module-name})
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

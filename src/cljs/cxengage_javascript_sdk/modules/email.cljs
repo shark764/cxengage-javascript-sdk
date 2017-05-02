@@ -10,6 +10,7 @@
             [promesa.core :as prom :refer [promise all then]]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [ajax.core :as ax :refer [POST]]))
 
@@ -268,17 +269,19 @@
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)
+    (let [module-name (get @(:state this) :module-name)
           email-integration true]
       (if-not email-integration
-        (a/put! core-messages< {:module-registration-status :failure
-                                :module module-name})
-        (do (register {:api {:interactions {:email {:add-attachment (partial add-attachment this)
+        (ih/send-core-message {:type :module-registration-status
+                               :status :failure
+                               :module-name module-name})
+        (do (ih/register {:api {:interactions {:email {:add-attachment (partial add-attachment this)
                                                     :remove-attachment (partial remove-attachment this)
                                                     :get-attachment-url (partial get-attachment-url this)
                                                     :send-reply (partial send-reply this)}}}
                        :module-name module-name})
-            (log :info (str "<----- Started " (name module-name) " module! ----->"))))))
+            (ih/send-core-message {:type :module-registration-status
+                                   :status :success
+                                   :module-name module-name})))))
   (stop [this])
   (refresh-integration [this]))

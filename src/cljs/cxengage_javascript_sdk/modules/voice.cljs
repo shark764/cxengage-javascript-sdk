@@ -14,6 +14,7 @@
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cognitect.transit :as t]
@@ -302,14 +303,14 @@
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)
+    (let [module-name (get @(:state this) :module-name)
           twilio-integration (state/get-integration-by-type "twilio")]
       (if-not twilio-integration
-        (a/put! core-messages< {:module-registration-status :failure
-                                :module module-name})
+        (ih/send-core-message {:type :module-registration-status
+                               :status :failure
+                               :module-name module-name})
         (do (twilio-init twilio-integration core-messages<)
-            (register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
+            (ih/register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
                                                     :customer-resume (partial send-interrupt this :resume)
                                                     :mute (partial send-interrupt this :mute)
                                                     :unmute (partial send-interrupt this :unmute)
@@ -328,7 +329,10 @@
                                                     :resource-hold (partial send-interrupt this :resource-hold)
                                                     :resource-resume (partial send-interrupt this :resource-resume)
                                                     :resume-all (partial send-interrupt this :resume-all)}}}
-                       :module-name module-name})))))
+                       :module-name module-name})
+            (ih/send-core-message {:type :module-registration-status
+                                   :status :success
+                                   :module-name module-name})))))
   (stop [this])
   (refresh-integration [this]
     (go-loop []

@@ -8,11 +8,11 @@
             [cxengage-cljs-utils.core :as cxu]
 
             [cxengage-javascript-sdk.interaction-management :as int]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.helpers :refer [log]]
 
             [cxengage-javascript-sdk.next-modules.authentication :as authentication]
             [cxengage-javascript-sdk.next-modules.session :as session]
@@ -30,10 +30,10 @@
 
 (defn register-module [module]
   (let [{:keys [api module-name]} module
-        old-api (iu/kebabify (aget js/window "serenova" "cxengage" "api"))
+        old-api (iu/kebabify (aget js/window "CxEngage"))
         new-api (iu/deep-merge old-api api)]
     (when api
-      (aset js/window "serenova" "cxengage" "api" (->> new-api (transform-keys k/->camelCase) (clj->js))))))
+      (aset js/window "CxEngage" (->> new-api (transform-keys k/->camelCase) (clj->js))))))
 
 (defn start-external-module [module]
   (.start module (clj->js (state/get-config))))
@@ -43,7 +43,9 @@
   (pr/refresh-integration module))
 
 (defn gen-new-initial-module-config [comm<]
-  {:config (state/get-config) :state (atom {}) :core-messages< comm<})
+  {:config (state/get-config)
+   :state (atom {})
+   :core-messages< comm<})
 
 (defn start-base-modules [comm<]
   (let [auth-module (authentication/map->AuthenticationModule. (gen-new-initial-module-config comm<))
@@ -64,9 +66,16 @@
     (doseq [module [sqs-module messaging-module voice-module email-module reporting-module]]
       (start-internal-module module))))
 
+(defn handle-module-registration-status [m]
+  (let [{:keys [status module-name]} m]
+    (if (= status :failure)
+      (log :fatal (clj->js (e/required-module-failed-to-start-err)))
+      (log :info (str "<----- Started " (name module-name) " module! ----->")))))
+
 (defn route-module-message [comm< m]
-  (case m
+  (case (:type m)
     :config-ready (start-session-dependant-modules comm<)
+    :module-registration-status (handle-module-registration-status m)
     nil))
 
 (s/def ::base-url string?)
@@ -79,40 +88,40 @@
           :opt-un [::consumer-type ::log-level ::environment ::base-url ::blast-sqs-output ::reporting-refresh-rate]))
 
 (defn initialize
-  ([] (initialize {}))
-  ([options & rest] (clj->js (e/wrong-number-of-args-error)))
-  ([options]
-   (let [options (iu/extract-params options)
-         options (-> options
-                     (assoc :base-url (or (:base-url options) "https://api.cxengage.net/v1/"))
-                     (assoc :reporting-refresh-rate (or (:reporting-refresh-rate options) 10000))
-                     (assoc :consumer-type (keyword (or (:consumer-type options) :js)))
-                     (assoc :log-level (keyword (or (:log-level options) :info)))
-                     (assoc :blast-sqs-output (or (:blast-sqs-output options) false))
-                     (assoc :environment (keyword (or (:environment options) :prod))))]
-     (if-not (s/valid? ::initialize-options options)
-       (clj->js (e/invalid-args-error (s/explain-data ::initialize-options options)))
-       (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} options
-             module-comm-chan (a/chan 1024)
-             core (iu/camelify {:api {:subscribe pu/subscribe
-                                      :publish pu/js-publish
-                                      :unsubscribe pu/unsubscribe
-                                      :dump-state state/get-state-js
-                                      :send-core-message #(a/put! module-comm-chan %)}
-                                :modules {:register register-module
-                                          :start start-external-module}
-                                :internal {}})
-             module-comm-chan (a/chan 1024)]
-         (state/set-base-api-url! base-url)
-         (state/set-consumer-type! consumer-type)
-         (state/set-log-level! log-level l/levels)
-         (state/set-reporting-refresh-rate! reporting-refresh-rate)
-         (state/set-env! environment)
-         (state/set-blast-sqs-output! blast-sqs-output)
-         (aset js/window "serenova" #js {"cxengage" core})
-         (start-base-modules module-comm-chan)
-         (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
-         (let [api (aget js/window "serenova" "cxengage" "api")]
-           (if (= consumer-type :cljs)
-             (iu/kebabify (aget js/window "serenova"))
-             (aget js/window "serenova" "cxengage" "api"))))))))
+  ([& options]
+   (if (> 1 (count (flatten (iu/kebabify options))))
+     (do (js/console.error (clj->js (e/wrong-number-sdk-opts-err))
+                           nil))
+     (let [opts (first (flatten (iu/kebabify options)))
+           opts (-> opts
+                    (assoc :base-url (or (:base-url opts) "https://api.cxengage.net/v1/"))
+                    (assoc :reporting-refresh-rate (or (:reporting-refresh-rate opts) 10000))
+                    (assoc :consumer-type (keyword (or (:consumer-type opts) :js)))
+                    (assoc :log-level (keyword (or (:log-level opts) :info)))
+                    (assoc :blast-sqs-output (or (:blast-sqs-output opts) false))
+                    (assoc :environment (keyword (or (:environment opts) :prod))))]
+       (if-not (s/valid? ::initialize-options opts)
+         (do (js/console.error (clj->js (e/bad-sdk-init-opts-err)))
+             nil)
+         (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} options
+               module-comm-chan (a/chan 1024)
+               core (iu/camelify {:subscribe pu/subscribe
+                                  :publish pu/js-publish
+                                  :unsubscribe pu/unsubscribe
+                                  :dump-state state/get-state-js
+                                  :send-core-message #(a/put! module-comm-chan %)
+                                  :register-module register-module
+                                  :start-module start-external-module})]
+           (aset js/window "CxEngage" core)
+           (state/set-base-api-url! base-url)
+           (state/set-consumer-type! consumer-type)
+           (state/set-log-level! log-level l/levels)
+           (state/set-reporting-refresh-rate! reporting-refresh-rate)
+           (state/set-env! environment)
+           (state/set-blast-sqs-output! blast-sqs-output)
+           (start-base-modules module-comm-chan)
+           (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan))
+           (let [api (aget js/window "CxEngage")]
+             (if (= consumer-type :cljs)
+               (iu/kebabify api)
+               api))))))))

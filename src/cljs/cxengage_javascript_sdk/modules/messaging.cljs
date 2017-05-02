@@ -14,7 +14,12 @@
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
+<<<<<<< 3638db7220d097a5b3911dea2d8607bc3e46ef23
             [cxengage-javascript-sdk.domain.specs :as specs]
+=======
+            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.specs :as spec]
+>>>>>>> Revamp SDK window global naming conventions & nesting
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cognitect.transit :as t]
             [cxengage-javascript-sdk.domain.errors :as e]
@@ -356,8 +361,7 @@
   pr/SDKModule
   (start [this]
     (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)
+    (let [module-name (get @(:state this) :module-name)
           client-id (state/get-active-user-id)
           mqtt-integration (state/get-integration-by-type "messaging")
           mqtt-integration (->> (merge (select-keys mqtt-integration [:region :endpoint])
@@ -367,14 +371,17 @@
                                 (transform-keys camel/->kebab-case-keyword)
                                 (#(rename-keys % {:region :region-name})))]
       (if-not mqtt-integration
-        (a/put! core-messages< {:module-registration-status :failure
-                                :module module-name})
+        (ih/send-core-message {:type :module-registration-status
+                               :status :failure
+                               :module-name module-name})
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
             (register {:api {:interactions {:messaging {:send-message (partial send-message this)
                                                         :get-transcripts (partial get-transcripts this)
                                                         :initialize-outbound-sms (partial click-to-sms this)
                                                         :send-outbound-sms (partial send-sms-by-interrupt this)}}}
                        :module-name module-name})
-            (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))))
+            (ih/send-core-message {:type :module-registration-status
+                                   :status :success
+                                   :module-name module-name})))))
   (stop [this])
   (refresh-integration [this]))
