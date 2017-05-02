@@ -47,6 +47,7 @@
 (s/def ::stats map?)
 (s/def ::message string?)
 (s/def ::contact-point string?)
+(s/def ::contactIds (s/coll-of ::contactId))
 
 (s/def ::level #{"debug" "info" "warn" "error" "fatal"})
 (s/def ::digit #{"0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "*" "#"})

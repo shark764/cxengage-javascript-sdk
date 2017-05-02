@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.modules.contacts
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cxengage-javascript-sdk.helpers :refer [log]]
@@ -130,7 +131,6 @@
          body {:attributes attributes}]
      (contact-request url body method params :create-contact ::create-contact-params module true))))
 
-
 (s/def ::update-contact-params
   (s/keys :req-un [::specs/contactId
                    ::specs/attributes]
@@ -168,6 +168,26 @@
                        :contact-id contactId}}
          method :delete]
      (contact-request url nil method params :delete-contact ::delete-contact-params module true))))
+
+(s/def ::merge-contacts-params
+  (s/keys :req-un [::specs/contactIds
+                   ::specs/attributes]
+          :opt-un [::specs/callback]))
+
+(defn merge-contacts
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (merge-contacts module (merge (iu/extract-params params true) {:callback (first others)}))))
+  ([module params]
+   (let [{:keys [contactIds attributes callback] :as params} (iu/extract-params params true)
+         url {:base :merge-contacts-url
+              :params {:tenant-id (state/get-active-tenant-id)}}
+         method :post
+         body {:attributes attributes
+               :contactIds contactIds}]
+     (contact-request url body method params :merge-contacts ::merge-contacts-params module true))))
 
 (s/def ::list-attributes-params
   (s/keys :req-un []
@@ -260,6 +280,7 @@
             :list-layouts "contacts/layouts"}
    :urls {:single-contact-url "tenants/tenant-id/contacts/contact-id"
           :multiple-contact-url "tenants/tenant-id/contacts"
+          :merge-contacts-url "tenants/tenant-id/contacts/merge"
           :multiple-attribute-url "tenants/tenant-id/contacts/attributes"
           :multiple-layout-url "tenants/tenant-id/contacts/layouts"
           :single-layout-url "tenants/tenant-id/contacts/layouts/layout-id"}})
@@ -275,7 +296,8 @@
                                     :search (partial search-contacts this)
                                     :create (partial create-contact this)
                                     :update (partial update-contact this)
-                                    :delete (partial delete-contact this)
+                                    :delete  (partial delete-contact this)
+                                    :merge (partial merge-contacts this)
                                     :list-attributes (partial list-attributes this)
                                     :get-layout (partial get-layout this)
                                     :list-layouts (partial list-layouts this)}}

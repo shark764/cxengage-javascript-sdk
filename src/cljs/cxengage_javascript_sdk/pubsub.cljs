@@ -39,6 +39,7 @@
                  :create-contact "cxengage/contacts/create-contact-response"
                  :update-contact "cxengage/contacts/update-contact-response"
                  :delete-contact "cxengage/contacts/delete-contact-response"
+                 :merge-contacts "cxengage/contacts/merge-contacts-response"
                  :list-attributes "cxengage/contacts/list-attributes-response"
                  :get-layout "cxengage/contacts/get-layout-response"
                  :list-layouts "cxengage/contacts/list-layouts-response"

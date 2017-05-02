@@ -8,45 +8,48 @@
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.core :as m]
             [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.state :as state]
             [cljs.test :refer-macros [deftest is testing run-tests async use-fixtures]]))
 
-#_(deftest contact-request-test-one
-    (testing "The contact request function. Arity 4."
-      (async done
-             (go (let [old iu/api-request
-                       the-chan (a/promise-chan)
-                       _ (a/>! the-chan {:api-response {:result {:id "unit-test"}}
-                                         :status 200})
-                       _ (set! iu/api-request (fn [request-map casing]
-                                                (let [{:keys [url method]} request-map]
-                                                  (when (and url method)
-                                                    the-chan))))
-                       api-response (a/<! (contacts/contact-request "dev-test.cxengagelab.net" nil :get true))]
-                   (is (= {:api-response {:result {:id "unit-test"}}
-                           :status 200} api-response))
-                   (set! iu/api-request old)
-                   (done))))))
+(deftest contact-request-test-one
+  (testing "The contact request function. Arity 4."
+    (async done
+           (go (let [old iu/api-request
+                     the-chan (a/promise-chan)
+                     _ (a/>! the-chan {:api-response {:result {:id "unit-test"}}
+                                       :status 200})
+                     _ (set! iu/api-request (fn [request-map casing]
+                                              (let [{:keys [url method]} request-map]
+                                                (when (and url method)
+                                                  the-chan)
+                                                )))
+                     api-response (a/<! (contacts/contact-request "dev-test.cxengagelab.net" nil :get true))]
+                 (is (= {:api-response {:result {:id "unit-test"}}
+                         :status 200} api-response))
+                 (set! iu/api-request old)
+                 (done))))))
 
-#_(deftest contact-request-test-two
-    (testing "The contact request function, Arity 8"
-      (async done
-             (go (let [old iu/api-request
-                       the-chan (a/promise-chan)
-                       contact-id (str (cljs-uuid-utils.core/make-random-uuid))
-                       _ (a/>! the-chan {:status 200
-                                         :api-response {:result {:id "unit-test"}}})
-                       ContactsModule (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-                       _ (set! iu/api-request (fn [request-map casing]
-                                                (let [{:keys [url method]} request-map]
-                                                  (when (and url method)
-                                                    the-chan))))
-                       topic-string (p/get-topic :get-contact)
-                       _ (p/subscribe "cxengage" (fn [error topic response]
-                                                   (cond
-                                                     (and (= topic topic-string) response) (is (= {:id "unit-test"} response)))))]
-                   (contacts/contact-request "https://dev-api.cxengagelabs.net/v1/" nil :get {:contactId contact-id} :get-contact ::contacts/get-contact-params ContactsModule false)
-                   (set! iu/api-request old)
-                   (done))))))
+(deftest contact-request-test-two
+  (testing "The contact request function, Arity 8"
+    (async done
+           (go (let [old iu/api-request
+                     _ (reset! p/sdk-subscriptions {})
+                     the-chan (a/promise-chan)
+                     contact-id (str (cljs-uuid-utils.core/make-random-uuid))
+                     _ (a/>! the-chan {:status 200
+                                       :api-response {:result {:id "unit-test"}}})
+                     ContactsModule (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
+                     _ (set! iu/api-request (fn [request-map casing]
+                                              (let [{:keys [url method]} request-map]
+                                                (when (and url method)
+                                                  the-chan))))
+                     topic-string (p/get-topic :get-contact)
+                     _ (p/subscribe "cxengage" (fn [error topic response]
+                                                 (cond
+                                                   (and (= topic topic-string) response) (is (= {:id "unit-test"} (js->clj response :keywordize-keys true))))
+                                                 (done)))]
+                 (contacts/contact-request "https://dev-api.cxengagelabs.net/v1/" nil :get {:contactId contact-id} :get-contact ::contacts/get-contact-params ContactsModule false)
+                 (set! iu/api-request old))))))
 
 (deftest get-query-str-test
   (testing "The query string builder"
@@ -97,8 +100,8 @@
                 :createdBy fake-user
                 :updated date-time
                 :updatedBy fake-user} get-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} get-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} get-response-3))
+        (is (= {:err "wrong # of args"} get-response-2))
+        (is (= {:err "wrong # of args"} get-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest get-contacts-test
@@ -161,7 +164,7 @@
                            :createdBy fake-user
                            :updated date-time
                            :updatedBy fake-user}]} search-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} search-response-3))
+        (is (= {:err "wrong # of args"} search-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest search-contacts-test
@@ -214,8 +217,8 @@
                            :createdBy fake-user
                            :updated date-time
                            :updatedBy fake-user}]} search-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} search-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} search-response-3))
+        (is (= {:err "wrong # of args"} search-response-2))
+        (is (= {:err "wrong # of args"} search-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest create-contact-test
@@ -261,8 +264,8 @@
                 :updated date-time
                 :updatedBy fake-user} (dissoc create-response-4 :id)))
         (is (uuid/valid-uuid? (:id create-response-4)))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} create-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} create-response-3))
+        (is (= {:err "wrong # of args"} create-response-2))
+        (is (= {:err "wrong # of args"} create-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest update-contact-test
@@ -308,8 +311,8 @@
                 :createdBy fake-user
                 :updated date-time
                 :updatedBy fake-user} update-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} update-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} update-response-3))
+        (is (= {:err "wrong # of args"} update-response-2))
+        (is (= {:err "wrong # of args"} update-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest delete-contact-test
@@ -333,8 +336,41 @@
 
         (is (true? delete-response))
         (is (true? delete-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} delete-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} delete-response-3))
+        (is (= {:err "wrong # of args"} delete-response-2))
+        (is (= {:err "wrong # of args"} delete-response-3))
+        (set! contacts/contact-request old)))))
+
+(deftest merge-contacts-test
+  (testing "Contact module merge contacts function"
+    (let [new-fake-user (str (uuid/make-random-squuid))
+          old contacts/contact-request]
+      (set! contacts/contact-request (fn [url body method params topic-keys spec module preserve]
+                                       (let [{:keys [contactIds attributes]} params
+                                             tenant-id (get-in url [:params :tenant-id])]
+                                         (when (s/valid? spec params)
+                                           {:attributes attributes
+                                            :id new-fake-user
+                                            :tenant-id tenant-id}))))
+      (let [fake-user-1 (str (uuid/make-random-squuid))
+            fake-user-2 (str (uuid/make-random-squuid))
+            tenant-id (str (uuid/make-random-squuid))
+            _ (state/set-active-tenant! tenant-id)
+            attributes {:name "Unit test!!!"}
+            params {:contactIds [fake-user-1 fake-user-2]
+                    :attributes attributes}
+            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
+            merge-response (contacts/merge-contacts contacts-module params)
+            merge-response-2 (contacts/merge-contacts contacts-module)
+            merge-response-3 (contacts/merge-contacts contacts-module {} "")
+            merge-response-4 (contacts/merge-contacts contacts-module params (fn [] "blah"))]
+        (is (= {:attributes attributes
+                :id new-fake-user
+                :tenant-id tenant-id} merge-response))
+        (is (= {:attributes attributes
+                :id new-fake-user
+                :tenant-id tenant-id} merge-response-4))
+        (is (= {:err "wrong # of args"} merge-response-2))
+        (is (= {:err "wrong # of args"} merge-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest list-attributes-test
@@ -358,7 +394,7 @@
         (is (nil?  list-response))
         (is (nil? list-response-4))
         (is (nil? list-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} list-response-3))
+        (is (= {:err "wrong # of args"} list-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest get-layout-test
@@ -407,8 +443,8 @@
                 :name "basic"
                 :id layout-id
                 :created date-time} get-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} get-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} get-response-3))
+        (is (= {:err "wrong # of args"} get-response-2))
+        (is (= {:err "wrong # of args"} get-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest list-layouts-test
@@ -503,5 +539,5 @@
                  :name "basic"
                  :id layout-id-2
                  :created date-time}] list-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} list-response-3))
+        (is (= {:err "wrong # of args"} list-response-3))
         (set! contacts/contact-request old)))))

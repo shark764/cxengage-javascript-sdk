@@ -1,10 +1,7 @@
 # Change Log
 
 ## [Unreleased]
-* fixed refreshing of twilio and sqs tokens
-* added resource/tenant capacity function
-* added retry logic to api-request fn for http 5xx response codes
-* added support for reason codes when going not ready
+* fixed pub/sub system to only call callbacks for the subscribers whose topics match
 * renamed "goOffline" (in session) - changed to "logout" in authentication
 * fixed pub/sub system to only call callbacks for the subscribers whose topics match
 * removed the ability to pass callbacks as a part of the params object (must be passed as a 2nd parameter)
@@ -17,9 +14,10 @@
 
 ## [4.0.1]
 * fixed token refresh for SQS
-* fixed tenant/resource capacity
-
 ## [4.0.0]
+* fixed tenant/resource capacity
+* added merging and deleting of contacts
+
 * fixed refreshing of twilio and sqs tokens
 * added resource/tenant capacity function
 * added retry logic to api-request fn for http 5xx response codes
