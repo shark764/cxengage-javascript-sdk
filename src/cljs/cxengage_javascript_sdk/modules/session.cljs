@@ -355,8 +355,8 @@
                                :callback callback})
                    (p/publish {:topics topic
                                :response (assoc (select-keys result [:session-id]) :direction direction)
-                               :callback callback})
-                   nil))))))))
+                               :callback callback}))))
+           nil)))))
 
 (defn set-active-tenant
   ([module] (e/wrong-number-of-args-error))

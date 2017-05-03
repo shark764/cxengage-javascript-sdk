@@ -9,6 +9,12 @@
             [camel-snake-kebab.extras :refer [transform-keys]])
   (:import [goog.crypt Sha256 Hmac]))
 
+(defn normalize-phone-number
+  [phone-number]
+  (-> phone-number
+      (clojure.string/replace #"\+" "")
+      (clojure.string/replace #" " "")))
+
 (defn deep-merge
   [& vals]
   (if (every? map? vals)
