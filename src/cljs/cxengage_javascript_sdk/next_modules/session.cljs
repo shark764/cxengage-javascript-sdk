@@ -63,7 +63,7 @@
                   :error (e/failed-to-change-state-err)
                   :callback callback}))))
 
-(defn start-heartbeats* []
+(defn- start-heartbeats []
   (log :info "Sending heartbeats...")
   (let [session-id (state/get-session-id)
         tenant-id (state/get-active-tenant-id)
@@ -83,19 +83,19 @@
         (let [{:keys [api-response status]} (a/<! (iu/api-request heartbeat-request))
               {:keys [result]} api-response
               next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
-          (if (not= status 200)
-            (do (log :fatal "Heartbeat failed; ceasing future heartbeats.")
-                (state/set-session-expired! true)
-                (p/publish {:topics topic
-                            :error (e/session-heartbeats-failed-err)})
-                nil)
+          (if (= status 200)
             (do (log :debug "Heartbeat sent!")
                 (p/publish {:topics topic
                             :response result})
                 (a/<! (a/timeout next-heartbeat-delay))
-                (recur))))))))
+                (recur))
+            (do (log :fatal "Heartbeat failed; ceasing future heartbeats.")
+                (state/set-session-expired! true)
+                (p/publish {:topics topic
+                            :error (e/session-heartbeats-failed-err)})
+                nil)))))))
 
-(defn start-session* []
+(defn- start-session []
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
         start-session-request {:method :post
@@ -118,7 +118,7 @@
                         :error (e/failed-to-start-agent-session-err)}))
           nil))))
 
-(defn get-config* []
+(defn- get-config []
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
         config-request {:method :get
@@ -182,7 +182,7 @@
                   :response direction-details
                   :callback callback}))))
 
-(defn go-ready* [topic callback]
+(defn- go-ready [topic callback]
   (go (let [session-id (state/get-session-id)
             resource-id (state/get-active-user-id)
             tenant-id (state/get-active-tenant-id)
