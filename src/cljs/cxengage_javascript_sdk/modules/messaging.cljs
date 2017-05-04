@@ -14,7 +14,7 @@
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.domain.specs :as spec]
+            [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cognitect.transit :as t]
             [cxengage-javascript-sdk.domain.errors :as e]
@@ -187,7 +187,7 @@
 (s/def ::send-message-params
   (s/keys :req-un [::interaction-id
                    ::message]
-          :opt-un [:specs/callback]))
+          :opt-un [::specs/callback]))
 
 (defn send-message
   ([module] (e/wrong-number-of-args-error))
@@ -225,6 +225,101 @@
           (p/publish {:topics (p/get-topic :transcript-response)
                       :response (:files api-response)
                       :callback callback})))))
+
+(s/def ::send-sms-by-interrupt-params
+  (s/keys :req-un [::specs/message
+                   ::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(defn send-sms-by-interrupt
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (send-sms-by-interrupt module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [{:keys [interaction-id message callback] :as params} (iu/extract-params params)
+         tenant-id (state/get-active-tenant-id)
+         topic (p/get-topic :send-outbound-sms-response)
+         api-url (get-in module [:config :api-url])
+         sms-url (str api-url "tenants/tenant-id/interactions/interaction-id/interrupts")
+         interrupt-body {:interrupt-type "send-sms"
+                         :interrupt {:message message}
+                         :source "Client"}
+         sms-request {:method :post
+                      :url (iu/build-api-url-with-params
+                            sms-url
+                            {:tenant-id tenant-id
+                             :interaction-id interaction-id})
+                      :body interrupt-body}]
+     (if-not (s/valid? ::send-sms-by-interrupt-params params)
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::send-sms-by-interrupt-params params))
+                   :callback callback})
+       (do (go (let [sms-response (a/<! (iu/api-request sms-request))
+                     {:keys [api-response status]} sms-response]
+                 (if (not= status 200)
+                   (p/publish {:topics topic
+                               :error (e/api-error api-response)
+                               :callback callback})
+                   (p/publish {:topics topic
+                               :response {:interaction-id interaction-id}
+                               :callback callback}))))
+           nil)))))
+
+(s/def ::click-to-sms-params
+  (s/keys :req-un [::specs/phone-number
+                   ::specs/message]
+          :opt-on [::specs/callback]))
+
+(defn click-to-sms
+  ([module] (e/wrong-number-of-args-error))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (click-to-sms module (merge (iu/extract-params params) {:callback (first others)}))))
+  ([module params]
+   (let [params (iu/extract-params params)
+         {:keys [phone-number message callback]} params
+         phone-number (iu/normalize-phone-number phone-number)
+         tenant-id (state/get-active-tenant-id)
+         resource-id (state/get-active-user-id)
+         interaction-id (str (id/make-random-uuid))
+         topic (p/get-topic :initialize-outbound-sms-response)
+         api-url (get-in module [:config :api-url])
+         sms-url (str api-url "tenants/tenant-id/interactions")
+         metadata {:customer phone-number
+                   :customer-name "SMS User"
+                   :channel-type "sms"
+                   :source "twilio"}
+         sms-body {:id interaction-id
+                   :source "messaging"
+                   :customer phone-number
+                   :contact-point "outbound"
+                   :channel-type "sms"
+                   :direction "outbound"
+                   :metadata metadata
+                   :interaction {:message message
+                                 :resource-id resource-id}}
+         sms-request {:method :post
+                      :url (iu/build-api-url-with-params
+                            sms-url
+                            {:tenant-id tenant-id})
+                      :body sms-body}]
+     (if-not (s/valid? ::click-to-sms-params params)
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::click-to-sms-params params))
+                   :callback callback})
+       (do (go (let [sms-response (a/<! (iu/api-request sms-request))
+                     {:keys [api-response status]} sms-response]
+                 (if (not= status 200)
+                   (p/publish {:topics topic
+                               :error (e/api-error api-response)
+                               :callback callback})
+                   (p/publish {:topics topic
+                               :response api-response
+                               :callback callback}))))
+           nil)))))
 
 (defn get-transcripts
   ([module] (e/wrong-number-of-args-error))
@@ -274,7 +369,9 @@
                                 :module module-name})
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
             (register {:api {:interactions {:messaging {:send-message (partial send-message this)
-                                                        :get-transcripts (partial get-transcripts this)}}}
+                                                        :get-transcripts (partial get-transcripts this)
+                                                        :initialize-outbound-sms (partial click-to-sms this)
+                                                        :send-outbound-sms (partial send-sms-by-interrupt this)}}}
                        :module-name module-name})
             (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))))
   (stop [this])

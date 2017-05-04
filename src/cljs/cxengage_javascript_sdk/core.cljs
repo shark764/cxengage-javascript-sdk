@@ -95,7 +95,8 @@
                                       :unsubscribe pu/unsubscribe
                                       :dump-state state/get-state-js}
                                 :modules {:register register-module
-                                          :start start-external-module}})
+                                          :start start-external-module}
+                                :internal {}})
              module-comm-chan (a/chan 1024)]
          (state/set-base-api-url! base-url)
          (state/set-consumer-type! consumer-type)

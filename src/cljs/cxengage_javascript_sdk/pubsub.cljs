@@ -138,6 +138,8 @@
                  :messaging-history-received "cxengage/interactions/messaging/history-received"
                  :send-message-acknowledged "cxengage/interactions/messaging/send-message-acknowledged"
                  :new-message-received "cxengage/interactions/messaging/new-message-received"
+                 :initialize-outbound-sms-response "cxengage/interactions/messaging/initialize-outbound-sms-response"
+                 :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
                  })
 
 (defn get-topic [k]
