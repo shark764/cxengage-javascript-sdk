@@ -72,11 +72,12 @@
                           :sessionToken session-token
                           :region "us-east-1" ;;TODO: get from integration
                           :params {:QueueUrl queue-url}})
-        sqs (AWS.SQS. options)]
+        sqs (aset js/window "serenova" "cxengage" "internal" "SQS" (AWS.SQS. options))]
     (a/put! done-init< {:module-registration-status :success
                         :module (get @(:state module) :module-name)})
     (go-loop []
-      (let [response< (receive-message* sqs queue-url)
+      (let [sqs-poller (aget js/window "serenova" "cxengage" "internal" "SQS")
+            response< (receive-message* sqs-poller queue-url)
             value (a/<! response<)]
         (if (= value :shutdown)
           nil
@@ -105,7 +106,7 @@
   (refresh-integration [this]
     (go-loop []
       (let [sqs-token-ttl (get-in (state/get-integration-by-type "sqs") [:credentials :ttl])
-            min-ttl (* sqs-token-ttl 500)];;refresh at half the ttl
+            min-ttl (* sqs-token-ttl 500)] ;;refresh at half the ttl
         (a/<! (a/timeout min-ttl))
         (let [api-url (get-in this [:config :api-url])
               module-state @(:state this)
@@ -135,5 +136,5 @@
                                     :sessionToken session-token
                                     :region "us-east-1"
                                     :params {:QueueUrl queue-url}})
-                  sqs (AWS.SQS. options)])))
+                  sqs (aset js/window "serenova" "cxengage" "internal" "SQS" (AWS.SQS. options))])))
         (recur)))))
