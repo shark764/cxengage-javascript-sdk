@@ -117,42 +117,42 @@
 
 
 (s/def ::get-capacity-params
- (s/keys :req-un []
-         :opt-un [::specs/callback ::specs/resource-id]))
+  (s/keys :req-un []
+          :opt-un [::specs/callback ::specs/resource-id]))
 
 (defn get-capacity
- ([module]
-  (get-capacity module {}))
- ([module params & others]
-  (if-not (fn? (js->clj (first others)))
-    (e/wrong-number-of-args-error)
-    (get-capacity module (merge (iu/extract-params params {:callback (first others)})))))
- ([module params]
-  (let [params (iu/extract-params params)
-        module-state (:state module)
-        api-url (get-in module [:config :api-url])
-        tenant-id (st/get-active-tenant-id)
-        {:keys [resource-id callback]} params
-        url (if resource-id :capacity-tenant :capacity-user)
-        topic (p/get-topic :get-capacity-response)]
-    (if-not (s/valid? ::get-capacity-params params)
-      (p/publish {:topics topic
-                  :error (e/invalid-args-error (s/explain-data ::get-capacity-params params))
-                  :callback callback})
-      (go (let [capacity-url (str (st/get-base-api-url) (get-in @module-state [:urls url]))
-                url-params (if resource-id {:tenant-id tenant-id :resource-id resource-id} {:tenant-id tenant-id})
-                capacity-request {:method :get
-                                  :url (iu/build-api-url-with-params
-                                        capacity-url
-                                        url-params)}
-                {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
-                {:keys [results]} api-response]
-            (if (not= status 200)
-              (p/publish {:topics topic
-                          :error (e/api-error "api returned an error")})
-              (p/publish {:topics topic
-                          :response results})))))
-    nil)))
+  ([module]
+   (get-capacity module {}))
+  ([module params & others]
+   (if-not (fn? (js->clj (first others)))
+     (e/wrong-number-of-args-error)
+     (get-capacity module (merge (iu/extract-params params {:callback (first others)})))))
+  ([module params]
+   (let [params (iu/extract-params params)
+         module-state (:state module)
+         api-url (get-in module [:config :api-url])
+         tenant-id (st/get-active-tenant-id)
+         {:keys [resource-id callback]} params
+         url (if resource-id :capacity-user :capacity-tenant)
+         topic (p/get-topic :get-capacity-response)]
+     (if-not (s/valid? ::get-capacity-params params)
+       (p/publish {:topics topic
+                   :error (e/invalid-args-error (s/explain-data ::get-capacity-params params))
+                   :callback callback})
+       (go (let [capacity-url (str (st/get-base-api-url) (get-in @module-state [:urls url]))
+                 url-params (if resource-id {:tenant-id tenant-id :resource-id resource-id} {:tenant-id tenant-id})
+                 capacity-request {:method :get
+                                   :url (iu/build-api-url-with-params
+                                         capacity-url
+                                         url-params)}
+                 {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
+                 {:keys [results]} api-response]
+             (if (not= status 200)
+               (p/publish {:topics topic
+                           :error (e/api-error "api returned an error")})
+               (p/publish {:topics topic
+                           :response results})))))
+     nil)))
 
 (def initial-state
   {:module-name :reporting
