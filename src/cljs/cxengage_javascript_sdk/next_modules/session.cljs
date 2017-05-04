@@ -86,7 +86,7 @@
             (do (log :error "Heartbeat failed; ceasing future heartbeats.")
                 (state/set-session-expired! true)
                 (p/publish {:topics topic
-                            :error (e/api-error "no more heartbeats")})
+                            :error (e/session-heartbeats-failed-err)})
                 nil)
             (do (log :debug "Heartbeat sent!")
                 (p/publish {:topics topic
@@ -114,7 +114,7 @@
                 (state/set-session-expired! false)
                 (start-heartbeats*))
             (p/publish {:topics topic
-                        :error "failed to start session cxengage session"}))
+                        :error (e/failed-to-start-agent-session-err)}))
           nil))))
 
 (defn get-config* []
@@ -138,7 +138,7 @@
                             :response (select-keys user-config [:active-extension :extensions])})
                 (start-session*))
             (p/publish {:topics topic
-                        :error "couldnt get config (non 200 resp), failed to start session"}))))
+                        :error (e/failed-to-get-session-config-err)}))))
     nil))
 
 (def-sdk-fn set-active-tenant
@@ -149,7 +149,7 @@
         tenant-permissions (state/get-tenant-permissions tenant-id)]
     (if-not (state/has-permissions? tenant-permissions required-desktop-permissions)
       (p/publish {:topics topic
-                  :error (e/missing-required-permissions-error)
+                  :error (e/insufficient-permissions-err)
                   :callback callback})
       (do (state/set-active-tenant! tenant-id)
           (p/publish {:topics topic
@@ -194,9 +194,12 @@
                                          :state "ready"}}
             {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
             new-state-data (:result api-response)]
-        (when (= status 200)
+        (if (= status 200)
           (p/publish {:topics topic
                       :response new-state-data
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-change-state-err)
                       :callback callback})))))
 
 (def-sdk-fn go-ready
@@ -220,7 +223,7 @@
             active-extension (state/get-active-extension)]
         (if-not new-extension
           (p/publish {:topics topic
-                      :error (e/invalid-extension-provided)
+                      :error (e/invalid-extension-provided-err)
                       :callback callback})
           (if-not (= active-extension new-extension)
 

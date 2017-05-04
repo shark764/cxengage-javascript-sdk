@@ -50,44 +50,55 @@
    :level :error
    :message "The API rejected the values provided (400 status code). Verify your values against the SDK documentation."})
 
+(defn insufficient-permissions-err []
+  {:code 2000
+   :level :error
+   :message "You lack sufficient permissions in order to perform this action."})
+
+(defn failed-to-get-session-config-err []
+  {:code 2001
+   :level :error
+   :message "Failed to get user session config. The API returned an error."})
+
+(defn failed-to-start-agent-session-err []
+  {:code 2002
+   :level :error
+   :message "Failed to start an agent session. The API returned an error."})
+
+(defn session-heartbeats-failed-err []
+  {:code 2003
+   :level :fatal
+   :message "Session heartbeats failed. Unable to continue using agent session."})
+
+(defn failed-to-change-state-err []
+  {:code 2004
+   :level :error
+   :message "Failed to change agent state. The API returned an error."})
+
+(defn invalid-extension-provided-err []
+  {:code 2005
+   :level :error
+   :message "Invalid extension provided. Must be in the list of extensions provided via your user config. Unable to transition agent to ready state."})
+
 (defn failed-to-update-extension-err []
   {:code 2006
    :level :error
-   :message "Failed to update user extension. Unable to go ready."})
+   :message "Failed to update user extension. Unable to transition agent to ready state."})
 
-(defn invalid-extension-provided []
-  {:code 2005
-   :level :error
-   :message "Invalid extension provided. Must be in the list of extensions provided via your user config."})
-
-;;2000 - insufficient permissions to perform this action based on your role on this tenant
-;;2001 - failed to get config for user on this tenant, unable to start session
-;;2002 - failed to start users session
-;;2003 - session heartbeat failed
-;;2004 - failed to change presence state
-;;2005 - passed an invalid extension, unable to go ready / set your active extension
-;;2006 - attempt to update the users extension in order to go ready failed
-;;2007 -
-
-
-
-
-
-
-(defn token-error [a] nil)
-(defn wrong-number-of-args-error [] {:err "wrong # of args"})
-(defn missing-required-permissions-error [] {:err "missing required perms"})
-(defn invalid-args-error
-  ([] {:err "invalid args"})
-  ([a] {:err "invalid args"}))
-(defn api-error
-  ([] {:err "api error"})
-  ([a] {:err "api error"}))
-(defn no-entity-found-for-specified-id [] {:err "no entity of that id"})
-(defn incorrect-disposition-selected [] {:err "no dispo"})
-(defn invalid-artifact-file [] {:err "no artifact file"})
-(defn no-microphone-access-error
-  ([] {:err "no mic access"})
-  ([a] {:err "no mic access"}))
-(defn not-a-valid-extension [] {:err "no valid ext"})
-(defn invalid-logging-level-specified-error [] {:err "invalid log level"})
+;;(defn token-error [a] nil)
+;;(defn wrong-number-of-args-error [] {:err "wrong # of args"})
+;;(defn missing-required-permissions-error [] {:err "missing required perms"})
+#_(defn invalid-args-error
+    ([] {:err "invalid args"})
+    ([a] {:err "invalid args"}))
+#_(defn api-error
+    ([] {:err "api error"})
+    ([a] {:err "api error"}))
+;;(defn no-entity-found-for-specified-id [] {:err "no entity of that id"})
+;;(defn incorrect-disposition-selected [] {:err "no dispo"})
+;;(defn invalid-artifact-file [] {:err "no artifact file"})
+#_(defn no-microphone-access-error
+    ([] {:err "no mic access"})
+    ([a] {:err "no mic access"}))
+;;(defn not-a-valid-extension [] {:err "no valid ext"})
+;;(defn invalid-logging-level-specified-error [] {:err "invalid log level"})
