@@ -175,7 +175,7 @@
 (defn subscribe [topic callback]
   (let [params {:topic topic :callback callback}]
     (if-not (s/valid? ::subscribe-params params)
-      (e/invalid-args-error (s/explain-data ::subscribe-params params))
+      (s/explain-data ::subscribe-params params)
       (let [subscription-id (str (id/make-random-uuid))]
         (if-not (valid-topic? topic)
           (js/console.error (str "(" topic ") is not a valid subscription topic."))
@@ -201,6 +201,13 @@
       (do (js/console.info "Successfully unsubscribed")
           true))))
 
+(defn get-subscribers-by-topic [topic]
+  (let [all-topics (keys @sdk-subscriptions)]
+    (when-let [matched-topic (first (filter #(= topic %) all-topics))]
+      (-> @sdk-subscriptions
+          (get matched-topic)
+          (vals)))))
+
 (defn publish
   ([publish-details]
    (publish publish-details false))
@@ -208,11 +215,19 @@
    (let [{:keys [topics response error callback]} publish-details
          topics (if (string? topics) (conj #{} topics) topics)
          all-topics (all-topics)
-         subscription-callbacks (first (map vals (map #(get @sdk-subscriptions (name %)) topics)))
          topics (iu/camelify topics)
          error (iu/camelify error)
-         response (if preserve-casing (clj->js response) (iu/camelify response))]
-     (doseq [cb subscription-callbacks]
+         response (if preserve-casing
+                    (clj->js response)
+                    (iu/camelify response))
+         subscribers (->> topics
+                         (map get-topic-permutations)
+                         (flatten)
+                         (distinct)
+                         (map get-subscribers-by-topic)
+                         (filter (complement nil?))
+                         (flatten))]
+     (doseq [cb subscribers]
        (doseq [t topics]
          (cb error t response)))
      (when (and (fn? callback) callback) (callback error topics response)))))

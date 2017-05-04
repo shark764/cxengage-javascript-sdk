@@ -129,7 +129,7 @@
                                                                          :resource-id (state/get-active-user-id)
                                                                          :transfer-type transfer-type}})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
-       (p/publish {:topic (:topic interrupt-params)
+       (p/publish {:topics (:topic interrupt-params)
                    :error (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params))
                    :callback callback})
        (do #_(when (and (= transfer-type "warm-transfer")
