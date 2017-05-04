@@ -68,8 +68,13 @@
                                           :source-map true
                                           :parallel-build true
                                           :compiler-stats true
+                                          :source-map-timestamp true
+                                          :cache-analysis true
+                                          :recompile-dependents false
                                           :warnings {:single-segment-namespace false}
-                                        ;:verbose true
+                                          ;;:watch-fn (fn [] (println "Done compilation! Go to ya browsa"))
+                                          ;;:source-map-path "resources/public"
+                                          ;;:verbose true
                                           }})
   identity)
 
@@ -84,8 +89,11 @@
                                           :pseudo-names true
                                           :output-wrapper true
                                           :compiler-stats true
+                                          :anon-fn-naming-policy :mapped
+                                          :pretty-print true
                                           :source-map true
                                           :parallel-build true
+                                          :static-fns true
                                           :language-in :ecmascript5
                                           :print-input-delimiter true
                                           :language-out :ecmascript5
