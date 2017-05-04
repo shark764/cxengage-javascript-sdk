@@ -131,7 +131,7 @@
   (state/set-user-session-state! message)
   (if (not= (:state message) "offline")
     (p/publish {:topics (p/get-topic :presence-state-changed)
-                :response (select-keys message [:state :available-states :direction])})
+                :response (select-keys message [:state :available-states :direction :reason :reason-id :reason-list-id])})
     (p/publish {:topics (p/get-topic :session-ended)
                 :response true})))
 
