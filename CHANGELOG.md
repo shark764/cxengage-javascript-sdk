@@ -1,6 +1,9 @@
 # Change Log
 
 ## [Unreleased]
+
+## [4.0.1]
+* fixed token refresh for SQS
 * fixed tenant/resource capacity
 
 ## [4.0.0]
