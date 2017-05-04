@@ -16,8 +16,8 @@
 
             [cxengage-javascript-sdk.next-modules.authentication :as authentication]
             [cxengage-javascript-sdk.next-modules.session :as session]
-            [cxengage-javascript-sdk.next-modules.messaging :as messaging]
 
+            [cxengage-javascript-sdk.modules.messaging :as messaging]
             [cxengage-javascript-sdk.modules.entities :as entities]
             [cxengage-javascript-sdk.modules.reporting :as reporting]
             [cxengage-javascript-sdk.modules.contacts :as contacts]

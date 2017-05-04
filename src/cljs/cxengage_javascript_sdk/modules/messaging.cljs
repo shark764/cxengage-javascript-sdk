@@ -14,12 +14,8 @@
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-<<<<<<< 3638db7220d097a5b3911dea2d8607bc3e46ef23
             [cxengage-javascript-sdk.domain.specs :as specs]
-=======
             [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.specs :as spec]
->>>>>>> Revamp SDK window global naming conventions & nesting
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cognitect.transit :as t]
             [cxengage-javascript-sdk.domain.errors :as e]

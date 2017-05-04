@@ -1,26 +1,13 @@
 (ns cxengage-javascript-sdk.next-modules.authentication
-  (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
-                   [cljs.core.async.macros :refer [go]])
+  (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.domain.errors :as e]
-            [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.interop-helpers :as ih]))
 
-(defn str-long-enough?
-  [len st]
-  (>= (.-length st) len))
-
-(s/def ::min-8-len-string (and string?
-                               (partial str-long-enough? 8)))
-(s/def ::username ::min-8-len-string)
-(s/def ::password ::min-8-len-string)
-(s/def ::callback #(or (fn? %) (nil? %)))
 (s/def ::login-spec
   (s/keys :req-un [::username ::password]
           :opt-un [::callback]))
