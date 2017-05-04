@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 * added support for Click-to-sms and send-sms-by-interrupt
+* fixed missing intermediary {internal} object on exposed global
 
 ## [4.0.1]
 * fixed token refresh for SQS
