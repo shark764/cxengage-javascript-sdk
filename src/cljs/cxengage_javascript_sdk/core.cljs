@@ -28,6 +28,8 @@
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.domain.errors :as e]))
 
+(def *SDK-VERSION* "4.0.1-SNAPSHOT")
+
 (defn register-module [module]
   (let [{:keys [api module-name]} module
         old-api (iu/kebabify (aget js/window "CxEngage"))
@@ -105,7 +107,8 @@
              nil)
          (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} options
                module-comm-chan (a/chan 1024)
-               core (iu/camelify {:subscribe pu/subscribe
+               core (iu/camelify {:version *SDK-VERSION*
+                                  :subscribe pu/subscribe
                                   :publish pu/js-publish
                                   :unsubscribe pu/unsubscribe
                                   :dump-state state/get-state-js
