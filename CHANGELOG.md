@@ -1,7 +1,11 @@
 # Change Log
 
 ## [Unreleased]
+
+## [4.1.0]
 * added support for Click-to-sms and send-sms-by-interrupt
+* fixed missing intermediary {internal} object on exposed global
+* verify if callbacks are fn's before attempting to call them
 
 ## [4.0.1]
 * fixed token refresh for SQS

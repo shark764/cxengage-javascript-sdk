@@ -220,7 +220,7 @@
      (doseq [cb subscription-callbacks]
        (doseq [t topics]
          (cb error t response)))
-     (when callback (callback error topics response)))))
+     (when (and (fn? callback) callback) (callback error topics response)))))
 
 (defn js-publish [publish-details]
   (let [details (iu/extract-params publish-details)]
