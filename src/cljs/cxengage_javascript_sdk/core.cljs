@@ -28,7 +28,7 @@
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.domain.errors :as e]))
 
-(def *SDK-VERSION* "4.0.1-SNAPSHOT")
+(def *SDK-VERSION* "5.0.0-SNAPSHOT")
 
 (defn register-module [module]
   (let [{:keys [api module-name]} module

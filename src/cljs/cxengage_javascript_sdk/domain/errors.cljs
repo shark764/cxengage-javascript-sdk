@@ -50,6 +50,16 @@
    :level :error
    :message "The API rejected the values provided (400 status code). Verify your values against the SDK documentation."})
 
+(defn failed-to-update-extension-err []
+  {:code 2006
+   :level :error
+   :message "Failed to update user extension. Unable to go ready."})
+
+(defn invalid-extension-provided []
+  {:code 2005
+   :level :error
+   :message "Invalid extension provided. Must be in the list of extensions provided via your user config."})
+
 ;;2000 - insufficient permissions to perform this action based on your role on this tenant
 ;;2001 - failed to get config for user on this tenant, unable to start session
 ;;2002 - failed to start users session

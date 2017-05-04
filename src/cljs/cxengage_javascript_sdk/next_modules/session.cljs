@@ -220,7 +220,7 @@
             active-extension (state/get-active-extension)]
         (if-not new-extension
           (p/publish {:topics topic
-                      :error (e/not-a-valid-extension)
+                      :error (e/invalid-extension-provided)
                       :callback callback})
           (if-not (= active-extension new-extension)
 
@@ -237,7 +237,7 @@
               (if (= status 200)
                 (go-ready* topic callback)
                 (p/publish {:topics topic
-                            :error "failed to update users extension, unable to go ready"
+                            :error (e/failed-to-update-extension-err)
                             :callback callback})))
 
             ;;Their active extension and the extension they passed in are the same,

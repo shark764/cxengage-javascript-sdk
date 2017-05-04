@@ -72,10 +72,7 @@
                                           :cache-analysis true
                                           :recompile-dependents false
                                           :warnings {:single-segment-namespace false}
-                                          ;;:watch-fn (fn [] (println "Done compilation! Go to ya browsa"))
-                                          ;;:source-map-path "resources/public"
-                                          ;;:verbose true
-                                          }})
+                                          :source-map-path "resources/public"}})
   identity)
 
 (deftask testing* []
