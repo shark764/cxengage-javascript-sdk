@@ -60,7 +60,7 @@
                   :response new-state-data
                   :callback callback})
       (p/publish {:topics topic
-                  :error "failed to change presence state :("
+                  :error (e/failed-to-change-state-err)
                   :callback callback}))))
 
 (defn start-heartbeats* []
@@ -78,12 +78,13 @@
     (go-loop []
       (if (= "offline" (state/get-user-session-state))
         (do (log :info "Session is now offline; ceasing future heartbeats.")
+            (state/set-session-expired! true)
             nil)
         (let [{:keys [api-response status]} (a/<! (iu/api-request heartbeat-request))
               {:keys [result]} api-response
-              next-heartbeat-delay (* 1000 (or (:heartbeatDelay api-response) 30))]
+              next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
           (if (not= status 200)
-            (do (log :error "Heartbeat failed; ceasing future heartbeats.")
+            (do (log :fatal "Heartbeat failed; ceasing future heartbeats.")
                 (state/set-session-expired! true)
                 (p/publish {:topics topic
                             :error (e/session-heartbeats-failed-err)})
