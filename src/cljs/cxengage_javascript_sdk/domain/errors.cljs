@@ -84,21 +84,3 @@
   {:code 2006
    :level :error
    :message "Failed to update user extension. Unable to transition agent to ready state."})
-
-;;(defn token-error [a] nil)
-;;(defn wrong-number-of-args-error [] {:err "wrong # of args"})
-;;(defn missing-required-permissions-error [] {:err "missing required perms"})
-#_(defn invalid-args-error
-    ([] {:err "invalid args"})
-    ([a] {:err "invalid args"}))
-#_(defn api-error
-    ([] {:err "api error"})
-    ([a] {:err "api error"}))
-;;(defn no-entity-found-for-specified-id [] {:err "no entity of that id"})
-;;(defn incorrect-disposition-selected [] {:err "no dispo"})
-;;(defn invalid-artifact-file [] {:err "no artifact file"})
-#_(defn no-microphone-access-error
-    ([] {:err "no mic access"})
-    ([a] {:err "no mic access"}))
-;;(defn not-a-valid-extension [] {:err "no valid ext"})
-;;(defn invalid-logging-level-specified-error [] {:err "invalid log level"})
