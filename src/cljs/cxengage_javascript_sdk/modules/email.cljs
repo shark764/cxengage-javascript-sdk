@@ -3,7 +3,6 @@
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cljs-uuid-utils.core :as id]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.specs :as specs]
@@ -56,7 +55,7 @@
      (add-attachment module (merge (iu/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [params (iu/extract-params params)
-         _ (log :debug "[Attachment Processing] Params from client adding attachment:" params)
+         _ (js/console.log "[Attachment Processing] Params from client adding attachment:" params)
          {:keys [interaction-id file callback]} params
          attachment-id (id/uuid-string (id/make-random-uuid))]
      (if-not (s/valid? ::add-attachment-params params)
@@ -107,11 +106,11 @@
           :opt-un [::callback]))
 
 (defn html-body-id [files]
-  (log :debug "[Email Processing] Files when building html body id" files)
+  (js/console.log "[Email Processing] Files when building html body id" files)
   (:artifact-file-id (first (filter #(= (:filename %) "htmlBody") files))))
 
 (defn plain-body-id [files]
-  (log :debug "[Email Processing] Files when building plain body id" files)
+  (js/console.log "[Email Processing] Files when building plain body id" files)
   (:artifact-file-id (first (filter #(= (:filename %) "plainTextBody") files))))
 
 (defn build-attachments [files]
@@ -122,7 +121,7 @@
       (if (or (= (:filename file) "htmlBody")
               (= (:filename file) "plainTextBody"))
         nil
-        (do (log :debug "file in build attachments:" file)
+        (do (js/console.log "file in build attachments:" file)
             {:filename (:filename file)
              :headers [{:content-type (:content-type file)}]
              :artifact-file-id (:artifact-file-id file)})))
@@ -176,8 +175,8 @@
                                                              (js/Blob. (clj->js [html-body]) #js {"type" "text/html"})
                                                              "htmlBody"))
 
-                                                  :else (do (log :debug "[Email Processing] Name property on attachment file passed:" (.-name file))
-                                                            (log :debug "[Email Processing] File passed:" file)
+                                                  :else (do (js/console.log "[Email Processing] Name property on attachment file passed:" (.-name file))
+                                                            (js/console.log "[Email Processing] File passed:" file)
                                                             (doto (js/FormData.) (.append (.-name file) file (.-name file)))))
 
                                                 filename (cond
@@ -188,19 +187,19 @@
                                                                (= attachment-type :plain-text-body) "text/plain"
                                                                (= attachment-type :html-body) "text/html"
                                                                :else (.-type file))]
-                                            (log :debug "[Email Processing] File name:" filename)
-                                            (log :debug "[Email Processing] File content-type:" content-type)
-                                            (log :debug "[Email Processing] Form data:" form-data)
-                                            (log :debug "[Email Processing] Attachment Type:" attachment-type)
-                                            (log :debug "[Email Processing] Artifact URL:" artifact-url)
+                                            (js/console.log "[Email Processing] File name:" filename)
+                                            (js/console.log "[Email Processing] File content-type:" content-type)
+                                            (js/console.log "[Email Processing] Form data:" form-data)
+                                            (js/console.log "[Email Processing] Attachment Type:" attachment-type)
+                                            (js/console.log "[Email Processing] Artifact URL:" artifact-url)
                                             (iu/file-api-request
                                              {:method :post
                                               :url artifact-url
                                               :body form-data
                                               :callback (fn [{:keys [api-response status]} response]
-                                                          (log :debug "[Email Processing] API response for file upload:" api-response)
-                                                          (log :debug "[Email Processing] Filename from API response" filename)
-                                                          (log :debug "[Email Processing] String'd filename:" (name filename))
+                                                          (js/console.log "[Email Processing] API response for file upload:" api-response)
+                                                          (js/console.log "[Email Processing] Filename from API response" filename)
+                                                          (js/console.log "[Email Processing] String'd filename:" (name filename))
                                                           (resolve {:artifact-file-id (first (vals api-response))
                                                                     :filename (name filename)
                                                                     :content-type content-type}))}))))))
@@ -209,7 +208,7 @@
              all-req-promises (all all-req-promises)]
          (then all-req-promises
                (fn [results]
-                 (log :debug "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (iu/camelify results) nil 2))
+                 (js/console.log "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (iu/camelify results) nil 2))
                  (let [in-reply-to-id (state/get-email-reply-to-id interaction-id)
                        manifest-map {:attachments (build-attachments results)
                                      :cc cc
@@ -221,7 +220,7 @@
                                      :subject subject
                                      :to to}
                        manifest-string (js/JSON.stringify (iu/camelify manifest-map))
-                       _ (log :debug "[Email Processing] Manifest we're creating:" manifest-string)
+                       _ (js/console.log "[Email Processing] Manifest we're creating:" manifest-string)
                        form-data (doto (js/FormData.)
                                    (.append "manifest.json"
                                             (js/Blob. (clj->js [manifest-string]) #js {"type" "application/json"})
@@ -230,7 +229,7 @@
                                                 :url artifact-url
                                                 :body form-data}]
                    (go (let [manifest-response (a/<! (iu/file-api-request create-manifest-request))
-                             _ (log :debug "[Email Processing] Manifest creation response:" (iu/camelify manifest-response))
+                             _ (js/console.log "[Email Processing] Manifest creation response:" (iu/camelify manifest-response))
                              {:keys [api-response status]} manifest-response
                              manifest-id (get api-response :manifest.json)
                              artifact-update-request {:method :put
@@ -238,7 +237,7 @@
                                                       :body {:manifest-id manifest-id
                                                              :artifactType "email"}}
                              artifact-update-response (a/<! (iu/api-request artifact-update-request))
-                             _ (log :debug "[Email Processing] Artifact update response:" (iu/camelify artifact-update-response))
+                             _ (js/console.log "[Email Processing] Artifact update response:" (iu/camelify artifact-update-response))
                              flow-url (-> (state/get-base-api-url)
                                           (str "tenants/tenant-id/interactions/interaction-id/interrupts")
                                           (iu/build-api-url-with-params

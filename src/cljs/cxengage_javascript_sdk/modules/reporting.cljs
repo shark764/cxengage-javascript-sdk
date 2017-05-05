@@ -3,7 +3,6 @@
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
@@ -32,10 +31,10 @@
                 {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
                 {:keys [results]} api-response]
             (if (not= status 200)
-              (do (log :error "Batch request failed.")
+              (do (js/console.error "Batch request failed.")
                   (p/publish {:topics topic
                               :error (e/api-error api-response)}))
-              (do (log :info "Batch request received!")
+              (do (js/console.info "Batch request received!")
                   (p/publish {:topics topic
                               :response results})
 
@@ -63,7 +62,7 @@
          topic (p/get-topic :add-stat)
          stat-bundle (dissoc params :callback)]
      (if-not (s/valid? ::add-statistic-params params)
-       (do (log :debug (s/explain-data ::add-statistic-params params))
+       (do (js/console.log (s/explain-data ::add-statistic-params params))
            (p/publish {:topics topic
                        :error (e/invalid-args-error "invalid args passed to sdk fn")
                        :callback callback}))

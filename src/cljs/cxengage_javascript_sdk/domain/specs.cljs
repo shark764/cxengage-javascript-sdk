@@ -1,9 +1,7 @@
 (ns cxengage-javascript-sdk.domain.specs
   (:require [cljs.spec :as s]
+            [cxengage-javascript-sdk.internal-utils :as iu]
             [cljs-uuid-utils.core :as id]))
-
-(defn str-long-enough? [len st]
-  (>= (.-length st) len))
 
 (s/def ::answers map?)
 (s/def ::artifact-file-id ::uuid)
@@ -24,7 +22,7 @@
 (s/def ::layout-id ::uuid)
 (s/def ::level #{"debug" "info" "warn" "error" "fatal"})
 (s/def ::message string?)
-(s/def ::min-8-len-string (and string? (partial str-long-enough? 8)))
+(s/def ::min-8-len-string (and string? (partial iu/str-long-enough? 8)))
 (s/def ::note-id ::uuid)
 (s/def ::password ::min-8-len-string)
 (s/def ::phone-number string?)

@@ -2,7 +2,6 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
-            [cxengage-cljs-utils.core :as u]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
@@ -11,7 +10,6 @@
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.state :as state]
             [cljs-uuid-utils.core :as uuid]
-            [clojure.string :as str]
             [lumbajack.core :as jack]))
 
 (defn format-request-logs

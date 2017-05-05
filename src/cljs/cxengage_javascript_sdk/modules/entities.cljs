@@ -5,7 +5,6 @@
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]

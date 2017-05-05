@@ -1,12 +1,6 @@
 (ns cxengage-javascript-sdk.pubsub
-  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.spec :as s]
-            [cljs.core.async :as a]
             [clojure.string :as string]
-            [clojure.set :as set]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
-            [cxengage-javascript-sdk.domain.errors :as e]
-            [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.domain.specs :as specs]))
@@ -143,12 +137,16 @@
                  :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
                  })
 
-(defn get-topic [k]
+(defn get-topic
+  "Gets the SDK consumer topic string for a specific internal topic key."
+  [k]
   (if-let [topic (get sdk-topics k)]
     topic
     (js/console.error "Topic not found in topic list" k)))
 
-(defn get-topic-permutations [topic]
+(defn get-topic-permutations
+  "Given an SDK consumer topic string, returns a list of all possible permutatations of that topic string. I.E. 'cxengage/authentication' returns 'cxengage' & 'cxengage/authentication'."
+  [topic]
   (let [parts (string/split topic #"/")]
     (:permutations
      (reduce
@@ -163,7 +161,9 @@
           #{}
           (vals sdk-topics)))
 
-(defn valid-topic? [topic]
+(defn valid-topic?
+  "Determines if a topic exists in the list of valid SDK topics."
+  [topic]
   (let [valid-topics (all-topics)]
     (if (some #(= topic %) valid-topics)
       topic)))
@@ -172,7 +172,9 @@
   (s/keys :req-un [::specs/topic ::specs/callback]
           :opt-un []))
 
-(defn subscribe [topic callback]
+(defn subscribe
+  "Adds a subscription callback associated with a specific topic. Any time that topic is published to all subscription callbacks for that topic will be fired. Returns a subscription ID which can be later unsubscribed with."
+  [topic callback]
   (let [params {:topic topic :callback callback}]
     (if-not (s/valid? ::subscribe-params params)
       (s/explain-data ::subscribe-params params)
@@ -186,7 +188,9 @@
   (s/keys :req-un [::specs/subscription-id]
           :opt-un []))
 
-(defn unsubscribe [subscription-id]
+(defn unsubscribe
+  "Removes a subscription callback from the SDK subscribers list."
+  [subscription-id]
   (let [original-subs @sdk-subscriptions
         new-sub-list (reduce-kv
                       (fn [updated-subscriptions topic subscribers]
@@ -201,7 +205,9 @@
       (do (js/console.info "Successfully unsubscribed")
           true))))
 
-(defn get-subscribers-by-topic [topic]
+(defn get-subscribers-by-topic
+  "Given a topic, finds all subscriber callbacks for any topics that match the topic provided."
+  [topic]
   (let [all-topics (keys @sdk-subscriptions)]
     (when-let [matched-topic (first (filter #(= topic %) all-topics))]
       (-> @sdk-subscriptions
@@ -209,6 +215,7 @@
           (vals)))))
 
 (defn publish
+  "Publishes a value (or error) to a specific topic, optionally calling the callback provided and optionally leaving the casing of the response unaltered."
   ([publish-details]
    (publish publish-details false))
   ([publish-details preserve-casing]
@@ -220,14 +227,14 @@
          response (if preserve-casing
                     (clj->js response)
                     (iu/camelify response))
-         subscribers (->> topics
+         relevant-subscribers (->> topics
                          (map get-topic-permutations)
                          (flatten)
                          (distinct)
                          (map get-subscribers-by-topic)
                          (filter (complement nil?))
                          (flatten))]
-     (doseq [cb subscribers]
+     (doseq [cb relevant-subscribers]
        (doseq [t topics]
          (cb error t response)))
      (when (and (fn? callback) callback) (callback error topics response)))))

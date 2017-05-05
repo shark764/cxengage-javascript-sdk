@@ -2,15 +2,20 @@
   (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
+            [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.interop-helpers :as ih]))
 
-(s/def ::login-spec
-  (s/keys :req-un [::username ::password]
-          :opt-un [::callback]))
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.authentication.logout();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::logout-spec
+  (s/keys :req-un []
+          :opt-un []))
 
 (def-sdk-fn logout
   ::logout-spec
@@ -34,6 +39,17 @@
       (p/publish {:topics topic
                   :response new-state-data
                   :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.authentication.login({
+;;   username: "{{string}}",
+;;   password: "{{string}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::login-spec
+  (s/keys :req-un [::specs/username ::specs/password]
+          :opt-un [::specs/callback]))
 
 (def-sdk-fn login
   ::login-spec
@@ -60,7 +76,11 @@
                         :response user-identity
                         :callback callback})))))))
 
-(defrecord AuthenticationModule [config state core-messages<]
+;; -------------------------------------------------------------------------- ;;
+;; SDK Authentication Module
+;; -------------------------------------------------------------------------- ;;
+
+(defrecord AuthenticationModule []
   pr/SDKModule
   (start [this]
     (let [module-name :authentication]

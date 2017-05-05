@@ -1,10 +1,9 @@
 (ns cxengage-javascript-sdk.modules.interaction
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.domain.errors :as err]

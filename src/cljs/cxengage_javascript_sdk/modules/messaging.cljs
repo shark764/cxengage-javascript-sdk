@@ -1,17 +1,14 @@
 (ns cxengage-javascript-sdk.modules.messaging
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljsjs.paho]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [clojure.set :refer [rename-keys]]
             [cljs-time.core :as time]
             [cljs-time.format :as fmt]
             [cljs-time.instant]
-            [goog.crypt :as c]
             [cljs-uuid-utils.core :as id]
-            [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.specs :as specs]
@@ -98,7 +95,7 @@
 (defn subscribe
   [topic]
   (.subscribe (get-mqtt-client) topic #js {:qos 1})
-  (log :debug (str "Subscribed to MQTT topic: " topic)))
+  (js/console.log (str "Subscribed to MQTT topic: " topic)))
 
 (defn unsubscribe
   [topic]
@@ -116,20 +113,20 @@
                 :callback callback})))
 
 (defn on-connect [done-init<]
-  (log :debug "Mqtt client connected")
+  (js/console.log "Mqtt client connected")
   (a/put! done-init< {:module-registration-status :success
                       :module :mqtt})
   (p/publish {:topics (p/get-topic :messaging-enabled)
               :response true}))
 
 (defn on-failure [done-init< msg]
-  (log :debug "Mqtt Client failed to connect")
+  (js/console.log "Mqtt Client failed to connect")
   (a/put! done-init< {:module-registration-status :success
                       :module :mqtt
                       :message msg}))
 
 (defn disconnect [client]
-  (log :debug "Disconnecting mqtt client")
+  (js/console.log "Disconnecting mqtt client")
   (.disconnect client))
 
 (defn connect
@@ -137,7 +134,7 @@
   (let [mqtt (Paho.MQTT.Client. endpoint client-id)
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
-                                      (log :error "Mqtt Connection Lost" {:reasonCode reason-code
+                                      (js/console.error "Mqtt Connection Lost" {:reasonCode reason-code
                                                                           :reasonMessage reason-message})))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))

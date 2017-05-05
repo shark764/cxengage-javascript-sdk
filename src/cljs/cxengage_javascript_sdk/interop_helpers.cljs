@@ -1,5 +1,4 @@
-(ns cxengage-javascript-sdk.interop-helpers
-  (:require [cljs.core.async :as a]))
+(ns cxengage-javascript-sdk.interop-helpers)
 
 (defn register [module-details]
   (let [f (aget js/window "CxEngage" "registerModule")]
@@ -9,6 +8,8 @@
   (let [f (aget js/window "CxEngage" "sendCoreMessage")]
     (f message)))
 
-(defn publish [message]
-  (let [f (aget js/window "CxEngage" "publish")]
-    (f message)))
+(defn set-sdk-global [sdk]
+  (aset js/window "CxEngage" sdk))
+
+(defn get-sdk-global []
+  (aget js/window "CxEngage"))

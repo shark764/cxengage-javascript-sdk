@@ -1,21 +1,14 @@
 (ns cxengage-javascript-sdk.modules.contacts
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
-            [cxengage-javascript-sdk.helpers :refer [log]]
-            [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]
-            [lumbajack.core :as jack]
-            [camel-snake-kebab.core :as camel]
-            [camel-snake-kebab.extras :refer [transform-keys]]
-            [cxengage-javascript-sdk.state :as state]
-            [cljs-uuid-utils.core :as uuid]))
+            [cxengage-javascript-sdk.state :as state]))
 
 (defn contact-request
   ([url body method params topic-key spec module preserve-casing?]

@@ -77,6 +77,9 @@
   [status]
   (and (>= status 500) (< status 512) (not= status 509)))
 
+(defn str-long-enough? [len st]
+  (>= (.-length st) len))
+
 (defn api-request
   ([request-map]
    (api-request request-map false))
@@ -156,11 +159,6 @@
                       :url url}]
     (api-request file-request)))
 
-(defn format-response [response]
-  (if (= :cljs (state/get-consumer-type))
-    response
-    (clj->js response)))
-
 (defn extract-params
   ([params]
    (extract-params params false))
@@ -171,39 +169,27 @@
        params
        (kebabify (js->clj params :keywordize-keys true))))))
 
-(defn base-module-request
-  ([type]
-   (base-module-request type nil))
-  ([type additional-params]
-   (let [token (state/get-token)
-         resp-chan (a/promise-chan)]
-     (cond-> {:type type
-              :resp-chan resp-chan}
-       additional-params (merge additional-params)
-       token (merge {:token token})))))
-
 (defn send-interrupt*
-  ([module params]
-   (let [params (extract-params params)
-         module-state @(:state module)
-         {:keys [interaction-id interrupt-type interrupt-body topic on-confirm-fn callback]} params
-         tenant-id (state/get-active-tenant-id)
-         interrupt-request {:method :post
-                            :body {:source "client"
-                                   :interrupt-type interrupt-type
-                                   :interrupt interrupt-body}
-                            :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
-     (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
-                   {:keys [api-response status]} interrupt-response]
-               (if (not= status 200)
-                 (ih/publish {:topics topic
-                              :error (e/api-error api-response)
-                              :callback callback})
-                 (do (ih/publish {:topics topic
-                                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                                  :callback callback})
-                     (when on-confirm-fn (on-confirm-fn))))))
-         nil))))
+  [module params]
+  (let [params (extract-params params)
+        {:keys [interaction-id interrupt-type interrupt-body topic on-confirm-fn callback]} params
+        tenant-id (state/get-active-tenant-id)
+        interrupt-request {:method :post
+                           :body {:source "client"
+                                  :interrupt-type interrupt-type
+                                  :interrupt interrupt-body}
+                           :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
+    (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
+                  {:keys [api-response status]} interrupt-response]
+              (if (not= status 200)
+                (ih/publish {:topics topic
+                             :error (e/api-error api-response)
+                             :callback callback})
+                (do (ih/publish {:topics topic
+                                 :response (merge {:interaction-id interaction-id} interrupt-body)
+                                 :callback callback})
+                    (when on-confirm-fn (on-confirm-fn))))))
+        nil)))
 
 ;;;;;;;;;;;;;;;
 ;; sigv4 utils

@@ -6,65 +6,63 @@
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
-(s/def ::set-direction-spec
-  (s/keys :req-un [::specs/direction]
-          :opt-un [::specs/callback]))
-
-(s/def ::go-ready-spec
-  (s/keys :req-un [::specs/extension-value]
-          :opt-un [::specs/callback]))
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.goNotReady({
+;;   reasonInfo: {
+;;     reason: "{{string}}",
+;;     reasonId: "{{uuid}}",
+;;     reasonListId: "{{uuid}}"
+;;   }
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (s/def ::go-not-ready-spec
   (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
-(s/def ::set-active-tenant-spec
-  (s/keys :req-un [::specs/tenant-id]
-          :opt-un [::specs/callback]))
-
-(def required-desktop-permissions
-  #{"CONTACTS_CREATE"
-    "CONTACTS_UPDATE"
-    "CONTACTS_READ"
-    "CONTACTS_ATTRIBUTES_READ"
-    "CONTACTS_LAYOUTS_READ"
-    "CONTACTS_ASSIGN_INTERACTION"
-    "CONTACTS_INTERACTION_HISTORY_READ"
-    "ARTIFACTS_CREATE_ALL"})
+          :opt-un [::specs/callback ::specs/reason-info]))
 
 (def-sdk-fn go-not-ready
   ::go-not-ready-spec
   (p/get-topic :presence-state-change-request-acknowledged)
   [params]
-  (let [{:keys [callback topic]} params
+  (let [{:keys [callback topic reason-info]} params
+        {:keys [reason reason-id reason-list-id]} reason-info
         session-id (state/get-session-id)
         resource-id (state/get-active-user-id)
-        tenant-id (state/get-active-tenant-id)
-        change-state-request {:method :post
-                              :url (iu/api-url
-                                    "tenants/tenant-id/presence/resource-id"
-                                    {:tenant-id tenant-id
-                                     :resource-id resource-id})
-                              :body {:session-id session-id
-                                     :state "notready"}}
-        {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
-        new-state-data (:result api-response)]
-    (if (= status 200)
+        tenant-id (state/get-active-tenant-id)]
+    (if (and
+         (or reason reason-id reason-list-id)
+         (not (state/valid-reason-codes? reason reason-id reason-list-id)))
       (p/publish {:topics topic
-                  :response new-state-data
+                  :error (e/invalid-reason-info-err)
                   :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-change-state-err)
-                  :callback callback}))))
+      (let [change-state-request {:method :post
+                                  :url (iu/api-url
+                                        "tenants/tenant-id/presence/resource-id"
+                                        {:tenant-id tenant-id
+                                         :resource-id resource-id})
+                                  :body {:session-id session-id
+                                         :state "notready"}}
+            {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
+            new-state-data (:result api-response)]
+         (if (= status 200)
+           (p/publish {:topics topic
+                       :response new-state-data
+                       :callback callback})
+           (p/publish {:topics topic
+                       :error (e/failed-to-change-state-err)
+                       :callback callback}))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.setActiveTenant({ tenantId: "{{uuid}}" });
+;; -------------------------------------------------------------------------- ;;
 
 (defn- start-heartbeats []
-  (log :info "Sending heartbeats...")
+  (js/console.info "Sending heartbeats...")
   (let [session-id (state/get-session-id)
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
@@ -77,19 +75,19 @@
         topic (p/get-topic :presence-heartbeats-response)]
     (go-loop []
       (if (= "offline" (state/get-user-session-state))
-        (do (log :info "Session is now offline; ceasing future heartbeats.")
+        (do (js/console.info "Session is now offline; ceasing future heartbeats.")
             (state/set-session-expired! true)
             nil)
         (let [{:keys [api-response status]} (a/<! (iu/api-request heartbeat-request))
               {:keys [result]} api-response
               next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
           (if (= status 200)
-            (do (log :debug "Heartbeat sent!")
+            (do (js/console.log "Heartbeat sent!")
                 (p/publish {:topics topic
                             :response result})
                 (a/<! (a/timeout next-heartbeat-delay))
                 (recur))
-            (do (log :fatal "Heartbeat failed; ceasing future heartbeats.")
+            (do (js/console.error "Heartbeat failed; ceasing future heartbeats.")
                 (state/set-session-expired! true)
                 (p/publish {:topics topic
                             :error (e/session-heartbeats-failed-err)})
@@ -142,6 +140,20 @@
                         :error (e/failed-to-get-session-config-err)}))))
     nil))
 
+(def required-desktop-permissions
+  #{"CONTACTS_CREATE"
+    "CONTACTS_UPDATE"
+    "CONTACTS_READ"
+    "CONTACTS_ATTRIBUTES_READ"
+    "CONTACTS_LAYOUTS_READ"
+    "CONTACTS_ASSIGN_INTERACTION"
+    "CONTACTS_INTERACTION_HISTORY_READ"
+    "ARTIFACTS_CREATE_ALL"})
+
+(s/def ::set-active-tenant-spec
+  (s/keys :req-un [::specs/tenant-id]
+          :opt-un [::specs/callback]))
+
 (def-sdk-fn set-active-tenant
   ::set-active-tenant-spec
   (p/get-topic :active-tenant-set)
@@ -157,6 +169,14 @@
                       :response {:tenant-id tenant-id}
                       :callback callback})
           (get-config*)))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.setDirection({ direction: "{{inbound/outbound}}" });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::set-direction-spec
+  (s/keys :req-un [::specs/direction]
+          :opt-un [::specs/callback]))
 
 (def-sdk-fn set-direction
   ::set-direction-spec
@@ -182,6 +202,10 @@
                   :response direction-details
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.goReady({ extensionValue: "{{uuid/extension}}" });
+;; -------------------------------------------------------------------------- ;;
+
 (defn- go-ready [topic callback]
   (go (let [session-id (state/get-session-id)
             resource-id (state/get-active-user-id)
@@ -202,6 +226,10 @@
           (p/publish {:topics topic
                       :error (e/failed-to-change-state-err)
                       :callback callback})))))
+
+(s/def ::go-ready-spec
+  (s/keys :req-un [::specs/extension-value]
+          :opt-un [::specs/callback]))
 
 (def-sdk-fn go-ready
   ::go-ready-spec
@@ -227,10 +255,11 @@
                       :error (e/invalid-extension-provided-err)
                       :callback callback})
           (if-not (= active-extension new-extension)
-
-            ;; Active extension was either nil, or didn't match the one they passed.
-            ;; Update their user prior to changing state, so they go ready with the
-            ;; correct extension.
+            ;; Active extension was either nil (this user has never had an
+            ;; active extension, E.G. they're a new user), or they *do* have an
+            ;; active extension, but it didn't match the one they passed for the
+            ;; session they're starting. Update their user prior to changing
+            ;; state, so they go ready with the correct extension.
             (let [update-user-request {:method :put
                                        :url (iu/api-url
                                              "tenants/tenant-id/users/resource-id"
@@ -244,11 +273,15 @@
                             :error (e/failed-to-update-extension-err)
                             :callback callback})))
 
-            ;;Their active extension and the extension they passed in are the same,
-            ;;no user update is necessary, simply go ready.
+            ;; Their active extension and the extension they passed in are the
+            ;; same, no user update request is necessary, simply go ready.
             (go-ready* topic callback)))))))
 
-(defrecord SessionModule [config state core-messages<]
+;; -------------------------------------------------------------------------- ;;
+;; SDK Presence Session Module
+;; -------------------------------------------------------------------------- ;;
+
+(defrecord SessionModule []
   pr/SDKModule
   (start [this]
     (let [module-name :session]

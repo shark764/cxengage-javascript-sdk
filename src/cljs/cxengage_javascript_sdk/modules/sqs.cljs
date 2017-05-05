@@ -3,11 +3,9 @@
   (:require [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cljsjs.aws-sdk-js]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
@@ -17,7 +15,7 @@
   [response<]
   (fn [err data]
     (if err
-      (log :error err)
+      (js/console.error err)
       (go
         (>! response< (->> data
                            js->clj
@@ -27,7 +25,7 @@
   [sqs queue-url]
   (let [response (a/promise-chan)]
     (if (state/get-session-expired)
-      (do (log :error "Session expired, shutting down SQS")
+      (do (js/console.error "Session expired, shutting down SQS")
           (go (a/>! response :shutdown))
           response)
       (let [params (clj->js {:QueueUrl queue-url
@@ -47,7 +45,7 @@
           msg-type (or (:notification-type parsed-body)
                        (:type parsed-body))]
       (if (not= (state/get-session-id) session-id)
-        (do #_(log :warn (str "Received a message from a different session than the current one."
+        (do #_(js/console.warn (str "Received a message from a different session than the current one."
                               "Current session ID: " current-session-id
                               " - Session ID on message received: " session-id
                               " Message type: " msg-type))
@@ -61,7 +59,7 @@
                          :ReceiptHandle receipt-handle})]
     (.deleteMessage sqs params (fn [err data]
                                  (when err
-                                   (log :error err))))))
+                                   (js/console.error err))))))
 
 (defn sqs-init*
   [module integration on-received done-init<]

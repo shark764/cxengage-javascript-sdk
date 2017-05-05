@@ -1,23 +1,13 @@
 (ns cxengage-javascript-sdk.modules.voice
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljsjs.paho]
-            [camel-snake-kebab.core :as camel]
-            [camel-snake-kebab.extras :refer [transform-keys]]
             [cljs.core.async :as a]
-            [clojure.set :refer [rename-keys]]
-            [cljs-time.core :as time]
-            [cljs-time.format :as fmt]
-            [cljs-time.instant]
-            [cxengage-javascript-sdk.helpers :refer [log]]
-            [goog.crypt :as c]
             [cljs-uuid-utils.core :as id]
-            [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.protocols :as pr]
-            [cognitect.transit :as t]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec :as s]))
@@ -190,7 +180,7 @@
   (state/set-twilio-connection connection))
 
 (defn handle-twilio-error [script config error]
-  (log :error error script config))
+  (js/console.error error script config))
 
 (defn ^:private twilio-init
   [config done-init<]
@@ -218,7 +208,7 @@
                               (js/Twilio.Device.error handle-twilio-error)
                               (p/publish {:topics (p/get-topic :voice-enabled)
                                           :response true})
-                              (log :info "<----- Started voice SDK module! ----->"))
+                              (js/console.info "<----- Started voice SDK module! ----->"))
                             (do (a/<! (a/timeout 250))
                                 (recur))))))]
     (-> js/navigator

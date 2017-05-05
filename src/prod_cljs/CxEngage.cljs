@@ -1,6 +1,7 @@
 (ns CxEngage
-  (:require [cxengage-javascript-sdk.core :as c]
-            [cxengage-javascript-sdk.state :as state]))
+  (:require [cxengage-javascript-sdk.core :as c]))
 
 (defn ^:export initialize
-  ([& params] (c/initialize params)))
+  "Single entry-point for the SDK. Registers the global ('CxEngage')"
+  [& params]
+  (c/initialize params))

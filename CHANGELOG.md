@@ -9,6 +9,7 @@
 * fixed pub/sub system to only call callbacks for the subscribers whose topics match
 * removed the ability to pass callbacks as a part of the params object (must be passed as a 2nd parameter)
 * migrated session & authentication modules to use the sdk macro
+* added lots of code comments, tided up namespace deps, removed lots of dead code
 
 ## [4.1.0]
 * added support for click-to-sms and send-sms-by-interrupt

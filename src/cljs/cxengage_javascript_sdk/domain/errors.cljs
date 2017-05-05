@@ -78,9 +78,14 @@
 (defn invalid-extension-provided-err []
   {:code 2005
    :level :error
-   :message "Invalid extension provided. Must be in the list of extensions provided via your user config. Unable to transition agent to ready state."})
+   :message "Invalid extension provided. Must be in the list of extensions provided via your user config. Unable to transition agent to a ready state."})
 
 (defn failed-to-update-extension-err []
   {:code 2006
    :level :error
    :message "Failed to update user extension. Unable to transition agent to ready state."})
+
+(defn invalid-reason-info-err []
+  {:code 2007
+   :level :error
+   :message "Invalid reason info provided. Must be in the list of reasons provided via your user config. Unable to transition agent to a not ready"})
