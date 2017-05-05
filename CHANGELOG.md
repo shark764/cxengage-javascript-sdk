@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* fixed capacity callbacks
 
 ## [4.1.0]
 * added support for Click-to-sms and send-sms-by-interrupt

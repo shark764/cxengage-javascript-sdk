@@ -149,9 +149,11 @@
                  {:keys [results]} api-response]
              (if (not= status 200)
                (p/publish {:topics topic
-                           :error (e/api-error "api returned an error")})
+                           :error (e/api-error "api returned an error")
+                           :callback callback})
                (p/publish {:topics topic
-                           :response results})))))
+                           :response results
+                           :callback callback})))))
      nil)))
 
 (def initial-state
