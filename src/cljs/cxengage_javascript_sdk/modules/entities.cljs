@@ -29,10 +29,10 @@
   ([module entity-type validation] (get-entity module entity-type validation {}))
   ([module entity-type validation params & others]
    (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (get-entity module entity-type validation (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-entity module entity-type validation (merge (ih/extract-params params) {:callback (first others)}))))
   ([module entity-type validation params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          module-state @(:state module)
          api-url (get-in module [:config :api-url])
          {:keys [callback]} params
@@ -71,10 +71,10 @@
   ([module entity-type] (get-entity module entity-type {}))
   ([module entity-type params & others]
    (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (get-entity module entity-type (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-entity module entity-type (merge (ih/extract-params params) {:callback (first others)}))))
   ([module entity-type params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          module-state @(:state module)
          api-url (get-in module [:config :api-url])
          {:keys [body callback]} params

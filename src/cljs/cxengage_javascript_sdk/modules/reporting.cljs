@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.modules.reporting
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.interop-helpers :as ih]
@@ -33,7 +34,7 @@
             (if (not= status 200)
               (do (js/console.error "Batch request failed.")
                   (p/publish {:topics topic
-                              :error (e/api-error api-response)}))
+                              :error (e/client-request-err)}))
               (do (js/console.info "Batch request received!")
                   (p/publish {:topics topic
                               :response results})
@@ -41,31 +42,18 @@
                   (recur))))))
       nil)))
 
-(s/def statistic string?)
-
 (s/def ::add-statistic-params
-  (s/keys :req-un [::statistic]
+  (s/keys :req-un [::specs/statistic]
           :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
 
-(defn add-stat-subscription
-  ([module]
-   (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (add-stat-subscription module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
+(def-sdk-fn add-stat-subscription
+   ::add-statistic-params
+   (p/get-topic :add-stat)
+   [params]
+   (let [{:keys [module topic callback]} params
          module-state (:state module)
-         {:keys [callback]} params
          tenant-id (st/get-active-tenant-id)
-         topic (p/get-topic :add-stat)
          stat-bundle (dissoc params :callback)]
-     (if-not (s/valid? ::add-statistic-params params)
-       (do (js/console.log (s/explain-data ::add-statistic-params params))
-           (p/publish {:topics topic
-                       :error (e/invalid-args-error "invalid args passed to sdk fn")
-                       :callback callback}))
        (let [stat-id (str (uuid/make-random-uuid))]
          (swap! module-state assoc-in [:statistics stat-id] stat-bundle)
          (p/publish {:topics topic
@@ -80,12 +68,10 @@
                    {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
                    {:keys [results]} api-response
                    batch-topic (p/get-topic :batch-response)]
-               (if (not= status 200)
+               (when (= status 200)
                  (p/publish {:topics batch-topic
-                             :error (e/api-error "api returned an error")})
-                 (p/publish {:topics batch-topic
-                             :response results}))))
-         nil)))))
+                             :response results
+                             :callback callback})))))))
 
 (s/def ::remove-statistics-params
   (s/keys :req-un [::specs/stat-id]
@@ -93,13 +79,13 @@
 
 (defn remove-stat-subscription
   ([module]
-   (e/wrong-number-of-args-error))
+   (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (remove-stat-subscription module (merge (iu/extract-params params {:callback (first others)})))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (remove-stat-subscription module (merge (ih/extract-params params {:callback (first others)})))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          module-state (:state module)
          api-url (get-in module [:config :api-url])
          {:keys [stat-id callback]} params
@@ -125,10 +111,10 @@
    (get-capacity module {}))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-capacity module (merge (iu/extract-params params {:callback (first others)})))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-capacity module (merge (ih/extract-params params {:callback (first others)})))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          module-state (:state module)
          api-url (get-in module [:config :api-url])
          tenant-id (st/get-active-tenant-id)

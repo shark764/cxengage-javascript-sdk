@@ -38,7 +38,7 @@
   [{:keys [messages]} delete-message-fn]
   (when (seq messages)
     (let [{:keys [receipt-handle body]} (first messages)
-          parsed-body (iu/kebabify (js/JSON.parse body))
+          parsed-body (ih/kebabify (js/JSON.parse body))
           session-id (or (get parsed-body :session-id)
                          (get-in parsed-body [:resource :session-id]))
           current-session-id (state/get-session-id)
@@ -71,11 +71,11 @@
                           :sessionToken session-token
                           :region "us-east-1" ;;TODO: get from integration
                           :params {:QueueUrl queue-url}})
-        sqs (aset js/window "serenova" "cxengage" "internal" "SQS" (AWS.SQS. options))]
+        sqs (aset js/window "CxEngage" "internal" "SQS" (AWS.SQS. options))]
     (a/put! done-init< {:module-registration-status :success
                         :module (get @(:state module) :module-name)})
     (go-loop []
-      (let [sqs-poller (aget js/window "serenova" "cxengage" "internal" "SQS")
+      (let [sqs-poller (aget js/window "CxEngage" "internal" "SQS")
             response< (receive-message* sqs-poller queue-url)
             value (a/<! response<)]
         (if (= value :shutdown)
@@ -138,5 +138,5 @@
                                     :sessionToken session-token
                                     :region "us-east-1"
                                     :params {:QueueUrl queue-url}})
-                  sqs (aset js/window "serenova" "cxengage" "internal" "SQS" (AWS.SQS. options))])))
+                  sqs (aset js/window "CxEngage" "internal" "SQS" (AWS.SQS. options))])))
         (recur)))))

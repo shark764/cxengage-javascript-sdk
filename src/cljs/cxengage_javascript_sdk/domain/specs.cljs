@@ -3,6 +3,8 @@
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cljs-uuid-utils.core :as id]))
 
+(s/def ::uuid id/valid-uuid?)
+
 (s/def ::answers map?)
 (s/def ::artifact-file-id ::uuid)
 (s/def ::artifact-id ::uuid)
@@ -35,6 +37,7 @@
 (s/def ::script-id ::uuid)
 (s/def ::stat-id ::uuid)
 (s/def ::state string?)
+(s/def ::statistic string?)
 (s/def ::stats map?)
 (s/def ::subscription-id ::uuid)
 (s/def ::tenant-id ::uuid)
@@ -43,5 +46,4 @@
 (s/def ::transfer-extension map?)
 (s/def ::transfer-type #{"cold" "warm"})
 (s/def ::username ::min-8-len-string)
-(s/def ::uuid id/valid-uuid?)
 (s/def ::wrapup string?)

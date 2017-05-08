@@ -3,6 +3,7 @@
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.internal-utils :as iu]

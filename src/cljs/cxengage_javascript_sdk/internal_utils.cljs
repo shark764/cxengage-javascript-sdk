@@ -22,16 +22,6 @@
     (apply merge-with deep-merge vals)
     (last vals)))
 
-(defn camelify [m]
-  (->> m
-       (transform-keys camel/->camelCase)
-       (clj->js)))
-
-(defn kebabify [m]
-  (->> m
-       (#(js->clj % :keywordize-keys true))
-       (transform-keys camel/->kebab-case)))
-
 (defn api-url
   ([url]
    (str (state/get-base-api-url) url))
@@ -67,7 +57,7 @@
            (= (:status response) 200))
     {:api-response nil :status 200}
     (let [status (if ok? 200 (get response :status))
-          response (if (or preserve-casing? manifest-endpoint?) response (kebabify response))
+          response (if (or preserve-casing? manifest-endpoint?) response (ih/kebabify response))
           api-response (if (map? response)
                          (dissoc response :status)
                          response)]
@@ -102,7 +92,7 @@
                                                 (ajax/text-response-format)
                                                 (ajax/json-response-format {:keywords? true}))}
                             (when body
-                              {:params (if preserve-casing? body (camelify body))})
+                              {:params (if preserve-casing? body (ih/camelify body))})
                             (when-let [token (state/get-token)]
                               (if manifest-endpoint?
                                 {}
@@ -159,19 +149,9 @@
                       :url url}]
     (api-request file-request)))
 
-(defn extract-params
-  ([params]
-   (extract-params params false))
-  ([params preserve-casing?]
-   (if preserve-casing?
-     (js->clj params :keywordize-keys true)
-     (if (= :cljs (state/get-consumer-type))
-       params
-       (kebabify (js->clj params :keywordize-keys true))))))
-
 (defn send-interrupt*
   [module params]
-  (let [params (extract-params params)
+  (let [params (ih/extract-params params)
         {:keys [interaction-id interrupt-type interrupt-body topic on-confirm-fn callback]} params
         tenant-id (state/get-active-tenant-id)
         interrupt-request {:method :post
@@ -182,12 +162,12 @@
     (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
                   {:keys [api-response status]} interrupt-response]
               (if (not= status 200)
-                (ih/publish {:topics topic
-                             :error (e/api-error api-response)
-                             :callback callback})
-                (do (ih/publish {:topics topic
-                                 :response (merge {:interaction-id interaction-id} interrupt-body)
-                                 :callback callback})
+                (ih/js-publish {:topics topic
+                                :error (e/client-request-err)
+                                :callback callback})
+                (do (ih/js-publish {:topics topic
+                                    :response (merge {:interaction-id interaction-id} interrupt-body)
+                                    :callback callback})
                     (when on-confirm-fn (on-confirm-fn))))))
         nil)))
 
