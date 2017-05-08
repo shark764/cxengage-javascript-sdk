@@ -89,3 +89,8 @@
   {:code 2007
    :level :error
    :message "Invalid reason info provided. Must be in the list of reasons provided via your user config. Unable to transition agent to a not ready"})
+
+(defn no-microphone-access-error []
+  {:code 8000
+   :level :fatal
+   :message "Failed to connect to Twilio. Microphone access must be enabled within your browser to utilize voice features."})

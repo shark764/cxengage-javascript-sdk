@@ -29,7 +29,7 @@
   ([module entity-type validation] (get-entity module entity-type validation {}))
   ([module entity-type validation params & others]
    (if-not (fn? (first others))
-     (e/wrong-number-of-sdk-fn-args-err)
+     (e/callback-isnt-a-function-err)
      (get-entity module entity-type validation (merge (ih/extract-params params) {:callback (first others)}))))
   ([module entity-type validation params]
    (let [params (ih/extract-params params)
@@ -45,7 +45,7 @@
          topic (p/get-topic (keyword (str "get-" (name entity-type) "-response")))]
      (if (not (s/valid? validation params))
        (p/publish {:topics topic
-                   :error (e/invalid-args-error "Arguments are invalid")
+                   :error (e/args-failed-spec-err)
                    :callback callback})
        (let [api-url (str api-url (get-in module-state [:urls entity-type]))
              entity-get-request {:method :get
@@ -56,7 +56,7 @@
                    {:keys [status api-response]} entity-get-response]
                (if (not= status 200)
                  (p/publish {:topics topic
-                             :error (e/api-error api-response)
+                             :error (e/client-request-err)
                              :callback callback})
                  (p/publish {:topics topic
                              :response api-response
@@ -71,7 +71,7 @@
   ([module entity-type] (get-entity module entity-type {}))
   ([module entity-type params & others]
    (if-not (fn? (first others))
-     (e/wrong-number-of-sdk-fn-args-err)
+     (e/callback-isnt-a-function-err)
      (get-entity module entity-type (merge (ih/extract-params params) {:callback (first others)}))))
   ([module entity-type params]
    (let [params (ih/extract-params params)
@@ -87,7 +87,7 @@
          topic (p/get-topic (keyword (str "update-" (name entity-type) "-response")))]
      (if (not (s/valid? ::put-entity-params params))
        (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::put-entity-params params))
+                   :error (e/args-failed-spec-err)
                    :callback callback})
        (let [api-url (str api-url (get-in module-state [:urls entity-type]))
              entity-get-request {:method :put
@@ -99,7 +99,7 @@
                    {:keys [status api-response]} entity-get-response]
                (if (not= status 200)
                  (p/publish {:topics topic
-                             :error (e/api-error api-response)
+                             :error (e/client-request-err)
                              :callback callback})
                  (p/publish {:topics topic
                              :response api-response
