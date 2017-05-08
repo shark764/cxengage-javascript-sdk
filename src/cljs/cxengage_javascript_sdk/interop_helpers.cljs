@@ -11,6 +11,12 @@
   (let [f (aget js/window "CxEngage" "sendCoreMessage")]
     (f message)))
 
+(defn set-sqs-poller-interval [interval-id]
+  (aset js/window "CxEngage" "internal" "SQSPoller" interval-id))
+
+(defn get-sqs-poller-interval []
+  (aget js/window "CxEngage" "internal" "SQSPoller"))
+
 (defn set-sdk-global [sdk]
   (aset js/window "CxEngage" sdk))
 
@@ -28,14 +34,14 @@
        (transform-keys camel/->kebab-case)))
 
 (defn extract-params
- ([params]
-  (extract-params params false))
- ([params preserve-casing?]
-  (if preserve-casing?
-    (js->clj params :keywordize-keys true)
-    (if (= :cljs (state/get-consumer-type))
-      params
-      (kebabify (js->clj params :keywordize-keys true))))))
+  ([params]
+   (extract-params params false))
+  ([params preserve-casing?]
+   (if preserve-casing?
+     (js->clj params :keywordize-keys true)
+     (if (= :cljs (state/get-consumer-type))
+       params
+       (kebabify (js->clj params :keywordize-keys true))))))
 
 (defn js-publish [publish-details]
   (let [publish (aget js/window "CxEngage" "publish")

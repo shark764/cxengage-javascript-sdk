@@ -4,6 +4,7 @@
             [cxengage-javascript-sdk.state :as state]
             [cljs.core.async :as a]
             [cljsjs.aws-sdk-js]
+            [cxengage-javascript-sdk.interaction-management :as int]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
@@ -30,28 +31,29 @@
           response)
       (let [params (clj->js {:QueueUrl queue-url
                              :MaxNumberOfMessages 1
-                             :WaitTimeSeconds 20})]
+                             :WaitTimeSeconds 2})]
         (.receiveMessage sqs params (handle-response* response))
         response))))
 
 (defn process-message*
-  [{:keys [messages]} delete-message-fn]
-  (when (seq messages)
-    (let [{:keys [receipt-handle body]} (first messages)
-          parsed-body (ih/kebabify (js/JSON.parse body))
-          session-id (or (get parsed-body :session-id)
-                         (get-in parsed-body [:resource :session-id]))
-          current-session-id (state/get-session-id)
-          msg-type (or (:notification-type parsed-body)
-                       (:type parsed-body))]
-      (if (not= (state/get-session-id) session-id)
-        (do #_(js/console.warn (str "Received a message from a different session than the current one."
-                              "Current session ID: " current-session-id
-                              " - Session ID on message received: " session-id
-                              " Message type: " msg-type))
-            nil)
-        (do (delete-message-fn receipt-handle)
-            body)))))
+  [response delete-message-fn]
+  (let [{:keys [messages]} response]
+    (when (seq messages)
+      (let [{:keys [receipt-handle body]} (first messages)
+            parsed-body (ih/kebabify (js/JSON.parse body))
+            session-id (or (get parsed-body :session-id)
+                           (get-in parsed-body [:resource :session-id]))
+            current-session-id (state/get-session-id)
+            msg-type (or (:notification-type parsed-body)
+                         (:type parsed-body))]
+        (if (not= (state/get-session-id) session-id)
+          (do #_(js/console.warn (str "Received a message from a different session than the current one."
+                                      "Current session ID: " current-session-id
+                                      " - Session ID on message received: " session-id
+                                      " Message type: " msg-type))
+              nil)
+          (do (delete-message-fn receipt-handle)
+              body))))))
 
 (defn delete-message*
   [sqs {:keys [queue-url]} receipt-handle]
@@ -73,21 +75,53 @@
                           :params {:QueueUrl queue-url}})
         sqs (aset js/window "CxEngage" "internal" "SQS" (AWS.SQS. options))]
     (a/put! done-init< {:module-registration-status :success
-                        :module (get @(:state module) :module-name)})
-    (go-loop []
-      (let [sqs-poller (aget js/window "CxEngage" "internal" "SQS")
-            response< (receive-message* sqs-poller queue-url)
-            value (a/<! response<)]
-        (if (= value :shutdown)
-          nil
-          (let [message (process-message* value (partial delete-message* sqs queue-url))]
-            (when (not= nil (js/JSON.parse message))
-              (on-received (js/JSON.parse message)))
-            (recur)))))))
+                        :module (get @(:state module) :module-name)})))
 
 (def initial-state
   {:module-name :sqs
    :urls {:config "tenants/tenant-id/users/resource-id/config"}})
+
+(defn pull-message [sqs-queue queue-url on-received]
+  (go (let [response (receive-message* sqs-queue queue-url)
+            value (a/<! response)]
+        (let [message (process-message* value (partial delete-message* sqs-queue queue-url))]
+          (when (not= nil (js/JSON.parse message))
+            (on-received (js/JSON.parse message)))))))
+
+(defn init-sqs []
+  (go (js/clearInterval (ih/get-sqs-poller-interval))
+      (let [on-received int/sqs-msg-router
+            resource-id (state/get-active-user-id)
+            tenant-id (state/get-active-tenant-id)
+            topic (p/get-topic :config-response)
+            config-request {:method :get
+                            :url (iu/build-api-url-with-params
+                                  (str (state/get-base-api-url) "tenants/tenant-id/users/resource-id/config")
+                                  {:tenant-id tenant-id
+                                   :resource-id resource-id})}
+            {:keys [status api-response]} (a/<! (iu/api-request config-request))
+            user-config (:result api-response)]
+        (state/set-config! user-config)
+        (let [sqs-integration (state/get-integration-by-type "sqs")
+              {:keys [access-key secret-key session-token]} (:credentials sqs-integration)
+              {:keys [url]} (:queue sqs-integration)
+              region "us-east-1" ;; TODO: get from config?
+              halfTtl (-> (get-in sqs-integration [:credentials :ttl])
+                          (* 1000)
+                          (/ 2))
+              credentials-obj (clj->js {"accessKeyId" access-key
+                                        "secretAccessKey" secret-key
+                                        "sessionToken" session-token
+                                        "expiryWindow" 15})
+              params-obj (clj->js {"QueueUrl" url})
+              credentials (AWS.Credentials. credentials-obj)
+              queue (AWS.SQS. (clj->js {"credentials" credentials
+                                        "region" region
+                                        "params" params-obj}))]
+          (js/setTimeout init-sqs halfTtl)
+          (js/console.info "Starting new interval...")
+          (pull-message queue url on-received)
+          (ih/set-sqs-poller-interval (js/setInterval (partial pull-message queue url on-received) 3000))))))
 
 (defrecord SQSModule [config state core-messages< on-msg-fn]
   pr/SDKModule
@@ -99,44 +133,10 @@
           (ih/send-core-message {:type :module-registration-status
                                  :status :failure
                                  :module-name module-name})
-          (do (sqs-init* this sqs-integration on-msg-fn core-messages<)
+          (do (init-sqs)
               (ih/register {:module-name module-name})
               (ih/send-core-message {:type :module-registration-status
                                      :status :success
                                      :module-name module-name}))))))
   (stop [this])
-  (refresh-integration [this]
-    (go-loop []
-      (let [sqs-token-ttl (get-in (state/get-integration-by-type "sqs") [:credentials :ttl])
-            min-ttl (* sqs-token-ttl 500)] ;;refresh at half the ttl
-        (a/<! (a/timeout min-ttl))
-        (let [api-url (get-in this [:config :api-url])
-              module-state @(:state this)
-              resource-id (state/get-active-user-id)
-              tenant-id (state/get-active-tenant-id)
-              topic (p/get-topic :config-response)
-              config-url (str api-url (get-in module-state [:urls :config]))
-              config-request {:method :get
-                              :url (iu/build-api-url-with-params
-                                    config-url
-                                    {:tenant-id tenant-id
-                                     :resource-id resource-id})}
-              config-response (a/<! (iu/api-request config-request))
-              {:keys [status api-response]} config-response
-              {:keys [result]} api-response
-              {:keys [integrations]} result
-              sqs-integration (peek (filterv #(= (:type %) "sqs") integrations))]
-          (state/update-integration "sqs" sqs-integration)
-          (if (not= status 200)
-            (p/publish {:topics topic
-                        :error (e/token-error "SQS")})
-            (let [{:keys [queue credentials]} sqs-integration
-                  {:keys [access-key secret-key session-token]} credentials
-                  queue-url (:url queue)
-                  options (clj->js {:accessKeyId access-key
-                                    :secretAccessKey secret-key
-                                    :sessionToken session-token
-                                    :region "us-east-1"
-                                    :params {:QueueUrl queue-url}})
-                  sqs (aset js/window "CxEngage" "internal" "SQS" (AWS.SQS. options))])))
-        (recur)))))
+  (refresh-integration [this]))
