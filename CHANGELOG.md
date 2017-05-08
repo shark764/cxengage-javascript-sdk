@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* added stat-query function to reporting module - allows for one-off batch queries
 * ** BREAKING ** changed global window exposure from "serenova.cxengage.api...." to just "CxEngage"
 * ** BREAKING ** removed (due to them now being necessary) the "capabilities" pub/sub messages
   * Because of the above two changes, the usage for initializating the SDK is now: CxEngage.initialize(options). Beyond that you will need to just reference "CxEngage" on the window, and *not create an alias to it like you used to* (via var SDK = serenova.cxengage.initialioze(options);)
