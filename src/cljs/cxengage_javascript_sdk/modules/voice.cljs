@@ -29,13 +29,13 @@
           :opt-un [::specs/callback]))
 
 (defn send-interrupt
-  ([module type] (e/wrong-number-of-args-error))
+  ([module type] (e/wrong-number-of-sdk-fn-args-err))
   ([module type client-params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (send-interrupt module type (merge (ih/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
-   (let [client-params (iu/extract-params client-params)
+   (let [client-params (ih/extract-params client-params)
          {:keys [callback interaction-id resource-id target-resource-id queue-id transfer-extension transfer-resource-id transfer-queue-id transfer-type]} client-params
          transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
          simple-interrupt-body {:resource-id (state/get-active-user-id)}
@@ -136,13 +136,13 @@
           :opt-un [::specs/callback]))
 
 (defn dial
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (dial module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (dial module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          {:keys [phone-number callback]} params
          topic (p/get-topic :dial-send-acknowledged)
          api-url (get-in module [:config :api-url])
@@ -184,7 +184,7 @@
 
 (defn ^:private twilio-init
   [config done-init<]
-  (let [audio-params (iu/camelify {"audio" true})
+  (let [audio-params (ih/camelify {"audio" true})
         script-init (fn [& args]
                       (let [{:keys [js-api-url credentials]} config
                             {:keys [token]} credentials
@@ -223,14 +223,14 @@
           :opt-un [::specs/callback]))
 
 (defn send-digits
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (send-digits module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (send-digits module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [connection (state/get-twilio-connection)
-         {:keys [interaction-id digit callback] :as params} (iu/extract-params params)
+         {:keys [interaction-id digit callback] :as params} (ih/extract-params params)
          module-state @(:state module)
          topic (p/get-topic :send-digits-acknowledged)]
      (if-not (s/valid? ::send-digits-params params)
@@ -260,13 +260,13 @@
                       :callback callback})))))
 
 (defn get-recordings
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-recordings module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-recordings module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          {:keys [interaction-id callback]} params]
      (go (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))
                {:keys [api-response status]} interaction-files

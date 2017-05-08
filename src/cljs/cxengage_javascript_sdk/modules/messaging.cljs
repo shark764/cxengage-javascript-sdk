@@ -188,14 +188,14 @@
           :opt-un [::specs/callback]))
 
 (defn send-message
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (send-message module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (send-message module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [module-state @(:state module)
-         params (iu/extract-params params)
+         params (ih/extract-params params)
          {:keys [interaction-id callback]} params
          topic (p/get-topic :send-message-acknowledged)
          tenant-id (state/get-active-tenant-id)
@@ -230,13 +230,13 @@
           :opt-un [::specs/callback]))
 
 (defn send-sms-by-interrupt
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (send-sms-by-interrupt module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (send-sms-by-interrupt module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [interaction-id message callback] :as params} (iu/extract-params params)
+   (let [{:keys [interaction-id message callback] :as params} (ih/extract-params params)
          tenant-id (state/get-active-tenant-id)
          topic (p/get-topic :send-outbound-sms-response)
          api-url (get-in module [:config :api-url])
@@ -271,13 +271,13 @@
           :opt-on [::specs/callback]))
 
 (defn click-to-sms
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (click-to-sms module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (click-to-sms module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          {:keys [phone-number message callback]} params
          phone-number (iu/normalize-phone-number phone-number)
          tenant-id (state/get-active-tenant-id)
@@ -320,13 +320,13 @@
            nil)))))
 
 (defn get-transcripts
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-transcripts module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-transcripts module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          {:keys [interaction-id callback]} params]
      (go (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))
                {:keys [api-response status]} interaction-files
@@ -368,7 +368,7 @@
                                :status :failure
                                :module-name module-name})
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
-            (register {:api {:interactions {:messaging {:send-message (partial send-message this)
+            (ih/register {:api {:interactions {:messaging {:send-message (partial send-message this)
                                                         :get-transcripts (partial get-transcripts this)
                                                         :initialize-outbound-sms (partial click-to-sms this)
                                                         :send-outbound-sms (partial send-sms-by-interrupt this)}}}

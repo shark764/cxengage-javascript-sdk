@@ -1,7 +1,7 @@
 (ns cxengage-javascript-sdk.pubsub
   (:require [cljs.spec :as s]
             [clojure.string :as string]
-            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
@@ -222,11 +222,11 @@
    (let [{:keys [topics response error callback]} publish-details
          topics (if (string? topics) (conj #{} topics) topics)
          all-topics (all-topics)
-         topics (iu/camelify topics)
-         error (iu/camelify error)
+         topics (ih/camelify topics)
+         error (ih/camelify error)
          response (if preserve-casing
                     (clj->js response)
-                    (iu/camelify response))
+                    (ih/camelify response))
          relevant-subscribers (->> topics
                          (map get-topic-permutations)
                          (flatten)
@@ -238,7 +238,3 @@
        (doseq [t topics]
          (cb error t response)))
      (when (and (fn? callback) callback) (callback error topics response)))))
-
-(defn js-publish [publish-details]
-  (let [details (iu/extract-params publish-details)]
-    (publish details false)))

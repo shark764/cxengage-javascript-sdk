@@ -1,6 +1,7 @@
 (ns cxengage-javascript-sdk.core
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
+            [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [lumbajack.core :as l]
             [cxengage-cljs-utils.core :as cxu]
@@ -10,6 +11,7 @@
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
 
             [cxengage-javascript-sdk.next-modules.authentication :as authentication]
             [cxengage-javascript-sdk.next-modules.session :as session]
@@ -31,10 +33,10 @@
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
   [module]
   (let [{:keys [api module-name]} module
-        old-api (iu/kebabify (aget js/window "CxEngage"))
+        old-api (ih/kebabify (aget js/window "CxEngage"))
         new-api (iu/deep-merge old-api api)]
     (when api
-      (aset js/window "CxEngage" (->> new-api (transform-keys k/->camelCase) (clj->js))))))
+      (aset js/window "CxEngage" (->> new-api (transform-keys camel/->camelCase) (clj->js))))))
 
 
 (defn start-internal-module
@@ -101,10 +103,10 @@
 (defn initialize
   "Internal initialization function (called by the CxEngage namespace where an external initalize() function is exposed). Validates the SDK options provided & bootstraps the whole system."
   [& options]
-  (if (> 1 (count (flatten (iu/kebabify options))))
+  (if (> 1 (count (flatten (ih/kebabify options))))
     (do (js/console.error (clj->js (e/wrong-number-sdk-opts-err))
                           nil))
-    (let [opts (first (flatten (iu/kebabify options)))
+    (let [opts (first (flatten (ih/kebabify options)))
           opts (-> opts
                    (assoc :base-url (or (:base-url opts) "https://api.cxengage.net/v1/"))
                    (assoc :reporting-refresh-rate (or (:reporting-refresh-rate opts) 10000))
@@ -115,12 +117,13 @@
       (if-not (s/valid? ::initialize-options opts)
         (do (js/console.error (clj->js (e/bad-sdk-init-opts-err)))
             nil)
-        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} options
+        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} opts
               module-comm-chan (a/chan 1024)
-              core (iu/camelify {:version *SDK-VERSION*
+              core (ih/camelify {:version *SDK-VERSION*
                                  :subscribe pu/subscribe
-                                 :publish pu/js-publish
+                                 :publish ih/js-publish
                                  :unsubscribe pu/unsubscribe
+                                 :internal {}
                                  :dump-state state/get-state-js
                                  :send-core-message #(a/put! module-comm-chan %)
                                  :register-module register-module

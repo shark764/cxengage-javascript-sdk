@@ -18,13 +18,13 @@
           :opt-un [::specs/callback]))
 
 (defn get-attachment-url
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-attachment-url module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-attachment-url module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          {:keys [interaction-id artifact-file-id artifact-id callback]} params
          tenant-id (state/get-active-tenant-id)
          url (str (state/get-base-api-url) "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id")
@@ -48,13 +48,13 @@
           :opt-un [::specs/callback]))
 
 (defn add-attachment
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (add-attachment module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (add-attachment module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          _ (js/console.log "[Attachment Processing] Params from client adding attachment:" params)
          {:keys [interaction-id file callback]} params
          attachment-id (id/uuid-string (id/make-random-uuid))]
@@ -75,13 +75,13 @@
           :opt-un [::specs/callback]))
 
 (defn remove-attachment
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (remove-attachment module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (remove-attachment module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          {:keys [interaction-id attachment-id callback]} params]
      (if-not (s/valid? ::remove-attachment-params params)
        (p/publish {:topics (p/get-topic :remove-attachment)
@@ -128,13 +128,13 @@
     files)))
 
 (defn send-reply
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (send-reply module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (send-reply module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [params (iu/extract-params params)
+   (let [params (ih/extract-params params)
          {:keys [callback cc bcc html-body plain-text-body subject to interaction-id]} params
          artifact-id (state/get-reply-artifact-id-by-interaction-id interaction-id)
          tenant-id (state/get-active-tenant-id)
@@ -208,7 +208,7 @@
              all-req-promises (all all-req-promises)]
          (then all-req-promises
                (fn [results]
-                 (js/console.log "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (iu/camelify results) nil 2))
+                 (js/console.log "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (ih/camelify results) nil 2))
                  (let [in-reply-to-id (state/get-email-reply-to-id interaction-id)
                        manifest-map {:attachments (build-attachments results)
                                      :cc cc
@@ -219,7 +219,7 @@
                                             :plain {:artifact-file-id (plain-body-id results)}}
                                      :subject subject
                                      :to to}
-                       manifest-string (js/JSON.stringify (iu/camelify manifest-map))
+                       manifest-string (js/JSON.stringify (ih/camelify manifest-map))
                        _ (js/console.log "[Email Processing] Manifest we're creating:" manifest-string)
                        form-data (doto (js/FormData.)
                                    (.append "manifest.json"
@@ -229,7 +229,7 @@
                                                 :url artifact-url
                                                 :body form-data}]
                    (go (let [manifest-response (a/<! (iu/file-api-request create-manifest-request))
-                             _ (js/console.log "[Email Processing] Manifest creation response:" (iu/camelify manifest-response))
+                             _ (js/console.log "[Email Processing] Manifest creation response:" (ih/camelify manifest-response))
                              {:keys [api-response status]} manifest-response
                              manifest-id (get api-response :manifest.json)
                              artifact-update-request {:method :put
@@ -237,7 +237,7 @@
                                                       :body {:manifest-id manifest-id
                                                              :artifactType "email"}}
                              artifact-update-response (a/<! (iu/api-request artifact-update-request))
-                             _ (js/console.log "[Email Processing] Artifact update response:" (iu/camelify artifact-update-response))
+                             _ (js/console.log "[Email Processing] Artifact update response:" (ih/camelify artifact-update-response))
                              flow-url (-> (state/get-base-api-url)
                                           (str "tenants/tenant-id/interactions/interaction-id/interrupts")
                                           (iu/build-api-url-with-params

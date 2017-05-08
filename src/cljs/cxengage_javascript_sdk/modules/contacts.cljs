@@ -58,13 +58,13 @@
           :opt-un [::specs/callback]))
 
 (defn get-contact
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-contact module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-contact module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [contactId callback] :as params} (iu/extract-params params true)
+   (let [{:keys [contactId callback] :as params} (ih/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
                        :contact-id contactId}}
@@ -80,10 +80,10 @@
    (get-contacts module {}))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-contacts module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-contacts module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [callback] :as params} (iu/extract-params params)
+   (let [{:keys [callback] :as params} (ih/extract-params params)
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get]
@@ -94,13 +94,13 @@
           :opt-un [::specs/callback]))
 
 (defn search-contacts
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (search-contacts module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (search-contacts module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [query callback] :as params} (iu/extract-params params true)
+   (let [{:keys [query callback] :as params} (ih/extract-params params true)
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get
@@ -112,13 +112,13 @@
           :opt-un [::specs/callback]))
 
 (defn create-contact
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (create-contact module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (create-contact module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [attributes callback] :as params} (iu/extract-params params true)
+   (let [{:keys [attributes callback] :as params} (ih/extract-params params true)
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :post
@@ -131,13 +131,13 @@
           :opt-un [::specs/callback]))
 
 (defn update-contact
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (update-contact module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (update-contact module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [attributes contactId callback] :as params} (iu/extract-params params true)
+   (let [{:keys [attributes contactId callback] :as params} (ih/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
                        :contact-id contactId}}
@@ -150,13 +150,13 @@
           :opt-un [::specs/callback]))
 
 (defn delete-contact
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (delete-contact module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (delete-contact module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [contactId callback] :as params} (iu/extract-params params true)
+   (let [{:keys [contactId callback] :as params} (ih/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
                        :contact-id contactId}}
@@ -169,13 +169,13 @@
           :opt-un [::specs/callback]))
 
 (defn merge-contacts
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (merge-contacts module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (merge-contacts module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [contactIds attributes callback] :as params} (iu/extract-params params true)
+   (let [{:keys [contactIds attributes callback] :as params} (ih/extract-params params true)
          url {:base :merge-contacts-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :post
@@ -192,11 +192,11 @@
    (list-attributes module {}))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (list-attributes module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (list-attributes module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [params (if (fn? params) {:callback params} params)
-         {:keys [callback] :as params} (iu/extract-params params true)
+         {:keys [callback] :as params} (ih/extract-params params true)
          url {:base :multiple-attribute-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get
@@ -230,13 +230,13 @@
           :opt-un [::specs/callback]))
 
 (defn get-layout
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-layout module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (get-layout module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [layoutId callback] :as params} (iu/extract-params params true)
+   (let [{:keys [layoutId callback] :as params} (ih/extract-params params true)
          url {:base :single-layout-url
               :params {:tenant-id (state/get-active-tenant-id)
                        :layout-id layoutId}}
@@ -252,11 +252,11 @@
    (list-layouts module {}))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (list-layouts module (merge (iu/extract-params params true) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (list-layouts module (merge (ih/extract-params params true) {:callback (first others)}))))
   ([module params]
    (let [params (if (fn? params) {:callback params} params)
-         {:keys [callback] :as params} (iu/extract-params params true)
+         {:keys [callback] :as params} (ih/extract-params params true)
          url {:base :multiple-layout-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get]

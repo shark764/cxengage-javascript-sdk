@@ -4,6 +4,7 @@
             [clojure.string :refer [starts-with? lower-case]]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.modules.messaging :as messaging]))
@@ -55,7 +56,7 @@
                                           :url manifest-url})]
     (js/console.log (str "[Email Processing] Fetching email manifest: " manifest-url))
     (go (let [manifest-response (a/<! manifest-request)
-              manifest-body (iu/kebabify (js/JSON.parse (:api-response manifest-response)))
+              manifest-body (ih/kebabify (js/JSON.parse (:api-response manifest-response)))
               plain-body-url (:url (first (filter #(and (= (:filename %) "body")
                                                         (starts-with? (lower-case (:content-type %)) "text/plain")) files)))
               html-body-url (:url (first (filter #(and (= (:filename %) "body")
@@ -114,7 +115,7 @@
 (defn handle-new-messaging-message [payload]
   (let [payload (-> (.-payloadString payload)
                     (js/JSON.parse)
-                    (iu/kebabify))
+                    (ih/kebabify))
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
@@ -382,7 +383,7 @@
       (merge {:sdk-msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
-  (let [cljsd-msg (iu/kebabify message)
+  (let [cljsd-msg (ih/kebabify message)
         session-id (or (get cljsd-msg :session-id)
                        (get-in cljsd-msg [:resource :session-id]))
         inferred-msg (case (:type cljsd-msg)
@@ -392,7 +393,7 @@
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (when (state/get-blast-sqs-output)
-      (js/console.log (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (iu/camelify message)))
+      (js/console.log (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
     (if inferred-msg
       (msg-router inferred-msg)
       (do (js/console.warn "Unable to infer message type from sqs")

@@ -18,7 +18,7 @@
         date-time (js/Date.)]
     (assoc {}
            :level "info"
-           :message (js/JSON.stringify (iu/camelify {:data (clojure.string/join " " data) :original-client-log-level (name level)}))
+           :message (js/JSON.stringify (ih/camelify {:data (clojure.string/join " " data) :original-client-log-level (name level)}))
            :timestamp (.toISOString date-time))))
 
 (defn log*
@@ -41,15 +41,15 @@
    (dump-logs module {}))
   ([module params & others]
    (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (dump-logs module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/callback-isnt-a-function-err)
+     (dump-logs module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
    (let [module-state @(:state module)
-         {:keys [callback] :as params} (iu/extract-params params)
+         {:keys [callback] :as params} (ih/extract-params params)
          topic (p/get-topic :logs-dumped)]
      (if-not (s/valid? ::dump-logs-params params)
        (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::dump-logs-params params))
+                   :error (e/args-failed-spec-err)
                    :callback callback})
        (p/publish {:topics topic
                    :response (state/get-unsaved-logs)
@@ -61,18 +61,18 @@
 
 (defn set-level
   ([module]
-   (e/wrong-number-of-args-error))
+   (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (set-level module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/callback-isnt-a-function-err)
+     (set-level module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [level callback] :as params} (iu/extract-params params)
+   (let [{:keys [level callback] :as params} (ih/extract-params params)
          topic (p/get-topic :log-level-set)
          level (keyword level)]
      (if-not (s/valid? ::set-level-params params)
        (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::set-level-params params))
+                   :error (e/args-failed-spec-err)
                    :callback callback}))
      (state/set-log-level! level jack/levels))))
 
@@ -85,10 +85,10 @@
    (save-logs module {}))
   ([module params & others]
    (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (save-logs module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/callback-isnt-a-function-err)
+     (save-logs module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [callback] :as params} (iu/extract-params params)
+   (let [{:keys [callback] :as params} (ih/extract-params params)
          module-state @(:state module)
          api-url (get-in module [:config :api-url])
          routes (get-in module-state [:urls :save-logs])
@@ -105,14 +105,14 @@
          topic (p/get-topic :logs-saved)]
      (if-not (s/valid? ::save-logs-params params)
        (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::save-logs-params params))
+                   :error (e/args-failed-spec-err)
                    :callback callback})
        (do (go (let [save-response (a/<! (iu/api-request request-map true))
                      {:keys [status api-response]} save-response
                      {:keys [result]} api-response]
                  (if (not= status 200)
                    (p/publish {:topics topic
-                               :error (e/api-error api-response)
+                               :error (e/client-request-err)
                                :callback callback})
                    (do (p/publish {:topics topic
                                    :response result

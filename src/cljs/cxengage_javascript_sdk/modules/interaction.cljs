@@ -22,13 +22,13 @@
           :opt-un [::specs/callback]))
 
 (defn send-interrupt
-  ([module type] (e/wrong-number-of-args-error))
+  ([module type] (e/wrong-number-of-sdk-fn-args-err))
   ([module type client-params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (send-interrupt module type (merge (iu/extract-params client-params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (send-interrupt module type (merge (ih/extract-params client-params) {:callback (first others)}))))
   ([module type client-params]
-   (let [client-params (iu/extract-params client-params)
+   (let [client-params (ih/extract-params client-params)
          {:keys [callback interaction-id contact-id disposition]} client-params
          {:keys [sub-id action-id channel-type resource-id tenant-id resource direction channel-type timeout timeout-end]} (state/get-interaction interaction-id)
          {:keys [extension role-id session-id work-offer-id]} resource
@@ -121,13 +121,13 @@
           :opt-un [::specs/callback ::specs/contact-id ::specs/tenant-id ::specs/resource-id]))
 
 (defn note-action
-  ([module action] (e/wrong-number-of-args-error))
+  ([module action] (e/wrong-number-of-sdk-fn-args-err))
   ([module action client-params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (note-action module action (merge (iu/extract-params client-params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (note-action module action (merge (ih/extract-params client-params) {:callback (first others)}))))
   ([module action client-params]
-   (let [params (iu/extract-params client-params)
+   (let [params (ih/extract-params client-params)
          module-state @(:state module)
          api-url (get-in module [:config :api-url])
          {:keys [callback interaction-id note-id]} params
@@ -188,13 +188,13 @@
 
 (defn select-disposition-code
   ([module]
-   (e/wrong-number-of-args-error))
+   (e/wrong-number-of-sdk-fn-args-err))
   ([module params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (select-disposition-code module (merge (iu/extract-params params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (select-disposition-code module (merge (ih/extract-params params) {:callback (first others)}))))
   ([module params]
-   (let [{:keys [interaction-id disposition-id callback] :as params} (iu/extract-params params)
+   (let [{:keys [interaction-id disposition-id callback] :as params} (ih/extract-params params)
          dispositions (state/get-interaction-disposition-codes interaction-id)
          dv (filterv #(= (:disposition-id %1) disposition-id) dispositions)
          topic (p/get-topic :disposition-code-changed)]
@@ -232,13 +232,13 @@
           :opt-un [::specs/callback]))
 
 (defn send-script
-  ([module] (e/wrong-number-of-args-error))
+  ([module] (e/wrong-number-of-sdk-fn-args-err))
   ([module client-params & others]
    (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (send-script module (merge (iu/extract-params client-params) {:callback (first others)}))))
+     (e/wrong-number-of-sdk-fn-args-err)
+     (send-script module (merge (ih/extract-params client-params) {:callback (first others)}))))
   ([module client-params]
-   (let [params (iu/extract-params client-params)
+   (let [params (ih/extract-params client-params)
          module-state @(:state module)
          {:keys [answers script-id interaction-id callback]} params
          original-script (state/get-script interaction-id script-id)

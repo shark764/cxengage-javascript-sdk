@@ -14,12 +14,12 @@
   [name spec topic _ & body]
   `(defn ~name
      ([& args#]
-      (let [args# (map iu/extract-params args#)
+      (let [args# (map ih/extract-params args#)
             callback# (second args#)]
         (if-let [error# (cond
 
                           (or (> (count args#) 2))
-                          (e/wrong-number-of-args-error)
+                          (e/wrong-number-of-sdk-fn-args-err)
 
                           (and (first args#)
                                (not (map? (first args#))))
