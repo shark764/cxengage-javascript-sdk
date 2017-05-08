@@ -116,7 +116,7 @@
                         :error (e/failed-to-start-agent-session-err)}))
           nil))))
 
-(defn get-config* []
+(defn- get-config* []
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
         config-request {:method :get
@@ -206,7 +206,7 @@
 ;; CxEngage.session.goReady({ extensionValue: "{{uuid/extension}}" });
 ;; -------------------------------------------------------------------------- ;;
 
-(defn go-ready* [topic callback]
+(defn- go-ready* [topic callback]
   (go (let [session-id (state/get-session-id)
             resource-id (state/get-active-user-id)
             tenant-id (state/get-active-tenant-id)
