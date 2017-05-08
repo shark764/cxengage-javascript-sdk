@@ -15,10 +15,10 @@
 
             [cxengage-javascript-sdk.next-modules.authentication :as authentication]
             [cxengage-javascript-sdk.next-modules.session :as session]
+            [cxengage-javascript-sdk.next-modules.reporting :as reporting]
 
             [cxengage-javascript-sdk.modules.messaging :as messaging]
             [cxengage-javascript-sdk.modules.entities :as entities]
-            [cxengage-javascript-sdk.modules.reporting :as reporting]
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cxengage-javascript-sdk.modules.interaction :as interaction]
             [cxengage-javascript-sdk.modules.sqs :as sqs]
@@ -74,7 +74,7 @@
         messaging-module (messaging/map->MessagingModule (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/messaging-msg-router))
         voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))
         email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))
-        reporting-module (reporting/map->ReportingModule. (gen-new-initial-module-config comm<))]
+        reporting-module (reporting/map->ReportingModule.)]
     (doseq [module [sqs-module messaging-module voice-module email-module reporting-module]]
       (start-internal-module module))))
 

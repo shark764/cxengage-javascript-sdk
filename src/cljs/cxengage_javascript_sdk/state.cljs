@@ -53,6 +53,9 @@
 (defn set-reporting-refresh-rate! [rate]
   (swap! sdk-state assoc-in [:config :reporting-refresh-rate] rate))
 
+(defn get-reporting-refresh-rate []
+  (get-in @sdk-state [:config :reporting-refresh-rate]))
+
 (defn get-config []
   (get @sdk-state :config))
 

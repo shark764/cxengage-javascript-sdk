@@ -23,11 +23,11 @@
 
                           (and (first args#)
                                (not (map? (first args#))))
-                          (e/invalid-args-error)
+                          (e/params-isnt-a-map-err)
 
                           (and (not (nil? callback#))
                                (not (fn? callback#)))
-                          (e/invalid-args-error)
+                          (e/callback-isnt-a-function-err)
 
                           :else false)]
           (p/publish {:topics ~topic
@@ -41,7 +41,7 @@
             (if (not (s/valid? ~spec params#))
               (do (js/console.info "Params object failed spec validation: " (s/explain-data ~spec params#))
                   (p/publish {:topics ~topic
-                              :error (e/invalid-args-error)
+                              :error (e/args-failed-spec-err)
                               :callback callback#}))
               (do (cljs.core.async.macros/go ~@body)
                   nil))))))))
