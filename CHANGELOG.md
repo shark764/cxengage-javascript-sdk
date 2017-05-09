@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+* ** BREAKING ** refactored entities module - each entity now has it's own function and will require passing the proper type-id ie; "resource-id" rather than the generic "entity-id".
+* Reporting functions moved to Reporting Module.
 * added stat-query function to reporting module - allows for one-off batch queries
 * ** BREAKING ** changed global window exposure from "serenova.cxengage.api...." to just "CxEngage"
 * ** BREAKING ** removed (due to them now being necessary) the "capabilities" pub/sub messages

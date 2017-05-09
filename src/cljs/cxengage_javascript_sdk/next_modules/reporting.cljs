@@ -137,13 +137,13 @@
                            :response results
                            :callback callback}))))))
 
- ;; -------------------------------------------------------------------------- ;;
- ;; CxEngage.reporting.statQuery({
- ;;   statistic: "{{string}}",
- ;;   resourceId: "{{uuid}}",
- ;;   queueId: "{{queueId}}"
- ;; });
- ;; -------------------------------------------------------------------------- ;;
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.statQuery({
+;;   statistic: "{{string}}",
+;;   resourceId: "{{uuid}}",
+;;   queueId: "{{queueId}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
  (s/def ::stat-query-params
    (s/keys :req-un [::specs/statistic]
@@ -172,6 +172,87 @@
                             :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.getAvailableStats();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-available-stats-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-available-stats
+  ::get-available-stats-params
+  (p/get-topic :get-available-stats-response)
+  [params]
+  (let [{:keys [callback topic]} params
+        tenant-id (st/get-active-tenant-id)
+        url (str (st/get-base-api-url) "tenants/tenant-id/realtime-statistics/available?client=toolbar")
+        get-available-stats-request {:method :get
+                                     :url (iu/build-api-url-with-params
+                                           url
+                                           {:tenant-id tenant-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-available-stats-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.getContactHistory({
+;;   interactionId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-contact-interaction-history-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-contact-interaction-history
+  ::get-contact-interaction-history-params
+  (p/get-topic :get-contact-interaction-history-response)
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        tenant-id (st/get-active-tenant-id)
+        url (str (st/get-base-api-url) "tenants/tenant-id/contacts/interaction-id/interactions")
+        get-contact-interaction-history-request {:method :get
+                                     :url (iu/build-api-url-with-params
+                                           url
+                                           {:tenant-id tenant-id
+                                            :interaction-id interaction-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-contact-interaction-history-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.getInteraction({
+;;   interactionId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-interaction-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-interaction
+  ::get-interaction-params
+  (p/get-topic :get-interaction-response)
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        tenant-id (st/get-active-tenant-id)
+        url (str (st/get-base-api-url) "tenants/tenant-id/interactions/interaction-id")
+        get-interaction-request {:method :get
+                                         :url (iu/build-api-url-with-params
+                                               url
+                                               {:tenant-id tenant-id
+                                                :interaction-id interaction-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-interaction-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; SDK Reporting Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -182,7 +263,10 @@
       (ih/register {:api {module-name {:add-stat-subscription add-stat-subscription
                                        :remove-stat-subscription remove-stat-subscription
                                        :get-capacity get-capacity
-                                       :stat-query stat-query}}
+                                       :stat-query stat-query
+                                       :get-available-stats get-available-stats
+                                       :get-contact-interaction-history get-contact-interaction-history
+                                       :get-interaction get-interaction}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
