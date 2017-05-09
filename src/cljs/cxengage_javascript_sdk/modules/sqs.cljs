@@ -31,7 +31,7 @@
           response)
       (let [params (clj->js {:QueueUrl queue-url
                              :MaxNumberOfMessages 1
-                             :WaitTimeSeconds 2})]
+                             :WaitTimeSeconds 5})]
         (.receiveMessage sqs params (handle-response* response))
         response))))
 
@@ -121,7 +121,7 @@
           (js/setTimeout init-sqs halfTtl)
           (js/console.info "Starting new interval...")
           (pull-message queue url on-received)
-          (ih/set-sqs-poller-interval (js/setInterval (partial pull-message queue url on-received) 3000))))))
+          (ih/set-sqs-poller-interval (js/setInterval (partial pull-message queue url on-received) 6000))))))
 
 (defrecord SQSModule [config state core-messages< on-msg-fn]
   pr/SDKModule
