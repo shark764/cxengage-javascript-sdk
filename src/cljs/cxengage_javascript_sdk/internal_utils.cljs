@@ -150,7 +150,7 @@
     (api-request file-request)))
 
 (defn send-interrupt*
-  [module params]
+  [params]
   (let [params (ih/extract-params params)
         {:keys [interaction-id interrupt-type interrupt-body topic on-confirm-fn callback]} params
         tenant-id (state/get-active-tenant-id)

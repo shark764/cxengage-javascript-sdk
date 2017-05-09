@@ -128,9 +128,9 @@
                             (= type :transfer-to-queue)
                             (= type :transfer-to-extension)))
                (send-interrupt module :hold {:interaction-id interaction-id}))
-           (iu/send-interrupt* module (assoc interrupt-params
-                                             :interaction-id interaction-id
-                                             :callback callback)))))))
+           (iu/send-interrupt* (assoc interrupt-params
+                                         :interaction-id interaction-id
+                                         :callback callback)))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.dial({
