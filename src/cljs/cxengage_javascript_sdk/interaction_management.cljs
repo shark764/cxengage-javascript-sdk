@@ -16,7 +16,7 @@
               {:keys [api-response status]} history-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (e/api-error result)
+            (e/client-request-err)
             (do (state/add-messages-to-history! interaction-id result)
                 (p/publish {:topics (p/get-topic :messaging-history-received)
                             :response (state/get-interaction-messaging-history interaction-id)})))))))
@@ -28,7 +28,7 @@
               {:keys [api-response status]} metadata-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (e/api-error result)
+            (e/client-request-err)
             (do (state/add-messaging-interaction-metadata! result)
                 (get-messaging-history tenant-id interaction-id)))))))
 

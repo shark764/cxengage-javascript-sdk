@@ -1,5 +1,6 @@
-(ns cxengage-javascript-sdk.modules.voice
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+(ns cxengage-javascript-sdk.next-modules.voice
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljsjs.paho]
             [cljs.core.async :as a]
             [cljs-uuid-utils.core :as id]
@@ -120,7 +121,7 @@
                                                                          :transfer-type transfer-type}})]
      (if-not (s/valid? (:validation interrupt-params) client-params)
        (p/publish {:topics (:topic interrupt-params)
-                   :error (e/invalid-args-error (s/explain-data (:validation interrupt-params) client-params))
+                   :error (e/args-failed-spec-err)
                    :callback callback})
        (do #_(when (and (= transfer-type "warm-transfer")
                         (or (= type :transfer-to-resource)
@@ -131,22 +132,22 @@
                                              :interaction-id interaction-id
                                              :callback callback)))))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.dial({
+;;   phoneNumber: "{{number}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
 (s/def ::dial-params
   (s/keys :req-un [::specs/phone-number]
           :opt-un [::specs/callback]))
 
-(defn dial
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-sdk-fn-args-err)
-     (dial module (merge (ih/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (ih/extract-params params)
-         {:keys [phone-number callback]} params
-         topic (p/get-topic :dial-send-acknowledged)
-         api-url (get-in module [:config :api-url])
-         dial-url (str api-url "tenants/tenant-id/interactions")
+(def-sdk-fn dial
+   ::dial-params
+   (p/get-topic :dial-send-acknowledged)
+   [params]
+   (let [{:keys [topic phone-number callback]} params
+         dial-url (str (state/get-base-api-url) "tenants/tenant-id/interactions")
          tenant-id (state/get-active-tenant-id)
          resource-id (state/get-active-user-id)
          dial-body {:channel-type "voice"
@@ -161,20 +162,16 @@
                              dial-url
                              {:tenant-id tenant-id})
                        :body dial-body}]
-     (if-not (s/valid? ::dial-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::dial-params params))
-                   :callback callback})
        (do (go (let [dial-response (a/<! (iu/api-request dial-request))
                      {:keys [api-response status]} dial-response]
-                 (if (not= status 200)
-                   (p/publish {:topics topic
-                               :error (e/api-error api-response)
-                               :callback callback})
+                 (when (= status 200)
                    (p/publish {:topics topic
                                :response api-response
-                               :callback callback}))))
-           nil)))))
+                               :callback callback})))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; Twilio Initialization Functions
+;; -------------------------------------------------------------------------- ;;
 
 (defn update-twilio-connection [connection]
   (state/set-twilio-connection connection))
@@ -183,7 +180,7 @@
   (js/console.error error script config))
 
 (defn ^:private twilio-init
-  [config done-init<]
+  [config]
   (let [audio-params (ih/camelify {"audio" true})
         script-init (fn [& args]
                       (let [{:keys [js-api-url credentials]} config
@@ -194,6 +191,11 @@
                         (.setAttribute script "type" "text/javascript")
                         (.setAttribute script "src" js-api-url)
                         (.appendChild body script)
+                        ;; The active user's Twilio token as well as the specific twilio
+                        ;; SDK version is retrieved from their config details. The url
+                        ;; to the twilio SDK is then appended to the window on a script
+                        ;; element - which allows us to further initialize the Twilio
+                        ;; Device in order to receive voice interactions.
                         (go-loop []
                           (if (and (aget js/window "Twilio")
                                    (aget js/window "Twilio" "Device")
@@ -215,28 +217,29 @@
         (.-mediaDevices)
         (.getUserMedia audio-params)
         (.then script-init)
-        (.catch (fn [err] (e/no-microphone-access-error err))))))
+        (.catch (fn [err] (e/no-microphone-access-error))))))
+        ;; If a user "blocks" microphone access through their browser
+        ;; it causes issues with Twilio. This is a our way of detecting
+        ;; and notifying the user of this problem.
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.sendDigits({
+;;   interactionId: "{{uuid}}",
+;;   digit: "{{number}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (s/def ::send-digits-params
   (s/keys :req-un [::specs/interaction-id
                    ::specs/digit]
           :opt-un [::specs/callback]))
 
-(defn send-digits
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-sdk-fn-args-err)
-     (send-digits module (merge (ih/extract-params params) {:callback (first others)}))))
-  ([module params]
+(def-sdk-fn send-digits
+   ::send-digits-params
+   (p/get-topic :send-digits-acknowledged)
+   [params]
    (let [connection (state/get-twilio-connection)
-         {:keys [interaction-id digit callback] :as params} (ih/extract-params params)
-         module-state @(:state module)
-         topic (p/get-topic :send-digits-acknowledged)]
-     (if-not (s/valid? ::send-digits-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::send-digits-params params))
-                   :callback callback})
+         {:keys [interaction-id topic digit callback]} params]
        (when (and (= :active (state/find-interaction-location interaction-id))
                   (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
          (when connection
@@ -246,79 +249,78 @@
                              :response {:interaction-id interaction-id
                                         :digit-sent digit}
                              :callback callback}))
-             (catch js/Object e (str "Caught: Invalid Dial-Tone Multiple Frequency signal: " e)))))))))
+             (catch js/Object e (str "Caught: Invalid Dial-Tone Multiple Frequency signal: " e)))))))
+
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.getRecordings({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
 
 (defn get-recording [interaction-id tenant-id artifact-id callback]
   (go (let [audio-recording (a/<! (iu/get-artifact interaction-id tenant-id artifact-id))
             {:keys [api-response status]} audio-recording]
-        (if-not (= status 200)
-          (p/publish {:topics (p/get-topic :recording-response)
-                      :response (e/api-error "api returned error")
-                      :callback callback})
+        (when (= status 200)
           (p/publish {:topics (p/get-topic :recording-response)
                       :response (:files api-response)
                       :callback callback})))))
 
-(defn get-recordings
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-sdk-fn-args-err)
-     (get-recordings module (merge (ih/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (ih/extract-params params)
-         {:keys [interaction-id callback]} params]
+(s/def ::get-recordings-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-recordings
+   ::get-recordings-params
+   (p/get-topic :recording-response)
+   [params]
+   (let [{:keys [interaction-id topic callback]} params]
      (go (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))
                {:keys [api-response status]} interaction-files
                {:keys [results]} api-response
                tenant-id (state/get-active-tenant-id)
                audio-recordings (filterv #(= (:artifact-type %) "audio-recording") results)]
-           (if-not (= status 200)
-             (p/publish {:topics (p/get-topic :recording-response)
-                         :response (e/api-error "api returned error")
-                         :callback callback})
              (if (= (count audio-recordings) 0)
-               (p/publish {:topics (p/get-topic :recording-response)
+               (p/publish {:topics topic
                            :response []
                            :callback callback})
                (doseq [rec audio-recordings]
-                 (get-recording interaction-id tenant-id (:artifact-id rec) callback))))))
-     nil)))
+                 (get-recording interaction-id tenant-id (:artifact-id rec) callback)))))))
 
-(def initial-state
-  {:module-name :voice
-   :urls {:config "tenants/tenant-id/users/resource-id/config"}})
+;; -------------------------------------------------------------------------- ;;
+;; SDK Voice Module
+;; -------------------------------------------------------------------------- ;;
 
-(defrecord VoiceModule [config state core-messages<]
+(defrecord VoiceModule []
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [module-name (get @(:state this) :module-name)
+    (let [module-name :voice
           twilio-integration (state/get-integration-by-type "twilio")]
       (if-not twilio-integration
         (ih/send-core-message {:type :module-registration-status
                                :status :failure
                                :module-name module-name})
-        (do (twilio-init twilio-integration core-messages<)
+        (do (twilio-init twilio-integration)
             (ih/register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
-                                                    :customer-resume (partial send-interrupt this :resume)
-                                                    :mute (partial send-interrupt this :mute)
-                                                    :unmute (partial send-interrupt this :unmute)
-                                                    :start-recording (partial send-interrupt this :start-recording)
-                                                    :stop-recording (partial send-interrupt this :stop-recording)
-                                                    :transfer-to-resource (partial send-interrupt this :transfer-to-resource)
-                                                    :transfer-to-queue (partial send-interrupt this :transfer-to-queue)
-                                                    :transfer-to-extension (partial send-interrupt this :transfer-to-extension)
-                                                    :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
-                                                    :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
-                                                    :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
-                                                    :dial (partial dial this)
-                                                    :send-digits (partial send-digits this)
-                                                    :get-recordings (partial get-recordings this)
-                                                    :resource-remove (partial send-interrupt this :remove-resource)
-                                                    :resource-hold (partial send-interrupt this :resource-hold)
-                                                    :resource-resume (partial send-interrupt this :resource-resume)
-                                                    :resume-all (partial send-interrupt this :resume-all)}}}
+                                                       :customer-resume (partial send-interrupt this :resume)
+                                                       :mute (partial send-interrupt this :mute)
+                                                       :unmute (partial send-interrupt this :unmute)
+                                                       :start-recording (partial send-interrupt this :start-recording)
+                                                       :stop-recording (partial send-interrupt this :stop-recording)
+                                                       :transfer-to-resource (partial send-interrupt this :transfer-to-resource)
+                                                       :transfer-to-queue (partial send-interrupt this :transfer-to-queue)
+                                                       :transfer-to-extension (partial send-interrupt this :transfer-to-extension)
+                                                       :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
+                                                       :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
+                                                       :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
+                                                       :dial dial
+                                                       :send-digits send-digits
+                                                       :get-recordings get-recordings
+                                                       :resource-remove (partial send-interrupt this :remove-resource)
+                                                       :resource-hold (partial send-interrupt this :resource-hold)
+                                                       :resource-resume (partial send-interrupt this :resource-resume)
+                                                       :resume-all (partial send-interrupt this :resume-all)}}}
                        :module-name module-name})
             (ih/send-core-message {:type :module-registration-status
                                    :status :success
@@ -329,12 +331,10 @@
       (let [twilio-token-ttl (get-in (state/get-integration-by-type "twilio") [:credentials :ttl])
             min-ttl (* twilio-token-ttl 500)]
         (a/<! (a/timeout min-ttl))
-        (let [api-url (get-in this [:config :api-url])
-              module-state @(:state this)
-              resource-id (state/get-active-user-id)
+        (let [resource-id (state/get-active-user-id)
               tenant-id (state/get-active-tenant-id)
               topic (p/get-topic :config-response)
-              config-url (str api-url (get-in module-state [:urls :config]))
+              config-url (str (state/get-base-api-url) "tenants/tenant-id/users/resource-id/config")
               config-request {:method :get
                               :url (iu/build-api-url-with-params
                                     config-url
@@ -349,6 +349,6 @@
           (state/update-integration "twilio" twilio-integration)
           (if (not= status 200)
             (p/publish {:topics topic
-                        :error (e/token-error "twilio")})
+                        :error (e/client-request-err)})
             (state/set-twilio-device (js/Twilio.Device.setup twilio-token))))
         (recur)))))

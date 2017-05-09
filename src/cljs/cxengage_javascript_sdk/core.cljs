@@ -16,13 +16,13 @@
             [cxengage-javascript-sdk.next-modules.authentication :as authentication]
             [cxengage-javascript-sdk.next-modules.session :as session]
             [cxengage-javascript-sdk.next-modules.reporting :as reporting]
+            [cxengage-javascript-sdk.next-modules.voice :as voice]
 
             [cxengage-javascript-sdk.modules.messaging :as messaging]
             [cxengage-javascript-sdk.modules.entities :as entities]
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cxengage-javascript-sdk.modules.interaction :as interaction]
             [cxengage-javascript-sdk.modules.sqs :as sqs]
-            [cxengage-javascript-sdk.modules.voice :as voice]
             [cxengage-javascript-sdk.modules.logging :as logging]
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.domain.errors :as e]))
@@ -72,7 +72,7 @@
   [comm<]
   (let [sqs-module (sqs/map->SQSModule. (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/sqs-msg-router))
         messaging-module (messaging/map->MessagingModule (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/messaging-msg-router))
-        voice-module (voice/map->VoiceModule. (gen-new-initial-module-config comm<))
+        voice-module (voice/map->VoiceModule.)
         email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))
         reporting-module (reporting/map->ReportingModule.)]
     (doseq [module [sqs-module messaging-module voice-module email-module reporting-module]]
