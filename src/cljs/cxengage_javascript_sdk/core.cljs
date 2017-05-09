@@ -18,9 +18,9 @@
             [cxengage-javascript-sdk.next-modules.reporting :as reporting]
             [cxengage-javascript-sdk.next-modules.voice :as voice]
             [cxengage-javascript-sdk.next-modules.interaction :as interaction]
+            [cxengage-javascript-sdk.next-modules.entities :as entities]
 
             [cxengage-javascript-sdk.modules.messaging :as messaging]
-            [cxengage-javascript-sdk.modules.entities :as entities]
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cxengage-javascript-sdk.modules.sqs :as sqs]
             [cxengage-javascript-sdk.modules.logging :as logging]
@@ -61,7 +61,7 @@
   (let [auth-module (authentication/map->AuthenticationModule.)
         session-module (session/map->SessionModule.)
         interaction-module (interaction/map->InteractionModule.)
-        entities-module (entities/map->EntitiesModule. (gen-new-initial-module-config comm<))
+        entities-module (entities/map->EntitiesModule.)
         contacts-module (contacts/map->ContactsModule. (gen-new-initial-module-config comm<))
         logging-module (logging/map->LoggingModule. (gen-new-initial-module-config comm<))]
     (doseq [module [auth-module session-module interaction-module entities-module contacts-module logging-module]]
