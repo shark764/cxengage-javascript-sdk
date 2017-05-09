@@ -115,13 +115,11 @@
 (defn on-connect [done-init<]
   (js/console.log "Mqtt client connected")
   (a/put! done-init< {:module-registration-status :success
-                      :module :mqtt})
-  (p/publish {:topics (p/get-topic :messaging-enabled)
-              :response true}))
+                      :module :mqtt}))
 
 (defn on-failure [done-init< msg]
   (js/console.log "Mqtt Client failed to connect")
-  (a/put! done-init< {:module-registration-status :success
+  (a/put! done-init< {:module-registration-status :failure
                       :module :mqtt
                       :message msg}))
 
@@ -135,7 +133,7 @@
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
                                       (js/console.error "Mqtt Connection Lost" {:reasonCode reason-code
-                                                                          :reasonMessage reason-message})))
+                                                                                :reasonMessage reason-message})))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
     (set! (.-onSuccess connect-options) (fn [] (on-connect done-init<)))
@@ -369,12 +367,9 @@
                                :module-name module-name})
         (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
             (ih/register {:api {:interactions {:messaging {:send-message (partial send-message this)
-                                                        :get-transcripts (partial get-transcripts this)
-                                                        :initialize-outbound-sms (partial click-to-sms this)
-                                                        :send-outbound-sms (partial send-sms-by-interrupt this)}}}
-                       :module-name module-name})
-            (ih/send-core-message {:type :module-registration-status
-                                   :status :success
-                                   :module-name module-name})))))
+                                                           :get-transcripts (partial get-transcripts this)
+                                                           :initialize-outbound-sms (partial click-to-sms this)
+                                                           :send-outbound-sms (partial send-sms-by-interrupt this)}}}
+                          :module-name module-name})))))
   (stop [this])
   (refresh-integration [this]))

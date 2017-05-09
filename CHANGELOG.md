@@ -19,10 +19,10 @@
 
 ## [4.0.1]
 * fixed token refresh for SQS
+
 ## [4.0.0]
 * fixed tenant/resource capacity
 * added merging and deleting of contacts
-
 * fixed refreshing of twilio and sqs tokens
 * added resource/tenant capacity function
 * added retry logic to api-request fn for http 5xx response codes

@@ -49,13 +49,13 @@
                                          :state "notready"}}
             {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
             new-state-data (:result api-response)]
-         (if (= status 200)
-           (p/publish {:topics topic
-                       :response new-state-data
-                       :callback callback})
-           (p/publish {:topics topic
-                       :error (e/failed-to-change-state-err)
-                       :callback callback}))))))
+        (if (= status 200)
+          (p/publish {:topics topic
+                      :response new-state-data
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-change-state-err)
+                      :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.setActiveTenant({ tenantId: "{{uuid}}" });

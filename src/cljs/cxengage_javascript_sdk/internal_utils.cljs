@@ -3,6 +3,7 @@
   (:require [cljs.core.async :as a]
             [goog.crypt :as c]
             [ajax.core :as ajax]
+            [clojure.string :as str]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.interop-helpers :as ih]
@@ -34,7 +35,7 @@
 
 (defn build-api-url-with-params [url params]
   (reduce-kv (fn [s k v]
-               (clojure.string/replace s (re-pattern (name k)) v)) url params))
+               (str/replace s (re-pattern (name k)) v)) url params))
 
 (defn get-now
   []
