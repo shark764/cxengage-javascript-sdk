@@ -49,6 +49,7 @@
 
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"
+                 :get-stat-query-response "cxengage/reporting/get-stat-query-response"
                  :get-available-stats-response "cxengage/reporting/get-available-stats-response"
                  :get-contact-history-response "cxengage/reporting/get-contact-interaction-history-response"
                  :get-contact-interaction-response "cxengage/reporting/get-contact-interactions-response"

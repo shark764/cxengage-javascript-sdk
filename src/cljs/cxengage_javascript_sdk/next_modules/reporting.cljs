@@ -58,7 +58,7 @@
    ::add-statistic-params
    (p/get-topic :add-stat)
    [params]
-   (let [{:keys [stat-id topic callback]} params
+   (let [{:keys [topic callback]} params
          tenant-id (st/get-active-tenant-id)
          stat-bundle (dissoc params :callback)]
        (let [stat-id (str (uuid/make-random-uuid))]
@@ -137,6 +137,40 @@
                            :response results
                            :callback callback}))))))
 
+ ;; -------------------------------------------------------------------------- ;;
+ ;; CxEngage.reporting.statQuery({
+ ;;   statistic: "{{string}}",
+ ;;   resourceId: "{{uuid}}",
+ ;;   queueId: "{{queueId}}"
+ ;; });
+ ;; -------------------------------------------------------------------------- ;;
+
+ (s/def ::stat-query-params
+   (s/keys :req-un [::specs/statistic]
+           :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
+
+ (def-sdk-fn stat-query
+    ::stat-query-params
+    (p/get-topic :get-stat-query-response)
+    [params]
+    (let [{:keys [statistic topic callback]} params
+          tenant-id (st/get-active-tenant-id)
+          stat-bundle (dissoc params :callback)
+          stat-id (str (uuid/make-random-uuid))
+          stat-body (assoc {} stat-id stat-bundle)]
+        (go (let [batch-url (str (st/get-base-api-url) "tenants/tenant-id/realtime-statistics/batch")
+                  polling-request {:method :post
+                                   :body {:requests stat-body}
+                                   :url (iu/build-api-url-with-params
+                                         batch-url
+                                         {:tenant-id tenant-id})}
+                  {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
+                  {:keys [results]} api-response]
+              (when (= status 200)
+                (p/publish {:topics topic
+                            :response results
+                            :callback callback}))))))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Reporting Module
 ;; -------------------------------------------------------------------------- ;;
@@ -147,7 +181,8 @@
     (let [module-name :reporting]
       (ih/register {:api {module-name {:add-stat-subscription add-stat-subscription
                                        :remove-stat-subscription remove-stat-subscription
-                                       :get-capacity get-capacity}}
+                                       :get-capacity get-capacity
+                                       :stat-query stat-query}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
