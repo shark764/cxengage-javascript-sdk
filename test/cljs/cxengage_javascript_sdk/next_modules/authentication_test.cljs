@@ -2,7 +2,9 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.pubsub :as p]
             [cljs.core.async :as a]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.next-modules.authentication :as auth]
             [cljs.test :refer-macros [deftest is testing async use-fixtures]]))
 
@@ -23,7 +25,7 @@
                                         resp-chan))
                  (p/subscribe "cxengage/authentication/login-response"
                               (fn [error topic response]
-                                (is (= pubsub-expected-response (iu/kebabify response)))
+                                (is (= pubsub-expected-response (ih/kebabify response)))
                                 (set! iu/api-request old)
                                 (done)))
                  (auth/login {:username "testuser@testemail.com"
@@ -41,7 +43,7 @@
                                         resp-chan))
                  (p/subscribe "cxengage/session/tenant-list"
                               (fn foo [error topic response]
-                                (is (= pubsub-expected-response (iu/kebabify response)))
+                                (is (= pubsub-expected-response (ih/kebabify response)))
                                 (set! iu/api-request old)
                                 (done)))
                  (auth/login {:username "testuser@testemail.com"
@@ -51,10 +53,10 @@
   (testing "login function failure - wrong # of args"
     (async done
            (reset! p/sdk-subscriptions {})
-           (let [pubsub-expected-response {:code 1000, :error "Incorrect number of arguments passed to SDK fn."}]
+           (let [pubsub-expected-response (js->clj (ih/camelify (e/wrong-number-of-sdk-fn-args-err)))]
              (p/subscribe "cxengage/authentication/login-response"
                           (fn bar [error topic response]
-                            (is (= pubsub-expected-response (iu/kebabify error)))
+                            (is (= pubsub-expected-response (js->clj error)))
                             (done)))
              (auth/login {:username "testyoyoyoy"
                           :password "oyoyoyoy"}
@@ -65,10 +67,10 @@
   (testing "login function failure - didn't pass a map"
     (async done
            (reset! p/sdk-subscriptions {})
-           (let [pubsub-expected-response {:code 1001, :error "Invalid arguments passed to SDK fn."}]
+           (let [pubsub-expected-response (js->clj (ih/camelify (e/params-isnt-a-map-err)))]
              (p/subscribe "cxengage/authentication/login-response"
                           (fn [error topic response]
-                            (is (= pubsub-expected-response (iu/kebabify error)))
+                            (is (= pubsub-expected-response (js->clj error)))
                             (done)))
              (auth/login "test")))))
 
@@ -76,10 +78,10 @@
   (testing "login function failure - did pass a callback, but it isnt a function"
     (async done
            (reset! p/sdk-subscriptions {})
-           (let [pubsub-expected-response {:code 1001, :error "Invalid arguments passed to SDK fn."}]
+           (let [pubsub-expected-response (js->clj (ih/camelify (e/callback-isnt-a-function-err)))]
              (p/subscribe "cxengage/authentication/login-response"
                           (fn [error topic response]
-                            (is (= pubsub-expected-response (iu/kebabify error)))
+                            (is (= pubsub-expected-response (js->clj error)))
                             (done)))
              (auth/login {:username "testyoyoyoy"
                           :password "oyoyoyoy"}
