@@ -12,6 +12,7 @@
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.specs :as specs]
 
             [cxengage-javascript-sdk.next-modules.authentication :as authentication]
             [cxengage-javascript-sdk.next-modules.session :as session]
@@ -91,14 +92,9 @@
     :module-registration-status (handle-module-registration-status m)
     nil))
 
-(s/def ::base-url string?)
-(s/def ::type #{:js :cljs})
-(s/def ::environment #{:dev :qe :staging :prod})
-(s/def ::log-level #{:debug :info :warn :error :fatal :off})
-(s/def ::blast-sqs-output boolean?)
 (s/def ::initialize-options
   (s/keys :req-un []
-          :opt-un [::consumer-type ::log-level ::environment ::base-url ::blast-sqs-output ::reporting-refresh-rate]))
+          :opt-un [::specs/consumer-type ::specs/log-level ::specs/environment ::specs/base-url ::specs/blast-sqs-output ::specs/reporting-refresh-rate]))
 
 (defn initialize
   "Internal initialization function (called by the CxEngage namespace where an external initalize() function is exposed). Validates the SDK options provided & bootstraps the whole system."
