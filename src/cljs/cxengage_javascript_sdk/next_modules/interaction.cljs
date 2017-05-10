@@ -246,53 +246,79 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-script
-   ::script-params
-   (p/get-topic :send-script)
-   [params]
-   (let [{:keys [topic answers script-id interaction-id callback]} params
-         original-script (state/get-script interaction-id script-id)
-         {:keys [sub-id script action-id]} original-script
-         parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
-         elements (modify-elements (:elements parsed-script))
-         script-url (str (state/get-base-api-url) "tenants/tenant-id/interactions/interaction-id/actions/action-id")
-         updated-answers (reduce-kv
-                          (fn [acc input-name input-value]
-                            (assoc acc input-name {:value (or input-value nil) :text (get-in elements [input-name :text])}))
-                          {}
-                          answers)
-         final-elements (add-answers-to-elements elements updated-answers)
-         script-update {:resource-id (state/get-active-user-id)
-                        :script-response {(keyword (:name parsed-script)) {:elements final-elements
-                                                                           :id (:id parsed-script)
-                                                                           :name (:name parsed-script)}}}
-         script-body {:source "client"
-                      :sub-id (:sub-id original-script)
-                      :update (merge script-update updated-answers)}
-         ;; The send script payload has a somewhat complicated structure due to
-         ;; two major services needing overlapping data in different locations.
+  ::script-params
+  (p/get-topic :send-script)
+  [params]
+  (let [{:keys [topic answers script-id interaction-id callback]} params
+        original-script (state/get-script interaction-id script-id)
+        {:keys [sub-id script action-id]} original-script
+        parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
+        elements (modify-elements (:elements parsed-script))
+        script-url (str (state/get-base-api-url) "tenants/tenant-id/interactions/interaction-id/actions/action-id")
+        updated-answers (reduce-kv
+                         (fn [acc input-name input-value]
+                           (assoc acc input-name {:value (or input-value nil) :text (get-in elements [input-name :text])}))
+                         {}
+                         answers)
+        final-elements (add-answers-to-elements elements updated-answers)
+        script-update {:resource-id (state/get-active-user-id)
+                       :script-response {(keyword (:name parsed-script)) {:elements final-elements
+                                                                          :id (:id parsed-script)
+                                                                          :name (:name parsed-script)}}}
+        script-body {:source "client"
+                     :sub-id (:sub-id original-script)
+                     :update (merge script-update updated-answers)}
+        ;; The send script payload has a somewhat complicated structure due to
+        ;; two major services needing overlapping data in different locations.
 
-         ;; First - Flow needs the answers for the script located in the top level
-         ;; "update" object, where each field from the script is it's own key and
-         ;; contains the value as well as text value (if applicable).
+        ;; First - Flow needs the answers for the script located in the top level
+        ;; "update" object, where each field from the script is it's own key and
+        ;; contains the value as well as text value (if applicable).
 
-         ;; Second - Reporting parses the scriptResponse object which is the script
-         ;; broken down by front-end elements. The value for each field also needs
-         ;; to be located within the scriptResponse object under it's corresponding
-         ;; element.
-         script-request {:method :post
-                         :url (iu/build-api-url-with-params
-                               script-url
-                               {:tenant-id (state/get-active-tenant-id)
-                                :interaction-id interaction-id
-                                :action-id action-id})
-                         :body script-body}]
-       (do (go (let [script-response (a/<! (iu/api-request script-request))
-                     {:keys [status api-response]} script-response
-                     {:keys [result]} api-response]
-                 (when (= status 200)
-                   (p/publish {:topics topic
-                               :response interaction-id
-                               :callback callback})))))))
+        ;; Second - Reporting parses the scriptResponse object which is the script
+        ;; broken down by front-end elements. The value for each field also needs
+        ;; to be located within the scriptResponse object under it's corresponding
+        ;; element.
+        script-request {:method :post
+                        :url (iu/build-api-url-with-params
+                              script-url
+                              {:tenant-id (state/get-active-tenant-id)
+                               :interaction-id interaction-id
+                               :action-id action-id})
+                        :body script-body}]
+    (do (go (let [script-response (a/<! (iu/api-request script-request))
+                  {:keys [status api-response]} script-response
+                  {:keys [result]} api-response]
+              (when (= status 200)
+                (p/publish {:topics topic
+                            :response interaction-id
+                            :callback callback})))))))
+
+(s/def ::generic-interrupt-params
+  (s/keys :req-un [::specs/interaction-id
+                   ::specs/interrupt-body
+                   ::specs/interrupt-type]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn generic-interrupt
+  ::generic-interrupt-params
+  (p/get-topic :send-custom-interrupt-acknowledged)
+  [params]
+  (let [{:keys [callback topic interrupt-body interrupt-type interaction-id]} params
+        tenant-id (state/get-active-tenant-id)
+        interrupt-request {:method :post
+                           :body {:source "Client"
+                                  :interrupt-type interrupt-type
+                                  :interrupt interrupt-body}
+                           :url (str (iu/api-url
+                                      "tenants/tenant-id/interactions/interaction-id/interrupts"
+                                      {:tenant-id tenant-id
+                                       :interaction-id interaction-id}))}
+        {:keys [status api-response]} (a/<! (iu/api-request interrupt-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Interactions Module
@@ -318,7 +344,8 @@
                                        :getAllNotes (partial note-action this :get-all)
                                        :selectDispositionCode select-disposition-code
                                        :deselectDispositionCode (partial send-interrupt :deselect-disposition)
-                                       :sendScript send-script}}
+                                       :sendScript send-script
+                                       :sendCustomInterrupt generic-interrupt}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

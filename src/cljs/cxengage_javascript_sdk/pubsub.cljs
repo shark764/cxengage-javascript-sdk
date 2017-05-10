@@ -92,6 +92,7 @@
                  :resource-removed-received "cxengage/interactions/resource-removed-received"
                  :resource-hold-received "cxengage/interactions/resource-hold-received"
                  :resource-resume-received "cxengage/interactions/resource-resume-received"
+                 :send-custom-interrupt-acknowledged "cxengage/interactions/send-custom-interrupt-acknowledged"
 
                  ;; Email Interaction Topics
                  :attachment-received "cxengage/interactions/email/attachment-received"
