@@ -21,9 +21,9 @@
             [cxengage-javascript-sdk.next-modules.interaction :as interaction]
             [cxengage-javascript-sdk.next-modules.entities :as entities]
 
+            [cxengage-javascript-sdk.modules.sqs :as sqs]
             [cxengage-javascript-sdk.modules.messaging :as messaging]
             [cxengage-javascript-sdk.modules.contacts :as contacts]
-            [cxengage-javascript-sdk.modules.sqs :as sqs]
             [cxengage-javascript-sdk.modules.logging :as logging]
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.domain.errors :as e]))

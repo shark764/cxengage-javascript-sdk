@@ -90,6 +90,11 @@
    :level :error
    :message "Invalid reason info provided. Must be in the list of reasons provided via your user config. Unable to transition agent to a not ready"})
 
+(defn failed-to-refresh-sqs-integration-err []
+  {:code 5000
+   :level :fatal
+   :message "Failed to refresh SQS Queue object. Unable to continue agent notification polling."})
+
 (defn no-microphone-access-error []
   {:code 8000
    :level :fatal
