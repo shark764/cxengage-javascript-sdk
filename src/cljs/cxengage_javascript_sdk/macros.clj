@@ -14,34 +14,34 @@
   [name spec topic _ & body]
   `(defn ~name
      ([& args#]
-      (let [args# (map ih/extract-params args#)
+      (let [args# (map cxengage-javascript-sdk.interop-helpers/extract-params args#)
             callback# (second args#)]
         (if-let [error# (cond
 
                           (or (> (count args#) 2))
-                          (e/wrong-number-of-sdk-fn-args-err)
+                          (cxengage-javascript-sdk.domain.errors/wrong-number-of-sdk-fn-args-err)
 
                           (and (first args#)
                                (not (map? (first args#))))
-                          (e/params-isnt-a-map-err)
+                          (cxengage-javascript-sdk.domain.errors/params-isnt-a-map-err)
 
                           (and (not (nil? callback#))
                                (not (fn? callback#)))
-                          (e/callback-isnt-a-function-err)
+                          (cxengage-javascript-sdk.domain.errors/callback-isnt-a-function-err)
 
                           :else false)]
-          (p/publish {:topics ~topic
-                      :error error#
-                      :callback (if (fn? callback#) callback# nil)})
+          (cxengage-javascript-sdk.pubsub/publish {:topics ~topic
+                                                   :error error#
+                                                   :callback callback#})
           (let [params# (first args#)
                 params# (-> params#
                             (assoc :callback (second args#))
                             (assoc :topic ~topic))
                 ~'params params#]
-            (if (not (s/valid? ~spec params#))
-              (do (js/console.info "Params object failed spec validation: " (s/explain-data ~spec params#))
-                  (p/publish {:topics ~topic
-                              :error (e/args-failed-spec-err)
-                              :callback callback#}))
+            (if (not (cljs.spec/valid? ~spec params#))
+              (do (js/console.info "Params object failed spec validation: " (cljs.spec/explain-data ~spec params#))
+                  (cxengage-javascript-sdk.pubsub/publish {:topics ~topic
+                                                           :error (cxengage-javascript-sdk.domain.errors/args-failed-spec-err)
+                                                           :callback callback#}))
               (do (cljs.core.async.macros/go ~@body)
                   nil))))))))
