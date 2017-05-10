@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.modules.sqs
+(ns cxengage-javascript-sdk.next-modules.sqs
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
@@ -6,7 +6,6 @@
             [cljsjs.aws-sdk-js]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
@@ -63,7 +62,7 @@
                                    (js/console.log :error err))))))
 
 (defn sqs-init*
-  [module integration on-received done-init<]
+  [integration on-received]
   (let [{:keys [queue credentials]} integration
         {:keys [access-key secret-key session-token ttl]} credentials
         most-of-ttl (-> ttl
@@ -78,8 +77,9 @@
         original-sqs-queue (AWS.SQS. options)
         original-sqs-needs-refresh-time (+ (.getTime (js/Date.)) most-of-ttl)]
 
-    (a/put! done-init< {:module-registration-status :success
-                        :module (get @(:state module) :module-name)})
+    (ih/send-core-message {:type :module-registration-status
+                           :status :success
+                           :module-name "sqs"})
 
     ;; Start the loop to poll SQS, initially with the first SQS Queue object + url that we instantiated
     (go-loop [sqs-queue original-sqs-queue
@@ -145,20 +145,20 @@
                      sqs-queue-url
                      sqs-needs-refresh-time))))))))
 
-(def initial-state
-  {:module-name :sqs
-   :urls {:config "tenants/tenant-id/users/resource-id/config"}})
+;; -------------------------------------------------------------------------- ;;
+;; SDK SQS Module
+;; -------------------------------------------------------------------------- ;;
 
-(defrecord SQSModule [config state core-messages< on-msg-fn]
+(defrecord SQSModule [on-msg-fn]
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [module-name (get @(:state this) :module-name)]
+    (let [module-name :sqs]
       (let [sqs-integration (state/get-integration-by-type "sqs")]
         (if-not sqs-integration
-          (a/put! core-messages< {:module-registration-status :failure
-                                  :module module-name})
-          (do (sqs-init* this sqs-integration on-msg-fn core-messages<)
+          (ih/send-core-message {:type :module-registration-status
+                                 :status :failure
+                                 :module-name module-name})
+          (do (sqs-init* sqs-integration on-msg-fn)
               (ih/register {:module-name module-name}))))))
   (stop [this])
   (refresh-integration [this]))
