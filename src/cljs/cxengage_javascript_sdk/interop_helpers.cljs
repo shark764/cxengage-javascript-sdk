@@ -44,6 +44,6 @@
        (kebabify (js->clj params :keywordize-keys true))))))
 
 (defn js-publish [publish-details]
-  (let [publish (aget js/window "CxEngage" "publish")
+  (let [publish-fn (aget js/window "CxEngage" "publish")
         details (extract-params publish-details)]
-    (publish details false)))
+    (publish-fn details false)))

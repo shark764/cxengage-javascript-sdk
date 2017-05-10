@@ -20,9 +20,10 @@
             [cxengage-javascript-sdk.next-modules.voice :as voice]
             [cxengage-javascript-sdk.next-modules.interaction :as interaction]
             [cxengage-javascript-sdk.next-modules.entities :as entities]
+            [cxengage-javascript-sdk.next-modules.messaging :as messaging]
             [cxengage-javascript-sdk.next-modules.sqs :as sqs]
 
-            [cxengage-javascript-sdk.modules.messaging :as messaging]
+
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cxengage-javascript-sdk.modules.logging :as logging]
             [cxengage-javascript-sdk.modules.email :as email]
@@ -72,7 +73,7 @@
   "Starts any core SDK modules which are only able to be turned on once we have the users integrations by way of having started a session."
   [comm<]
   (let [sqs-module (sqs/map->SQSModule. {:on-msg-fn int/sqs-msg-router})
-        messaging-module (messaging/map->MessagingModule (assoc (gen-new-initial-module-config comm<) :on-msg-fn int/messaging-msg-router))
+        messaging-module (messaging/map->MessagingModule {:on-msg-fn int/messaging-msg-router})
         voice-module (voice/map->VoiceModule.)
         email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))
         reporting-module (reporting/map->ReportingModule.)]
@@ -117,7 +118,7 @@
               module-comm-chan (a/chan 1024)
               core (ih/camelify {:version *SDK-VERSION*
                                  :subscribe pu/subscribe
-                                 :publish ih/js-publish
+                                 :publish pu/publish
                                  :unsubscribe pu/unsubscribe
                                  :internal {}
                                  :dump-state state/get-state-js
