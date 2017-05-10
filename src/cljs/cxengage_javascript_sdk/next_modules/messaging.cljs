@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.modules.messaging
+(ns cxengage-javascript-sdk.next-modules.messaging
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljsjs.paho]
@@ -113,42 +113,37 @@
                 :response true
                 :callback callback})))
 
-(defn on-connect [done-init<]
-  (js/console.log "Mqtt client connected")
-  (a/put! done-init< {:module-registration-status :success
-                      :module :mqtt})
-  (p/publish {:topics (p/get-topic :messaging-enabled)
-              :response true}))
+(defn on-connect []
+  (js/console.log "Mqtt client connected"))
 
-(defn on-failure [done-init< msg]
-  (js/console.log "Mqtt Client failed to connect")
-  (a/put! done-init< {:module-registration-status :success
-                      :module :mqtt
-                      :message msg}))
+(defn on-failure [msg]
+  (js/console.log "Mqtt Client failed to connect " msg)
+  (ih/send-core-message {:type :module-registration-status
+                         :status :failure
+                         :module-name :messaging}))
 
 (defn disconnect [client]
   (js/console.log "Disconnecting mqtt client")
   (.disconnect client))
 
 (defn connect
-  [endpoint client-id on-received done-init<]
+  [endpoint client-id on-received]
   (let [mqtt (Paho.MQTT.Client. endpoint client-id)
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
                                       (js/console.error "Mqtt Connection Lost" {:reasonCode reason-code
-                                                                          :reasonMessage reason-message})))
+                                                                                :reasonMessage reason-message})))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
-    (set! (.-onSuccess connect-options) (fn [] (on-connect done-init<)))
+    (set! (.-onSuccess connect-options) (fn [] (on-connect)))
     (set! (.-onFailure connect-options) (fn [_ _ msg]
-                                          (a/put! (:error-channel @module-state) {:type :messaging/SHUTDOWN})
-                                          (on-failure done-init< msg)))
+                                          (on-failure msg)))
     (.connect mqtt connect-options)
     mqtt))
 
 (defn mqtt-init
-  [mqtt-conf client-id on-received done-init<]
-  (let [mqtt-client (connect (get-iot-url (time/now) mqtt-conf) client-id on-received done-init<)]
+  [mqtt-conf client-id on-received]
+  (let [mqtt-client (connect (get-iot-url (time/now) mqtt-conf) client-id on-received)]
     (swap! module-state assoc :mqtt-client mqtt-client)))
 
 (s/fdef init
@@ -181,6 +176,12 @@
 (defn format-payload [message]
   (t/write (t/writer :json-verbose) (clojure.walk/stringify-keys message)))
 
+;; ----------------------------------------------------------------;;
+;;
+;; CxEngage.interactions.messaging.sendMessage{interactionId: "{{interaction-id}}", message: "The message you want to send"})
+;;
+;; ----------------------------------------------------------------;;
+
 (s/def ::send-message-params
   (s/keys :req-un [::specs/interaction-id
                    ::specs/message]
@@ -188,7 +189,7 @@
 
 (def-sdk-fn send-message
   ::send-message-params
-  (p/get-topic :send-message-acknowledge)
+  (p/get-topic :send-message-acknowledged)
   [params]
   (let [{:keys [interaction-id message topic callback]} params
         tenant-id (state/get-active-tenant-id)
@@ -270,6 +271,8 @@
         metadata {:customer phone-number
                   :customer-name "SMS User"
                   :channel-type "sms"
+                  :name "Agent"
+                  :type "agent"
                   :source "twilio"}
         sms-body {:id interaction-id
                   :source "messaging"
@@ -304,7 +307,7 @@
 
 (def-sdk-fn get-transcripts
   ::get-transcripts-params
-  (p/get-topic :trascript-response)
+  (p/get-topic :transcript-response)
   [params]
   (let [{:keys [interaction-id topic callback]} params
         interaction-files (a/<! (iu/get-interaction-files interaction-id))
@@ -320,16 +323,10 @@
         (doseq [t transcripts]
           (get-transcript interaction-id tenant-id (:artifact-id t) callback))))))
 
-
-(def initial-state
-  {:module-name :messaging
-   :urls {}})
-
-(defrecord MessagingModule [config state core-messages< on-msg-fn]
+(defrecord MessagingModule [on-msg-fn]
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [module-name (get @(:state this) :module-name)
+    (let [module-name :messaging
           client-id (state/get-active-user-id)
           mqtt-integration (state/get-integration-by-type "messaging")
           mqtt-integration (->> (merge (select-keys mqtt-integration [:region :endpoint])
@@ -342,7 +339,7 @@
         (ih/send-core-message {:type :module-registration-status
                                :status :failure
                                :module-name module-name})
-        (do (mqtt-init mqtt-integration client-id on-msg-fn core-messages<)
+        (do (mqtt-init mqtt-integration client-id on-msg-fn)
             (ih/register {:api {:interactions {:messaging {:send-message send-message
                                                            :get-transcripts get-transcripts
                                                            :initialize-outbound-sms click-to-sms

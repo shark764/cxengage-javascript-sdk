@@ -7,7 +7,7 @@
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
-            [cxengage-javascript-sdk.modules.messaging :as messaging]))
+            [cxengage-javascript-sdk.next-modules.messaging :as messaging]))
 
 (defn get-messaging-history [tenant-id interaction-id]
   (let [history-request {:method :get
