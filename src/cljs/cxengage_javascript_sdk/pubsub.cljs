@@ -136,6 +136,7 @@
                  :new-message-received "cxengage/interactions/messaging/new-message-received"
                  :initialize-outbound-sms-response "cxengage/interactions/messaging/initialize-outbound-sms-response"
                  :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
+                 :failed-to-refresh-sqs-integration "cxengage/errors/fatal/failed-to-refresh-sqs-integration"
                  })
 
 (defn get-topic
@@ -229,12 +230,12 @@
                     (clj->js response)
                     (ih/camelify response))
          relevant-subscribers (->> topics
-                         (map get-topic-permutations)
-                         (flatten)
-                         (distinct)
-                         (map get-subscribers-by-topic)
-                         (filter (complement nil?))
-                         (flatten))]
+                                   (map get-topic-permutations)
+                                   (flatten)
+                                   (distinct)
+                                   (map get-subscribers-by-topic)
+                                   (filter (complement nil?))
+                                   (flatten))]
      (doseq [cb relevant-subscribers]
        (doseq [t topics]
          (cb error t response)))
