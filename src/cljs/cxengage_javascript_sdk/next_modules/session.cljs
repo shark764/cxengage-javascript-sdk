@@ -5,6 +5,7 @@
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
@@ -208,16 +209,8 @@
 
 (defn- go-ready* [topic callback]
   (go (let [session-id (state/get-session-id)
-            resource-id (state/get-active-user-id)
-            tenant-id (state/get-active-tenant-id)
-            change-state-request {:method :post
-                                  :url (iu/api-url
-                                        "tenants/tenant-id/presence/resource-id"
-                                        {:tenant-id tenant-id
-                                         :resource-id resource-id})
-                                  :body {:session-id session-id
-                                         :state "ready"}}
-            {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
+            {:keys [status api-response]} (a/<! (rest/change-state-request {:session-id session-id
+                                                                            :state "ready"}))
             new-state-data (:result api-response)]
         (if (= status 200)
           (p/publish {:topics topic
@@ -235,16 +228,8 @@
   ::go-ready-spec
   (p/get-topic :presence-state-change-request-acknowledged)
   [params]
-  (let [session-id (state/get-session-id)
-        resource-id (state/get-active-user-id)
-        tenant-id (state/get-active-tenant-id)
-        {:keys [callback topic extension-value]} params
-        config-request {:method :get
-                        :url (iu/api-url
-                              "tenants/tenant-id/users/resource-id/config"
-                              {:tenant-id tenant-id
-                               :resource-id resource-id})}
-        {:keys [status api-response]} (a/<! (iu/api-request config-request))
+  (let [{:keys [callback topic extension-value]} params
+        {:keys [status api-response]} (a/<! (rest/get-config-request))
         user-config (:result api-response)]
     (when (= status 200)
       (state/set-config! user-config)
@@ -260,13 +245,7 @@
             ;; active extension, but it didn't match the one they passed for the
             ;; session they're starting. Update their user prior to changing
             ;; state, so they go ready with the correct extension.
-            (let [update-user-request {:method :put
-                                       :url (iu/api-url
-                                             "tenants/tenant-id/users/resource-id"
-                                             {:tenant-id tenant-id
-                                              :resource-id resource-id})
-                                       :body {:activeExtension new-extension}}
-                  {:keys [status api-response]} (a/<! (iu/api-request update-user-request))]
+            (let [{:keys [status api-response]} (a/<! (rest/update-user-request {:activeExtension new-extension}))]
               (if (= status 200)
                 (go-ready* topic callback)
                 (p/publish {:topics topic
