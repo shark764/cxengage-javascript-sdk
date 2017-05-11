@@ -2,13 +2,11 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.next-modules.interaction :as interaction]
             [cljs.core.async :as a]
-            [cljs.spec :as s]
             [cljs-uuid-utils.core :as id]
-            [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
-            [cljs.test :refer-macros [deftest is testing run-tests async use-fixtures]]))
+            [cljs.test :refer-macros [deftest is testing async]]))
 
 (deftest generic-interrupt-test
   (testing "the generic-interrupt fn"
