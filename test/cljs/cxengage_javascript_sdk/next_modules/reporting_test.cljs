@@ -7,8 +7,11 @@
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.next-modules.reporting :as rep]
+            [cljs-uuid-utils.core :as uuid]
             [cljs.test :refer-macros [deftest is testing async use-fixtures]]
             [cljs-uuid-utils.core :as uuid]))
+
+(def test-state {:session {:tenant-id "f5b660ef-9d64-47c9-9905-2f27a74bc14c"}})
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Stat Query Tests
@@ -27,7 +30,7 @@
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-stat-query-response [:api-response :results])]
                  (a/>! resp-chan successful-stat-query-response)
-                 (set! st/get-active-tenant-id #(str "f5b660ef-9d64-47c9-9905-2f27a74bc14c"))
+                 (reset! st/sdk-state test-state)
                  (set! iu/api-request (fn [_]
                                         resp-chan))
                  (p/subscribe "cxengage/reporting/get-stat-query-response"
@@ -56,7 +59,7 @@
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-capacity-response [:api-response :results])]
                  (a/>! resp-chan successful-capacity-response)
-                 (set! st/get-active-tenant-id #(str "f5b660ef-9d64-47c9-9905-2f27a74bc14c"))
+                 (reset! st/sdk-state test-state)
                  (set! iu/api-request (fn [request]
                                         (is (= (get request :url) tenant-capacity-url))
                                         resp-chan))
@@ -67,8 +70,6 @@
                                 (done)))
                  (rep/get-capacity))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (deftest get-capacity--happy-test--resource
   (testing "get resource capacity function success"
     (async done
@@ -77,7 +78,7 @@
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-capacity-response [:api-response :results])]
                  (a/>! resp-chan successful-capacity-response)
-                 (set! st/get-active-tenant-id #(str "f5b660ef-9d64-47c9-9905-2f27a74bc14c"))
+                 (reset! st/sdk-state test-state)
                  (set! iu/api-request (fn [request]
                                         (is (= (get request :url) resource-capacity-url))
                                         resp-chan))
@@ -106,7 +107,7 @@
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-available-response [:api-response])]
                  (a/>! resp-chan successful-available-response)
-                 (set! st/get-active-tenant-id #(str "f5b660ef-9d64-47c9-9905-2f27a74bc14c"))
+                 (reset! st/sdk-state test-state)
                  (set! iu/api-request (fn [_]
                                         resp-chan))
                  (p/subscribe "cxengage/reporting/get-available-stats-response"
@@ -134,7 +135,7 @@
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-interaction-response [:api-response])]
                  (a/>! resp-chan successful-interaction-response)
-                 (set! st/get-active-tenant-id #(str "f5b660ef-9d64-47c9-9905-2f27a74bc14c"))
+                 (reset! st/sdk-state test-state)
                  (set! iu/api-request (fn [_]
                                         resp-chan))
                  (p/subscribe "cxengage/reporting/get-interaction-response"
@@ -160,7 +161,7 @@
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-contact-history-response [:api-response])]
                  (a/>! resp-chan successful-contact-history-response)
-                 (set! st/get-active-tenant-id #(str "f5b660ef-9d64-47c9-9905-2f27a74bc14c"))
+                 (reset! st/sdk-state test-state)
                  (set! iu/api-request (fn [_]
                                         resp-chan))
                  (p/subscribe "cxengage/reporting/get-contact-interaction-history-response"
@@ -169,3 +170,88 @@
                                 (set! iu/api-request old)
                                 (done)))
                  (rep/get-contact-interaction-history {:interaction-id "2937ac8b-380d-472b-9b9e-599097ee8c0d"}))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; Add Statistic Subscription Tests
+;; -------------------------------------------------------------------------- ;;
+
+(def successful-batch-response
+  {:status 200
+   :api-response {:results { :queue-length {:name "queue-length"
+                                            :type "interaction-count"
+                                            :user-friendly-name "Queue Length"}}}})
+
+(def successful-stat-subs-update
+  {:statistics {"c82d912c-2034-4b9e-a92a-f175870f5d8b" {:statistic "queue-length"
+                                                        :topic "cxengage/reporting/stat-subscription-added"}}})
+
+(def successful-stat-sub-response
+  {:stat-id "c82d912c-2034-4b9e-a92a-f175870f5d8b"})
+
+(def stat-subs (atom {}))
+
+(deftest add-stat-sub--happy-test--batch-response
+  (testing "add statistic subscription - batch success"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (go (let [old iu/api-request
+                     resp-chan (a/promise-chan)
+                     pubsub-expected-response (get-in successful-batch-response [:api-response :results])]
+                 (a/>! resp-chan successful-batch-response)
+                 (reset! st/sdk-state test-state)
+                 (set! iu/api-request (fn [_]
+                                        resp-chan))
+                 (p/subscribe "cxengage/reporting/batch-response"
+                              (fn [error topic response]
+                                (is (= pubsub-expected-response (ih/kebabify response)))
+                                (set! iu/api-request old)
+                                (reset! stat-subs)
+                                (done)))
+                 (rep/add-stat-subscription {:statistic "queue-length"}))))))
+
+(deftest add-stat-sub--happy-test--subscription-added
+  (testing "add statistic subscription - subscription success"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (go (let [old iu/api-request
+                     resp-chan (a/promise-chan)]
+                 (a/>! resp-chan successful-stat-sub-response)
+                 (set! rep/stat-subscriptions stat-subs)
+                 (set! uuid/make-random-uuid #(str "c82d912c-2034-4b9e-a92a-f175870f5d8b"))
+                 (reset! st/sdk-state test-state)
+                 (set! iu/api-request (fn [_]
+                                        resp-chan))
+                 (p/subscribe "cxengage/reporting/stat-subscription-added"
+                              (fn [error topic response]
+                                (is (= successful-stat-sub-response (ih/kebabify response)))
+                                (is (= @stat-subs successful-stat-subs-update))
+                                (set! iu/api-request old)
+                                (reset! stat-subs)
+                                (done)))
+                 (rep/add-stat-subscription {:statistic "queue-length"}))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; Remove Statistic Subscription Tests
+;; -------------------------------------------------------------------------- ;;
+
+(def successful-stat-removal
+  {:statistics nil})
+
+(deftest remove-stat-sub--happy-test
+  (testing "add statistic subscription - subscription success"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (go (let [old iu/api-request
+                     resp-chan (a/promise-chan)]
+                 (a/>! resp-chan successful-stat-sub-response)
+                 (set! rep/stat-subscriptions stat-subs)
+                 (reset! st/sdk-state test-state)
+                 (set! iu/api-request (fn [_]
+                                        resp-chan))
+                 (p/subscribe "cxengage/reporting/stat-subscription-removed"
+                              (fn [error topic response]
+                                (is (= @stat-subs successful-stat-removal))
+                                (set! iu/api-request old)
+                                (reset! stat-subs)
+                                (done)))
+                 (rep/remove-stat-subscription {:stat-id "c82d912c-2034-4b9e-a92a-f175870f5d8b"}))))))

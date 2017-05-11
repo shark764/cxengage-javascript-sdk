@@ -96,7 +96,7 @@
    [params]
    (let [{:keys [stat-id topic callback]} params]
        (let [new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
-         (swap! @stat-subscriptions assoc :statistics new-stats)
+         (swap! stat-subscriptions assoc :statistics new-stats)
          (p/publish {:topics topic
                      :response new-stats
                      :callback callback}))))
