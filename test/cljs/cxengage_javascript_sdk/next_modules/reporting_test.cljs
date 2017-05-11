@@ -2,14 +2,12 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.pubsub :as p]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.next-modules.reporting :as rep]
             [cljs-uuid-utils.core :as uuid]
-            [cljs.test :refer-macros [deftest is testing async use-fixtures]]
-            [cljs-uuid-utils.core :as uuid]))
+            [cljs.test :refer-macros [deftest is testing async]]))
 
 (def test-state {:session {:tenant-id "f5b660ef-9d64-47c9-9905-2f27a74bc14c"}})
 
