@@ -117,7 +117,8 @@
   (comp (testing*)
         (watch)
         (test-cljs :js-env :phantom
-                   :namespaces ["cxengage-javascript-sdk.next-modules.authentication-test"])))
+                   ;;:namespaces ["cxengage-javascript-sdk.next-modules.authentication-test"]
+                   )))
 
 (deftask dev []
   (comp (development*)

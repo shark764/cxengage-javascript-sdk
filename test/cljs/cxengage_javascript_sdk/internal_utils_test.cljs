@@ -86,7 +86,3 @@
             {:tenant-id "a4a4046c-fc8d-4c18-b058-dd4e8f8cd06d"
              :interaction-id "ea10fdc7-47f4-482e-81a8-4208640c7510"
              :artifact-file-id "6624b161-085f-4bc0-935c-6e1463cad5f2"})))))
-
-(deftest camelify-test
-  (testing "camelify"
-    (is (= {:camelCasedKey "asdf"} (js->clj (iu/camelify {:camel-cased-key "asdf"}) :keywordize-keys true)))))

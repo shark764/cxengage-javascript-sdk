@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 * ** BREAKING ** refactored entities module - each entity now has it's own function and will require passing the proper type-id ie; "resource-id" rather than the generic "entity-id".
-* Reporting functions moved to Reporting Module.
-* added stat-query function to reporting module - allows for one-off batch queries
 * ** BREAKING ** changed global window exposure from "serenova.cxengage.api...." to just "CxEngage"
 * ** BREAKING ** removed (due to them now being necessary) the "capabilities" pub/sub messages
-  * Because of the above two changes, the usage for initializating the SDK is now: CxEngage.initialize(options). Beyond that you will need to just reference "CxEngage" on the window, and *not create an alias to it like you used to* (via var SDK = serenova.cxengage.initialioze(options);)
+  * Because of the above two changes, the usage for initializating the SDK is now: CxEngage.initialize(options). Beyond that you will need to just reference "CxEngage" on the window, and *not create an alias to it like you used to* (via var SDK = serenova.cxengage.initialize(options);)
+* Reporting functions moved to Reporting Module.
+* added stat-query function to reporting module - allows for one-off batch queries
 * fixed pub/sub system to only call callbacks for the subscribers whose topics match
 * renamed "goOffline" (in session) - changed to "logout" in authentication
 * fixed pub/sub system to only call callbacks for the subscribers whose topics match
