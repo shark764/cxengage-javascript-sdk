@@ -32,10 +32,7 @@
        (do (go (let [response (a/<! (contact-request request-url body method preserve-casing?))
                      {:keys [status api-response]} response
                      {:keys [result]} api-response]
-                 (if (not= status 200)
-                   (p/publish {:topics topic
-                               :error (e/client-request-err)
-                               :callback callback})
+                 (when (= status 200)
                    (p/publish {:topics topic
                                :response result
                                :callback callback} true))))
@@ -210,19 +207,16 @@
        (p/publish {:topics topic
                    :error (e/args-failed-spec-err)
                    :callback callback})
-       (let [request-map {:url request-url
-                          :method method}]
-         (go (let [response (a/<! (iu/api-request request-map true))
-                   {:keys [status api-response]} response
-                   {:keys [result]} api-response]
-               (if (not= status 200)
-                 (p/publish {:topics topic
-                             :error (e/client-request-err)
-                             :callback callback})
-                 (p/publish {:topics topic
-                             :response result
-                             :callback callback} true))))
-         nil)))))
+       (go (let [request-map {:url request-url
+                              :method method}
+                 response (a/<! (iu/api-request request-map true))
+                 {:keys [status api-response]} response
+                 {:keys [result]} api-response]
+             (when (= status 200)
+               (p/publish {:topics topic
+                           :response result
+                           :callback callback} true)))
+           nil)))))
 
 (s/def ::get-layout-params
   (s/keys :req-un [::specs/layoutId]

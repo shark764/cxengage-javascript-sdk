@@ -138,6 +138,7 @@
                  :initialize-outbound-sms-response "cxengage/interactions/messaging/initialize-outbound-sms-response"
                  :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
                  :failed-to-refresh-sqs-integration "cxengage/errors/fatal/failed-to-refresh-sqs-integration"
+                 :mqtt-failed-to-connect "cxengage/errors/fatal/mqtt-failed-to-connect"
                  })
 
 (defn get-topic

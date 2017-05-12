@@ -76,18 +76,14 @@
                           :params {:QueueUrl original-sqs-queue-url}})
         original-sqs-queue (AWS.SQS. options)
         original-sqs-needs-refresh-time (+ (.getTime (js/Date.)) most-of-ttl)]
-
     (ih/send-core-message {:type :module-registration-status
                            :status :success
                            :module-name "sqs"})
-
     ;; Start the loop to poll SQS, initially with the first SQS Queue object + url that we instantiated
     (go-loop [sqs-queue original-sqs-queue
               sqs-queue-url original-sqs-queue-url
               sqs-needs-refresh-time original-sqs-needs-refresh-time]
-
       (if (> (.getTime (js/Date.)) sqs-needs-refresh-time)
-
         ;; 1/2 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
         (do (js/console.info "Refreshing SQS integration")
             (let [tenant-id (state/get-active-tenant-id)
@@ -132,7 +128,6 @@
                             (recur new-sqs-queue
                                    new-sqs-queue-url
                                    new-sqs-needs-refresh-time))))))))))
-
         ;; It is still less than 1/2 of the TTL for the previously instantiated SQS Queue object, continue using the same one
         (let [response< (receive-message* sqs-queue sqs-queue-url)
               value (a/<! response<)]

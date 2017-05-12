@@ -35,11 +35,14 @@
                                      :state "offline"}}
         {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
         new-state-data (:result api-response)]
-    (when (= status 200)
-      (state/set-session-expired! true)
-      (p/publish {:topics topic
-                  :response new-state-data
-                  :callback callback}))))
+    (if (= status 200)
+      (do (state/set-session-expired! true)
+          (p/publish {:topics topic
+                      :response new-state-data
+                      :callback callback}))
+      (p/publish {:topic topic
+                  :callback callback
+                  :error (e/logout-failed-err)}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.authentication.login({
@@ -67,7 +70,7 @@
       (let [login-request {:method :post
                            :url (iu/api-url "login")}
             {:keys [status api-response]} (a/<! (iu/api-request login-request))]
-        (when (= status 200)
+        (if (= status 200)
           (let [user-identity (:result api-response)
                 tenants (:tenants user-identity)]
             (state/set-user-identity! user-identity)
@@ -75,7 +78,10 @@
                         :response tenants})
             (p/publish {:topics topic
                         :response user-identity
-                        :callback callback})))))))
+                        :callback callback}))
+          (p/publish {:topics topic
+                      :callback callback
+                      :error (e/login-failed-err)}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Authentication Module

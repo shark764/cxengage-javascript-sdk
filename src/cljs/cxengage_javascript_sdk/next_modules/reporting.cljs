@@ -34,7 +34,7 @@
             (if (not= status 200)
               (do (js/console.error "Batch request failed.")
                   (p/publish {:topics topic
-                              :error (e/client-request-err)}))
+                              :error (e/reporting-batch-request-failed-err)}))
               (do (js/console.info "Batch request received!")
                   (p/publish {:topics topic
                               :response results})
