@@ -275,10 +275,10 @@
                                :status :failure
                                :module-name module-name})
         (do (ih/register {:api {:interactions {:email {:add-attachment (partial add-attachment this)
-                                                    :remove-attachment (partial remove-attachment this)
-                                                    :get-attachment-url (partial get-attachment-url this)
-                                                    :send-reply (partial send-reply this)}}}
-                       :module-name module-name})
+                                                       :remove-attachment (partial remove-attachment this)
+                                                       :get-attachment-url (partial get-attachment-url this)
+                                                       :send-reply (partial send-reply this)}}}
+                          :module-name module-name})
             (ih/send-core-message {:type :module-registration-status
                                    :status :success
                                    :module-name module-name})))))

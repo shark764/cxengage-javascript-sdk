@@ -15,27 +15,19 @@
   `(defn ~name
      ([& args#]
       (let [args# (map cxengage-javascript-sdk.interop-helpers/extract-params args#)
-            callback# (second args#)]
+            callback# (if (fn? (first args#)) (first args#) (second args#))]
         (if-let [error# (cond
 
                           (or (> (count args#) 2))
                           (cxengage-javascript-sdk.domain.errors/wrong-number-of-sdk-fn-args-err)
 
-                          (and (first args#)
-                               (not (map? (first args#))))
-                          (cxengage-javascript-sdk.domain.errors/params-isnt-a-map-err)
-
-                          (and (not (nil? callback#))
-                               (not (fn? callback#)))
-                          (cxengage-javascript-sdk.domain.errors/callback-isnt-a-function-err)
-
                           :else false)]
           (cxengage-javascript-sdk.pubsub/publish {:topics ~topic
                                                    :error error#
                                                    :callback callback#})
-          (let [params# (first args#)
+          (let [params# (if (fn? (first args#)) {:callback (first args#)} (first args#))
                 params# (-> params#
-                            (assoc :callback (second args#))
+                            (assoc :callback callback#)
                             (assoc :topic ~topic))
                 ~'params params#]
             (if (not (cljs.spec/valid? ~spec params#))

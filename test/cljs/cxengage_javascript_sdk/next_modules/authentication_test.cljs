@@ -62,27 +62,3 @@
                           :password "oyoyoyoy"}
                          (fn [] nil)
                          "this should cause the fn to throw an error")))))
-
-(deftest login-api--sad-test--invalid-args-error-2
-  (testing "login function failure - didn't pass a map"
-    (async done
-           (reset! p/sdk-subscriptions {})
-           (let [pubsub-expected-response (js->clj (ih/camelify (e/params-isnt-a-map-err)))]
-             (p/subscribe "cxengage/authentication/login-response"
-                          (fn [error topic response]
-                            (is (= pubsub-expected-response (js->clj error)))
-                            (done)))
-             (auth/login "test")))))
-
-(deftest login-api--sad-test--invalid-args-error-3
-  (testing "login function failure - did pass a callback, but it isnt a function"
-    (async done
-           (reset! p/sdk-subscriptions {})
-           (let [pubsub-expected-response (js->clj (ih/camelify (e/callback-isnt-a-function-err)))]
-             (p/subscribe "cxengage/authentication/login-response"
-                          (fn [error topic response]
-                            (is (= pubsub-expected-response (js->clj error)))
-                            (done)))
-             (auth/login {:username "testyoyoyoy"
-                          :password "oyoyoyoy"}
-                         "this should cause the fn to throw an error")))))
