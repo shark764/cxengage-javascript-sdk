@@ -22,9 +22,10 @@
             [cxengage-javascript-sdk.next-modules.entities :as entities]
             [cxengage-javascript-sdk.next-modules.messaging :as messaging]
             [cxengage-javascript-sdk.next-modules.sqs :as sqs]
+            [cxengage-javascript-sdk.next-modules.logging :as logging]
 
             [cxengage-javascript-sdk.modules.contacts :as contacts]
-            [cxengage-javascript-sdk.modules.logging :as logging]
+
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.domain.errors :as e]))
 
@@ -64,7 +65,7 @@
         interaction-module (interaction/map->InteractionModule.)
         entities-module (entities/map->EntitiesModule.)
         contacts-module (contacts/map->ContactsModule. (gen-new-initial-module-config comm<))
-        logging-module (logging/map->LoggingModule. (gen-new-initial-module-config comm<))]
+        logging-module (logging/map->LoggingModule.)]
     (doseq [module [auth-module session-module interaction-module entities-module contacts-module logging-module]]
       (start-internal-module module))))
 
