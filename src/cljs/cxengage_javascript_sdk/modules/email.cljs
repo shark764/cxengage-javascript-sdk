@@ -94,16 +94,9 @@
                        :callback callback})
            nil)))))
 
-(s/def ::cc vector?)
-(s/def ::bcc vector?)
-(s/def ::html-body string?)
-(s/def ::plain-text-body string?)
-(s/def ::subject string?)
-(s/def ::to vector?)
-
 (s/def ::send-reply-params
-  (s/keys :req-un [::cc ::bcc ::html-body ::plain-text-body ::subject ::to ::specs/interaction-id]
-          :opt-un [::callback]))
+  (s/keys :req-un [::specs/cc ::specs/bcc ::specs/html-body ::specs/plain-text-body ::specs/subject ::specs/to ::specs/interaction-id]
+          :opt-un [::specs/callback]))
 
 (defn html-body-id [files]
   (js/console.log "[Email Processing] Files when building html body id" files)
