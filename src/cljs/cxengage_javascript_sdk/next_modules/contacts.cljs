@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.modules.contacts
+(ns cxengage-javascript-sdk.next-modules.contacts
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
@@ -11,27 +11,30 @@
             [cxengage-javascript-sdk.state :as state]))
 
 (defn contact-request
-  ([url body method params topic-key spec module preserve-casing?]
-   (contact-request url body method params topic-key spec module preserve-casing? nil))
-  ([url body method params topic-key spec module preserve-casing? query]
-   (let [api-url (get-in module [:config :api-url])
-         {:keys [callback]} params
-         module-state @(:state module)
-         base-url (str api-url (get-in module-state [:urls (:base url)]) query)
-         request-url (iu/build-api-url-with-params
-                      base-url
+  ([url body method params topic-key spec preserve-casing?]
+   (contact-request url body method params topic-key spec preserve-casing? nil))
+  ([url body method params topic-key spec preserve-casing? query]
+   (let [{:keys [callback]} params
+         urls {:single-contact-url "tenants/tenant-id/contacts/contact-id"
+               :multiple-contact-url "tenants/tenant-id/contacts"
+               :merge-contacts-url "tenants/tenant-id/contacts/merge"
+               :multiple-attribute-url "tenants/tenant-id/contacts/attributes"
+               :multiple-layout-url "tenants/tenant-id/contacts/layouts"
+               :single-layout-url "tenants/tenant-id/contacts/layouts/layout-id"}
+         request-url (iu/api-url
+                      (get urls (:base url))
                       (:params url))
          topic (p/get-topic topic-key)]
      (if-not (s/valid? spec params)
        (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data spec params))
+                   :error (e/args-failed-spec-err)
                    :callback callback})
        (do (go (let [response (a/<! (contact-request request-url body method preserve-casing?))
                      {:keys [status api-response]} response
                      {:keys [result]} api-response]
                  (if (not= status 200)
                    (p/publish {:topics topic
-                               :error (e/api-error api-response)
+                               :error (e/client-request-err)
                                :callback callback})
                    (p/publish {:topics topic
                                :response result
@@ -58,72 +61,73 @@
           :opt-un [::specs/callback]))
 
 (defn get-contact
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
+  ([] (e/wrong-number-of-sdk-fn-args-err))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (get-contact module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (get-contact (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [{:keys [contactId callback] :as params} (ih/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
                        :contact-id contactId}}
          method :get]
-     (contact-request url nil method params :get-contact ::get-contact-params module true))))
+     (contact-request url nil method params :get-contact ::get-contact-params true))))
 
 (s/def ::get-contacts-params
   (s/keys :req-un []
           :opt-un [::specs/callback]))
 
 (defn get-contacts
-  ([module]
-   (get-contacts module {}))
-  ([module params & others]
+  ([]
+   (get-contacts {}))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (get-contacts module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
-   (let [{:keys [callback] :as params} (ih/extract-params params)
+     (get-contacts (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
+   (let [params (if (fn? params) {:callback params} params)
+         {:keys [callback] :as params} (ih/extract-params params)
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get]
-     (contact-request url nil method params :get-contacts ::get-contacts-params module true))))
+     (contact-request url nil method params :get-contacts ::get-contacts-params true))))
 
 (s/def ::search-contacts-params
   (s/keys :req-un [::specs/query]
           :opt-un [::specs/callback]))
 
 (defn search-contacts
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
+  ([] (e/wrong-number-of-sdk-fn-args-err))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (search-contacts module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (search-contacts (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [{:keys [query callback] :as params} (ih/extract-params params true)
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get
          query (get-query-str query)]
-     (contact-request url nil method params :search-contacts ::search-contacts-params module true query))))
+     (contact-request url nil method params :search-contacts ::search-contacts-params true query))))
 
 (s/def ::create-contact-params
   (s/keys :req-un [::specs/attributes]
           :opt-un [::specs/callback]))
 
 (defn create-contact
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
+  ([] (e/wrong-number-of-sdk-fn-args-err))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (create-contact module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (create-contact (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [{:keys [attributes callback] :as params} (ih/extract-params params true)
          url {:base :multiple-contact-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :post
          body {:attributes attributes}]
-     (contact-request url body method params :create-contact ::create-contact-params module true))))
+     (contact-request url body method params :create-contact ::create-contact-params true))))
 
 (s/def ::update-contact-params
   (s/keys :req-un [::specs/contactId
@@ -131,37 +135,37 @@
           :opt-un [::specs/callback]))
 
 (defn update-contact
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
+  ([] (e/wrong-number-of-sdk-fn-args-err))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (update-contact module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (update-contact (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [{:keys [attributes contactId callback] :as params} (ih/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
                        :contact-id contactId}}
          method :put
          body {:attributes attributes}]
-     (contact-request url body method params :update-contact ::update-contact-params module true))))
+     (contact-request url body method params :update-contact ::update-contact-params true))))
 
 (s/def ::delete-contact-params
   (s/keys :req-un [::specs/contactId]
           :opt-un [::specs/callback]))
 
 (defn delete-contact
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
+  ([] (e/wrong-number-of-sdk-fn-args-err))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (delete-contact module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (delete-contact (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [{:keys [contactId callback] :as params} (ih/extract-params params true)
          url {:base :single-contact-url
               :params {:tenant-id (state/get-active-tenant-id)
                        :contact-id contactId}}
          method :delete]
-     (contact-request url nil method params :delete-contact ::delete-contact-params module true))))
+     (contact-request url nil method params :delete-contact ::delete-contact-params true))))
 
 (s/def ::merge-contacts-params
   (s/keys :req-un [::specs/contactIds
@@ -169,47 +173,42 @@
           :opt-un [::specs/callback]))
 
 (defn merge-contacts
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
+  ([] (e/wrong-number-of-sdk-fn-args-err))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (merge-contacts module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (merge-contacts (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [{:keys [contactIds attributes callback] :as params} (ih/extract-params params true)
          url {:base :merge-contacts-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :post
          body {:attributes attributes
                :contactIds contactIds}]
-     (contact-request url body method params :merge-contacts ::merge-contacts-params module true))))
+     (contact-request url body method params :merge-contacts ::merge-contacts-params true))))
 
 (s/def ::list-attributes-params
   (s/keys :req-un []
           :opt-un [::specs/callback]))
 
 (defn list-attributes
-  ([module]
-   (list-attributes module {}))
-  ([module params & others]
+  ([]
+   (list-attributes {}))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (list-attributes module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (list-attributes (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [params (if (fn? params) {:callback params} params)
          {:keys [callback] :as params} (ih/extract-params params true)
-         url {:base :multiple-attribute-url
-              :params {:tenant-id (state/get-active-tenant-id)}}
          method :get
-         module-state @(:state module)
-         api-url (get-in module [:config :api-url])
-         base-url (str api-url (get-in module-state [:urls (:base url)]))
-         request-url (iu/build-api-url-with-params
-                      base-url
-                      (:params url))
+         request-url (iu/api-url
+                      "tenants/tenant-id/contacts/attributes"
+                      {:tenant-id (state/get-active-tenant-id)})
          topic (p/get-topic :list-attributes)]
      (if-not (s/valid? ::list-attributes-params params)
        (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::list-attributes-params params))
+                   :error (e/args-failed-spec-err)
                    :callback callback})
        (let [request-map {:url request-url
                           :method method}]
@@ -218,7 +217,7 @@
                    {:keys [result]} api-response]
                (if (not= status 200)
                  (p/publish {:topics topic
-                             :error (e/api-error api-response)
+                             :error (e/client-request-err)
                              :callback callback})
                  (p/publish {:topics topic
                              :response result
@@ -230,71 +229,53 @@
           :opt-un [::specs/callback]))
 
 (defn get-layout
-  ([module] (e/wrong-number-of-sdk-fn-args-err))
-  ([module params & others]
+  ([] (e/wrong-number-of-sdk-fn-args-err))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (get-layout module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (get-layout (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [{:keys [layoutId callback] :as params} (ih/extract-params params true)
          url {:base :single-layout-url
               :params {:tenant-id (state/get-active-tenant-id)
                        :layout-id layoutId}}
          method :get]
-     (contact-request url nil method params :get-layout ::get-layout-params module true))))
+     (contact-request url nil method params :get-layout ::get-layout-params true))))
 
 (s/def ::list-layouts-params
   (s/keys :req-un []
           :opt-un [::specs/callback]))
 
 (defn list-layouts
-  ([module]
-   (list-layouts module {}))
-  ([module params & others]
+  ([]
+   (list-layouts {}))
+  ([params & others]
    (if-not (fn? (js->clj (first others)))
      (e/wrong-number-of-sdk-fn-args-err)
-     (list-layouts module (merge (ih/extract-params params true) {:callback (first others)}))))
-  ([module params]
+     (list-layouts (merge (ih/extract-params params true) {:callback (first others)}))))
+  ([params]
    (let [params (if (fn? params) {:callback params} params)
          {:keys [callback] :as params} (ih/extract-params params true)
          url {:base :multiple-layout-url
               :params {:tenant-id (state/get-active-tenant-id)}}
          method :get]
-     (contact-request url nil method params :list-layouts ::list-layouts-params module true))))
-
-(def initial-state
-  {:module-name :contacts
-   :topics {:get-contact "contacts/get"
-            :search-contacts "contacts/search"
-            :create-contact "contacts/create"
-            :update-contact "contacts/update"
-            :delete-contact "contacts/delete"
-            :list-attributes "contacts/attributes"
-            :get-layout "contact/layouts/get"
-            :list-layouts "contacts/layouts"}
-   :urls {:single-contact-url "tenants/tenant-id/contacts/contact-id"
-          :multiple-contact-url "tenants/tenant-id/contacts"
-          :merge-contacts-url "tenants/tenant-id/contacts/merge"
-          :multiple-attribute-url "tenants/tenant-id/contacts/attributes"
-          :multiple-layout-url "tenants/tenant-id/contacts/layouts"
-          :single-layout-url "tenants/tenant-id/contacts/layouts/layout-id"}})
+     (contact-request url nil method params :list-layouts ::list-layouts-params true))))
 
 (defrecord ContactsModule [config state core-messages<]
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [module-name (get @(:state this) :module-name)]
-      (ih/register {:api {module-name {:get (partial get-contact this)
-                                    :get-all (partial get-contacts this)
-                                    :search (partial search-contacts this)
-                                    :create (partial create-contact this)
-                                    :update (partial update-contact this)
-                                    :delete  (partial delete-contact this)
-                                    :merge (partial merge-contacts this)
-                                    :list-attributes (partial list-attributes this)
-                                    :get-layout (partial get-layout this)
-                                    :list-layouts (partial list-layouts this)}}
-                 :module-name module-name})
+    (let [module-name :contacts]
+      (ih/register {:api {module-name {:get get-contact
+                                       :get-all get-contacts
+                                       :search search-contacts
+                                       :create create-contact
+                                       :update update-contact
+                                       :delete delete-contact
+                                       :merge merge-contacts
+                                       :list-attributes list-attributes
+                                       :get-layout get-layout
+                                       :list-layouts list-layouts}}
+                    :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
                              :module-name module-name})))

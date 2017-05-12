@@ -23,8 +23,7 @@
             [cxengage-javascript-sdk.next-modules.messaging :as messaging]
             [cxengage-javascript-sdk.next-modules.sqs :as sqs]
             [cxengage-javascript-sdk.next-modules.logging :as logging]
-
-            [cxengage-javascript-sdk.modules.contacts :as contacts]
+            [cxengage-javascript-sdk.next-modules.contacts :as contacts]
 
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.domain.errors :as e]))
