@@ -300,6 +300,16 @@
                    ::specs/interrupt-type]
           :opt-un [::specs/callback]))
 
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.sendCustomInterrupt({
+;;   interactionId: "{{uuid}}",
+;;   interruptType: "{{string}}",
+;;   interruptBody: "{{object}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+
 (def-sdk-fn generic-interrupt
   ::generic-interrupt-params
   (p/get-topic :send-custom-interrupt-acknowledged)
