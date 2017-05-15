@@ -33,10 +33,10 @@
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
   [module]
   (let [{:keys [api module-name]} module
-        old-api (ih/kebabify (aget js/window "CxEngage"))
-        new-api (iu/deep-merge old-api api)]
+        old-api (ih/kebabify (ih/get-sdk-global))
+        new-api (->> (iu/deep-merge old-api api) (transform-keys camel/->camelCase) (clj->js))]
     (when api
-      (aset js/window "CxEngage" (->> new-api (transform-keys camel/->camelCase) (clj->js))))))
+      (ih/set-sdk-global new-api))))
 
 (defn start-internal-module
   "Given an internal Clojurescript SDK module that adheres to the SDKModule protocol, calls the (start) and (refresh-integration) methods to turn the module on."
@@ -117,7 +117,7 @@
                                  :send-core-message #(a/put! module-comm-chan %)
                                  :register-module register-module
                                  :start-module start-external-module})]
-          (aset js/window "CxEngage" core)
+          (ih/set-sdk-global core)
           (state/set-base-api-url! base-url)
           (state/set-consumer-type! consumer-type)
           (state/set-log-level! log-level l/levels)
