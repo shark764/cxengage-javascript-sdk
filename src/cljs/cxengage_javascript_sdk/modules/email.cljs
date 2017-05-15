@@ -14,6 +14,14 @@
             [cxengage-javascript-sdk.internal-utils :as iu]
             [ajax.core :as ax :refer [POST]]))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.email.getAttachmentUrl({
+;;   interactionId: {{uuid}},
+;;   artifactId: {{uuid}},
+;;   artifactFileId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
 (s/def ::get-attachment-url-params
   (s/keys :req-un [::specs/interaction-id ::specs/artifact-id ::specs/artifact-file-id]
           :opt-un [::specs/callback]))
@@ -39,6 +47,13 @@
                   :response attachment
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.email.addAttachment({
+;;   interactionId: {{uuid}},
+;;   file: {{HTML5 File}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
 (s/def ::add-attachment-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
@@ -56,6 +71,13 @@
                 :response {:interaction-id interaction-id :attachment-id attachment-id :filename (.-name file)}
                 :callback callback})))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.email.removeAttachment({
+;;   interactionId: {{uuid}},
+;;   attachmentId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
 (s/def ::remove-attachment-params
   (s/keys :req-un [::specs/attachment-id ::specs/interaction-id]
           :opt-un [::specs/callback]))
@@ -70,6 +92,18 @@
     (p/publish {:topics topic
                 :response {:interaction-id interaction-id :attachment-id attachment-id}
                 :callback callback})))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.email.sendReply({
+;;   interactionId: {{uuid}},
+;;   to: {{string}},
+;;   subject: {{string}},
+;;   plainTextBody: {{string}},
+;;   htmlBody: {{string}},
+;;   bcc: {{string}},
+;;   cc: {{string}}
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (s/def ::send-reply-params
   (s/keys :req-un [::specs/cc ::specs/bcc ::specs/html-body ::specs/plain-text-body ::specs/subject ::specs/to ::specs/interaction-id]
