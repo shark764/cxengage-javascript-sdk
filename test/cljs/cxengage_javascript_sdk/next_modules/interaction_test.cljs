@@ -8,8 +8,8 @@
             [cxengage-javascript-sdk.state :as state]
             [cljs.test :refer-macros [deftest is testing async]]))
 
-(deftest generic-interrupt-test
-  (testing "the generic-interrupt fn"
+(deftest custom-interrupt-test
+  (testing "the custom-interrupt fn"
     (async done
            (reset! p/sdk-subscriptions {})
            (state/reset-state)
@@ -33,4 +33,4 @@
                                         (let [{:keys [url method body]} request-map
                                               {:keys [interrupt-body interrupt-type interaction-id]} body]
                                           the-chan)))
-                 (interaction/generic-interrupt {:interrupt-type "unit-test" :interrupt-body {} :interaction-id interaction-id}))))))
+                 (interaction/custom-interrupt {:interrupt-type "unit-test" :interrupt-body {} :interaction-id interaction-id}))))))
