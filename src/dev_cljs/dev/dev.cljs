@@ -3,5 +3,6 @@
 
 (js/console.info "                _      _      _\n              >(.)__ <(.)__ =(.)__\n               (___/  (___/  (___/\n\n              we are the ducklets of\n           safe code, your code will run\n            without errors, but only if\n           you say \"compile well duckos\"\n\n")
 
-(devtools/install! [:formatters :hints])
+;; Enables pretty-printing of clojure data structures in your browser console
+(devtools/install! [:formatters :hints :async])
 (enable-console-print!)

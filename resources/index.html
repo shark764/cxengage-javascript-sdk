@@ -91,7 +91,7 @@
 
   <script>
   // var SDK = serenova.cxengage.initialize({
-    var SDK = cxengage_javascript_sdk.core.initialize({
+    CxEngage.initialize({
       "environment":"dev",
       "baseUrl":"https://dev-api.cxengagelabs.net/v1/",
       "logLevel":"debug",
@@ -110,9 +110,11 @@
       voiceTimer:undefined
     };
 
-    SDK.subscribe('cxengage', function(error, topic, response) {
+    CxEngage.subscribe('cxengage', function(error, topic, response) {
 
-      if (error) { console.log('Error:', error); }
+      console.warn('Received pubsub for: ' + topic, error, response);
+
+      if (error) { return console.log('Error in things:', error, topic, response); }
 
       switch(topic) {
         case 'cxengage/authentication/login-response':
@@ -174,7 +176,7 @@
           break;
         case 'cxengage/interactions/wrapup-started':
           $('#' + response.interactionId + ' #responseArea').hide();
-          $('#' + response.interactionId).append('<button onclick="SDK.interactions.endWrapup({interactionId:\''+response.interactionId+'\'})">End Wrapup</button>');
+          $('#' + response.interactionId).append('<button onclick="CxEngage.interactions.endWrapup({interactionId:\''+response.interactionId+'\'})">End Wrapup</button>');
           break;
         case 'cxengage/interactions/unfocus-acknowledged':
           handleButtonSwitch(error, topic, response, 'focus', 'off');
@@ -196,9 +198,6 @@
           break;
         case 'cxengage/capabilities/voice-available':
           handleVoiceEnabled(error, topic, response);
-          break;
-        case 'cxengage/capabilities/messaging-available':
-          handleMessagingEnabled(error, topic, response);
           break;
         case 'cxengage/interactions/wrapup-started':
           console.log("Wrapup started " + response);
@@ -255,18 +254,6 @@
       } else {
         $('#extension-select, #esbutton').attr('disabled','disabled');
       }
-    };
-
-    var handleVoiceEnabled = function(error, topic, response) {
-      if (error) return console.error('uh oh');
-      $('.call-controls').show();
-      SDK = serenova.cxengage.api;
-    };
-
-    var handleMessagingEnabled = function(error, topic, response) {
-      if (error) return console.error('uh oh');
-      $('.messaging-controls').show();
-      SDK = serenova.cxengage.api;
     };
 
     var handleNewMessagingMessage = function(error, topic, response) {
@@ -506,7 +493,6 @@
     var populateTenantsDropdown = function(tenants) {
       $('#tenantSelect option').remove();
       _.each(tenants, function(t) {
-        // if (t.tenantId === 'b1095ee0-eeed-11e6-b864-e898003f3411') {
         if (t.tenantId === '3b639eb0-febc-11e6-98a7-36051d50f3bf') {
           $('#tenantSelect').append('<option value="' + t.tenantId + '" selected="selected">' + t.tenantName + '</option>');
         } else {
@@ -521,83 +507,83 @@
      *
      */
     var acceptEmailInteraction = function(miid) {
-      SDK.interactions.accept({interactionId:miid});
+      CxEngage.interactions.accept({interactionId:miid});
     };
     var rejectEmailInteraction = function(miid) {
-      SDK.interactions.reject({interactionId:miid});
+      CxEngage.interactions.reject({interactionId:miid});
     };
     var endEmailInteraction = function(miid) {
-      SDK.interactions.end({interactionId:miid});
+      CxEngage.interactions.end({interactionId:miid});
     };
     var acceptMessagingInteraction = function(miid) {
-      SDK.interactions.accept({interactionId:miid});
+      CxEngage.interactions.accept({interactionId:miid});
     };
     var rejectMessagingInteraction = function(miid) {
-      SDK.interactions.reject({interactionId:miid});
+      CxEngage.interactions.reject({interactionId:miid});
     };
     var endMessagingInteraction = function(miid) {
-      SDK.interactions.end({interactionId:miid});
+      CxEngage.interactions.end({interactionId:miid});
     };
     var sendMessage = function(miid) {
-      SDK.interactions.messaging.sendMessage({interactionId:miid,message:$('#' + miid + ' .msgText').val()})
+      CxEngage.interactions.messaging.sendMessage({interactionId:miid,message:$('#' + miid + ' .msgText').val()})
       $('#' + miid + ' .msgText').val('');
     };
     var selectActiveTenant = function() {
       var tid = $('#tenantSelect').val();
-      SDK.session.setActiveTenant({tenantId:tid});
+      CxEngage.session.setActiveTenant({tenantId:tid});
     };
     var selectExtension = function() {
       state.extensionId = $('#extension-select').val();
     };
     var goReady = function() {
-      SDK.session.goReady({ extensionValue: state.extensionId });
+      CxEngage.session.goReady({ extensionValue: state.extensionId });
     };
     var goNotReady = function() {
-      SDK.session.goNotReady();
+      CxEngage.session.goNotReady();
     };
     var goOffline = function() {
-      SDK.session.end();
+      CxEngage.session.end();
     };
     var goInbound = function() {
-      SDK.session.setDirection({direction:'inbound'});
+      CxEngage.session.setDirection({direction:'inbound'});
     };
     var goOutbound = function() {
-      SDK.session.setDirection({direction:'outbound'});
+      CxEngage.session.setDirection({direction:'outbound'});
     };
     var acceptCall = function() {
-      SDK.interactions.accept({ interactionId: state.voiceInteractionId });
+      CxEngage.interactions.accept({ interactionId: state.voiceInteractionId });
     };
     var endCall = function() {
-      SDK.interactions.end({ interactionId: state.voiceInteractionId });
+      CxEngage.interactions.end({ interactionId: state.voiceInteractionId });
     };
     var focusCall = function() {
-      SDK.interactions.focus({interactionId:state.voiceInteractionId});
+      CxEngage.interactions.focus({interactionId:state.voiceInteractionId});
     };
     var unfocusCall = function() {
-      SDK.interactions.unfocus({interactionId:state.voiceInteractionId});
+      CxEngage.interactions.unfocus({interactionId:state.voiceInteractionId});
     };
     var holdCall = function() {
-      SDK.interactions.voice.hold({interactionId:state.voiceInteractionId});
+      CxEngage.interactions.voice.hold({interactionId:state.voiceInteractionId});
     };
     var resumeCall = function() {
-      SDK.interactions.voice.resume({interactionId:state.voiceInteractionId});
+      CxEngage.interactions.voice.resume({interactionId:state.voiceInteractionId});
     };
     var startRecordingCall = function() {
-      SDK.interactions.voice.startRecording({interactionId:state.voiceInteractionId});
+      CxEngage.interactions.voice.startRecording({interactionId:state.voiceInteractionId});
     };
     var stopRecordingCall = function() {
-      SDK.interactions.voice.stopRecording({interactionId:state.voiceInteractionId});
+      CxEngage.interactions.voice.stopRecording({interactionId:state.voiceInteractionId});
     };
     var muteCall = function() {
-      SDK.interactions.voice.mute({interactionId:state.voiceInteractionId,targetResourceId:state.currentUserId});
+      CxEngage.interactions.voice.mute({interactionId:state.voiceInteractionId,targetResourceId:state.currentUserId});
     };
     var unmuteCall = function() {
-      SDK.interactions.voice.unmute({interactionId:state.voiceInteractionId,targetResourceId:state.currentUserId});
+      CxEngage.interactions.voice.unmute({interactionId:state.voiceInteractionId,targetResourceId:state.currentUserId});
     };
     var login = function() {
       var username = $('#username').val();
       var password = $('#password').val();
-      SDK.authentication.login({username:username,password:password});
+      CxEngage.authentication.login({username:username,password:password});
     };
   </script>
 </body>

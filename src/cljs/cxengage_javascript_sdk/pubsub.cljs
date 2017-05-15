@@ -1,13 +1,7 @@
 (ns cxengage-javascript-sdk.pubsub
-  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.spec :as s]
-            [cljs.core.async :as a]
             [clojure.string :as string]
-            [clojure.set :as set]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
-            [cxengage-javascript-sdk.domain.errors :as e]
-            [cxengage-javascript-sdk.state :as st]
-            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
@@ -39,6 +33,7 @@
                  :create-contact "cxengage/contacts/create-contact-response"
                  :update-contact "cxengage/contacts/update-contact-response"
                  :delete-contact "cxengage/contacts/delete-contact-response"
+                 :merge-contacts "cxengage/contacts/merge-contacts-response"
                  :list-attributes "cxengage/contacts/list-attributes-response"
                  :get-layout "cxengage/contacts/get-layout-response"
                  :list-layouts "cxengage/contacts/list-layouts-response"
@@ -54,9 +49,10 @@
 
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"
+                 :get-stat-query-response "cxengage/reporting/get-stat-query-response"
                  :get-available-stats-response "cxengage/reporting/get-available-stats-response"
-                 :get-contact-history-response "cxengage/reporting/get-contact-interaction-history-response"
-                 :get-contact-interaction-response "cxengage/reporting/get-contact-interactions-response"
+                 :get-contact-interaction-history-response "cxengage/reporting/get-contact-interaction-history-response"
+                 :get-interaction-response "cxengage/reporting/get-interaction-response"
                  :batch-response "cxengage/reporting/batch-response"
                  :add-stat "cxengage/reporting/stat-subscription-added"
                  :remove-stat "cxengage/reporting/stat-subscription-removed"
@@ -96,6 +92,7 @@
                  :resource-removed-received "cxengage/interactions/resource-removed-received"
                  :resource-hold-received "cxengage/interactions/resource-hold-received"
                  :resource-resume-received "cxengage/interactions/resource-resume-received"
+                 :send-custom-interrupt-acknowledged "cxengage/interactions/send-custom-interrupt-acknowledged"
 
                  ;; Email Interaction Topics
                  :attachment-received "cxengage/interactions/email/attachment-received"
@@ -140,14 +137,29 @@
                  :new-message-received "cxengage/interactions/messaging/new-message-received"
                  :initialize-outbound-sms-response "cxengage/interactions/messaging/initialize-outbound-sms-response"
                  :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
+
+                 ;; Errors
+                 :failed-to-refresh-sqs-integration "cxengage/errors/fatal/failed-to-refresh-sqs-integration"
+                 :mqtt-failed-to-connect "cxengage/errors/fatal/mqtt-failed-to-connect"
+                 :failed-to-retrieve-messaging-history "cxengage/errors/error/failed-to-retrieve-messaging-history"
+                 :failed-to-retrieve-messaging-metadata "cxengage/errors/error/failed-to-retrieve-messaging-metadata"
+                 :failed-to-create-email-reply-artifact "cxengage/errors/error/failed-to-create-email-reply-artifact"
+                 :unknown-agent-notification-type-received "cxengage/errors/error/unknown-agent-notification-type"
+                 :api-rejected-bad-client-request "cxengage/errors/error/api-rejected-bad-client-request"
+                 :api-encountered-internal-error "cxengage/errors/error/api-encountered-internal-server-error"
+                 :failed-to-send-digits-invalid-interaction "cxengage/errors/error/failed-to-send-digits-invalid-interaction"
                  })
 
-(defn get-topic [k]
+(defn get-topic
+  "Gets the SDK consumer topic string for a specific internal topic key."
+  [k]
   (if-let [topic (get sdk-topics k)]
     topic
     (js/console.error "Topic not found in topic list" k)))
 
-(defn get-topic-permutations [topic]
+(defn get-topic-permutations
+  "Given an SDK consumer topic string, returns a list of all possible permutatations of that topic string. I.E. 'cxengage/authentication' returns 'cxengage' & 'cxengage/authentication'."
+  [topic]
   (let [parts (string/split topic #"/")]
     (:permutations
      (reduce
@@ -162,7 +174,9 @@
           #{}
           (vals sdk-topics)))
 
-(defn valid-topic? [topic]
+(defn valid-topic?
+  "Determines if a topic exists in the list of valid SDK topics."
+  [topic]
   (let [valid-topics (all-topics)]
     (if (some #(= topic %) valid-topics)
       topic)))
@@ -171,10 +185,12 @@
   (s/keys :req-un [::specs/topic ::specs/callback]
           :opt-un []))
 
-(defn subscribe [topic callback]
+(defn subscribe
+  "Adds a subscription callback associated with a specific topic. Any time that topic is published to all subscription callbacks for that topic will be fired. Returns a subscription ID which can be later unsubscribed with."
+  [topic callback]
   (let [params {:topic topic :callback callback}]
     (if-not (s/valid? ::subscribe-params params)
-      (e/invalid-args-error (s/explain-data ::subscribe-params params))
+      (s/explain-data ::subscribe-params params)
       (let [subscription-id (str (id/make-random-uuid))]
         (if-not (valid-topic? topic)
           (js/console.error (str "(" topic ") is not a valid subscription topic."))
@@ -185,7 +201,9 @@
   (s/keys :req-un [::specs/subscription-id]
           :opt-un []))
 
-(defn unsubscribe [subscription-id]
+(defn unsubscribe
+  "Removes a subscription callback from the SDK subscribers list."
+  [subscription-id]
   (let [original-subs @sdk-subscriptions
         new-sub-list (reduce-kv
                       (fn [updated-subscriptions topic subscribers]
@@ -200,28 +218,36 @@
       (do (js/console.info "Successfully unsubscribed")
           true))))
 
+(defn get-subscribers-by-topic
+  "Given a topic, finds all subscriber callbacks for any topics that match the topic provided."
+  [topic]
+  (let [all-topics (keys @sdk-subscriptions)]
+    (when-let [matched-topic (first (filter #(= topic %) all-topics))]
+      (-> @sdk-subscriptions
+          (get matched-topic)
+          (vals)))))
+
 (defn publish
+  "Publishes a value (or error) to a specific topic, optionally calling the callback provided and optionally leaving the casing of the response unaltered."
   ([publish-details]
    (publish publish-details false))
   ([publish-details preserve-casing]
    (let [{:keys [topics response error callback]} publish-details
          topics (if (string? topics) (conj #{} topics) topics)
          all-topics (all-topics)
-         subscriptions-to-publish (reduce-kv
-                                   (fn [subs-to-pub topic subscriptions]
-                                     (if (some #(= topic %) all-topics)
-                                       (merge subs-to-pub subscriptions)))
-                                   {}
-                                   @sdk-subscriptions)
-         subscription-callbacks (vals subscriptions-to-publish)
-         topics (iu/camelify topics)
-         error (iu/camelify error)
-         response (if preserve-casing (clj->js response) (iu/camelify response))]
-     (doseq [cb subscription-callbacks]
+         topics (ih/camelify topics)
+         error (ih/camelify error)
+         response (if preserve-casing
+                    (clj->js response)
+                    (ih/camelify response))
+         relevant-subscribers (->> topics
+                                   (map get-topic-permutations)
+                                   (flatten)
+                                   (distinct)
+                                   (map get-subscribers-by-topic)
+                                   (filter (complement nil?))
+                                   (flatten))]
+     (doseq [cb relevant-subscribers]
        (doseq [t topics]
          (cb error t response)))
      (when (and (fn? callback) callback) (callback error topics response)))))
-
-(defn js-publish [publish-details]
-  (let [details (iu/extract-params publish-details)]
-    (publish details false)))

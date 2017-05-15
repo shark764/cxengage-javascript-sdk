@@ -1,12 +1,10 @@
 (ns cxengage-javascript-sdk.interaction-management
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
-            [clojure.string :as s :refer [starts-with? lower-case]]
-            [cljs-uuid-utils.core :as id]
+            [clojure.string :refer [starts-with? lower-case]]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.domain.errors :as err]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.modules.messaging :as messaging]))
@@ -18,7 +16,8 @@
               {:keys [api-response status]} history-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (e/api-error result)
+            (p/publish {:topics (p/get-topic :failed-to-retrieve-messaging-history)
+                        :error (e/failed-to-retrieve-messaging-history-err)})
             (do (state/add-messages-to-history! interaction-id result)
                 (p/publish {:topics (p/get-topic :messaging-history-received)
                             :response (state/get-interaction-messaging-history interaction-id)})))))))
@@ -30,20 +29,21 @@
               {:keys [api-response status]} metadata-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (e/api-error result)
+            (p/publish {:topics (p/get-topic :failed-to-retrieve-messaging-metadata)
+                        :error (e/failed-to-retrieve-messaging-metadata-err)})
             (do (state/add-messaging-interaction-metadata! result)
                 (get-messaging-history tenant-id interaction-id)))))))
 
 (defn get-email-artifact-data [tenant-id interaction-id artifact-id]
-  (log :debug "[Email Processing] Tenant, Interaction, and Artifact IDs from work offer:" tenant-id interaction-id artifact-id)
+  (js/console.log "[Email Processing] Tenant, Interaction, and Artifact IDs from work offer:" tenant-id interaction-id artifact-id)
   (let [artifact-request {:method :get
                           :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/artifacts/" artifact-id)}]
     (go (let [artifact-response (a/<! (iu/api-request artifact-request))
               {:keys [status api-response]} artifact-response]
           (if (not= status 200)
             (p/publish {:topics (p/get-topic :email-artifact-received)
-                        :response api-response})
-            (do (log :debug (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
+                        :error (e/failed-to-retrieve-email-artifact-err)})
+            (do (js/console.log (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
                 (state/add-email-artifact-data interaction-id api-response)))))))
 
 (defn get-email-bodies [interaction-id]
@@ -56,15 +56,15 @@
         manifest-url (:url (first (filter #(= (:artifact-file-id %) manifest-id) files)))
         manifest-request (iu/api-request {:method :get
                                           :url manifest-url})]
-    (log :debug (str "[Email Processing] Fetching email manifest: " manifest-url))
+    (js/console.log (str "[Email Processing] Fetching email manifest: " manifest-url))
     (go (let [manifest-response (a/<! manifest-request)
-              manifest-body (iu/kebabify (js/JSON.parse (:api-response manifest-response)))
+              manifest-body (ih/kebabify (js/JSON.parse (:api-response manifest-response)))
               plain-body-url (:url (first (filter #(and (= (:filename %) "body")
                                                         (starts-with? (lower-case (:content-type %)) "text/plain")) files)))
               html-body-url (:url (first (filter #(and (= (:filename %) "body")
                                                        (starts-with? (lower-case (:content-type %)) "text/html")) files)))
               manifest-body (assoc manifest-body :artifact-id artifact-id)]
-          (log :debug (str "[Email Processing] Email manifest received: " (js/JSON.stringify (clj->js manifest-body) nil 2)))
+          (js/console.log (str "[Email Processing] Email manifest received: " (js/JSON.stringify (clj->js manifest-body) nil 2)))
           (p/publish {:topics (p/get-topic :details-received)
                       :response {:interaction-id interaction-id
                                  :body manifest-body}})
@@ -73,7 +73,7 @@
             (let [plain-body-response (a/<! (iu/api-request {:method :get
                                                              :url plain-body-url}))
                   plain-body (:api-response plain-body-response)]
-              (log :debug (str "[Email Processing] Email plain body received: " plain-body))
+              (js/console.log (str "[Email Processing] Email plain body received: " plain-body))
               (p/publish {:topics (p/get-topic :plain-body-received)
                           :response {:interaction-id interaction-id
                                      :body plain-body}})))
@@ -83,14 +83,14 @@
                                          (dissoc :filename)
                                          (dissoc :url)
                                          (assoc :artifact-id artifact-id)) attachments)]
-              (log :debug (str "[Email Processing] Attachment list received: " (js/JSON.stringify (clj->js attachments) nil 2)))
+              (js/console.log (str "[Email Processing] Attachment list received: " (js/JSON.stringify (clj->js attachments) nil 2)))
               (p/publish {:topics (p/get-topic :attachment-list)
                           :response attachments})))
           (when html-body-url
             (let [html-body-response (a/<! (iu/api-request {:method :get
                                                             :url html-body-url}))
                   html-body (:api-response html-body-response)]
-              (log :debug (str "[Email Processing] HTML body received: " html-body))
+              (js/console.log (str "[Email Processing] HTML body received: " html-body))
               (p/publish {:topics (p/get-topic :html-body-received)
                           :response {:interaction-id interaction-id
                                      :body html-body}})))))))
@@ -101,7 +101,7 @@
         now (iu/get-now)
         expiry (.getTime (js/Date. timeout))]
     (if (> now expiry)
-      (log :warn "Received an expired work offer; doing nothing")
+      (js/console.warn "Received an expired work offer; doing nothing")
       (do
         (when (or (= channel-type "sms")
                   (= channel-type "messaging"))
@@ -117,11 +117,11 @@
 (defn handle-new-messaging-message [payload]
   (let [payload (-> (.-payloadString payload)
                     (js/JSON.parse)
-                    (iu/kebabify))
+                    (ih/kebabify))
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (log :debug "[Messaging] payload prior to filtering:" payload)
+    (js/console.log "[Messaging] payload prior to filtering:" payload)
     (when (= (:type payload) "message")
       (p/publish {:topics (p/get-topic :new-message-received)
                   :response (:payload (state/augment-messaging-payload {:payload payload}))})
@@ -184,20 +184,21 @@
         :interaction-id interaction-id
         :env (state/get-env)}))
     (when (= channel-type "email")
-      (let [api-url (state/get-base-api-url)
-            artifact-url (iu/build-api-url-with-params
-                          (str api-url "tenants/tenant-id/interactions/interaction-id/artifacts")
+      (let [artifact-url (iu/api-url
+                          "tenants/tenant-id/interactions/interaction-id/artifacts"
                           {:tenant-id tenant-id
                            :interaction-id interaction-id})
             artifact-request {:method :post
                               :url artifact-url
                               :body {:artifactType "email"}}]
-        ;;(aset js/window "IID" interaction-id)
         (go (let [artifact-create-response (a/<! (iu/api-request artifact-request))
-                  {:keys [api-response status]} artifact-create-response
-                  {:keys [artifact-id]} api-response]
-              (state/store-email-reply-artifact-id artifact-id interaction-id)
-              (get-email-bodies interaction-id)))))))
+                  {:keys [api-response status]} artifact-create-response]
+              (if (= status 200)
+                (let [{:keys [artifact-id]} api-response]
+                  (state/store-email-reply-artifact-id artifact-id interaction-id)
+                  (get-email-bodies interaction-id))
+                (p/publish {:topics (p/get-topic :failed-to-create-email-reply-artifact)
+                            :error (e/failed-to-create-email-reply-artifact-err)}))))))))
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message
@@ -338,8 +339,8 @@
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
                (not= (get message :type) "send-script"))
-      (log :debug (str "Acknowledging receipt of flow action: "
-                       (or (:notification-type message) (:type message))))
+      (js/console.log (str "Acknowledging receipt of flow action: "
+                           (or (:notification-type message) (:type message))))
       (when (or (:notification-type message) (:type message))
         (let [{:keys [action-id sub-id resource-id tenant-id interaction-id]} message
               ack-request {:method :post
@@ -351,10 +352,10 @@
           (go (let [ack-response (a/<! (iu/api-request ack-request))
                     {:keys [api-response status]} ack-response]
                 (when (not= status 200)
-                  (log :error "Failed to acknowledge flow action")))))))
+                  (js/console.error "Failed to acknowledge flow action")))))))
     (if handling-fn
       (handling-fn message)
-      (log :warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))
+      (js/console.warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))
     nil))
 
 (defn infer-notification-type [message]
@@ -385,7 +386,7 @@
       (merge {:sdk-msg-type inferred-notification-type} message))))
 
 (defn sqs-msg-router [message]
-  (let [cljsd-msg (iu/kebabify message)
+  (let [cljsd-msg (ih/kebabify message)
         session-id (or (get cljsd-msg :session-id)
                        (get-in cljsd-msg [:resource :session-id]))
         inferred-msg (case (:type cljsd-msg)
@@ -395,14 +396,16 @@
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (when (state/get-blast-sqs-output)
-      (log :debug (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (iu/camelify message)))
+      (js/console.log (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
     (if inferred-msg
       (msg-router inferred-msg)
-      (do (log :warn "Unable to infer message type from sqs")
+      (do (js/console.warn "Unable to infer message type from sqs")
+          (p/publish {:topics (p/get-topic :unknown-agent-notification-type-received)
+                      :error (e/unknown-agent-notification-type-err)})
           nil))))
 
 (defn messaging-msg-router [message]
   (handle-new-messaging-message message))
 
 (defn twilio-msg-router [message type]
-  (log :warn "message in twilio msg router" message))
+  (js/console.warn "message in twilio msg router" message))

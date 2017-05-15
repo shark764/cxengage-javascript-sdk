@@ -1,8 +1,5 @@
 (ns cxengage-javascript-sdk.state
   (:require [lumbajack.core]
-            [cxengage-javascript-sdk.domain.errors :as e]
-            [cljs.core.async :as a]
-            [cljs.spec :as s]
             [cljs-uuid-utils.core :as id]))
 
 (def initial-state {:authentication {}
@@ -66,21 +63,17 @@
 ;; Interactions
 ;;;;;;;;;;;
 
-(defn find-interaction-location [interaction-id]
+(defn find-interaction-location
+  "Determines which bucket an interaction is in that we have encountered during this session."
+  [interaction-id]
   (cond
     (not= nil (get-in @sdk-state [:interactions :pending interaction-id])) :pending
     (not= nil (get-in @sdk-state [:interactions :active interaction-id])) :active
     (not= nil (get-in @sdk-state [:interactions :past interaction-id])) :past
     :else (js/console.error "Unable to find interaction location - we have never received that interaction")))
 
-(defn get-all-interactions []
-  (get @sdk-state :interactions))
-
 (defn get-all-pending-interactions []
   (get-in @sdk-state [:interactions :pending]))
-
-(defn get-all-active-interactions []
-  (get-in @sdk-state [:interactions :active]))
 
 (defn get-pending-interaction [interaction-id]
   (get-in @sdk-state [:interactions :pending interaction-id]))
@@ -96,9 +89,11 @@
   (let [location (find-interaction-location interaction-id)]
     (get-in @sdk-state [:interactions location interaction-id :disposition-code-details :dispositions])))
 
-(defn augment-messaging-payload [msg]
+(defn augment-messaging-payload
+  "Normalizes the structure of the messaging payload, and updates the :from field depending on if it's a messaging or SMS interaction."
+  [msg]
   (let [{:keys [payload]} msg
-        {:keys [from id to]} payload
+        {:keys [from to]} payload
         interaction (get-interaction to)
         {:keys [channel-type messaging-metadata]} interaction
         {:keys [metadata]} messaging-metadata
@@ -110,7 +105,9 @@
                   :else msg)]
     payload))
 
-(defn add-messages-to-history! [interaction-id messages]
+(defn add-messages-to-history!
+  "Appends a list of messages to the messaging history for a given interaction."
+  [interaction-id messages]
   (let [interaction-location (find-interaction-location interaction-id)
         old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
         messages (->> messages
@@ -138,8 +135,8 @@
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :custom-field-details] custom-field-details)))
 
 (defn get-interaction-wrapup-details [interaction-id]
-  (let [location (find-interaction-location interaction-id)]
-    (get-in @sdk-state [:interactions location interaction-id :wrapup-details])))
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (get-in @sdk-state [:interactions interaction-location interaction-id :wrapup-details])))
 
 (defn add-interaction-wrapup-details! [wrapup-details interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)
@@ -151,7 +148,9 @@
   (let [interaction-location (find-interaction-location interaction-id)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :disposition-code-details] disposition-code-details)))
 
-(defn transition-interaction! [from to interaction-id]
+(defn transition-interaction!
+  "Moves an interaction from one state internally to another. E.G. from pending (we've received a work offer) to active (we've accepted the work offer)."
+  [from to interaction-id]
   (let [interaction (get-in @sdk-state [:interactions from interaction-id])
         updated-interactions-from (dissoc (get-in @sdk-state [:interactions from]) interaction-id)
         updated-interactions-to (assoc (get-in @sdk-state [:interactions to]) interaction-id interaction)]
@@ -248,9 +247,6 @@
 (defn get-session-expired []
   (get-in @sdk-state [:session :expired?]))
 
-(defn get-user-tenants []
-  (get-in @sdk-state [:user :tenants]))
-
 (defn get-tenant-permissions [tenant-id]
   (let [tenants (get-in @sdk-state [:user :tenants])
         permissions (->> tenants
@@ -277,7 +273,7 @@
   (get-in @sdk-state [:session :config :integrations]))
 
 (defn get-active-extension []
-  (get-in @sdk-state [:session :config :active-extension :value]))
+  (get-in @sdk-state [:session :config :active-extension]))
 
 (defn get-all-reason-lists []
   (get-in @sdk-state [:session :config :reason-lists]))
@@ -317,21 +313,9 @@
   []
   (get-in @sdk-state [:session :tenant-id]))
 
-(defn get-active-tenant-region
-  []
-  (get-in @sdk-state [:session :region]))
-
-(defn set-direction!
-  [direction]
-  (swap! sdk-state assoc-in [:session :direction] direction))
-
 (defn get-session-id
   []
   (get-in @sdk-state [:session :session-id]))
-
-(defn set-capacity!
-  [capacity]
-  (swap! sdk-state assoc-in [:session :capacity] capacity))
 
 (defn set-user-session-state!
   [state]
@@ -412,23 +396,9 @@
   []
   (get-in @sdk-state [:time :offset]))
 
-;;;;;;;;;;;
-;; Predicates
-;;;;;;;;;;;
-
-(defn session-started? []
-  (get-session-id))
-
-(defn active-tenant-set? []
-  (get-active-tenant-id))
-
-(defn presence-state-matches? [state]
-  (= state (get-user-session-state)))
-
-(defn interaction-exists-in-state? [interaction-state interaction-id]
-  (get-in @sdk-state [:interactions interaction-state interaction-id]))
-
-(defn has-permissions? [resource-perms req-perms]
+(defn has-permissions?
+  "Checks if a user has all of the permissions necessary within a list of required permissions for a given action."
+  [resource-perms req-perms]
   (let [req-perms (set req-perms)
         resource-perms (set resource-perms)
         check (clojure.set/intersection resource-perms req-perms)]

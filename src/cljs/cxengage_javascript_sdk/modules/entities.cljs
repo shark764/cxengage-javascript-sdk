@@ -1,143 +1,224 @@
 (ns cxengage-javascript-sdk.modules.entities
-  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]]
+                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
-(s/def ::get-all-entity-params
+;; -------------------------------------------------------------------------- ;;
+;; GET Entity Functions
+;; -------------------------------------------------------------------------- ;;
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getUser({
+;;   resourceId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-user-params
+  (s/keys :req-un [::specs/resource-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-user
+  ::get-user-params
+  (p/get-topic :get-user-response)
+  [params]
+  (let [{:keys [callback topic resource-id]} params
+        tenant-id (st/get-active-tenant-id)
+        get-user-request {:method :get
+                          :url (iu/api-url
+                                "tenants/tenant-id/users/resource-id"
+                                {:tenant-id tenant-id
+                                 :resource-id resource-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-user-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getUsers();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-users-params
   (s/keys :req-un []
-          :opt-un [:specs/callback]))
+          :opt-un [::specs/callback]))
 
-(s/def ::entity-sub-id (s/and string? ::not-empty-string))
-(s/def ::not-empty-string #(not= 0 (.-length %)))
-(s/def ::entity-id (s/and string? ::not-empty-string))
-(s/def ::get-sub-entity-params
-  (s/keys :req-un [::entity-id ::entity-sub-id]
-          :opt-un [:specs/callback]))
+(def-sdk-fn get-users
+  ::get-users-params
+  (p/get-topic :get-users-response)
+  [params]
+  (let [{:keys [callback topic]} params
+        tenant-id (st/get-active-tenant-id)
+        get-users-request {:method :get
+                           :url (iu/api-url
+                                 "tenants/tenant-id/users"
+                                 {:tenant-id tenant-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-users-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
 
-(s/def ::get-single-entity-params
-  (s/keys :req-un [::entity-id]
-          :opt-un [:specs/callback]))
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getQueue({
+;;   queueId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
 
-(defn get-entity
-  ([module entity-type validation] (get-entity module entity-type validation {}))
-  ([module entity-type validation params & others]
-   (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (get-entity module entity-type validation (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module entity-type validation params]
-   (let [params (iu/extract-params params)
-         module-state @(:state module)
-         api-url (get-in module [:config :api-url])
-         {:keys [callback]} params
-         session-id (st/get-session-id)
-         resource-id (st/get-active-user-id)
-         tenant-id (st/get-active-tenant-id)
-         params (merge params {:tenant-id tenant-id
-                               :resource-id resource-id
-                               :session-id session-id})
-         topic (p/get-topic (keyword (str "get-" (name entity-type) "-response")))]
-     (if (not (s/valid? validation params))
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error "Arguments are invalid")
-                   :callback callback})
-       (let [api-url (str api-url (get-in module-state [:urls entity-type]))
-             entity-get-request {:method :get
-                                 :url (iu/build-api-url-with-params
-                                       api-url
-                                       params)}]
-         (go (let [entity-get-response (a/<! (iu/api-request entity-get-request))
-                   {:keys [status api-response]} entity-get-response]
-               (if (not= status 200)
-                 (p/publish {:topics topic
-                             :error (e/api-error api-response)
-                             :callback callback})
-                 (p/publish {:topics topic
-                             :response api-response
-                             :callback callback}))))
-         nil)))))
+(s/def ::get-queue-params
+  (s/keys :req-un [::specs/queue-id]
+          :opt-un [::specs/callback]))
 
-(s/def ::put-entity-params
-  (s/keys :req-un [::entity-id]
-          :opt-un [:specs/callback]))
+(def-sdk-fn get-queue
+  ::get-queue-params
+  (p/get-topic :get-queue-response)
+  [params]
+  (let [{:keys [callback topic queue-id]} params
+        tenant-id (st/get-active-tenant-id)
+        get-queue-request {:method :get
+                           :url (iu/api-url
+                                 "tenants/tenant-id/queues/queue-id"
+                                 {:tenant-id tenant-id
+                                  :queue-id queue-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-queue-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
 
-(defn put-entity
-  ([module entity-type] (get-entity module entity-type {}))
-  ([module entity-type params & others]
-   (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (get-entity module entity-type (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module entity-type params]
-   (let [params (iu/extract-params params)
-         module-state @(:state module)
-         api-url (get-in module [:config :api-url])
-         {:keys [body callback]} params
-         session-id (st/get-session-id)
-         resource-id (st/get-active-user-id)
-         tenant-id (st/get-active-tenant-id)
-         params (merge params {:tenant-id tenant-id
-                               :resource-id resource-id
-                               :session-id session-id})
-         topic (p/get-topic (keyword (str "update-" (name entity-type) "-response")))]
-     (if (not (s/valid? ::put-entity-params params))
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::put-entity-params params))
-                   :callback callback})
-       (let [api-url (str api-url (get-in module-state [:urls entity-type]))
-             entity-get-request {:method :put
-                                 :body body
-                                 :url (iu/build-api-url-with-params
-                                       api-url
-                                       params)}]
-         (go (let [entity-get-response (a/<! (iu/api-request entity-get-request))
-                   {:keys [status api-response]} entity-get-response]
-               (if (not= status 200)
-                 (p/publish {:topics topic
-                             :error (e/api-error api-response)
-                             :callback callback})
-                 (p/publish {:topics topic
-                             :response api-response
-                             :callback callback}))))
-         nil)))))
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getQueues();
+;; -------------------------------------------------------------------------- ;;
 
-(def initial-state
-  {:module-name :entities
-   :urls {:user "tenants/tenant-id/users/entity-id"
-          :users "tenants/tenant-id/users"
-          :queue "tenants/tenant-id/queues/entity-id"
-          :queues "tenants/tenant-id/queues"
-          :transfer-list "tenants/tenant-id/transfer-lists/entity-id"
-          :transfer-lists "tenants/tenant-id/transfer-lists"
-          :available-stats "tenants/tenant-id/realtime-statistics/available?client=toolbar"
-          :contact-history "tenants/tenant-id/contacts/entity-id/interactions"
-          :contact-interaction "tenants/tenant-id/interactions/entity-id"}})
+(s/def ::get-queues-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
 
-(defrecord EntitiesModule [config state core-messages<]
+(def-sdk-fn get-queues
+  ::get-queues-params
+  (p/get-topic :get-queues-response)
+  [params]
+  (let [{:keys [callback topic]} params
+        tenant-id (st/get-active-tenant-id)
+        get-queues-request {:method :get
+                           :url (iu/api-url
+                                 "tenants/tenant-id/queues"
+                                 {:tenant-id tenant-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-queues-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getTransferList({
+;;   transferListId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-transfer-list-params
+  (s/keys :req-un [::specs/transfer-list-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-transfer-list
+  ::get-transfer-list-params
+  (p/get-topic :get-transfer-list-response)
+  [params]
+  (let [{:keys [callback topic transfer-list-id]} params
+        tenant-id (st/get-active-tenant-id)
+        get-transfer-list-request {:method :get
+                                   :url (iu/api-url
+                                         "tenants/tenant-id/transfer-lists/transfer-list-id"
+                                         {:tenant-id tenant-id
+                                          :transfer-list-id transfer-list-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-transfer-list-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getTransferLists();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-transfer-lists-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-transfer-lists
+  ::get-transfer-lists-params
+  (p/get-topic :get-transfer-lists-response)
+  [params]
+  (let [{:keys [callback topic]} params
+        tenant-id (st/get-active-tenant-id)
+        get-transfer-lists-request {:method :get
+                                    :url (iu/api-url
+                                          "tenants/tenant-id/transfer-lists"
+                                          {:tenant-id tenant-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-transfer-lists-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; PUT Entity Functions
+;; -------------------------------------------------------------------------- ;;
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.updateUser({
+;;   resourceId: {{uuid}},
+;;   updateBody: {{object}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::update-user-params
+  (s/keys :req-un [::specs/update-body ::specs/resource-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn update-user
+  ::update-user-params
+  (p/get-topic :update-user-response)
+  [params]
+  (let [{:keys [callback topic update-body resource-id]} params
+        tenant-id (st/get-active-tenant-id)
+        put-user-request {:method :put
+                          :body update-body
+                          :url (iu/api-url
+                                "tenants/tenant-id/users/resource-id"
+                                {:tenant-id tenant-id
+                                 :resource-id resource-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request put-user-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; SDK Entities Module
+;; -------------------------------------------------------------------------- ;;
+
+(defrecord EntitiesModule []
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:get {:users (partial get-entity this :users ::get-all-entity-params)
-                                          :user (partial get-entity this :user ::get-single-entity-params)
-                                          :queues (partial get-entity this :queues ::get-all-entity-params)
-                                          :queue (partial get-entity this :queue ::get-single-entity-params)
-                                          :notes (partial get-entity this :interactions ::get-all-entity-params)
-                                          :note (partial get-entity this :interaction ::get-single-entity-params)
-                                          :transfer-lists (partial get-entity this :transfer-lists ::get-all-entity-params)
-                                          :transfer-list (partial get-entity this :transfer-list ::get-single-entity-params)}
-                                    :update {:user (partial put-entity this :user)}}
-                       :reporting  {:get-available-stats (partial get-entity this :available-stats ::get-all-entity-params)
-                                    :get-contact-history (partial get-entity this :contact-history ::get-single-entity-params)
-                                    :get-contact-interaction (partial get-entity this :contact-interaction ::get-single-entity-params)}}
-                 :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+    (let [module-name :entities]
+      (ih/register {:api {module-name {:get-users get-users
+                                       :get-user get-user
+                                       :get-queues get-queues
+                                       :get-queue get-queue
+                                       :get-transfer-lists get-transfer-lists
+                                       :get-transfer-list get-transfer-list
+                                       :update-user update-user}}
+                    :module-name module-name})
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

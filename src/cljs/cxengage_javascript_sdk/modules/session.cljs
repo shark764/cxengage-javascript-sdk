@@ -1,308 +1,145 @@
 (ns cxengage-javascript-sdk.modules.session
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+                   [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
-(defn start-heartbeats*
-  [module]
-  (log :info "Sending heartbeats...")
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.goNotReady({
+;;   reasonInfo: {
+;;     reason: "{{string}}",
+;;     reasonId: "{{uuid}}",
+;;     reasonListId: "{{uuid}}"
+;;   }
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::go-not-ready-spec
+  (s/keys :req-un []
+          :opt-un [::specs/callback ::specs/reason-info]))
+
+(def-sdk-fn go-not-ready
+  ::go-not-ready-spec
+  (p/get-topic :presence-state-change-request-acknowledged)
+  [params]
+  (let [{:keys [callback topic reason-info]} params
+        {:keys [reason reason-id reason-list-id]} reason-info
+        session-id (state/get-session-id)
+        resource-id (state/get-active-user-id)
+        tenant-id (state/get-active-tenant-id)]
+    (if (and
+         (or reason reason-id reason-list-id)
+         (not (state/valid-reason-codes? reason reason-id reason-list-id)))
+      (p/publish {:topics topic
+                  :error (e/invalid-reason-info-err)
+                  :callback callback})
+      (let [change-state-request {:method :post
+                                  :url (iu/api-url
+                                        "tenants/tenant-id/presence/resource-id"
+                                        {:tenant-id tenant-id
+                                         :resource-id resource-id})
+                                  :body {:session-id session-id
+                                         :state "notready"}}
+            {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
+            new-state-data (:result api-response)]
+        (if (= status 200)
+          (p/publish {:topics topic
+                      :response new-state-data
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-change-state-err)
+                      :callback callback}))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.setActiveTenant({ tenantId: "{{uuid}}" });
+;; -------------------------------------------------------------------------- ;;
+
+(defn- start-heartbeats* []
+  (js/console.info "Sending heartbeats...")
   (let [session-id (state/get-session-id)
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
-        module-state @(:state module)
-        api-url (get-in module [:config :api-url])
-        heartbeat-url (str api-url (get-in module-state [:urls :heartbeat]))
         heartbeat-request {:method :post
                            :body {:session-id session-id}
-                           :url (iu/build-api-url-with-params
-                                 heartbeat-url
+                           :url (iu/api-url
+                                 "tenants/tenant-id/presence/resource-id/heartbeat"
                                  {:tenant-id tenant-id
                                   :resource-id resource-id})}
         topic (p/get-topic :presence-heartbeats-response)]
     (go-loop []
       (if (= "offline" (state/get-user-session-state))
-        (do (log :info "Session is now offline; ceasing future heartbeats.")
+        (do (js/console.info "Session is now offline; ceasing future heartbeats.")
+            (state/set-session-expired! true)
             nil)
         (let [{:keys [api-response status]} (a/<! (iu/api-request heartbeat-request))
               {:keys [result]} api-response
-              next-heartbeat-delay (* 1000 (or (:heartbeatDelay api-response) 30))]
-          (if (not= status 200)
-            (do (log :error "Heartbeat failed; ceasing future heartbeats.")
-                (state/set-session-expired! true)
-                (p/publish {:topics topic
-                            :error (e/api-error "no more heartbeats")})
-                nil)
-            (do (log :debug "Heartbeat sent!")
+              next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
+          (if (= status 200)
+            (do (js/console.log "Heartbeat sent!")
                 (p/publish {:topics topic
                             :response result})
                 (a/<! (a/timeout next-heartbeat-delay))
-                (recur))))))))
+                (recur))
+            (do (js/console.error "Heartbeat failed; ceasing future heartbeats.")
+                (state/set-session-expired! true)
+                (p/publish {:topics topic
+                            :error (e/session-heartbeats-failed-err)})
+                nil)))))))
 
-(s/def ::state #{"ready" "notready" "offline"})
-
-(s/def ::go-ready-params
-  (s/keys :req-un [::specs/extension-value]
-          :opt-un [::specs/callback]))
-
-(s/def ::reason-info
-  (s/keys :req-un [::specs/reason ::specs/reason-id ::specs/reason-list-id]
-          :opt-un []))
-
-(s/def ::go-not-ready-params
-  (s/keys :req-un []
-          :opt-un [::reason-info ::specs/callback]))
-
-(s/def ::go-offline-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
-(defn go-not-ready
-  ([module] (go-not-ready module {}))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (go-not-ready module (merge (iu/extract-params params)
-                                 {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         api-url (get-in module [:config :api-url])
-         module-state @(:state module)
-         session-id (state/get-session-id)
-         resource-id (state/get-active-user-id)
-         tenant-id (state/get-active-tenant-id)
-         {:keys [reason-info callback]} params
-         {:keys [reason-id reason-list-id reason]} reason-info
-         topic (p/get-topic :presence-state-change-request-acknowledged)
-         state-lists (state/get-all-reason-codes-by-list reason-list-id)
-         valid-reasons? (cond
-                          (empty? state-lists) false
-                          (empty? (filterv #(= (:reason-id reason-id)) state-lists)) false
-                          :else true)]
-     (if-not (s/valid? ::go-not-ready-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error "Invalid args. All three reason code parameters must be supplied.")
-                   :callback (if (fn? callback) callback nil)})
-       (if (and (or reason-id reason-list-id reason) (not (state/valid-reason-codes? reason reason-id reason-list-id)))
-         (p/publish {:topics topic
-                     :error (e/invalid-args-error "Reason, Reason-id, and Reason-list-id must be correct values.")})
-         (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
-               body {:session-id session-id
-                     :state "notready"}
-               change-state-request {:method :post
-                                     :url (iu/build-api-url-with-params
-                                           change-state-url
-                                           {:tenant-id tenant-id
-                                            :resource-id resource-id})
-                                     :body (cond-> body
-                                             reason-info (assoc :reason reason :reason-id reason-id :reason-list-id reason-list-id))}]
-
-           (go
-             (let [change-state-response (a/<! (iu/api-request change-state-request))
-                   {:keys [api-response status]} change-state-response
-                   {:keys [result]} api-response]
-               (if (not= status 200)
-                 (p/publish {:topics topic
-                             :error (e/api-error api-response)
-                             :callback callback})
-                 (p/publish {:topics topic
-                             :response result
-                             :callback callback}))))
-           nil))))))
-
-(defn go-offline
-  ([module] (go-offline module {}))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (go-offline module (merge (iu/extract-params params)
-                               {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         api-url (get-in module [:config :api-url])
-         module-state @(:state module)
-         session-id (state/get-session-id)
-         resource-id (state/get-active-user-id)
-         tenant-id (state/get-active-tenant-id)
-         {:keys [callback]} params
-         topic (p/get-topic :presence-state-change-request-acknowledged)]
-     (if (not (s/valid? ::go-offline-params params))
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error "Invalid args.")
-                   :callback (if (fn? callback) callback nil)})
-       (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
-             change-state-request {:method :post
-                                   :url (iu/build-api-url-with-params
-                                         change-state-url
-                                         {:tenant-id tenant-id
-                                          :resource-id resource-id})
-                                   :body {:session-id session-id
-                                          :state "offline"}}]
-         (go
-           (let [change-state-response (a/<! (iu/api-request change-state-request))
-                 {:keys [api-response status]} change-state-response
-                 {:keys [result]} api-response]
-             (state/set-session-expired! true)
-             (if (not= status 200)
-               (p/publish {:topics topic
-                           :error (e/api-error api-response)
-                           :callback callback})
-               (p/publish {:topics topic
-                           :response result
-                           :callback callback}))))
-         nil)))))
-
-(defn go-ready
-  ([module]
-   (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (go-ready module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         api-url (get-in module [:config :api-url])
-         module-state @(:state module)
-         session-id (state/get-session-id)
-         resource-id (state/get-active-user-id)
-         tenant-id (state/get-active-tenant-id)
-         {:keys [extension-value callback]} params
-         active-extension-value (state/get-active-extension)
-         topic (p/get-topic :presence-state-change-request-acknowledged)]
-     (if-not (s/valid? ::go-ready-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error "Invalid args.")
-                   :callback (if (fn? callback) callback nil)})
-       (let [change-state-url (str api-url (get-in module-state [:urls :change-state]))
-             change-state-request {:method :post
-                                   :url (iu/build-api-url-with-params
-                                         change-state-url
-                                         {:tenant-id tenant-id
-                                          :resource-id resource-id})
-                                   :body {:session-id session-id
-                                          :state "ready"}}
-             config-url (str api-url (get-in module-state [:urls :config]))
-             config-request {:method :get
-                             :url (iu/build-api-url-with-params
-                                   config-url
-                                   {:tenant-id tenant-id
-                                    :resource-id resource-id})}]
-         (go (let [config-response (a/<! (iu/api-request config-request))
-                   {:keys [api-response status]} config-response
-                   {:keys [result]} api-response]
-               (if (not= status 200)
-                 (p/publish {:topics topic
-                             :error (e/api-error api-response)
-                             :callback callback})
-                 (do (state/set-config! result)
-                     (let [update-user-url (str api-url (get-in module-state [:urls :update-user]))
-                           new-extension (state/get-extension-by-value extension-value)
-                           extensions (state/get-all-extensions)
-                           user-update-request {:method :put
-                                                :url (iu/build-api-url-with-params
-                                                      update-user-url
-                                                      {:tenant-id tenant-id
-                                                       :resource-id resource-id})
-                                                :body {:activeExtension new-extension}}]
-                       (if (and extension-value
-                                (not= active-extension-value extension-value))
-                         (if (nil? new-extension)
-                           (p/publish {:topics topic
-                                       :error (e/not-a-valid-extension)
-                                       :callback callback})
-                           (do (go (let [user-update-response (a/<! (iu/api-request user-update-request))
-                                         {:keys [api-response status]} user-update-response]
-                                     (if (not= status 200)
-                                       (p/publish {:topics topic
-                                                   :error (e/api-error "failed to set user extension")
-                                                   :callback callback})
-                                       (let [change-state-response (a/<! (iu/api-request change-state-request))
-                                             {:keys [api-response status]} change-state-response
-                                             {:keys [result]} api-response]
-                                         (if (not= status 200)
-                                           (p/publish {:topics topic
-                                                       :error (e/api-error api-response)
-                                                       :callback callback})
-                                           (p/publish {:topics topic
-                                                       :response result
-                                                       :callback callback}))))))
-                               nil))
-                         (do (go (let [change-state-response (a/<! (iu/api-request change-state-request))
-                                       {:keys [api-response status]} change-state-response
-                                       {:keys [result]} api-response]
-                                   (if (not= status 200)
-                                     (p/publish {:topics topic
-                                                 :error (e/api-error api-response)
-                                                 :callback callback})
-                                     (p/publish {:topics topic
-                                                 :response result
-                                                 :callback callback}))))
-                             nil))))))))))))
-
-(defn start-session* [module]
-  (let [api-url (get-in module [:config :api-url])
-        module-state @(:state module)
-        resource-id (state/get-active-user-id)
+(defn- start-session* []
+  (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
-        topic (p/get-topic :session-started)
-        start-session-url (str api-url (get-in module-state [:urls :start-session]))
         start-session-request {:method :post
-                               :url (iu/build-api-url-with-params
-                                     start-session-url
+                               :url (iu/api-url
+                                     "tenants/tenant-id/presence/resource-id/session"
                                      {:tenant-id tenant-id
                                       :resource-id resource-id})}]
     (go (let [start-session-response (a/<! (iu/api-request start-session-request))
               {:keys [status api-response]} start-session-response
-              {:keys [result]} api-response
-              pubsub-response (assoc result :resource-id (state/get-active-user-id))]
-          (if (not= status 200)
-            (p/publish {:topics topic
-                        :error (e/api-error api-response)})
-            (do (state/set-session-details! result)
+              topic (p/get-topic :session-started)
+              session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
+          (if (= status 200)
+            (do (state/set-session-details! session-details)
                 (p/publish {:topics topic
-                            :response pubsub-response})
-                (go-not-ready module)
+                            :response session-details})
+                (go-not-ready)
                 (state/set-session-expired! false)
-                (start-heartbeats* module)))))
-    nil))
+                (start-heartbeats*))
+            (p/publish {:topics topic
+                        :error (e/failed-to-start-agent-session-err)}))
+          nil))))
 
-(defn get-config* [module]
-  (let [api-url (get-in module [:config :api-url])
-        module-state @(:state module)
-        resource-id (state/get-active-user-id)
+(defn- get-config* []
+  (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
-        config-url (str api-url (get-in module-state [:urls :config]))
         config-request {:method :get
-                        :url (iu/build-api-url-with-params
-                              config-url
+                        :url (iu/api-url
+                              "tenants/tenant-id/users/resource-id/config"
                               {:tenant-id tenant-id
                                :resource-id resource-id})}
         topic (p/get-topic :config-response)]
     (go (let [config-response (a/<! (iu/api-request config-request))
               {:keys [api-response status]} config-response
-              {:keys [result]} api-response]
-          (if (not= status 200)
-            (p/publish {:topics topic
-                        :error (e/api-error api-response)})
-            (do (state/set-config! result)
-                (a/put! (:core-messages< module) :config-ready)
+              user-config (:result api-response)]
+          (if (= status 200)
+            (do (state/set-config! user-config)
+                (ih/send-core-message {:type :config-ready})
                 (p/publish {:topics topic
-                            :response result})
+                            :response user-config})
                 (p/publish {:topics (p/get-topic :extension-list)
-                            :response (select-keys result [:active-extension :extensions])})
-                (start-session* module)))))
+                            :response (select-keys user-config [:active-extension :extensions])})
+                (start-session*))
+            (p/publish {:topics topic
+                        :error (e/failed-to-get-session-config-err)}))))
     nil))
-
-(s/def ::tenant-id string?)
-(s/def ::set-active-tenant-params
-  (s/keys :req-un [::tenant-id]
-          :opt-un [:specs/callback]))
 
 (def required-desktop-permissions
   #{"CONTACTS_CREATE"
@@ -314,102 +151,126 @@
     "CONTACTS_INTERACTION_HISTORY_READ"
     "ARTIFACTS_CREATE_ALL"})
 
-(s/def ::set-direction-params
+(s/def ::set-active-tenant-spec
+  (s/keys :req-un [::specs/tenant-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn set-active-tenant
+  ::set-active-tenant-spec
+  (p/get-topic :active-tenant-set)
+  [params]
+  (let [{:keys [callback topic tenant-id]} params
+        tenant-permissions (state/get-tenant-permissions tenant-id)]
+    (if-not (state/has-permissions? tenant-permissions required-desktop-permissions)
+      (p/publish {:topics topic
+                  :error (e/insufficient-permissions-err)
+                  :callback callback})
+      (do (state/set-active-tenant! tenant-id)
+          (p/publish {:topics topic
+                      :response {:tenant-id tenant-id}
+                      :callback callback})
+          (get-config*)))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.setDirection({ direction: "{{inbound/outbound}}" });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::set-direction-spec
   (s/keys :req-un [::specs/direction]
           :opt-un [::specs/callback]))
 
-(defn set-direction
-  ([module] (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (set-direction module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         {:keys [direction callback]} params
-         topic (p/get-topic :set-direction-response)
-         api-url (get-in module [:config :api-url])
-         tenant-id (state/get-active-tenant-id)
-         resource-id (state/get-active-user-id)
-         session-id (state/get-session-id)
-         direction-url (str api-url "tenants/tenant-id/presence/resource-id/direction")
-         direction-body {:session-id session-id
-                         :direction direction
-                         :initiator-id resource-id}
-         direction-request {:method :post
-                            :url (iu/build-api-url-with-params
-                                  direction-url
-                                  {:tenant-id tenant-id
-                                   :resource-id resource-id})
-                            :body direction-body}]
-     (if-not (s/valid? ::set-direction-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::set-direction-params params))
-                   :callback callback})
-       (do (go (let [set-direction-response (a/<! (iu/api-request direction-request))
-                     {:keys [status api-response]} set-direction-response
-                     {:keys [result]} api-response]
-                 (if (not= status 200)
-                   (p/publish {:topics topic
-                               :error (e/api-error "api error")
-                               :callback callback})
-                   (p/publish {:topics topic
-                               :response (assoc (select-keys result [:session-id]) :direction direction)
-                               :callback callback}))))
-           nil)))))
+(def-sdk-fn set-direction
+  ::set-direction-spec
+  (p/get-topic :set-direction-response)
+  [params]
+  (let [{:keys [callback topic direction]} params
+        tenant-id (state/get-active-tenant-id)
+        resource-id (state/get-active-user-id)
+        session-id (state/get-session-id)
+        set-direction-request {:method :post
+                               :url (iu/api-url
+                                     "tenants/tenant-id/presence/resource-id/direction"
+                                     {:tenant-id tenant-id
+                                      :resource-id resource-id})
+                               :body {:session-id session-id
+                                      :direction direction
+                                      :initiator-id resource-id}}
+        {:keys [status api-response]} (a/<! (iu/api-request set-direction-request))
+        direction-details {:direction direction
+                           :session-id (get-in api-response [:result :session-id])}]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response direction-details
+                  :callback callback}))))
 
-(defn set-active-tenant
-  ([module] (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (set-active-tenant module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         module-state @(:state module)
-         {:keys [tenant-id callback]} params
-         tenant-permissions (state/get-tenant-permissions tenant-id)
-         topic (p/get-topic :active-tenant-set)]
-     (if-let [error (cond
-                      (not (s/valid? ::set-active-tenant-params params))
-                      (e/invalid-args-error (s/explain-data ::set-active-tenant-params params))
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.goReady({ extensionValue: "{{uuid/extension}}" });
+;; -------------------------------------------------------------------------- ;;
 
-                      (not (state/has-permissions? tenant-permissions required-desktop-permissions))
-                      (e/missing-required-permissions-error)
+(defn- go-ready* [topic callback]
+  (go (let [session-id (state/get-session-id)
+            {:keys [status api-response]} (a/<! (rest/change-state-request {:session-id session-id
+                                                                            :state "ready"}))
+            new-state-data (:result api-response)]
+        (if (= status 200)
+          (p/publish {:topics topic
+                      :response new-state-data
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-change-state-err)
+                      :callback callback})))))
 
-                      :else false)]
-       (p/publish {:topics topic
-                   :error error
-                   :callback callback})
-       (do (state/set-active-tenant! tenant-id)
-           (p/publish {:topics topic
-                       :response {:tenant-id tenant-id}
-                       :callback callback})
-           (get-config* module)
-           nil)))))
+(s/def ::go-ready-spec
+  (s/keys :req-un [::specs/extension-value]
+          :opt-un [::specs/callback]))
 
-(def initial-state
-  {:module-name :session
-   :topics ["active-tenant-set" "start-session"]
-   :urls {:config "tenants/tenant-id/users/resource-id/config"
-          :start-session "tenants/tenant-id/presence/resource-id/session"
-          :change-state "tenants/tenant-id/presence/resource-id"
-          :update-user "tenants/tenant-id/users/resource-id"
-          :heartbeat "tenants/tenant-id/presence/resource-id/heartbeat"}})
+(def-sdk-fn go-ready
+  ::go-ready-spec
+  (p/get-topic :presence-state-change-request-acknowledged)
+  [params]
+  (let [{:keys [callback topic extension-value]} params
+        {:keys [status api-response]} (a/<! (rest/get-config-request))
+        user-config (:result api-response)]
+    (when (= status 200)
+      (state/set-config! user-config)
+      (let [new-extension (state/get-extension-by-value extension-value)
+            active-extension (state/get-active-extension)]
+        (if-not new-extension
+          (p/publish {:topics topic
+                      :error (e/invalid-extension-provided-err)
+                      :callback callback})
+          (if-not (= active-extension new-extension)
+            ;; Active extension was either nil (this user has never had an
+            ;; active extension, E.G. they're a new user), or they *do* have an
+            ;; active extension, but it didn't match the one they passed for the
+            ;; session they're starting. Update their user prior to changing
+            ;; state, so they go ready with the correct extension.
+            (let [{:keys [status api-response]} (a/<! (rest/update-user-request {:activeExtension new-extension}))]
+              (if (= status 200)
+                (go-ready* topic callback)
+                (p/publish {:topics topic
+                            :error (e/failed-to-update-extension-err)
+                            :callback callback})))
 
-(defrecord SessionModule [config state core-messages<]
+            ;; Their active extension and the extension they passed in are the
+            ;; same, no user update request is necessary, simply go ready.
+            (go-ready* topic callback)))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; SDK Presence Session Module
+;; -------------------------------------------------------------------------- ;;
+
+(defrecord SessionModule []
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:set-active-tenant (partial set-active-tenant this)
-                                    :go-ready (partial go-ready this)
-                                    :go-not-ready (partial go-not-ready this)
-                                    :end (partial go-offline this)
-                                    :set-direction (partial set-direction this)}}
-                 :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+    (let [module-name :session]
+      (ih/register {:api {module-name {:set-active-tenant set-active-tenant
+                                       :go-ready go-ready
+                                       :go-not-ready go-not-ready
+                                       :set-direction set-direction}}
+                    :module-name module-name})
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

@@ -2,51 +2,27 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cljs.core.async :as a]
-            [cljs.spec :as s]
             [cljs-uuid-utils.core :as uuid]
-            [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.core :as m]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cljs.test :refer-macros [deftest is testing run-tests async use-fixtures]]))
+            [cxengage-javascript-sdk.state :as state]
+            [cljs.test :refer-macros [deftest is testing run-tests async]]))
 
-#_(deftest contact-request-test-one
-    (testing "The contact request function. Arity 4."
-      (async done
-             (go (let [old iu/api-request
-                       the-chan (a/promise-chan)
-                       _ (a/>! the-chan {:api-response {:result {:id "unit-test"}}
-                                         :status 200})
-                       _ (set! iu/api-request (fn [request-map casing]
-                                                (let [{:keys [url method]} request-map]
-                                                  (when (and url method)
-                                                    the-chan))))
-                       api-response (a/<! (contacts/contact-request "dev-test.cxengagelab.net" nil :get true))]
-                   (is (= {:api-response {:result {:id "unit-test"}}
-                           :status 200} api-response))
-                   (set! iu/api-request old)
-                   (done))))))
-
-#_(deftest contact-request-test-two
-    (testing "The contact request function, Arity 8"
-      (async done
-             (go (let [old iu/api-request
-                       the-chan (a/promise-chan)
-                       contact-id (str (cljs-uuid-utils.core/make-random-uuid))
-                       _ (a/>! the-chan {:status 200
-                                         :api-response {:result {:id "unit-test"}}})
-                       ContactsModule (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-                       _ (set! iu/api-request (fn [request-map casing]
-                                                (let [{:keys [url method]} request-map]
-                                                  (when (and url method)
-                                                    the-chan))))
-                       topic-string (p/get-topic :get-contact)
-                       _ (p/subscribe "cxengage" (fn [error topic response]
-                                                   (cond
-                                                     (and (= topic topic-string) response) (is (= {:id "unit-test"} response)))))]
-                   (contacts/contact-request "https://dev-api.cxengagelabs.net/v1/" nil :get {:contactId contact-id} :get-contact ::contacts/get-contact-params ContactsModule false)
-                   (set! iu/api-request old)
-                   (done))))))
+(deftest contact-request-test-one
+  (testing "The contact request function. Arity 4."
+    (async done
+           (go (let [old iu/api-request
+                     the-chan (a/promise-chan)]
+                 (set! iu/api-request (fn [request-map casing]
+                                        (let [{:keys [url method]} request-map]
+                                          (when (and url method)
+                                            the-chan))))
+                 (a/>! the-chan {:api-response {:result {:id "unit-test"}}
+                                 :status 200})
+                 (is (= {:api-response {:result {:id "unit-test"}}
+                         :status 200} (a/<! (contacts/contact-request "dev-test.cxengagelab.net" nil :get true))))
+                 (set! iu/api-request old)
+                 (done))))))
 
 (deftest get-query-str-test
   (testing "The query string builder"
@@ -76,11 +52,8 @@
       (let [contact-id (str (uuid/make-random-uuid))
             tenant-id (str (uuid/make-random-uuid))
             params {:contactId contact-id}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            get-response (contacts/get-contact contacts-module params)
-            get-response-2 (contacts/get-contact contacts-module)
-            get-response-3 (contacts/get-contact contacts-module {} "")
-            get-response-4 (contacts/get-contact contacts-module params (fn [] "blah"))]
+            get-response (contacts/get-contact params)
+            get-response-4 (contacts/get-contact params (fn [] "blah"))]
         (is (= {:id contact-id
                 :attributes {:name "Ian Bishop"
                              :mobile "+15554442222"
@@ -97,8 +70,6 @@
                 :createdBy fake-user
                 :updated date-time
                 :updatedBy fake-user} get-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} get-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} get-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest get-contacts-test
@@ -123,11 +94,9 @@
                                                      :updatedBy fake-user}]})))
       (let [tenant-id (str (uuid/make-random-uuid))
             params {:tenant-id tenant-id}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            search-response (contacts/get-contacts contacts-module params)
-            search-response-2 (contacts/get-contacts contacts-module)
-            search-response-3 (contacts/get-contacts contacts-module {} "")
-            search-response-4 (contacts/get-contacts contacts-module params (fn [] "blah"))]
+            search-response (contacts/get-contacts params)
+            search-response-2 (contacts/get-contacts)
+            search-response-4 (contacts/get-contacts params (fn [] "blah"))]
         (is (= {:page 1
                 :count 1
                 :total-pages 1
@@ -161,7 +130,6 @@
                            :createdBy fake-user
                            :updated date-time
                            :updatedBy fake-user}]} search-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} search-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest search-contacts-test
@@ -187,11 +155,8 @@
       (let [tenant-id (str (uuid/make-random-uuid))
             params {:tenant-id tenant-id
                     :query {:name "Ian"}}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            search-response (contacts/search-contacts contacts-module params)
-            search-response-2 (contacts/search-contacts contacts-module)
-            search-response-3 (contacts/search-contacts contacts-module {} "")
-            search-response-4 (contacts/search-contacts contacts-module params (fn [] "blah"))]
+            search-response (contacts/search-contacts params)
+            search-response-4 (contacts/search-contacts params (fn [] "blah"))]
         (is (= {:page 1
                 :count 1
                 :total-pages 1
@@ -214,8 +179,6 @@
                            :createdBy fake-user
                            :updated date-time
                            :updatedBy fake-user}]} search-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} search-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} search-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest create-contact-test
@@ -240,11 +203,8 @@
                     :attributes {:name "Ian Bishop"
                                  :mobile "+15554442222"
                                  :age 27}}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            create-response (contacts/create-contact contacts-module params)
-            create-response-2 (contacts/create-contact contacts-module)
-            create-response-3 (contacts/create-contact contacts-module {} "")
-            create-response-4 (contacts/create-contact contacts-module params (fn [] "blah"))]
+            create-response (contacts/create-contact params)
+            create-response-4 (contacts/create-contact params (fn [] "blah"))]
         (is (= {:attributes {:name "Ian Bishop"
                              :mobile "+15554442222"
                              :age 27}
@@ -261,8 +221,6 @@
                 :updated date-time
                 :updatedBy fake-user} (dissoc create-response-4 :id)))
         (is (uuid/valid-uuid? (:id create-response-4)))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} create-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} create-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest update-contact-test
@@ -287,11 +245,8 @@
                     :attributes {:name "Ian Bishop"
                                  :mobile "+15554442222"
                                  :age 27}}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            update-response (contacts/update-contact contacts-module params)
-            update-response-2 (contacts/update-contact contacts-module)
-            update-response-3 (contacts/update-contact contacts-module {} "")
-            update-response-4 (contacts/update-contact contacts-module params (fn [] "blah"))]
+            update-response (contacts/update-contact params)
+            update-response-4 (contacts/update-contact params (fn [] "blah"))]
         (is (= {:id contact-id
                 :attributes {:name "Ian Bishop"
                              :mobile "+15554442222"
@@ -308,8 +263,6 @@
                 :createdBy fake-user
                 :updated date-time
                 :updatedBy fake-user} update-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} update-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} update-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest delete-contact-test
@@ -325,41 +278,49 @@
       (let [contact-id (str (uuid/make-random-uuid))
             tenant-id (str (uuid/make-random-uuid))
             params {:contactId contact-id}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            delete-response (contacts/delete-contact contacts-module params)
-            delete-response-2 (contacts/delete-contact contacts-module)
-            delete-response-3 (contacts/delete-contact contacts-module {} "")
-            delete-response-4 (contacts/delete-contact contacts-module params (fn [] "blah"))]
+            delete-response (contacts/delete-contact params)
+            delete-response-4 (contacts/delete-contact params (fn [] "blah"))]
 
         (is (true? delete-response))
         (is (true? delete-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} delete-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} delete-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest list-attributes-test
   (testing "Contact module list attributes function"
-    (let [fake-user (str (uuid/make-random-squuid))
-          date (js/Date.)
-          date-time (.toISOString date)
-          old contacts/contact-request]
-      (set! contacts/contact-request (fn [url body method params topic-key spec module preserve?]
-                                       (when (and method url params topic-key spec module)
-                                         [{:mandatory false :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Name"} :object-name "name"}
-                                          {:mandatory true :updated "2017-01-30T16:10:20Z" :default "" :type "text" :created "2017-01-30T16:10:20Z" :active true :label {:en-US "Phone"} :object-name "phone"}])))
-      (let [contact-id (str (uuid/make-random-uuid))
-            tenant-id (str (uuid/make-random-uuid))
-            params {}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            list-response (contacts/list-attributes contacts-module params)
-            list-response-2 (contacts/list-attributes contacts-module)
-            list-response-3 (contacts/list-attributes contacts-module {} "")
-            list-response-4 (contacts/list-attributes contacts-module params (fn [] "blah"))]
-        (is (nil?  list-response))
-        (is (nil? list-response-4))
-        (is (nil? list-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} list-response-3))
-        (set! contacts/contact-request old)))))
+    (async done
+           (go (let [fake-user (str (uuid/make-random-squuid))
+                     date (js/Date.)
+                     date-time (.toISOString date)
+                     old iu/api-request
+                     the-chan (a/promise-chan)
+                     api-resp {:status 200
+                               :api-response {:result [{:mandatory false
+                                                        :updated "2017-01-30T16:10:20Z"
+                                                        :default ""
+                                                        :type "text"
+                                                        :created "2017-01-30T16:10:20Z"
+                                                        :active true
+                                                        :label {:en-US "Name"}
+                                                        :object-name "name"}
+                                                       {:mandatory true
+                                                        :updated "2017-01-30T16:10:20Z"
+                                                        :default ""
+                                                        :type "text"
+                                                        :created "2017-01-30T16:10:20Z"
+                                                        :active true
+                                                        :label {:en-US "Phone"}
+                                                        :object-name "phone"}]}}
+                     tenant-id (str (uuid/make-random-uuid))]
+                 (p/subscribe "cxengage/contacts/list-attributes-response" (fn [error topic response]
+                                                                             (is (= (get-in api-resp [:api-response :result]) (js->clj response :keywordize-keys true)))
+                                                                             (done)))
+                 (a/>! the-chan api-resp)
+                 (set! iu/api-request (fn [request-body preserve-casing]
+                                        the-chan))
+                 (state/set-active-tenant! {:tenant-id tenant-id})
+                 (let [contact-id (str (uuid/make-random-uuid))]
+                   (contacts/list-attributes)
+                   (set! contacts/contact-request old)))))))
 
 (deftest get-layout-test
   (testing "Contact module get layout contact function"
@@ -384,11 +345,8 @@
       (let [layout-id (str (uuid/make-random-uuid))
             tenant-id (str (uuid/make-random-uuid))
             params {:layoutId layout-id}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            get-response (contacts/get-layout contacts-module params)
-            get-response-2 (contacts/get-layout contacts-module)
-            get-response-3 (contacts/get-layout contacts-module {} "")
-            get-response-4 (contacts/get-layout contacts-module params (fn [] "blah"))]
+            get-response (contacts/get-layout params)
+            get-response-4 (contacts/get-layout params (fn [] "blah"))]
         (is (= {:description ""
                 :layout [{:label {:en-US "1"}
                           :attributes [attribute-id-1]}
@@ -407,8 +365,6 @@
                 :name "basic"
                 :id layout-id
                 :created date-time} get-response-4))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} get-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} get-response-3))
         (set! contacts/contact-request old)))))
 
 (deftest list-layouts-test
@@ -444,11 +400,9 @@
       (let [contact-id (str (uuid/make-random-uuid))
             tenant-id (str (uuid/make-random-uuid))
             params {}
-            contacts-module (contacts/map->ContactsModule. (m/gen-new-initial-module-config (a/chan)))
-            list-response (contacts/list-layouts contacts-module params)
-            list-response-2 (contacts/list-layouts contacts-module)
-            list-response-3 (contacts/list-layouts contacts-module {} "")
-            list-response-4 (contacts/list-layouts contacts-module params (fn [] "blah"))]
+            list-response (contacts/list-layouts params)
+            list-response-2 (contacts/list-layouts)
+            list-response-4 (contacts/list-layouts params (fn [] "blah"))]
         (is (= [{:description ""
                  :layout [{:label {:en-US "1"}
                            :attributes [attribute-id-1]}
@@ -503,5 +457,4 @@
                  :name "basic"
                  :id layout-id-2
                  :created date-time}] list-response-2))
-        (is (= {:code 1000 :error "Incorrect number of arguments passed to SDK fn."} list-response-3))
         (set! contacts/contact-request old)))))

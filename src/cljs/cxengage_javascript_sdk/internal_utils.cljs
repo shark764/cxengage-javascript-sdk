@@ -3,8 +3,10 @@
   (:require [cljs.core.async :as a]
             [goog.crypt :as c]
             [ajax.core :as ajax]
+            [clojure.string :as str]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]])
   (:import [goog.crypt Sha256 Hmac]))
@@ -21,19 +23,15 @@
     (apply merge-with deep-merge vals)
     (last vals)))
 
-(defn camelify [m]
-  (->> m
-       (transform-keys camel/->camelCase)
-       (clj->js)))
-
-(defn kebabify [m]
-  (->> m
-       (#(js->clj % :keywordize-keys true))
-       (transform-keys camel/->kebab-case)))
-
-(defn build-api-url-with-params [url params]
-  (reduce-kv (fn [s k v]
-               (clojure.string/replace s (re-pattern (name k)) v)) url params))
+(defn api-url
+  ([url]
+   (str (state/get-base-api-url) url))
+  ([url params]
+   (reduce-kv
+    (fn [s k v]
+      (clojure.string/replace s (re-pattern (name k)) v))
+    (str (state/get-base-api-url) url)
+    params)))
 
 (defn get-now
   []
@@ -56,22 +54,40 @@
            (= (:status response) 200))
     {:api-response nil :status 200}
     (let [status (if ok? 200 (get response :status))
-          response (if (or preserve-casing? manifest-endpoint?) response (kebabify response))
+          response (if (or preserve-casing? manifest-endpoint?) response (ih/kebabify response))
           api-response (if (map? response)
                          (dissoc response :status)
                          response)]
       {:api-response api-response :status status})))
 
+(defn str-long-enough? [len st]
+  (>= (.-length st) len))
+
+(defn service-unavailable?
+  [status]
+  (= status 503))
+
+(defn client-error?
+  [status]
+  (and (>= status 400)
+       (<= status 499)))
+
 (defn server-error?
   [status]
-  (and (>= status 500) (< status 512) (not= status 509)))
+  (and (>= status 500)
+       (<= status 599)))
+
+(defn request-success?
+  [status]
+  (and (>= status 200)
+       (<= status 299)))
 
 (defn api-request
   ([request-map]
    (api-request request-map false))
   ([request-map preserve-casing?]
    (let [resp-chan (a/promise-chan)]
-     (go-loop [timeout 1]
+     (go-loop [failed-attempts 0]
        (let [response-channel (a/promise-chan)
              {:keys [method url body]} request-map
              manifest-endpoint? (if url
@@ -88,7 +104,7 @@
                                                 (ajax/text-response-format)
                                                 (ajax/json-response-format {:keywords? true}))}
                             (when body
-                              {:params (if preserve-casing? body (camelify body))})
+                              {:params (if preserve-casing? body (ih/camelify body))})
                             (when-let [token (state/get-token)]
                               (if manifest-endpoint?
                                 {}
@@ -96,12 +112,19 @@
          (ajax/ajax-request request)
          (let [response (a/<! response-channel)
                {:keys [status]} response]
-           (if (and (server-error? status) (< timeout 4))
+           (if (and (service-unavailable? status) (< failed-attempts 3))
              (do
-               (js/console.error (str "Received server error " status " retrying in " (* 3 timeout) " seconds."))
-               (a/<! (a/timeout (* 3000 timeout)))
-               (recur (inc timeout)))
-             (a/put! resp-chan response)))))
+               (js/console.error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
+               (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
+               (recur (inc failed-attempts)))
+             (do (when (request-success? status)
+                   (a/put! resp-chan response))
+                 (when (client-error? status)
+                   (ih/js-publish {:topics "cxengage/errors/error/api-rejected-bad-client-request"
+                                   :error (e/client-request-err)}))
+                 (when (server-error? status)
+                   (ih/js-publish {:topics "cxengage/errors/error/api-encountered-internal-server-error"
+                                   :error (e/internal-server-err)})))))))
      resp-chan)))
 
 (defn file-api-request [request-map]
@@ -125,77 +148,43 @@
       response-channel)))
 
 (defn get-artifact [interaction-id tenant-id artifact-id]
-  (let [url (str (state/get-base-api-url)
-                 (build-api-url-with-params
-                  "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
-                  {:tenant-id tenant-id
-                   :interaction-id interaction-id
-                   :artifact-id artifact-id}))
+  (let [url (api-url
+             "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
+             {:tenant-id tenant-id
+              :interaction-id interaction-id
+              :artifact-id artifact-id})
         artifact-request {:method :get
                           :url url}]
     (api-request artifact-request)))
 
 (defn get-interaction-files [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
-        url (-> "tenants/tenant-id/interactions/interaction-id/artifacts"
-                (build-api-url-with-params {:interaction-id interaction-id
-                                            :tenant-id tenant-id})
-                (#(str (state/get-base-api-url) %)))
+        url (api-url
+             "tenants/tenant-id/interactions/interaction-id/artifacts"
+             {:interaction-id interaction-id
+              :tenant-id tenant-id})
         file-request {:method :get
                       :url url}]
     (api-request file-request)))
 
-(defn format-response [response]
-  (if (= :cljs (state/get-consumer-type))
-    response
-    (clj->js response)))
-
-(defn extract-params
-  ([params]
-   (extract-params params false))
-  ([params preserve-casing?]
-   (if preserve-casing?
-     (js->clj params :keywordize-keys true)
-     (if (= :cljs (state/get-consumer-type))
-       params
-       (kebabify params)))))
-
-(defn base-module-request
-  ([type]
-   (base-module-request type nil))
-  ([type additional-params]
-   (let [token (state/get-token)
-         resp-chan (a/promise-chan)]
-     (cond-> {:type type
-              :resp-chan resp-chan}
-       additional-params (merge additional-params)
-       token (merge {:token token})))))
-
-(defn publish* [thing]
-  ((aget js/window "serenova" "cxengage" "api" "publish") thing))
-
 (defn send-interrupt*
-  ([module params]
-   (let [params (extract-params params)
-         module-state @(:state module)
-         {:keys [interaction-id interrupt-type interrupt-body topic on-confirm-fn callback]} params
-         tenant-id (state/get-active-tenant-id)
-         interrupt-request {:method :post
-                            :body {:source "client"
-                                   :interrupt-type interrupt-type
-                                   :interrupt interrupt-body}
-                            :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
-     (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
-                   {:keys [api-response status]} interrupt-response]
-               (if (not= status 200)
-                 (publish* {:topics topic
-                            :error (e/api-error api-response)
+  [params]
+  (let [params (ih/extract-params params)
+        {:keys [interaction-id interrupt-type interrupt-body topic on-confirm-fn callback]} params
+        tenant-id (state/get-active-tenant-id)
+        interrupt-request {:method :post
+                           :body {:source "client"
+                                  :interrupt-type interrupt-type
+                                  :interrupt interrupt-body}
+                           :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
+    (go (let [interrupt-response (a/<! (api-request interrupt-request))
+              {:keys [api-response status]} interrupt-response]
+          (when (= status 200)
+            (ih/js-publish {:topics topic
+                            :response (merge {:interaction-id interaction-id} interrupt-body)
                             :callback callback})
-                 (do (publish* {:topics topic
-                                :response (merge {:interaction-id interaction-id} interrupt-body)
-                                :callback callback})
-                     (when on-confirm-fn (on-confirm-fn))))))
-         nil))))
+            (when on-confirm-fn (on-confirm-fn)))))
+    nil))
 
 ;;;;;;;;;;;;;;;
 ;; sigv4 utils
@@ -206,11 +195,13 @@
   (let [hmac (doto (Hmac. (Sha256.) key)
                (.update msg))]
     (c/byteArrayToHex (.digest hmac))))
+
 (defn sha256
   [msg]
   (let [hash (doto (Sha256.)
                (.update msg))]
     (c/byteArrayToHex (.digest hash))))
+
 (defn get-signature-key
   [key date-stamp region-name service-name]
   (let [date-stamp (or date-stamp (js/Date.))

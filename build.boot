@@ -4,30 +4,31 @@
 
  :source-paths #{}
 
- :dependencies '[[org.clojure/tools.nrepl "0.2.12" :scope "test"]
-                 [org.clojure/clojure "1.9.0-alpha14"]
-                 [org.clojure/clojurescript "1.9.473"]
-                 [org.clojure/core.async "0.2.395"
+ :dependencies '[[org.clojure/tools.nrepl "0.2.13" :scope "test"]
+                 [org.clojure/clojure "1.9.0-alpha16"]
+                 [org.clojure/clojurescript "1.9.521"]
+                 [org.clojure/core.async "0.3.442"
                   :exclusions [org.clojure/tools.reader]]
 
-                 [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
-                 [com.cemerick/piggieback "0.2.1" :scope "test"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
-                 [adzerk/boot-cljs-repl "0.3.2" :scope "test"]
-                 [adzerk/boot-cljs "1.7.228-2" :scope "test"]
-                 [adzerk/boot-reload "0.5.1" :scope "test"]
-                 [pandeiro/boot-http "0.7.6" :scope "test"]
                  [com.cognitect/transit-cljs "0.8.239"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
-                 [weasel "0.7.0" :scope "test"]
                  [cljsjs/aws-sdk-js "2.2.41-4"]
-                 [binaryage/devtools "0.9.1"]
+                 [binaryage/devtools "0.9.4"]
                  [camel-snake-kebab "0.4.0"]
-                 [funcool/promesa "1.8.0"]
+                 [funcool/promesa "1.8.1"]
                  [cljsjs/paho "1.0.1-0"]
 
                  [serenova/cxengage-cljs-utils "2.0.0"]
-                 [serenova/lumbajack "2.0.4"]]
+                 [serenova/lumbajack "2.0.4"]
+
+                 [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
+                 [com.cemerick/piggieback "0.2.1" :scope "test"]
+                 [adzerk/boot-cljs-repl "0.3.3" :scope "test"]
+                 [adzerk/boot-cljs "2.0.0" :scope "test"]
+                 [adzerk/boot-reload "0.5.1" :scope "test"]
+                 [pandeiro/boot-http "0.8.0" :scope "test"]
+                 [weasel "0.7.0" :scope "test"]]
 
  :repositories #(apply conj %
                        [["releases" {:url "http://nexus.cxengagelabs.net/content/repositories/releases/"
@@ -62,11 +63,16 @@
         (build*)))
 
 (deftask development* []
-  (set-env! :source-paths #(conj % "src/cljs" "src/dev_cljs"))
+  (set-env! :source-paths #(conj % "src/cljs" "src/dev_cljs" "src/prod_cljs"))
   (task-options! cljs {:compiler-options {:optimizations :none
                                           :source-map true
-                                          ;:verbose true
-                                          }})
+                                          :parallel-build true
+                                          :compiler-stats true
+                                          :source-map-timestamp true
+                                          :cache-analysis true
+                                          :recompile-dependents false
+                                          :warnings {:single-segment-namespace false}
+                                          :source-map-path "resources/public"}})
   identity)
 
 (deftask testing* []
@@ -79,8 +85,14 @@
                                           :externs ["externs.js"]
                                           :pseudo-names true
                                           :output-wrapper true
+                                          :compiler-stats true
+                                          :anon-fn-naming-policy :mapped
+                                          :pretty-print true
                                           :source-map true
+                                          :parallel-build true
+                                          :static-fns true
                                           :language-in :ecmascript5
+                                          :print-input-delimiter true
                                           :language-out :ecmascript5
                                           :verbose true}})
   (comp (cljs)))

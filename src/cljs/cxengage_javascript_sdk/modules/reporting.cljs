@@ -1,8 +1,9 @@
 (ns cxengage-javascript-sdk.modules.reporting
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.helpers :refer [log]]
+            [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
@@ -11,171 +12,261 @@
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cljs-uuid-utils.core :as uuid]))
 
+(def stat-subscriptions (atom {}))
+
 (defn start-polling
   [module]
-  (let [module-state (:state module)
-        api-url (get-in module [:config :api-url])
-        tenant-id (st/get-active-tenant-id)
+  (let [tenant-id (st/get-active-tenant-id)
         topic (p/get-topic :batch-response)
-        polling-delay (get-in module [:config :reporting-refresh-rate])]
-    (let [api-url (str api-url (get-in @module-state [:urls :batch]))]
-      (go-loop []
-        (a/<! (a/timeout polling-delay))
-        (if (empty? (:statistics @module-state))
-          (recur)
-          (let [polling-request {:method :post
-                                 :body {:requests (:statistics @module-state)}
-                                 :url (iu/build-api-url-with-params
-                                       api-url
-                                       {:tenant-id tenant-id})}
-                {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
-                {:keys [results]} api-response]
-            (if (not= status 200)
-              (do (log :error "Batch request failed.")
-                  (p/publish {:topics topic
-                              :error (e/api-error api-response)}))
-              (do (log :info "Batch request received!")
-                  (p/publish {:topics topic
-                              :response results})
+        polling-delay (st/get-reporting-refresh-rate)]
+    (go-loop []
+      (a/<! (a/timeout polling-delay))
+      (if (empty? (:statistics @stat-subscriptions))
+        (recur)
+        (let [polling-request {:method :post
+                               :body {:requests (:statistics @stat-subscriptions)}
+                               :url (iu/api-url
+                                     "tenants/tenant-id/realtime-statistics/batch"
+                                     {:tenant-id tenant-id})}
+              {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
+              {:keys [results]} api-response]
+          (if (not= status 200)
+            (do (js/console.error "Batch request failed.")
+                (p/publish {:topics topic
+                            :error (e/reporting-batch-request-failed-err)}))
+            (do (js/console.info "Batch request received!")
+                (p/publish {:topics topic
+                            :response results})
 
-                  (recur))))))
-      nil)))
+                (recur))))))
+    nil))
 
-(s/def statistic string?)
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.addStatisticSubscription({
+;;   statistic: "{{string}}",
+;;   resourceId: "{{uuid}}",
+;;   queueId: "{{queueId}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (s/def ::add-statistic-params
-  (s/keys :req-un [::statistic]
+  (s/keys :req-un [::specs/statistic]
           :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
 
-(defn add-stat-subscription
-  ([module]
-   (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (add-stat-subscription module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         module-state (:state module)
-         {:keys [callback]} params
-         tenant-id (st/get-active-tenant-id)
-         topic (p/get-topic :add-stat)
-         stat-bundle (dissoc params :callback)]
-     (if-not (s/valid? ::add-statistic-params params)
-       (do (log :debug (s/explain-data ::add-statistic-params params))
-           (p/publish {:topics topic
-                       :error (e/invalid-args-error "invalid args passed to sdk fn")
-                       :callback callback}))
-       (let [stat-id (str (uuid/make-random-uuid))]
-         (swap! module-state assoc-in [:statistics stat-id] stat-bundle)
-         (p/publish {:topics topic
-                     :response {:stat-id stat-id}
-                     :callback callback})
-         (go (let [batch-url (str (st/get-base-api-url) (get-in @module-state [:urls :batch]))
-                   polling-request {:method :post
-                                    :body {:requests (:statistics @module-state)}
-                                    :url (iu/build-api-url-with-params
-                                          batch-url
-                                          {:tenant-id tenant-id})}
-                   {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
-                   {:keys [results]} api-response
-                   batch-topic (p/get-topic :batch-response)]
-               (if (not= status 200)
-                 (p/publish {:topics batch-topic
-                             :error (e/api-error "api returned an error")})
-                 (p/publish {:topics batch-topic
-                             :response results}))))
-         nil)))))
+(def-sdk-fn add-stat-subscription
+  ::add-statistic-params
+  (p/get-topic :add-stat)
+  [params]
+  (let [{:keys [topic callback]} params
+        tenant-id (st/get-active-tenant-id)
+        stat-bundle (dissoc params :callback)
+        stat-id (str (uuid/make-random-uuid))]
+      (swap! stat-subscriptions assoc-in [:statistics stat-id] stat-bundle)
+      (p/publish {:topics topic
+                  :response {:stat-id stat-id}
+                  :callback callback})
+      (let [polling-request {:method :post
+                             :body {:requests (:statistics @stat-subscriptions)}
+                             :url (iu/api-url
+                                   "tenants/tenant-id/realtime-statistics/batch"
+                                   {:tenant-id tenant-id})}
+            {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
+            {:keys [results]} api-response
+            batch-topic (p/get-topic :batch-response)]
+        (when (= status 200)
+          (p/publish {:topics batch-topic
+                      :response results
+                      :callback callback})))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.removeStatSubscription({
+;;   statId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (s/def ::remove-statistics-params
   (s/keys :req-un [::specs/stat-id]
           :opt-un [::specs/callback]))
 
-(defn remove-stat-subscription
-  ([module]
-   (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (remove-stat-subscription module (merge (iu/extract-params params {:callback (first others)})))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         module-state (:state module)
-         api-url (get-in module [:config :api-url])
-         {:keys [stat-id callback]} params
-         topic (p/get-topic :remove-stat)]
-     (if-not (s/valid? ::remove-statistics-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::remove-statistics-params params))
-                   :callback callback})
-       (let [new-stats (dissoc (:statistics @module-state) stat-id)]
-         (swap! module-state assoc :statistics new-stats)
-         (p/publish {:topics topic
-                     :response new-stats
-                     :callback callback})
-         nil)))))
+(def-sdk-fn remove-stat-subscription
+  ::remove-statistics-params
+  (p/get-topic :remove-stat)
+  [params]
+  (let [{:keys [stat-id topic callback]} params
+        new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
+      (swap! stat-subscriptions assoc :statistics new-stats)
+      (p/publish {:topics topic
+                  :response new-stats
+                  :callback callback})))
 
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.getCapacity({
+;;   resourceId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (s/def ::get-capacity-params
   (s/keys :req-un []
           :opt-un [::specs/callback ::specs/resource-id]))
 
-(defn get-capacity
-  ([module]
-   (get-capacity module {}))
-  ([module params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-args-error)
-     (get-capacity module (merge (iu/extract-params params {:callback (first others)})))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         module-state (:state module)
-         api-url (get-in module [:config :api-url])
-         tenant-id (st/get-active-tenant-id)
-         {:keys [resource-id callback]} params
-         url (if resource-id :capacity-user :capacity-tenant)
-         topic (p/get-topic :get-capacity-response)]
-     (if-not (s/valid? ::get-capacity-params params)
-       (p/publish {:topics topic
-                   :error (e/invalid-args-error (s/explain-data ::get-capacity-params params))
-                   :callback callback})
-       (go (let [capacity-url (str (st/get-base-api-url) (get-in @module-state [:urls url]))
-                 url-params (if resource-id {:tenant-id tenant-id :resource-id resource-id} {:tenant-id tenant-id})
-                 capacity-request {:method :get
-                                   :url (iu/build-api-url-with-params
-                                         capacity-url
-                                         url-params)}
-                 {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
-                 {:keys [results]} api-response]
-             (if (not= status 200)
-               (p/publish {:topics topic
-                           :error (e/api-error "api returned an error")
-                           :callback callback})
-               (p/publish {:topics topic
-                           :response results
-                           :callback callback})))))
-     nil)))
+(def-sdk-fn get-capacity
+  ::get-capacity-params
+  (p/get-topic :get-capacity-response)
+  [params]
+  (let [tenant-id (st/get-active-tenant-id)
+        {:keys [resource-id topic callback]} params
+        url (if resource-id
+              "tenants/tenant-id/users/resource-id/realtime-statistics/resource-capacity"
+              "tenants/tenant-id/realtime-statistics/resource-capacity")
+        ;; If resource-id is passed to the function, it will return the Capacity
+        ;; for the specified resource-id. If no arguments are passed to the function
+        ;; it will instead return the capacity for the active user's selected Tenant
+        url-params (if resource-id {:tenant-id tenant-id :resource-id resource-id} {:tenant-id tenant-id})
+        capacity-request {:method :get
+                          :url (iu/api-url
+                                url
+                                url-params)}
+        {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
+        {:keys [results]} api-response]
+      (when (= status 200)
+        (p/publish {:topics topic
+                    :response results
+                    :callback callback}))))
 
-(def initial-state
-  {:module-name :reporting
-   :urls {:batch "tenants/tenant-id/realtime-statistics/batch"
-          :capacity-user "tenants/tenant-id/users/resource-id/realtime-statistics/resource-capacity"
-          :capacity-tenant "tenants/tenant-id/realtime-statistics/resource-capacity"}
-   :polling-started? false
-   :statistics {}})
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.statQuery({
+;;   statistic: "{{string}}",
+;;   resourceId: "{{uuid}}",
+;;   queueId: "{{queueId}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
-(defrecord ReportingModule [config state core-messages<]
+(s/def ::stat-query-params
+  (s/keys :req-un [::specs/statistic]
+          :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
+
+(def-sdk-fn stat-query
+  ::stat-query-params
+  (p/get-topic :get-stat-query-response)
+  [params]
+  (let [{:keys [statistic topic callback]} params
+        tenant-id (st/get-active-tenant-id)
+        stat-bundle (dissoc params :callback :topic)
+        stat-id (str (uuid/make-random-uuid))
+        stat-body (assoc {} stat-id stat-bundle)
+        polling-request {:method :post
+                         :body {:requests stat-body}
+                         :url (iu/api-url
+                               "tenants/tenant-id/realtime-statistics/batch"
+                               {:tenant-id tenant-id})}
+        {:keys [api-response status]} (a/<! (iu/api-request polling-request))
+        {:keys [results]} api-response]
+      (when (= status 200)
+        (p/publish {:topics topic
+                    :response results
+                    :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.getAvailableStats();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-available-stats-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-available-stats
+  ::get-available-stats-params
+  (p/get-topic :get-available-stats-response)
+  [params]
+  (let [{:keys [callback topic]} params
+        tenant-id (st/get-active-tenant-id)
+        get-available-stats-request {:method :get
+                                     :url (iu/api-url
+                                           "tenants/tenant-id/realtime-statistics/available?client=toolbar"
+                                           {:tenant-id tenant-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-available-stats-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.getContactInteractionHistory({
+;;   contactId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-contact-interaction-history-params
+  (s/keys :req-un [::specs/contact-id]
+          :opt-un [::specs/callback ::specs/page]))
+
+(def-sdk-fn get-contact-interaction-history
+  ::get-contact-interaction-history-params
+  (p/get-topic :get-contact-interaction-history-response)
+  [params]
+  (let [{:keys [callback topic contact-id page]} params
+        tenant-id (st/get-active-tenant-id)
+        url (if page
+              (str "tenants/tenant-id/contacts/contact-id/interactions?page=" page)
+              "tenants/tenant-id/contacts/contact-id/interactions")
+        get-contact-interaction-history-request {:method :get
+                                                 :url (iu/api-url
+                                                       url
+                                                       {:tenant-id tenant-id
+                                                        :contact-id contact-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-contact-interaction-history-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.getInteraction({
+;;   interactionId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-interaction-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-interaction
+  ::get-interaction-params
+  (p/get-topic :get-interaction-response)
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        tenant-id (st/get-active-tenant-id)
+        get-interaction-request {:method :get
+                                 :url (iu/api-url
+                                       "tenants/tenant-id/interactions/interaction-id"
+                                       {:tenant-id tenant-id
+                                        :interaction-id interaction-id})}
+        {:keys [status api-response]} (a/<! (iu/api-request get-interaction-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; SDK Reporting Module
+;; -------------------------------------------------------------------------- ;;
+
+(defrecord ReportingModule []
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:add-stat-subscription (partial add-stat-subscription this)
-                                    :remove-stat-subscription (partial remove-stat-subscription this)
-                                    :get-capacity (partial get-capacity this)}}
-                 :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (start-polling this)
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+    (let [module-name :reporting]
+      (ih/register {:api {module-name {:add-stat-subscription add-stat-subscription
+                                       :remove-stat-subscription remove-stat-subscription
+                                       :get-capacity get-capacity
+                                       :stat-query stat-query
+                                       :get-available-stats get-available-stats
+                                       :get-contact-interaction-history get-contact-interaction-history
+                                       :get-interaction get-interaction}}
+                    :module-name module-name})
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name}))
+    (start-polling this))
   (stop [this])
   (refresh-integration [this]))

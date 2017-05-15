@@ -1,86 +1,101 @@
 (ns cxengage-javascript-sdk.modules.authentication
-  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.errors :as e]
-            [cxengage-javascript-sdk.helpers :refer [log]]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.state :as st]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.domain.specs :as specs]))
+            [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.interop-helpers :as ih]))
 
-(s/def ::not-empty-string #(not= 0 (.-length %)))
-(s/def ::username (s/and string? ::not-empty-string))
-(s/def ::password (s/and string? ::not-empty-string))
-(s/def ::login-params
-  (s/keys :req-un [::username ::password]
-          :opt-un [:specs/callback]))
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.authentication.logout();
+;; -------------------------------------------------------------------------- ;;
 
-(defn login
-  ([module] (e/wrong-number-of-args-error))
-  ([module params & others]
-   (if-not (fn? (first others))
-     (e/wrong-number-of-args-error)
-     (login module (merge (iu/extract-params params) {:callback (first others)}))))
-  ([module params]
-   (let [params (iu/extract-params params)
-         module-state @(:state module)
-         {:keys [username password callback]} params
-         login-topic (p/get-topic :login-response)]
-     (if (not (s/valid? ::login-params params))
-       (p/publish {:topics login-topic
-                   :error (e/invalid-args-error (s/explain-data ::login-params params))
-                   :callback callback})
-       (let [token-body {:username username
-                         :password password}
-             api-url (get-in module [:config :api-url])
-             token-url (str api-url (get-in module-state [:urls :token]))
-             login-url (str api-url (get-in module-state [:urls :login]))
-             token-request {:method :post
-                            :url token-url
-                            :body token-body}
-             login-request {:method :post
-                            :url login-url}]
-         (go (let [token-response (a/<! (iu/api-request token-request))
-                   {:keys [status api-response]} token-response]
-               (if (not= status 200)
-                 (p/publish {:topics login-topic
-                             :error (e/api-error "non 200 response")
-                             :callback callback})
-                 (do (st/set-token! (:token api-response))
-                     (let [login-response (a/<! (iu/api-request login-request))
-                           {:keys [status api-response]} login-response]
-                       (if (not= status 200)
-                         (p/publish {:topics login-topic
-                                     :error (e/api-error "non 200 response")
-                                     :callback callback})
-                         (let [{:keys [result]} api-response]
-                           (st/set-user-identity! result)
-                           (p/publish {:topics login-topic
-                                       :response result
-                                       :callback callback})
-                           (p/publish {:topics (p/get-topic :tenant-list)
-                                       :response (:tenants result)}))))))))
-         nil)))))
+(s/def ::logout-spec
+  (s/keys :req-un []
+          :opt-un []))
 
-(def initial-state
-  {:module-name :authentication
-   :topics ["login"]
-   :urls {:token "tokens"
-          :login "login"}})
+(def-sdk-fn logout
+  ::logout-spec
+  (p/get-topic :presence-state-change-request-acknowledged)
+  [params]
+  (let [{:keys [callback topic]} params
+        session-id (state/get-session-id)
+        resource-id (state/get-active-user-id)
+        tenant-id (state/get-active-tenant-id)
+        change-state-request {:method :post
+                              :url (iu/api-url
+                                    "tenants/tenant-id/presence/resource-id"
+                                    {:tenant-id tenant-id
+                                     :resource-id resource-id})
+                              :body {:session-id session-id
+                                     :state "offline"}}
+        {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
+        new-state-data (:result api-response)]
+    (if (= status 200)
+      (do (state/set-session-expired! true)
+          (p/publish {:topics topic
+                      :response new-state-data
+                      :callback callback}))
+      (p/publish {:topic topic
+                  :callback callback
+                  :error (e/logout-failed-err)}))))
 
-(defn get-entity [module entity-type])
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.authentication.login({
+;;   username: "{{string}}",
+;;   password: "{{string}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
-(defrecord AuthenticationModule [config state core-messages<]
+(s/def ::login-spec
+  (s/keys :req-un [::specs/username ::specs/password]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn login
+  ::login-spec
+  (p/get-topic :login-response)
+  [params]
+  (let [{:keys [callback topic username password]} params
+        token-request {:method :post
+                       :url (iu/api-url "tokens")
+                       :body {:username username
+                              :password password}}
+        {:keys [status api-response]} (a/<! (iu/api-request token-request))]
+    (when (= status 200)
+      (state/set-token! (:token api-response))
+      (let [login-request {:method :post
+                           :url (iu/api-url "login")}
+            {:keys [status api-response]} (a/<! (iu/api-request login-request))]
+        (if (= status 200)
+          (let [user-identity (:result api-response)
+                tenants (:tenants user-identity)]
+            (state/set-user-identity! user-identity)
+            (p/publish {:topics (p/get-topic :tenant-list)
+                        :response tenants})
+            (p/publish {:topics topic
+                        :response user-identity
+                        :callback callback}))
+          (p/publish {:topics topic
+                      :callback callback
+                      :error (e/login-failed-err)}))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; SDK Authentication Module
+;; -------------------------------------------------------------------------- ;;
+
+(defrecord AuthenticationModule []
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [register (aget js/window "serenova" "cxengage" "modules" "register")
-          module-name (get @(:state this) :module-name)]
-      (register {:api {module-name {:login (partial login this)}}
-                 :module-name module-name})
-      (a/put! core-messages< {:module-registration-status :success :module module-name})
-      (log :info (str "<----- Started " (name module-name) " SDK module! ----->"))))
+    (let [module-name :authentication]
+      (ih/register {:api {module-name {:login login
+                                       :logout logout}}
+                    :module-name module-name})
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

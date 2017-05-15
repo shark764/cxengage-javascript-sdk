@@ -2,3 +2,4 @@
 /.nrepl-port
 /out
 .nrepl-*
+.cljs_rhino_repl/
