@@ -162,12 +162,12 @@
                             dial-url
                             {:tenant-id tenant-id})
                       :body dial-body}]
-    (do (go (let [dial-response (a/<! (iu/api-request dial-request))
-                  {:keys [api-response status]} dial-response]
-              (when (= status 200)
-                (p/publish {:topics topic
-                            :response api-response
-                            :callback callback})))))))
+    (let [dial-response (a/<! (iu/api-request dial-request))
+          {:keys [api-response status]} dial-response]
+      (when (= status 200)
+        (p/publish {:topics topic
+                    :response api-response
+                    :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Twilio Initialization Functions
@@ -247,9 +247,11 @@
                         :response pubsub-response
                         :callback callback}))
         (catch js/Object e (p/publish {:topics topic
-                                       :error (e/failed-to-send-twilio-digits-err)})))
+                                       :error (e/failed-to-send-twilio-digits-err)
+                                       :callback callback})))
       (p/publish {:topics (p/get-topic :failed-to-send-digits-invalid-interaction)
-                  :error (e/failed-to-send-digits-invalid-interaction-err)}))))
+                  :error (e/failed-to-send-digits-invalid-interaction-err)
+                  :callback callback}))))
 
 
 ;; -------------------------------------------------------------------------- ;;
@@ -275,17 +277,17 @@
   (p/get-topic :recording-response)
   [params]
   (let [{:keys [interaction-id topic callback]} params]
-    (go (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))
-              {:keys [api-response status]} interaction-files
-              {:keys [results]} api-response
-              tenant-id (state/get-active-tenant-id)
-              audio-recordings (filterv #(= (:artifact-type %) "audio-recording") results)]
-          (if (= (count audio-recordings) 0)
-            (p/publish {:topics topic
-                        :response []
-                        :callback callback})
-            (doseq [rec audio-recordings]
-              (get-recording interaction-id tenant-id (:artifact-id rec) callback)))))))
+    (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))
+          {:keys [api-response status]} interaction-files
+          {:keys [results]} api-response
+          tenant-id (state/get-active-tenant-id)
+          audio-recordings (filterv #(= (:artifact-type %) "audio-recording") results)]
+      (if (= (count audio-recordings) 0)
+        (p/publish {:topics topic
+                    :response []
+                    :callback callback})
+        (doseq [rec audio-recordings]
+          (get-recording interaction-id tenant-id (:artifact-id rec) callback))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Voice Module

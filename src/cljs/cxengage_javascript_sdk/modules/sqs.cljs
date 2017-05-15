@@ -84,7 +84,7 @@
               sqs-queue-url original-sqs-queue-url
               sqs-needs-refresh-time original-sqs-needs-refresh-time]
       (if (> (.getTime (js/Date.)) sqs-needs-refresh-time)
-        ;; 1/2 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
+        ;; 3/4 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
         (do (js/console.info "Refreshing SQS integration")
             (let [tenant-id (state/get-active-tenant-id)
                   resource-id (state/get-active-user-id)

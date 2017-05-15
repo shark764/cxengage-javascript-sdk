@@ -66,19 +66,19 @@
       (p/publish {:topics topic
                   :response {:stat-id stat-id}
                   :callback callback})
-      (go (let [batch-url (str (st/get-base-api-url) "tenants/tenant-id/realtime-statistics/batch")
-                polling-request {:method :post
-                                 :body {:requests (:statistics @stat-subscriptions)}
-                                 :url (iu/build-api-url-with-params
-                                       batch-url
-                                       {:tenant-id tenant-id})}
-                {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
-                {:keys [results]} api-response
-                batch-topic (p/get-topic :batch-response)]
-            (when (= status 200)
-              (p/publish {:topics batch-topic
-                          :response results
-                          :callback callback})))))))
+      (let [batch-url (str (st/get-base-api-url) "tenants/tenant-id/realtime-statistics/batch")
+            polling-request {:method :post
+                             :body {:requests (:statistics @stat-subscriptions)}
+                             :url (iu/build-api-url-with-params
+                                   batch-url
+                                   {:tenant-id tenant-id})}
+            {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
+            {:keys [results]} api-response
+            batch-topic (p/get-topic :batch-response)]
+        (when (= status 200)
+          (p/publish {:topics batch-topic
+                      :response results
+                      :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.removeStatSubscription({
@@ -124,18 +124,18 @@
     ;; If resource-id is passed to the function, it will return the Capacity
     ;; for the specified resource-id. If no arguments are passed to the function
     ;; it will instead return the capacity for the active user's selected Tenant
-    (go (let [capacity-url (str (st/get-base-api-url) url)
-              url-params (if resource-id {:tenant-id tenant-id :resource-id resource-id} {:tenant-id tenant-id})
-              capacity-request {:method :get
-                                :url (iu/build-api-url-with-params
-                                      capacity-url
-                                      url-params)}
-              {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
-              {:keys [results]} api-response]
-          (when (= status 200)
-            (p/publish {:topics topic
-                        :response results
-                        :callback callback}))))))
+    (let [capacity-url (str (st/get-base-api-url) url)
+          url-params (if resource-id {:tenant-id tenant-id :resource-id resource-id} {:tenant-id tenant-id})
+          capacity-request {:method :get
+                            :url (iu/build-api-url-with-params
+                                  capacity-url
+                                  url-params)}
+          {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
+          {:keys [results]} api-response]
+      (when (= status 200)
+        (p/publish {:topics topic
+                    :response results
+                    :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.statQuery({
