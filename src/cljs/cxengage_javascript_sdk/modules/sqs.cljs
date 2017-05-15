@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.next-modules.sqs
+(ns cxengage-javascript-sdk.modules.sqs
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]

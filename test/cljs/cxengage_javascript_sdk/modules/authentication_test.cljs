@@ -1,11 +1,11 @@
-(ns cxengage-javascript-sdk.next-modules.authentication-test
+(ns cxengage-javascript-sdk.modules.authentication-test
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.pubsub :as p]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.next-modules.authentication :as auth]
+            [cxengage-javascript-sdk.modules.authentication :as auth]
             [cljs.test :refer-macros [deftest is testing async use-fixtures]]))
 
 (def successful-login-response

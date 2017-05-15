@@ -7,7 +7,7 @@
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
-            [cxengage-javascript-sdk.next-modules.messaging :as messaging]))
+            [cxengage-javascript-sdk.modules.messaging :as messaging]))
 
 (defn get-messaging-history [tenant-id interaction-id]
   (let [history-request {:method :get
@@ -16,7 +16,7 @@
               {:keys [api-response status]} history-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (p/publish {:topics "cxengage/errors/error/failed-to-retrieve-messaging-history"
+            (p/publish {:topics (p/get-topic :failed-to-retrieve-messaging-history)
                         :error (e/failed-to-retrieve-messaging-history-err)})
             (do (state/add-messages-to-history! interaction-id result)
                 (p/publish {:topics (p/get-topic :messaging-history-received)
@@ -29,7 +29,7 @@
               {:keys [api-response status]} metadata-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (p/publish {:topics "cxengage/errors/error/failed-to-retrieve-messaging-metadata"
+            (p/publish {:topics (p/get-topic :failed-to-retrieve-messaging-metadata)
                         :error (e/failed-to-retrieve-messaging-metadata-err)})
             (do (state/add-messaging-interaction-metadata! result)
                 (get-messaging-history tenant-id interaction-id)))))))
@@ -198,7 +198,7 @@
                 (let [{:keys [artifact-id]} api-response]
                   (state/store-email-reply-artifact-id artifact-id interaction-id)
                   (get-email-bodies interaction-id))
-                (p/publish {:topics "cxengage/error/errors/failed-to-create-email-reply-artifact"
+                (p/publish {:topics (p/get-topic :failed-to-create-email-reply-artifact)
                             :error (e/failed-to-create-email-reply-artifact-err)}))))))))
 
 (defn handle-work-ended [message]
@@ -401,7 +401,7 @@
     (if inferred-msg
       (msg-router inferred-msg)
       (do (js/console.warn "Unable to infer message type from sqs")
-          (p/publish {:topics "cxengage/errors/error/unknown-agent-notification-type-received"
+          (p/publish {:topics (p/get-topic :unknown-agent-notification-type-received)
                       :error (e/unknown-agent-notification-type-err)})
           nil))))
 

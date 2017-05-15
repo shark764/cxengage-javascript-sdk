@@ -1,6 +1,6 @@
-(ns cxengage-javascript-sdk.next-modules.interaction-test
+(ns cxengage-javascript-sdk.modules.interaction-test
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cxengage-javascript-sdk.next-modules.interaction :as interaction]
+  (:require [cxengage-javascript-sdk.modules.interaction :as interaction]
             [cljs.core.async :as a]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.internal-utils :as iu]

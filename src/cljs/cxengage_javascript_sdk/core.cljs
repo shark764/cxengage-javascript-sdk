@@ -13,20 +13,19 @@
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.errors :as e]
 
-            [cxengage-javascript-sdk.next-modules.authentication :as authentication]
-            [cxengage-javascript-sdk.next-modules.session :as session]
-            [cxengage-javascript-sdk.next-modules.reporting :as reporting]
-            [cxengage-javascript-sdk.next-modules.voice :as voice]
-            [cxengage-javascript-sdk.next-modules.interaction :as interaction]
-            [cxengage-javascript-sdk.next-modules.entities :as entities]
-            [cxengage-javascript-sdk.next-modules.messaging :as messaging]
-            [cxengage-javascript-sdk.next-modules.sqs :as sqs]
-            [cxengage-javascript-sdk.next-modules.logging :as logging]
-            [cxengage-javascript-sdk.next-modules.contacts :as contacts]
-
-            [cxengage-javascript-sdk.modules.email :as email]
-            [cxengage-javascript-sdk.domain.errors :as e]))
+            [cxengage-javascript-sdk.modules.authentication :as authentication]
+            [cxengage-javascript-sdk.modules.session :as session]
+            [cxengage-javascript-sdk.modules.reporting :as reporting]
+            [cxengage-javascript-sdk.modules.voice :as voice]
+            [cxengage-javascript-sdk.modules.interaction :as interaction]
+            [cxengage-javascript-sdk.modules.entities :as entities]
+            [cxengage-javascript-sdk.modules.messaging :as messaging]
+            [cxengage-javascript-sdk.modules.sqs :as sqs]
+            [cxengage-javascript-sdk.modules.logging :as logging]
+            [cxengage-javascript-sdk.modules.contacts :as contacts]
+            [cxengage-javascript-sdk.modules.email :as email]))
 
 (def *SDK-VERSION* "5.0.0-SNAPSHOT")
 
@@ -50,11 +49,6 @@
   [module]
   (.start module (clj->js (state/get-config))))
 
-(defn gen-new-initial-module-config [comm<]
-  {:config (state/get-config)
-   :state (atom {})
-   :core-messages< comm<})
-
 (defn start-base-modules
   "Starts any core SDK modules which are not considered 'session-based', I.E. aren't dependent on any user-session specific integrations."
   [comm<]
@@ -62,7 +56,7 @@
         session-module (session/map->SessionModule.)
         interaction-module (interaction/map->InteractionModule.)
         entities-module (entities/map->EntitiesModule.)
-        contacts-module (contacts/map->ContactsModule. (gen-new-initial-module-config comm<))
+        contacts-module (contacts/map->ContactsModule.)
         logging-module (logging/map->LoggingModule.)]
     (doseq [module [auth-module session-module interaction-module entities-module contacts-module logging-module]]
       (start-internal-module module))))
@@ -73,7 +67,7 @@
   (let [sqs-module (sqs/map->SQSModule. {:on-msg-fn int/sqs-msg-router})
         messaging-module (messaging/map->MessagingModule {:on-msg-fn int/messaging-msg-router})
         voice-module (voice/map->VoiceModule.)
-        email-module (email/map->EmailModule. (gen-new-initial-module-config comm<))
+        email-module (email/map->EmailModule.)
         reporting-module (reporting/map->ReportingModule.)]
     (doseq [module [sqs-module messaging-module voice-module email-module reporting-module]]
       (start-internal-module module))))

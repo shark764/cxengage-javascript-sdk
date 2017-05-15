@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.next-modules.voice
+(ns cxengage-javascript-sdk.modules.voice
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljsjs.paho]
@@ -239,13 +239,17 @@
         {:keys [interaction-id topic digit callback]} params
         pubsub-response {:interaction-id interaction-id
                          :digit-sent digit}]
-    (try
-      (do (.sendDigits connection digit)
-          (p/publish {:topics topic
-                      :response pubsub-response
-                      :callback callback}))
-      (catch js/Object e (p/publish {:topics topic
-                                     :error (e/failed-to-send-twilio-digits-err)})))))
+    (if (and (= :active (state/find-interaction-location interaction-id))
+             (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
+      (try
+        (do (.sendDigits connection digit)
+            (p/publish {:topics topic
+                        :response pubsub-response
+                        :callback callback}))
+        (catch js/Object e (p/publish {:topics topic
+                                       :error (e/failed-to-send-twilio-digits-err)})))
+      (p/publish {:topics (p/get-topic :failed-to-send-digits-invalid-interaction)
+                  :error (e/failed-to-send-digits-invalid-interaction-err)}))))
 
 
 ;; -------------------------------------------------------------------------- ;;

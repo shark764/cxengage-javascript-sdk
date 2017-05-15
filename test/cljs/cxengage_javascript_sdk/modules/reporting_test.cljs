@@ -1,11 +1,11 @@
-(ns cxengage-javascript-sdk.next-modules.reporting-test
+(ns cxengage-javascript-sdk.modules.reporting-test
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.pubsub :as p]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.state :as st]
-            [cxengage-javascript-sdk.next-modules.reporting :as rep]
+            [cxengage-javascript-sdk.modules.reporting :as rep]
             [cljs-uuid-utils.core :as uuid]
             [cljs.test :refer-macros [deftest is testing async]]))
 

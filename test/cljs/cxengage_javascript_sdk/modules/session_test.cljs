@@ -1,6 +1,6 @@
-(ns cxengage-javascript-sdk.next-modules.session-test
+(ns cxengage-javascript-sdk.modules.session-test
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cxengage-javascript-sdk.next-modules.session :as session]
+  (:require [cxengage-javascript-sdk.modules.session :as session]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]

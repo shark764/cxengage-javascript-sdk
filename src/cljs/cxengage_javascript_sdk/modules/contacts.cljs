@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.next-modules.contacts
+(ns cxengage-javascript-sdk.modules.contacts
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
@@ -255,7 +255,7 @@
          method :get]
      (contact-request url nil method params :list-layouts ::list-layouts-params true))))
 
-(defrecord ContactsModule [config state core-messages<]
+(defrecord ContactsModule []
   pr/SDKModule
   (start [this]
     (let [module-name :contacts]

@@ -1,6 +1,6 @@
-(ns cxengage-javascript-sdk.next-modules.logging-test
+(ns cxengage-javascript-sdk.modules.logging-test
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cxengage-javascript-sdk.next-modules.logging :as log]
+  (:require [cxengage-javascript-sdk.modules.logging :as log]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.pubsub :as p]

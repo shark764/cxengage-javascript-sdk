@@ -127,7 +127,7 @@
                    (ih/js-publish {:topics "cxengage/errors/error/api-rejected-bad-client-request"
                                    :error (e/client-request-err)}))
                  (when (server-error? status)
-                   (ih/js-publish {:topics "cxengage/errors/error/api-encountered-internal-error"
+                   (ih/js-publish {:topics "cxengage/errors/error/api-encountered-internal-server-error"
                                    :error (e/internal-server-err)})))))))
      resp-chan)))
 

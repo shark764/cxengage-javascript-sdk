@@ -137,8 +137,17 @@
                  :new-message-received "cxengage/interactions/messaging/new-message-received"
                  :initialize-outbound-sms-response "cxengage/interactions/messaging/initialize-outbound-sms-response"
                  :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
+
+                 ;; Errors
                  :failed-to-refresh-sqs-integration "cxengage/errors/fatal/failed-to-refresh-sqs-integration"
                  :mqtt-failed-to-connect "cxengage/errors/fatal/mqtt-failed-to-connect"
+                 :failed-to-retrieve-messaging-history "cxengage/errors/error/failed-to-retrieve-messaging-history"
+                 :failed-to-retrieve-messaging-metadata "cxengage/errors/error/failed-to-retrieve-messaging-metadata"
+                 :failed-to-create-email-reply-artifact "cxengage/errors/error/failed-to-create-email-reply-artifact"
+                 :unknown-agent-notification-type-received "cxengage/errors/error/unknown-agent-notification-type"
+                 :api-rejected-bad-client-request "cxengage/errors/error/api-rejected-bad-client-request"
+                 :api-encountered-internal-error "cxengage/errors/error/api-encountered-internal-server-error"
+                 :failed-to-send-digits-invalid-interaction "cxengage/errors/error/failed-to-send-digits-invalid-interaction"
                  })
 
 (defn get-topic
