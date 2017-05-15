@@ -11,17 +11,16 @@
   (let [f (aget js/window "CxEngage" "sendCoreMessage")]
     (f message)))
 
-(defn set-sqs-poller-interval [interval-id]
-  (aset js/window "CxEngage" "internal" "SQSPoller" interval-id))
-
-(defn get-sqs-poller-interval []
-  (aget js/window "CxEngage" "internal" "SQSPoller"))
-
 (defn set-sdk-global [sdk]
   (aset js/window "CxEngage" sdk))
 
 (defn get-sdk-global []
   (aget js/window "CxEngage"))
+
+(defn twilio-ready? []
+  (and (aget js/window "Twilio")
+       (aget js/window "Twilio" "Device")
+       (aget js/window "Twilio" "Device" "setup")))
 
 (defn camelify [m]
   (->> m

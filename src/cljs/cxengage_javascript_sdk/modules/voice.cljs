@@ -196,9 +196,7 @@
                         ;; element - which allows us to further initialize the Twilio
                         ;; Device in order to receive voice interactions.
                         (go-loop []
-                          (if (and (aget js/window "Twilio")
-                                   (aget js/window "Twilio" "Device")
-                                   (aget js/window "Twilio" "Device" "setup"))
+                          (if (ih/twilio-ready?)
                             (do
                               (state/set-twilio-device (js/Twilio.Device.setup token #js {"debug" debug-twilio?}))
                               (js/Twilio.Device.incoming update-twilio-connection)
