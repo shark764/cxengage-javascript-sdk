@@ -225,7 +225,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn go-ready
-  {:validaton ::go-ready-spec
+  {:validation ::go-ready-spec
    :topic-key :presence-state-change-request-acknowledged}
   [params]
   (let [{:keys [callback topic extension-value]} params
