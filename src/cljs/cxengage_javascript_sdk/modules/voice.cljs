@@ -239,13 +239,17 @@
         {:keys [interaction-id topic digit callback]} params
         pubsub-response {:interaction-id interaction-id
                          :digit-sent digit}]
-    (try
-      (do (.sendDigits connection digit)
-          (p/publish {:topics topic
-                      :response pubsub-response
-                      :callback callback}))
-      (catch js/Object e (p/publish {:topics topic
-                                     :error (e/failed-to-send-twilio-digits-err)})))))
+    (if (and (= :active (state/find-interaction-location interaction-id))
+             (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
+      (try
+        (do (.sendDigits connection digit)
+            (p/publish {:topics topic
+                        :response pubsub-response
+                        :callback callback}))
+        (catch js/Object e (p/publish {:topics topic
+                                       :error (e/failed-to-send-twilio-digits-err)})))
+      (p/publish {:topics (p/get-topic :failed-to-send-digits-invalid-interaction)
+                  :error (e/failed-to-send-digits-invalid-interaction-err)}))))
 
 
 ;; -------------------------------------------------------------------------- ;;

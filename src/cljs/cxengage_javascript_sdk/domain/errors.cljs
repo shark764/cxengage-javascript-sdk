@@ -125,6 +125,11 @@
    :level "fatal"
    :message "Failed to refresh Twilio credentials."})
 
+(defn failed-to-send-digits-invalid-interaction-err []
+  {:code 7001
+   :level "error"
+   :message "Unable to send digits to specified interaction. Interaction must be active and of type voice."})
+
 (defn no-microphone-access-error []
   {:code 8000
    :level "fatal"

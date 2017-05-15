@@ -118,18 +118,18 @@
                {:keys [status]} response]
            (if (and (service-unavailable? status) (< failed-attempts 3))
              (do
-               (js/console.error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))))))))))
+               (js/console.error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
                (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
-               (recur (inc failed-attempts))
+               (recur (inc failed-attempts)))
              (do (when (request-success? status)
                    (a/put! resp-chan response))
                  (when (client-error? status)
-                   (ih/js-publish {:topics "cxengage/errors/error/api-rejected-bad-client-request"
+                   (ih/js-publish {:topics (p/get-topic :api-rejected-bad-client-request)
                                    :error (e/client-request-err)}))
                  (when (server-error? status)
-                   (ih/js-publish {:topics "cxengage/errors/error/api-encountered-internal-error"
-                                   :error (e/internal-server-err)})))
-     resp-chan
+                   (ih/js-publish {:topics (p/get-topic :api-encountered-internal-error)
+                                   :error (e/internal-server-err)})))))))
+     resp-chan)))
 
 (defn file-api-request [request-map]
   (let [response-channel (a/promise-chan)
