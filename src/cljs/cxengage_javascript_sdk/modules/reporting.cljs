@@ -55,30 +55,30 @@
           :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
 
 (def-sdk-fn add-stat-subscription
-   ::add-statistic-params
-   (p/get-topic :add-stat)
-   [params]
-   (let [{:keys [topic callback]} params
-         tenant-id (st/get-active-tenant-id)
-         stat-bundle (dissoc params :callback)]
-       (let [stat-id (str (uuid/make-random-uuid))]
-         (swap! stat-subscriptions assoc-in [:statistics stat-id] stat-bundle)
-         (p/publish {:topics topic
-                     :response {:stat-id stat-id}
-                     :callback callback})
-         (go (let [batch-url (str (st/get-base-api-url) "tenants/tenant-id/realtime-statistics/batch")
-                   polling-request {:method :post
-                                    :body {:requests (:statistics @stat-subscriptions)}
-                                    :url (iu/build-api-url-with-params
-                                          batch-url
-                                          {:tenant-id tenant-id})}
-                   {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
-                   {:keys [results]} api-response
-                   batch-topic (p/get-topic :batch-response)]
-               (when (= status 200)
-                 (p/publish {:topics batch-topic
-                             :response results
-                             :callback callback})))))))
+  ::add-statistic-params
+  (p/get-topic :add-stat)
+  [params]
+  (let [{:keys [topic callback]} params
+        tenant-id (st/get-active-tenant-id)
+        stat-bundle (dissoc params :callback)]
+    (let [stat-id (str (uuid/make-random-uuid))]
+      (swap! stat-subscriptions assoc-in [:statistics stat-id] stat-bundle)
+      (p/publish {:topics topic
+                  :response {:stat-id stat-id}
+                  :callback callback})
+      (go (let [batch-url (str (st/get-base-api-url) "tenants/tenant-id/realtime-statistics/batch")
+                polling-request {:method :post
+                                 :body {:requests (:statistics @stat-subscriptions)}
+                                 :url (iu/build-api-url-with-params
+                                       batch-url
+                                       {:tenant-id tenant-id})}
+                {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
+                {:keys [results]} api-response
+                batch-topic (p/get-topic :batch-response)]
+            (when (= status 200)
+              (p/publish {:topics batch-topic
+                          :response results
+                          :callback callback})))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.removeStatSubscription({
@@ -91,15 +91,15 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn remove-stat-subscription
-   ::remove-statistics-params
-   (p/get-topic :remove-stat)
-   [params]
-   (let [{:keys [stat-id topic callback]} params]
-       (let [new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
-         (swap! stat-subscriptions assoc :statistics new-stats)
-         (p/publish {:topics topic
-                     :response new-stats
-                     :callback callback}))))
+  ::remove-statistics-params
+  (p/get-topic :remove-stat)
+  [params]
+  (let [{:keys [stat-id topic callback]} params]
+    (let [new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
+      (swap! stat-subscriptions assoc :statistics new-stats)
+      (p/publish {:topics topic
+                  :response new-stats
+                  :callback callback}))))
 
 
 ;; -------------------------------------------------------------------------- ;;
@@ -113,29 +113,29 @@
           :opt-un [::specs/callback ::specs/resource-id]))
 
 (def-sdk-fn get-capacity
-   ::get-capacity-params
-   (p/get-topic :get-capacity-response)
-   [params]
-   (let [tenant-id (st/get-active-tenant-id)
-         {:keys [resource-id topic callback]} params
-         url (if resource-id
-                 "tenants/tenant-id/users/resource-id/realtime-statistics/resource-capacity"
-                 "tenants/tenant-id/realtime-statistics/resource-capacity")]
-         ;; If resource-id is passed to the function, it will return the Capacity
-         ;; for the specified resource-id. If no arguments are passed to the function
-         ;; it will instead return the capacity for the active user's selected Tenant
-       (go (let [capacity-url (str (st/get-base-api-url) url)
-                 url-params (if resource-id {:tenant-id tenant-id :resource-id resource-id} {:tenant-id tenant-id})
-                 capacity-request {:method :get
-                                   :url (iu/build-api-url-with-params
-                                         capacity-url
-                                         url-params)}
-                 {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
-                 {:keys [results]} api-response]
-             (when (= status 200)
-               (p/publish {:topics topic
-                           :response results
-                           :callback callback}))))))
+  ::get-capacity-params
+  (p/get-topic :get-capacity-response)
+  [params]
+  (let [tenant-id (st/get-active-tenant-id)
+        {:keys [resource-id topic callback]} params
+        url (if resource-id
+              "tenants/tenant-id/users/resource-id/realtime-statistics/resource-capacity"
+              "tenants/tenant-id/realtime-statistics/resource-capacity")]
+    ;; If resource-id is passed to the function, it will return the Capacity
+    ;; for the specified resource-id. If no arguments are passed to the function
+    ;; it will instead return the capacity for the active user's selected Tenant
+    (go (let [capacity-url (str (st/get-base-api-url) url)
+              url-params (if resource-id {:tenant-id tenant-id :resource-id resource-id} {:tenant-id tenant-id})
+              capacity-request {:method :get
+                                :url (iu/build-api-url-with-params
+                                      capacity-url
+                                      url-params)}
+              {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
+              {:keys [results]} api-response]
+          (when (= status 200)
+            (p/publish {:topics topic
+                        :response results
+                        :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.statQuery({
@@ -146,8 +146,8 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::stat-query-params
- (s/keys :req-un [::specs/statistic]
-         :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
+  (s/keys :req-un [::specs/statistic]
+          :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
 
 (def-sdk-fn stat-query
   ::stat-query-params
@@ -158,18 +158,18 @@
         stat-bundle (dissoc params :callback :topic)
         stat-id (str (uuid/make-random-uuid))
         stat-body (assoc {} stat-id stat-bundle)]
-      (let [batch-url (str (st/get-base-api-url) "tenants/tenant-id/realtime-statistics/batch")
-            polling-request {:method :post
-                             :body {:requests stat-body}
-                             :url (iu/build-api-url-with-params
-                                   batch-url
-                                   {:tenant-id tenant-id})}
-            {:keys [api-response status]} (a/<! (iu/api-request polling-request))
-            {:keys [results]} api-response]
-          (when (= status 200)
-            (p/publish {:topics topic
-                        :response results
-                        :callback callback})))))
+    (let [batch-url (str (st/get-base-api-url) "tenants/tenant-id/realtime-statistics/batch")
+          polling-request {:method :post
+                           :body {:requests stat-body}
+                           :url (iu/build-api-url-with-params
+                                 batch-url
+                                 {:tenant-id tenant-id})}
+          {:keys [api-response status]} (a/<! (iu/api-request polling-request))
+          {:keys [results]} api-response]
+      (when (= status 200)
+        (p/publish {:topics topic
+                    :response results
+                    :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.getAvailableStats();
@@ -213,8 +213,8 @@
   (let [{:keys [callback topic contact-id page]} params
         tenant-id (st/get-active-tenant-id)
         url (str (st/get-base-api-url) (if page
-                                          (str "tenants/tenant-id/contacts/contact-id/interactions?page=" page)
-                                          "tenants/tenant-id/contacts/contact-id/interactions"))
+                                         (str "tenants/tenant-id/contacts/contact-id/interactions?page=" page)
+                                         "tenants/tenant-id/contacts/contact-id/interactions"))
         get-contact-interaction-history-request {:method :get
                                                  :url (iu/build-api-url-with-params
                                                        url
@@ -244,10 +244,10 @@
         tenant-id (st/get-active-tenant-id)
         url (str (st/get-base-api-url) "tenants/tenant-id/interactions/interaction-id")
         get-interaction-request {:method :get
-                                         :url (iu/build-api-url-with-params
-                                               url
-                                               {:tenant-id tenant-id
-                                                :interaction-id interaction-id})}
+                                 :url (iu/build-api-url-with-params
+                                       url
+                                       {:tenant-id tenant-id
+                                        :interaction-id interaction-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-interaction-request))]
     (when (= status 200)
       (p/publish {:topics topic
@@ -273,6 +273,6 @@
       (ih/send-core-message {:type :module-registration-status
                              :status :success
                              :module-name module-name}))
-      (start-polling this))
+    (start-polling this))
   (stop [this])
   (refresh-integration [this]))
