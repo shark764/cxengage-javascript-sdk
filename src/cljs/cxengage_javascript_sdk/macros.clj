@@ -11,10 +11,14 @@
   - returning nil to prevent core/async channel leakage
   - providing the SDK API fn with a simple params map to work with
   - merging optional callback function into said params map."
-  [name spec topic _ & body]
+  [name options _ & body]
   `(defn ~name
      ([& args#]
-      (let [args# (map cxengage-javascript-sdk.interop-helpers/extract-params args#)
+      (let [validation# (:validation ~options)
+            topic-key# (:topic-key ~options)
+            preserve-casing?# (or (:preserve-casing? ~options) false)
+            topic# (cxengage-javascript-sdk.pubsub/get-topic topic-key#)
+            args# (map #(cxengage-javascript-sdk.interop-helpers/extract-params % preserve-casing?#) args#)
             callback# (if (fn? (first args#)) (first args#) (second args#))]
         (if-let [error# (cond
 
@@ -22,17 +26,17 @@
                           (cxengage-javascript-sdk.domain.errors/wrong-number-of-sdk-fn-args-err)
 
                           :else false)]
-          (cxengage-javascript-sdk.pubsub/publish {:topics ~topic
+          (cxengage-javascript-sdk.pubsub/publish {:topics topic#
                                                    :error error#
                                                    :callback callback#})
           (let [params# (if (fn? (first args#)) {:callback (first args#)} (first args#))
                 params# (-> params#
                             (assoc :callback callback#)
-                            (assoc :topic ~topic))
+                            (assoc :topic topic#))
                 ~'params params#]
-            (if (not (cljs.spec/valid? ~spec params#))
-              (do (js/console.info "Params object failed spec validation: " (cljs.spec/explain-data ~spec params#))
-                  (cxengage-javascript-sdk.pubsub/publish {:topics ~topic
+            (if (not (cljs.spec/valid? validation# params#))
+              (do (js/console.info "Params object failed spec validation: " (cljs.spec/explain-data validation# params#))
+                  (cxengage-javascript-sdk.pubsub/publish {:topics topic#
                                                            :error (cxengage-javascript-sdk.domain.errors/args-failed-spec-err)
                                                            :callback callback#}))
               (do (cljs.core.async.macros/go ~@body)

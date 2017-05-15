@@ -143,8 +143,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn dial
-  ::dial-params
-  (p/get-topic :dial-send-acknowledged)
+  {:validation ::dial-params
+   :topic-key :dial-send-acknowledged}
   [params]
   (let [{:keys [topic phone-number callback]} params
         tenant-id (state/get-active-tenant-id)
@@ -229,8 +229,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-digits
-  ::send-digits-params
-  (p/get-topic :send-digits-acknowledged)
+  {:validation ::send-digits-params
+   :topic-key :send-digits-acknowledged}
   [params]
   (let [connection (state/get-twilio-connection)
         {:keys [interaction-id topic digit callback]} params
@@ -270,8 +270,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-recordings
-  ::get-recordings-params
-  (p/get-topic :recording-response)
+  {:validation ::get-recordings-params
+   :topic-key :recording-response}
   [params]
   (let [{:keys [interaction-id topic callback]} params]
     (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))

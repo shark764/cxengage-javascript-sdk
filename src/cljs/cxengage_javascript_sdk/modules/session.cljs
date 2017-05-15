@@ -27,8 +27,8 @@
           :opt-un [::specs/callback ::specs/reason-info]))
 
 (def-sdk-fn go-not-ready
-  ::go-not-ready-spec
-  (p/get-topic :presence-state-change-request-acknowledged)
+  {:validation ::go-not-ready-spec
+   :topic-key :presence-state-change-request-acknowledged}
   [params]
   (let [{:keys [callback topic reason-info]} params
         {:keys [reason reason-id reason-list-id]} reason-info
@@ -156,8 +156,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn set-active-tenant
-  ::set-active-tenant-spec
-  (p/get-topic :active-tenant-set)
+  {:validation ::set-active-tenant-spec
+   :topic-key :active-tenant-set}
   [params]
   (let [{:keys [callback topic tenant-id]} params
         tenant-permissions (state/get-tenant-permissions tenant-id)]
@@ -180,8 +180,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn set-direction
-  ::set-direction-spec
-  (p/get-topic :set-direction-response)
+  {:validation ::set-direction-spec
+   :topic-key :set-direction-response}
   [params]
   (let [{:keys [callback topic direction]} params
         tenant-id (state/get-active-tenant-id)
@@ -225,8 +225,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn go-ready
-  ::go-ready-spec
-  (p/get-topic :presence-state-change-request-acknowledged)
+  {:validation ::go-ready-spec
+   :topic-key :presence-state-change-request-acknowledged}
   [params]
   (let [{:keys [callback topic extension-value]} params
         {:keys [status api-response]} (a/<! (rest/get-config-request))
