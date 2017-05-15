@@ -4,6 +4,7 @@
 * ** BREAKING ** refactored entities module - each entity now has it's own function and will require passing the proper type-id ie; "resource-id" rather than the generic "entity-id".
 * ** BREAKING ** changed global window exposure from "serenova.cxengage.api...." to just "CxEngage"
 * ** BREAKING ** removed (due to them now being necessary) the "capabilities" pub/sub messages
+* removed build-api-url-with-params, replace with api-url
 * Because of the above two changes, the usage for initializating the SDK is now: CxEngage.initialize(options). Beyond that you will need to just reference "CxEngage" on the window, and *not create an alias to it like you used to* (via var SDK = serenova.cxengage.initialize(options);)
 * reporting functions moved to Reporting Module.
 * add paging functionality to get contact interaction history

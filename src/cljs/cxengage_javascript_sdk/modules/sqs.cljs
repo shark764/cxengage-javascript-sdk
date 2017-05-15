@@ -89,8 +89,8 @@
             (let [tenant-id (state/get-active-tenant-id)
                   resource-id (state/get-active-user-id)
                   config-request {:method :get
-                                  :url (iu/build-api-url-with-params
-                                        (str (state/get-base-api-url) "tenants/tenant-id/users/resource-id/config")
+                                  :url (iu/api-url
+                                        "tenants/tenant-id/users/resource-id/config"
                                         {:tenant-id tenant-id
                                          :resource-id resource-id})}
                   {:keys [status api-response]} (a/<! (iu/api-request config-request))

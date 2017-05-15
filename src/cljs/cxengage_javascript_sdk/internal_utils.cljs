@@ -33,10 +33,6 @@
     (str (state/get-base-api-url) url)
     params)))
 
-(defn build-api-url-with-params [url params]
-  (reduce-kv (fn [s k v]
-               (str/replace s (re-pattern (name k)) v)) url params))
-
 (defn get-now
   []
   (let [offset (state/get-time-offset)
@@ -152,22 +148,21 @@
       response-channel)))
 
 (defn get-artifact [interaction-id tenant-id artifact-id]
-  (let [url (str (state/get-base-api-url)
-                 (build-api-url-with-params
-                  "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
-                  {:tenant-id tenant-id
-                   :interaction-id interaction-id
-                   :artifact-id artifact-id}))
+  (let [url (api-url
+             "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
+             {:tenant-id tenant-id
+              :interaction-id interaction-id
+              :artifact-id artifact-id})
         artifact-request {:method :get
                           :url url}]
     (api-request artifact-request)))
 
 (defn get-interaction-files [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
-        url (-> "tenants/tenant-id/interactions/interaction-id/artifacts"
-                (build-api-url-with-params {:interaction-id interaction-id
-                                            :tenant-id tenant-id})
-                (#(str (state/get-base-api-url) %)))
+        url (api-url
+             "tenants/tenant-id/interactions/interaction-id/artifacts"
+             {:interaction-id interaction-id
+              :tenant-id tenant-id})
         file-request {:method :get
                       :url url}]
     (api-request file-request)))

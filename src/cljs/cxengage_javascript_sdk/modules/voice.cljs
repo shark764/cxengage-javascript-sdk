@@ -147,7 +147,6 @@
   (p/get-topic :dial-send-acknowledged)
   [params]
   (let [{:keys [topic phone-number callback]} params
-        dial-url (str (state/get-base-api-url) "tenants/tenant-id/interactions")
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
         dial-body {:channel-type "voice"
@@ -158,8 +157,8 @@
                    :metadata {}
                    :source "twilio"}
         dial-request {:method :post
-                      :url (iu/build-api-url-with-params
-                            dial-url
+                      :url (iu/api-url
+                            "tenants/tenant-id/interactions"
                             {:tenant-id tenant-id})
                       :body dial-body}]
     (let [dial-response (a/<! (iu/api-request dial-request))
@@ -335,10 +334,9 @@
         (let [resource-id (state/get-active-user-id)
               tenant-id (state/get-active-tenant-id)
               topic (p/get-topic :config-response)
-              config-url (str (state/get-base-api-url) "tenants/tenant-id/users/resource-id/config")
               config-request {:method :get
-                              :url (iu/build-api-url-with-params
-                                    config-url
+                              :url (iu/api-url
+                                    "tenants/tenant-id/users/resource-id/config"
                                     {:tenant-id tenant-id
                                      :resource-id resource-id})}
               config-response (a/<! (iu/api-request config-request))

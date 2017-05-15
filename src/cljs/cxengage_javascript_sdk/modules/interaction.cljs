@@ -130,7 +130,6 @@
   ([module action client-params]
    (let [params (ih/extract-params client-params)
          module-state @(:state module)
-         api-url (state/get-base-api-url)
          {:keys [callback interaction-id note-id]} params
          params (assoc params :resource-id (state/get-active-user-id))
          params (assoc params :tenant-id (state/get-active-tenant-id))
@@ -144,12 +143,12 @@
                 :get-all nil
                 :update (select-keys params [:title :body :contact-id])
                 :create (select-keys params [:title :body :contact-id]))
-         note-url (-> api-url
-                      (str "tenants/tenant-id/interactions/interaction-id/notes/note-id")
-                      (iu/build-api-url-with-params (select-keys params [:tenant-id :interaction-id :note-id])))
-         notes-url (-> api-url
-                       (str "tenants/tenant-id/interactions/interaction-id/notes?contents=true")
-                       (iu/build-api-url-with-params (select-keys params [:tenant-id :interaction-id])))
+         note-url (iu/api-url
+                   "tenants/tenant-id/interactions/interaction-id/notes/note-id"
+                   (select-keys params [:tenant-id :interaction-id :note-id]))
+         notes-url (iu/api-url
+                    "tenants/tenant-id/interactions/interaction-id/notes?contents=true"
+                    (select-keys params [:tenant-id :interaction-id]))
          url (case action
                :get-one note-url
                :get-all notes-url
@@ -251,7 +250,6 @@
         {:keys [sub-id script action-id]} original-script
         parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
         elements (modify-elements (:elements parsed-script))
-        script-url (str (state/get-base-api-url) "tenants/tenant-id/interactions/interaction-id/actions/action-id")
         updated-answers (reduce-kv
                          (fn [acc input-name input-value]
                            (assoc acc input-name {:value (or input-value nil) :text (get-in elements [input-name :text])}))
@@ -277,8 +275,8 @@
         ;; to be located within the scriptResponse object under it's corresponding
         ;; element.
         script-request {:method :post
-                        :url (iu/build-api-url-with-params
-                              script-url
+                        :url (iu/api-url
+                              "tenants/tenant-id/interactions/interaction-id/actions/action-id"
                               {:tenant-id (state/get-active-tenant-id)
                                :interaction-id interaction-id
                                :action-id action-id})

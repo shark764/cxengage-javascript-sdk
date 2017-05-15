@@ -32,9 +32,8 @@
   [params]
   (let [{:keys [topic interaction-id artifact-file-id artifact-id callback]} params
         tenant-id (state/get-active-tenant-id)
-        url (str (state/get-base-api-url) "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id")
-        url (iu/build-api-url-with-params
-             url
+        url (iu/api-url
+             "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
              {:tenant-id tenant-id
               :interaction-id interaction-id
               :artifact-id artifact-id})
@@ -138,11 +137,11 @@
   (let [{:keys [topic callback cc bcc html-body plain-text-body subject to interaction-id]} params
         artifact-id (state/get-reply-artifact-id-by-interaction-id interaction-id)
         tenant-id (state/get-active-tenant-id)
-        artifact-url (-> (state/get-base-api-url)
-                         (str "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id")
-                         (iu/build-api-url-with-params {:tenant-id tenant-id
-                                                        :interaction-id interaction-id
-                                                        :artifact-id artifact-id}))]
+        artifact-url (iu/api-url
+                      "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
+                      {:tenant-id tenant-id
+                       :interaction-id interaction-id
+                       :artifact-id artifact-id})]
     (let [request-list {:html-body nil
                         :plain-text-body nil}
           attachments (-> (state/get-all-reply-email-attachments interaction-id)
@@ -234,11 +233,10 @@
                                                           :artifactType "email"}}
                           artifact-update-response (a/<! (iu/api-request artifact-update-request))
                           _ (js/console.log "[Email Processing] Artifact update response:" (ih/camelify artifact-update-response))
-                          flow-url (-> (state/get-base-api-url)
-                                       (str "tenants/tenant-id/interactions/interaction-id/interrupts")
-                                       (iu/build-api-url-with-params
-                                        {:tenant-id tenant-id
-                                         :interaction-id interaction-id}))
+                          flow-url (iu/api-url
+                                    "tenants/tenant-id/interactions/interaction-id/interrupts"
+                                    {:tenant-id tenant-id
+                                     :interaction-id interaction-id})
                           flow-body {:interrupt {:resource-id (state/get-active-user-id)
                                                  :artifact-id artifact-id}
                                      :interrupt-type "send-email"
