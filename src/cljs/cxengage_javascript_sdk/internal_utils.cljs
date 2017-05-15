@@ -64,19 +64,34 @@
                          response)]
       {:api-response api-response :status status})))
 
-(defn server-error?
-  [status]
-  (and (>= status 500) (< status 512) (not= status 509)))
-
 (defn str-long-enough? [len st]
   (>= (.-length st) len))
+
+(defn service-unavailable?
+  [status]
+  (= status 503))
+
+(defn client-error?
+  [status]
+  (and (>= status 400)
+       (<= status 499)))
+
+(defn server-error?
+  [status]
+  (and (>= status 500)
+       (<= status 599)))
+
+(defn request-success?
+  [status]
+  (and (>= status 200)
+       (<= status 299)))
 
 (defn api-request
   ([request-map]
    (api-request request-map false))
   ([request-map preserve-casing?]
    (let [resp-chan (a/promise-chan)]
-     (go-loop [timeout 1]
+     (go-loop [failed-attempts 0]
        (let [response-channel (a/promise-chan)
              {:keys [method url body]} request-map
              manifest-endpoint? (if url
@@ -101,12 +116,19 @@
          (ajax/ajax-request request)
          (let [response (a/<! response-channel)
                {:keys [status]} response]
-           (if (and (server-error? status) (< timeout 4))
+           (if (and (service-unavailable? status) (< failed-attempts 3))
              (do
-               (js/console.error (str "Received server error " status " retrying in " (* 3 timeout) " seconds."))
-               (a/<! (a/timeout (* 3000 timeout)))
-               (recur (inc timeout)))
-             (a/put! resp-chan response)))))
+               (js/console.error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
+               (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
+               (recur (inc failed-attempts)))
+             (do (when (request-success? status)
+                   (a/put! resp-chan response))
+                 (when (client-error? status)
+                   (ih/js-publish {:topics "cxengage/errors/error/api-rejected-bad-client-request"
+                                   :error (e/client-request-err)}))
+                 (when (server-error? status)
+                   (ih/js-publish {:topics "cxengage/errors/error/api-encountered-internal-error"
+                                   :error (e/internal-server-err)})))))))
      resp-chan)))
 
 (defn file-api-request [request-map]
@@ -160,17 +182,14 @@
                                   :interrupt-type interrupt-type
                                   :interrupt interrupt-body}
                            :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/interrupts")}]
-    (do (go (let [interrupt-response (a/<! (api-request interrupt-request))
-                  {:keys [api-response status]} interrupt-response]
-              (if (not= status 200)
-                (ih/js-publish {:topics topic
-                                :error (e/client-request-err)
-                                :callback callback})
-                (do (ih/js-publish {:topics topic
-                                    :response (merge {:interaction-id interaction-id} interrupt-body)
-                                    :callback callback})
-                    (when on-confirm-fn (on-confirm-fn))))))
-        nil)))
+    (go (let [interrupt-response (a/<! (api-request interrupt-request))
+              {:keys [api-response status]} interrupt-response]
+          (when (= status 200)
+            (ih/js-publish {:topics topic
+                            :response (merge {:interaction-id interaction-id} interrupt-body)
+                            :callback callback})
+            (when on-confirm-fn (on-confirm-fn)))))
+    nil))
 
 ;;;;;;;;;;;;;;;
 ;; sigv4 utils

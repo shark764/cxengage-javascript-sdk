@@ -118,6 +118,8 @@
 
 (defn on-failure [msg]
   (js/console.log "Mqtt Client failed to connect " msg)
+  (p/publish {:topics (p/get-topic :mqtt-failed-to-connect)
+              :error (e/failed-to-connect-to-mqtt-err)})
   (ih/send-core-message {:type :module-registration-status
                          :status :failure
                          :module-name :messaging}))
@@ -141,20 +143,18 @@
     (.connect mqtt connect-options)
     mqtt))
 
+(s/fdef init
+        :args (s/cat :mqtt-conf ::mqtt-conf :client-id string? :on-received fn?))
+
 (defn mqtt-init
   [mqtt-conf client-id on-received]
   (let [mqtt-client (connect (get-iot-url (time/now) mqtt-conf) client-id on-received)]
     (swap! module-state assoc :mqtt-client mqtt-client)))
 
-(s/fdef init
-        :args (s/cat :mqtt-conf ::mqtt-conf :client-id string? :on-received fn?))
-
 (defn subscribe-to-messaging-interaction [message]
   (let [{:keys [tenant-id interaction-id env]} message
         topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
     (subscribe topic)))
-
-(defn unsubscribe-from-messaging-interaction* [message])
 
 (defn gen-payload [message]
   (let [{:keys [message resource-id tenant-id interaction-id]} message
@@ -177,9 +177,10 @@
   (t/write (t/writer :json-verbose) (clojure.walk/stringify-keys message)))
 
 ;; ----------------------------------------------------------------;;
-;;
-;; CxEngage.interactions.messaging.sendMessage{interactionId: "{{interaction-id}}", message: "The message you want to send"})
-;;
+;; CxEngage.interactions.messaging.sendMessage({
+;;   interactionId: "{{interaction-id}}",
+;;   message: "The message you want to send"
+;; });
 ;; ----------------------------------------------------------------;;
 
 (s/def ::send-message-params
@@ -193,31 +194,20 @@
   [params]
   (let [{:keys [interaction-id message topic callback]} params
         tenant-id (state/get-active-tenant-id)
-        payload {:resource-id (state/get-active-user-id)
-                 :tenant-id tenant-id
-                 :interaction-id interaction-id
-                 :message message}]
-    (let [payload (-> payload
-                      (gen-payload)
-                      (format-payload))
-          mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
-      (send-message-impl payload mqtt-topic callback))))
-
-(defn get-transcript [interaction-id tenant-id artifact-id callback]
-  (go (let [transcript (a/<! (iu/get-artifact interaction-id tenant-id artifact-id))
-            {:keys [api-response status]} transcript]
-        (if-not (= status 200)
-          (p/publish {:topics (p/get-topic :transcript-response)
-                      :response (e/client-request-err)
-                      :callback callback})
-          (p/publish {:topics (p/get-topic :transcript-response)
-                      :response (:files api-response)
-                      :callback callback})))))
+        payload (-> {:resource-id (state/get-active-user-id)
+                     :tenant-id tenant-id
+                     :interaction-id interaction-id
+                     :message message}
+                    (gen-payload)
+                    (format-payload))
+        mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
+    (send-message-impl payload mqtt-topic callback)))
 
 ;; ----------------------------------------------------------------;;
-;;
-;; CxEngage.interactions.messaging.sendOutboundSms({interactionId: "{{interaction-id}}", message: "The message you want to send"})
-;;
+;; CxEngage.interactions.messaging.sendOutboundSms({
+;;   interactionId: "{{interaction-id}}",
+;;   message: "The message you want to send"
+;; });
 ;; ----------------------------------------------------------------;;
 
 (s/def ::send-sms-by-interrupt-params
@@ -239,18 +229,19 @@
                            "tenants/tenant-id/interactions/interaction-id/interrupts"
                            {:tenant-id tenant-id
                             :interaction-id interaction-id})
-                     :body interrupt-body}]
-    (let [sms-response (a/<! (iu/api-request sms-request))
-          {:keys [api-response status]} sms-response]
-      (when (= status 200)
-        (p/publish {:topics topic
-                    :response {:interaction-id interaction-id}
-                    :callback callback})))))
+                     :body interrupt-body}
+        sms-response (a/<! (iu/api-request sms-request))
+        {:keys [api-response status]} sms-response]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response {:interaction-id interaction-id}
+                  :callback callback}))))
 
 ;; ----------------------------------------------------------------;;
-;;
-;; CxEngage.interactions.messaging.initializeOutboundSms({phoneNumber: "+18005555555", message: "The message you want to send"})
-;;
+;; CxEngage.interactions.messaging.initializeOutboundSms({
+;;   phoneNumber: "+18005555555",
+;;   message: "The message you want to send"
+;; });
 ;; ----------------------------------------------------------------;;
 
 
@@ -287,23 +278,31 @@
                      :url (iu/api-url
                            "tenants/tenant-id/interactions"
                            {:tenant-id tenant-id})
-                     :body sms-body}]
-    (let [sms-response (a/<! (iu/api-request sms-request))
-          {:keys [api-response status]} sms-response]
-      (when (= status 200)
-        (p/publish {:topics topic
-                    :response api-response
-                    :callback callback})))))
+                     :body sms-body}
+        sms-response (a/<! (iu/api-request sms-request))
+        {:keys [api-response status]} sms-response]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
 
 ;; ----------------------------------------------------------------;;
-;;
-;; CxEngage.interactions.messaging.getTranscripts({interactionId: "{{interaction-id}}"})
-;;
+;; CxEngage.interactions.messaging.getTranscripts({
+;;   interactionId: "{{interaction-id}}"
+;; });
 ;; ----------------------------------------------------------------;;
 
 (s/def ::get-transcripts-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
+
+(defn get-transcript [interaction-id tenant-id artifact-id callback]
+  (go (let [transcript (a/<! (iu/get-artifact interaction-id tenant-id artifact-id))
+            {:keys [api-response status]} transcript]
+        (when (= status 200)
+          (p/publish {:topics (p/get-topic :transcript-response)
+                      :response (:files api-response)
+                      :callback callback})))))
 
 (def-sdk-fn get-transcripts
   ::get-transcripts-params
@@ -322,6 +321,10 @@
                     :callback callback})
         (doseq [t transcripts]
           (get-transcript interaction-id tenant-id (:artifact-id t) callback))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; SDK Messaging Module
+;; -------------------------------------------------------------------------- ;;
 
 (defrecord MessagingModule [on-msg-fn]
   pr/SDKModule

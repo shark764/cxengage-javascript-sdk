@@ -39,7 +39,6 @@
     (when api
       (aset js/window "CxEngage" (->> new-api (transform-keys camel/->camelCase) (clj->js))))))
 
-
 (defn start-internal-module
   "Given an internal Clojurescript SDK module that adheres to the SDKModule protocol, calls the (start) and (refresh-integration) methods to turn the module on."
   [module]

@@ -102,8 +102,8 @@
                    :error (e/args-failed-spec-err)
                    :callback callback})
        (iu/send-interrupt* (assoc interrupt-params
-                                   :interaction-id interaction-id
-                                   :callback callback))))))
+                                  :interaction-id interaction-id
+                                  :callback callback))))))
 
 (s/def ::get-one-note-params
   (s/keys :req-un [::specs/interaction-id ::specs/note-id]
@@ -171,13 +171,12 @@
                                 (assoc contact-note-request :body body)
                                 contact-note-request)]
      (if-not (s/valid? validation params)
-       (e/args-failed-spec-err)
+       (p/publish {:topics topic
+                   :error (e/args-failed-spec-err)
+                   :callback callback})
        (do (go (let [note-response (a/<! (iu/api-request contact-note-request))
                      {:keys [status api-response]} note-response]
-                 (if (not= status 200)
-                   (p/publish {:topics topic
-                               :response (e/client-request-err)
-                               :callback callback})
+                 (when (= status 200)
                    (p/publish {:topics topic
                                :response api-response
                                :callback callback}))))
@@ -195,20 +194,20 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn select-disposition-code
-   ::disposition-code-params
-   (p/get-topic :disposition-code-changed)
-   [params]
-   (let [{:keys [topic interaction-id disposition-id callback]} params
-         dispositions (state/get-interaction-disposition-codes interaction-id)
-         dv (filterv #(= (:disposition-id %1) disposition-id) dispositions)]
-       (if (empty? dv)
-         (p/publish {:topics topic
-                     :error (e/args-failed-spec-err)
-                     :callback callback})
-         (let [disposition (first dv)
-               interrupt-disposition (merge disposition {:selected true})
-               params (merge params {:disposition interrupt-disposition})]
-           (send-interrupt :select-disposition-code params)))))
+  ::disposition-code-params
+  (p/get-topic :disposition-code-changed)
+  [params]
+  (let [{:keys [topic interaction-id disposition-id callback]} params
+        dispositions (state/get-interaction-disposition-codes interaction-id)
+        dv (filterv #(= (:disposition-id %1) disposition-id) dispositions)]
+    (if (empty? dv)
+      (p/publish {:topics topic
+                  :error (e/args-failed-spec-err)
+                  :callback callback})
+      (let [disposition (first dv)
+            interrupt-disposition (merge disposition {:selected true})
+            params (merge params {:disposition interrupt-disposition})]
+        (send-interrupt :select-disposition-code params)))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.sendScript({
@@ -219,26 +218,24 @@
 ;; -------------------------------------------------------------------------- ;;
 
 
-(defn modify-elements [elements]
+(defn modify-elements
+  "One of two helper functions for prepping the send-script payload. Modifies the keys to be the same as the front-end element's name."
+  [elements]
   (let [updated-elements (reduce
                           (fn [acc element]
                             (assoc acc (get element :name) element))
                           {}
                           elements)]
-                          ;; One of two helper functions for prepping the
-                          ;; send-script payload. Modifies the keys to be
-                          ;; the same as the front-end element's name.
     (clojure.walk/keywordize-keys updated-elements)))
 
-(defn add-answers-to-elements [elements answers]
+(defn add-answers-to-elements
+  "Second helper function - injects the values for each element into the scriptResponse object solely for Reporting to parse them easier."
+  [elements answers]
   (let [updated-elements (reduce-kv
                           (fn [acc element-name element-value]
                             (assoc acc element-name (assoc element-value :value (get-in answers [element-name :value]))))
                           {}
                           elements)]
-                          ;; Second helper function - injects the values for
-                          ;; each element into the scriptResponse object solely
-                          ;; for Reporting to parse them easier.
     updated-elements))
 
 (s/def ::script-params
@@ -294,13 +291,6 @@
                             :response interaction-id
                             :callback callback})))))))
 
-(s/def ::generic-interrupt-params
-  (s/keys :req-un [::specs/interaction-id
-                   ::specs/interrupt-body
-                   ::specs/interrupt-type]
-          :opt-un [::specs/callback]))
-
-
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.sendCustomInterrupt({
 ;;   interactionId: "{{uuid}}",
@@ -309,9 +299,14 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
+(s/def ::custom-interrupt-params
+  (s/keys :req-un [::specs/interaction-id
+                   ::specs/interrupt-body
+                   ::specs/interrupt-type]
+          :opt-un [::specs/callback]))
 
-(def-sdk-fn generic-interrupt
-  ::generic-interrupt-params
+(def-sdk-fn custom-interrupt
+  ::custom-interrupt-params
   (p/get-topic :send-custom-interrupt-acknowledged)
   [params]
   (let [{:keys [callback topic interrupt-body interrupt-type interaction-id]} params
@@ -355,7 +350,7 @@
                                        :selectDispositionCode select-disposition-code
                                        :deselectDispositionCode (partial send-interrupt :deselect-disposition)
                                        :sendScript send-script
-                                       :sendCustomInterrupt generic-interrupt}}
+                                       :sendCustomInterrupt custom-interrupt}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

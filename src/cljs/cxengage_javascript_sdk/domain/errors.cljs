@@ -40,7 +40,7 @@
    :level "fatal"
    :message "The API returned a 503 error code and failed all retry attempts."})
 
-(defn inernal-server-err []
+(defn internal-server-err []
   {:code 1008
    :level "error"
    :message "The API encountered an internal error (500 status code)."})
@@ -49,6 +49,11 @@
   {:code 1009
    :level "error"
    :message "The API rejected the values provided (400 status code). Verify your values against the SDK documentation."})
+
+(defn unknown-agent-notification-type-err []
+  {:code 1010
+   :level "error"
+   :message "Received an unknown agent notification type. Unable to parse agent notification."})
 
 (defn insufficient-permissions-err []
   {:code 2000
@@ -90,12 +95,62 @@
    :level "error"
    :message "Invalid reason info provided. Must be in the list of reasons provided via your user config. Unable to transition agent to a not ready"})
 
+(defn login-failed-err []
+  {:code 3000
+   :level "error"
+   :message "Login attempt failed."})
+
+(defn logout-failed-err []
+  {:code 3001
+   :level "error"
+   :message "Logout attempt failed"})
+
 (defn failed-to-refresh-sqs-integration-err []
   {:code 5000
    :level "fatal"
    :message "Failed to refresh SQS Queue object. Unable to continue agent notification polling."})
 
+(defn failed-to-retrieve-messaging-history-err []
+  {:code 6000
+   :level "error"
+   :message "Failed to retrieve messaging interaction history."})
+
+(defn failed-to-retrieve-messaging-metadata-err []
+  {:code 6001
+   :level "error"
+   :message "Failed to retrieve messaging interaction metadata."})
+
+(defn failed-to-refresh-twilio-integration-err []
+  {:code 7000
+   :level "fatal"
+   :message "Failed to refresh Twilio credentials."})
+
 (defn no-microphone-access-error []
   {:code 8000
    :level "fatal"
    :message "Failed to connect to Twilio. Microphone access must be enabled within your browser to utilize voice features."})
+
+(defn failed-to-send-twilio-digits-err []
+  {:code 8001
+   :level "error"
+   :message "Failed to send digits via Twilio. Potentially invalid dial tones."})
+
+(defn failed-to-connect-to-mqtt-err []
+  {:code 9000
+   :level "fatal"
+   :message "Unable to connect to MQTT."})
+
+(defn failed-to-create-email-reply-artifact-err []
+  {:code 10000
+   :level "error"
+   :message "Failed to create email artifact for email reply."})
+
+(defn failed-to-retrieve-email-artifact-err []
+  {:code 10001
+   :level "error"
+   :message "Failed to retrieve email artifact data."})
+
+(defn reporting-batch-request-failed-err []
+  {:code 12000
+   :level "error"
+   :message "Reporting batch request failed. Ceasing further polling."})

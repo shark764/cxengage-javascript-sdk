@@ -129,8 +129,8 @@
                             (= type :transfer-to-extension)))
                (send-interrupt module :hold {:interaction-id interaction-id}))
            (iu/send-interrupt* (assoc interrupt-params
-                                         :interaction-id interaction-id
-                                         :callback callback)))))))
+                                      :interaction-id interaction-id
+                                      :callback callback)))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.dial({
@@ -236,17 +236,16 @@
   (p/get-topic :send-digits-acknowledged)
   [params]
   (let [connection (state/get-twilio-connection)
-        {:keys [interaction-id topic digit callback]} params]
-    (when (and (= :active (state/find-interaction-location interaction-id))
-               (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
-      (when connection
-        (try
-          (do (.sendDigits connection digit)
-              (p/publish {:topics topic
-                          :response {:interaction-id interaction-id
-                                     :digit-sent digit}
-                          :callback callback}))
-          (catch js/Object e (str "Caught: Invalid Dial-Tone Multiple Frequency signal: " e)))))))
+        {:keys [interaction-id topic digit callback]} params
+        pubsub-response {:interaction-id interaction-id
+                         :digit-sent digit}]
+    (try
+      (do (.sendDigits connection digit)
+          (p/publish {:topics topic
+                      :response pubsub-response
+                      :callback callback}))
+      (catch js/Object e (p/publish {:topics topic
+                                     :error (e/failed-to-send-twilio-digits-err)})))))
 
 
 ;; -------------------------------------------------------------------------- ;;
@@ -254,7 +253,6 @@
 ;;   interactionId: "{{uuid}}"
 ;; });
 ;; -------------------------------------------------------------------------- ;;
-
 
 (defn get-recording [interaction-id tenant-id artifact-id callback]
   (go (let [audio-recording (a/<! (iu/get-artifact interaction-id tenant-id artifact-id))
@@ -346,6 +344,6 @@
           (state/update-integration "twilio" twilio-integration)
           (if (not= status 200)
             (p/publish {:topics topic
-                        :error (e/client-request-err)})
+                        :error (e/failed-to-refresh-twilio-integration-err)})
             (state/set-twilio-device (js/Twilio.Device.setup twilio-token))))
         (recur)))))

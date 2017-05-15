@@ -60,7 +60,7 @@
          attachment-id (id/uuid-string (id/make-random-uuid))]
      (if-not (s/valid? ::add-attachment-params params)
        (p/publish {:topics (p/get-topic :add-attachment)
-                   :response (e/invalid-args-error "invalid args")
+                   :response (e/args-failed-spec-err)
                    :callback callback})
        (do (state/add-attachment-to-reply {:interaction-id interaction-id
                                            :attachment-id attachment-id
@@ -85,7 +85,7 @@
          {:keys [interaction-id attachment-id callback]} params]
      (if-not (s/valid? ::remove-attachment-params params)
        (p/publish {:topics (p/get-topic :remove-attachment)
-                   :response (e/invalid-args-error "invalid args")
+                   :response (e/args-failed-spec-err)
                    :callback callback})
        (do (state/remove-attachment-from-reply {:interaction-id interaction-id
                                                 :attachment-id attachment-id})
@@ -138,7 +138,7 @@
                                                          :artifact-id artifact-id}))]
      (if-not (s/valid? ::send-reply-params params)
        (p/publish {:topics (p/get-topic :send-reply)
-                   :response (e/invalid-args-error "bad args")
+                   :response (e/args-failed-spec-err)
                    :callback callback})
        (let [request-list {:html-body nil
                            :plain-text-body nil}
@@ -245,10 +245,7 @@
                                                       :body flow-body}
                              flow-response (a/<! (iu/api-request flow-send-email-request))
                              {:keys [api-response status]} flow-response]
-                         (if (not= status 200)
-                           (p/publish {:topics (p/get-topic :send-reply)
-                                       :response (e/api-error "api returned error")
-                                       :callback callback})
+                         (when (= status 200)
                            (p/publish {:topics (p/get-topic :send-reply)
                                        :response {:interaction-id interaction-id}
                                        :callback callback})))))))

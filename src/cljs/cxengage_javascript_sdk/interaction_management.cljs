@@ -16,7 +16,8 @@
               {:keys [api-response status]} history-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (e/client-request-err)
+            (p/publish {:topics "cxengage/errors/error/failed-to-retrieve-messaging-history"
+                        :error (e/failed-to-retrieve-messaging-history-err)})
             (do (state/add-messages-to-history! interaction-id result)
                 (p/publish {:topics (p/get-topic :messaging-history-received)
                             :response (state/get-interaction-messaging-history interaction-id)})))))))
@@ -28,7 +29,8 @@
               {:keys [api-response status]} metadata-response
               {:keys [result]} api-response]
           (if (not= status 200)
-            (e/client-request-err)
+            (p/publish {:topics "cxengage/errors/error/failed-to-retrieve-messaging-metadata"
+                        :error (e/failed-to-retrieve-messaging-metadata-err)})
             (do (state/add-messaging-interaction-metadata! result)
                 (get-messaging-history tenant-id interaction-id)))))))
 
@@ -40,7 +42,7 @@
               {:keys [status api-response]} artifact-response]
           (if (not= status 200)
             (p/publish {:topics (p/get-topic :email-artifact-received)
-                        :response api-response})
+                        :error (e/failed-to-retrieve-email-artifact-err)})
             (do (js/console.log (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
                 (state/add-email-artifact-data interaction-id api-response)))))))
 
@@ -190,12 +192,14 @@
             artifact-request {:method :post
                               :url artifact-url
                               :body {:artifactType "email"}}]
-        ;;(aset js/window "IID" interaction-id)
         (go (let [artifact-create-response (a/<! (iu/api-request artifact-request))
-                  {:keys [api-response status]} artifact-create-response
-                  {:keys [artifact-id]} api-response]
-              (state/store-email-reply-artifact-id artifact-id interaction-id)
-              (get-email-bodies interaction-id)))))))
+                  {:keys [api-response status]} artifact-create-response]
+              (if (= status 200)
+                (let [{:keys [artifact-id]} api-response]
+                  (state/store-email-reply-artifact-id artifact-id interaction-id)
+                  (get-email-bodies interaction-id))
+                (p/publish {:topics "cxengage/error/errors/failed-to-create-email-reply-artifact"
+                            :error (e/failed-to-create-email-reply-artifact-err)}))))))))
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message
@@ -337,7 +341,7 @@
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
                (not= (get message :type) "send-script"))
       (js/console.log (str "Acknowledging receipt of flow action: "
-                       (or (:notification-type message) (:type message))))
+                           (or (:notification-type message) (:type message))))
       (when (or (:notification-type message) (:type message))
         (let [{:keys [action-id sub-id resource-id tenant-id interaction-id]} message
               ack-request {:method :post
@@ -397,6 +401,8 @@
     (if inferred-msg
       (msg-router inferred-msg)
       (do (js/console.warn "Unable to infer message type from sqs")
+          (p/publish {:topics "cxengage/errors/error/unknown-agent-notification-type-received"
+                      :error (e/unknown-agent-notification-type-err)})
           nil))))
 
 (defn messaging-msg-router [message]
