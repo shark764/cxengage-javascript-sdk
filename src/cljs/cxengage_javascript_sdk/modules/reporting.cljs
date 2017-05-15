@@ -132,7 +132,6 @@
                                       url-params)}
               {:keys [api-response status]} (a/<! (iu/api-request capacity-request))
               {:keys [results]} api-response]
-          <<<<<<< HEAD
           (when (= status 200)
             (p/publish {:topics topic
                         :response results
