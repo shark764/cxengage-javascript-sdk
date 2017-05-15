@@ -193,8 +193,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn select-disposition-code
-  ::disposition-code-params
-  (p/get-topic :disposition-code-changed)
+  {:validation ::disposition-code-params
+   :topic-key :disposition-code-changed}
   [params]
   (let [{:keys [topic interaction-id disposition-id callback]} params
         dispositions (state/get-interaction-disposition-codes interaction-id)
@@ -242,8 +242,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-script
-  ::script-params
-  (p/get-topic :send-script)
+  {:validation ::script-params
+   :topic-key :send-script}
   [params]
   (let [{:keys [topic answers script-id interaction-id callback]} params
         original-script (state/get-script interaction-id script-id)
@@ -304,8 +304,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn custom-interrupt
-  ::custom-interrupt-params
-  (p/get-topic :send-custom-interrupt-acknowledged)
+  {:validation ::custom-interrupt-params
+   :topic-key :send-custom-interrupt-acknowledged}
   [params]
   (let [{:keys [callback topic interrupt-body interrupt-type interaction-id]} params
         tenant-id (state/get-active-tenant-id)
