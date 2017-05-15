@@ -37,6 +37,7 @@
 (s/def ::note-id ::uuid)
 (s/def ::not-empty-string #(not= 0 (.-length %)))
 (s/def ::password ::min-8-len-string)
+(s/def ::page number?)
 (s/def ::phone-number string?)
 (s/def ::plain-text-body string?)
 (s/def ::query map?)

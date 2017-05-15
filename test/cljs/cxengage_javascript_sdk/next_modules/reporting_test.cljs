@@ -147,6 +147,9 @@
 ;; Get Contact Interaction History Tests
 ;; -------------------------------------------------------------------------- ;;
 
+(def contact-history-url (str (st/get-base-api-url) "tenants/f5b660ef-9d64-47c9-9905-2f27a74bc14c/contacts/7749c9c0-3979-11e7-b8fc-d0f69d796523/interactions"))
+(def paged-history-url (str (st/get-base-api-url) "tenants/f5b660ef-9d64-47c9-9905-2f27a74bc14c/contacts/7749c9c0-3979-11e7-b8fc-d0f69d796523/interactions?page=5"))
+
 (def successful-contact-history-response
   {:status 200
    :api-response {:results []}})
@@ -160,14 +163,35 @@
                      pubsub-expected-response (get-in successful-contact-history-response [:api-response])]
                  (a/>! resp-chan successful-contact-history-response)
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_]
+                 (set! iu/api-request (fn [request]
+                                        (is (= (get request :url) contact-history-url))
                                         resp-chan))
                  (p/subscribe "cxengage/reporting/get-contact-interaction-history-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
                                 (set! iu/api-request old)
                                 (done)))
-                 (rep/get-contact-interaction-history {:interaction-id "2937ac8b-380d-472b-9b9e-599097ee8c0d"}))))))
+                 (rep/get-contact-interaction-history {:contact-id "7749c9c0-3979-11e7-b8fc-d0f69d796523"}))))))
+
+
+(deftest get-contact-history--happy-test--paged
+  (testing "get paged contact interaction history function success"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (go (let [old iu/api-request
+                     resp-chan (a/promise-chan)
+                     pubsub-expected-response (get-in successful-contact-history-response [:api-response])]
+                 (a/>! resp-chan successful-contact-history-response)
+                 (reset! st/sdk-state test-state)
+                 (set! iu/api-request (fn [request]
+                                        (is (= (get request :url) paged-history-url))
+                                        resp-chan))
+                 (p/subscribe "cxengage/reporting/get-contact-interaction-history-response"
+                              (fn [error topic response]
+                                (is (= pubsub-expected-response (ih/kebabify response)))
+                                (set! iu/api-request old)
+                                (done)))
+                 (rep/get-contact-interaction-history {:contact-id "7749c9c0-3979-11e7-b8fc-d0f69d796523" :page 5}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Add Statistic Subscription Tests
