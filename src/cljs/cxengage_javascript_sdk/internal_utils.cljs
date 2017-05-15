@@ -124,10 +124,10 @@
              (do (when (request-success? status)
                    (a/put! resp-chan response))
                  (when (client-error? status)
-                   (ih/js-publish {:topics (p/get-topic :api-rejected-bad-client-request)
+                   (ih/js-publish {:topics "cxengage/errors/error/api-rejected-bad-client-request"
                                    :error (e/client-request-err)}))
                  (when (server-error? status)
-                   (ih/js-publish {:topics (p/get-topic :api-encountered-internal-error)
+                   (ih/js-publish {:topics "cxengage/errors/error/api-encountered-internal-server-error"
                                    :error (e/internal-server-err)})))))))
      resp-chan)))
 
