@@ -26,8 +26,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-user
-  ::get-user-params
-  (p/get-topic :get-user-response)
+  {:validation ::get-user-params
+   :topic-key :get-user-response}
   [params]
   (let [{:keys [callback topic resource-id]} params
         tenant-id (st/get-active-tenant-id)
@@ -51,8 +51,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-users
-  ::get-users-params
-  (p/get-topic :get-users-response)
+  {:validation ::get-users-params
+   :topic-key :get-users-response}
   [params]
   (let [{:keys [callback topic]} params
         tenant-id (st/get-active-tenant-id)
@@ -77,8 +77,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-queue
-  ::get-queue-params
-  (p/get-topic :get-queue-response)
+  {:validation ::get-queue-params
+   :topic-key :get-queue-response}
   [params]
   (let [{:keys [callback topic queue-id]} params
         tenant-id (st/get-active-tenant-id)
@@ -102,8 +102,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-queues
-  ::get-queues-params
-  (p/get-topic :get-queues-response)
+  {:validation ::get-queues-params
+   :topic-key :get-queues-response}
   [params]
   (let [{:keys [callback topic]} params
         tenant-id (st/get-active-tenant-id)
@@ -128,8 +128,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-transfer-list
-  ::get-transfer-list-params
-  (p/get-topic :get-transfer-list-response)
+  {:validation ::get-transfer-list-params
+   :topic-key :get-transfer-list-response}
   [params]
   (let [{:keys [callback topic transfer-list-id]} params
         tenant-id (st/get-active-tenant-id)
@@ -153,8 +153,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-transfer-lists
-  ::get-transfer-lists-params
-  (p/get-topic :get-transfer-lists-response)
+  {:validation ::get-transfer-lists-params
+   :topic-key :get-transfer-lists-response}
   [params]
   (let [{:keys [callback topic]} params
         tenant-id (st/get-active-tenant-id)
@@ -184,8 +184,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn update-user
-  ::update-user-params
-  (p/get-topic :update-user-response)
+  {:validation ::update-user-params
+   :topic-key :update-user-response}
   [params]
   (let [{:keys [callback topic update-body resource-id]} params
         tenant-id (st/get-active-tenant-id)

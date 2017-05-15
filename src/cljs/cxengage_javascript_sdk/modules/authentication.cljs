@@ -19,8 +19,8 @@
           :opt-un []))
 
 (def-sdk-fn logout
-  ::logout-spec
-  (p/get-topic :presence-state-change-request-acknowledged)
+  {:validation ::logout-spec
+   :topic-key :presence-state-change-request-acknowledged}
   [params]
   (let [{:keys [callback topic]} params
         session-id (state/get-session-id)
@@ -56,8 +56,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn login
-  ::login-spec
-  (p/get-topic :login-response)
+  {:validation ::login-spec
+   :topic-key :login-response}
   [params]
   (let [{:keys [callback topic username password]} params
         token-request {:method :post

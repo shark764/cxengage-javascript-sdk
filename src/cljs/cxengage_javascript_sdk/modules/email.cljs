@@ -27,8 +27,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-attachment-url
-  ::get-attachment-url-params
-  (p/get-topic :attachment-received)
+  {:validation ::get-attachment-url-params
+   :topic-key ::attachment-received}
   [params]
   (let [{:keys [topic interaction-id artifact-file-id artifact-id callback]} params
         tenant-id (state/get-active-tenant-id)
@@ -58,8 +58,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn add-attachment
-  ::add-attachment-params
-  (p/get-topic :add-attachment)
+  {:validation ::add-attachment-params
+   :topic-key :add-attachment}
   [params]
   (let [{:keys [topic interaction-id file callback]} params
         attachment-id (id/uuid-string (id/make-random-uuid))]
@@ -82,8 +82,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn remove-attachment
-  ::remove-attachment-params
-  (p/get-topic :remove-attachment)
+  {:validation ::remove-attachment-params
+   :topic-key :remove-attachment}
   [params]
   (let [{:keys [topic interaction-id attachment-id callback]} params]
     (state/remove-attachment-from-reply {:interaction-id interaction-id
@@ -131,8 +131,8 @@
     files)))
 
 (def-sdk-fn send-reply
-  ::send-reply-params
-  (p/get-topic :send-reply)
+  {:validation ::send-reply-params
+   :topic-key :send-reply}
   [params]
   (let [{:keys [topic callback cc bcc html-body plain-text-body subject to interaction-id]} params
         artifact-id (state/get-reply-artifact-id-by-interaction-id interaction-id)

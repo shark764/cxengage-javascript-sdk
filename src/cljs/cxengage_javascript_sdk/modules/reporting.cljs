@@ -54,8 +54,8 @@
           :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
 
 (def-sdk-fn add-stat-subscription
-  ::add-statistic-params
-  (p/get-topic :add-stat)
+  {:validation ::add-statistic-params
+   :topic-key :add-stat}
   [params]
   (let [{:keys [topic callback]} params
         tenant-id (st/get-active-tenant-id)
@@ -89,8 +89,9 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn remove-stat-subscription
-  ::remove-statistics-params
-  (p/get-topic :remove-stat)
+  {:validation ::remove-statistics-params
+   :topic-key :remove-stat
+   :preserve-casing? true}
   [params]
   (let [{:keys [stat-id topic callback]} params
         new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
@@ -111,8 +112,8 @@
           :opt-un [::specs/callback ::specs/resource-id]))
 
 (def-sdk-fn get-capacity
-  ::get-capacity-params
-  (p/get-topic :get-capacity-response)
+  {:validation ::get-capacity-params
+   :topic-key :get-capacity-response}
   [params]
   (let [tenant-id (st/get-active-tenant-id)
         {:keys [resource-id topic callback]} params
@@ -147,8 +148,9 @@
           :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
 
 (def-sdk-fn stat-query
-  ::stat-query-params
-  (p/get-topic :get-stat-query-response)
+  {:validation ::stat-query-params
+   :topic-key :get-stat-query-response
+   :preserve-casing? true}
   [params]
   (let [{:keys [statistic topic callback]} params
         tenant-id (st/get-active-tenant-id)
@@ -176,8 +178,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-available-stats
-  ::get-available-stats-params
-  (p/get-topic :get-available-stats-response)
+  {:validation ::get-available-stats-params
+   :topic-key :get-available-stats-response}
   [params]
   (let [{:keys [callback topic]} params
         tenant-id (st/get-active-tenant-id)
@@ -202,8 +204,8 @@
           :opt-un [::specs/callback ::specs/page]))
 
 (def-sdk-fn get-contact-interaction-history
-  ::get-contact-interaction-history-params
-  (p/get-topic :get-contact-interaction-history-response)
+  {:validation ::get-contact-interaction-history-params
+   :topic-key :get-contact-interaction-history-response}
   [params]
   (let [{:keys [callback topic contact-id page]} params
         tenant-id (st/get-active-tenant-id)
@@ -232,8 +234,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-interaction
-  ::get-interaction-params
-  (p/get-topic :get-interaction-response)
+  {:validation ::get-interaction-params
+   :topic-key :get-interaction-response}
   [params]
   (let [{:keys [callback topic interaction-id]} params
         tenant-id (st/get-active-tenant-id)

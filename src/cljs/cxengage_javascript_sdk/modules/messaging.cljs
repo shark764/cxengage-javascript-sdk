@@ -189,8 +189,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-message
-  ::send-message-params
-  (p/get-topic :send-message-acknowledged)
+  {:validation ::send-message-params
+   :topic-key :send-message-acknowledged}
   [params]
   (let [{:keys [interaction-id message topic callback]} params
         tenant-id (state/get-active-tenant-id)
@@ -216,8 +216,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-sms-by-interrupt
-  ::send-sms-by-interrupt-params
-  (p/get-topic :send-outbound-sms-response)
+  {:validation ::send-sms-by-interrupt-params
+   :topic-key :send-outbound-sms-response}
   [params]
   (let [{:keys [interaction-id message topic callback]} params
         tenant-id (state/get-active-tenant-id)
@@ -251,8 +251,8 @@
           :opt-on [::specs/callback]))
 
 (def-sdk-fn click-to-sms
-  ::click-to-sms-params
-  (p/get-topic :initialize-outbound-sms-response)
+  {:validation ::click-to-sms-params
+   :topic-key :initialize-outbound-sms-response}
   [params]
   (let [{:keys [phone-number message topic callback]} params
         phone-number (iu/normalize-phone-number phone-number)
@@ -305,8 +305,8 @@
                       :callback callback})))))
 
 (def-sdk-fn get-transcripts
-  ::get-transcripts-params
-  (p/get-topic :transcript-response)
+  {:validation ::get-transcripts-params
+   :topic-key :transcript-response}
   [params]
   (let [{:keys [interaction-id topic callback]} params
         interaction-files (a/<! (iu/get-interaction-files interaction-id))

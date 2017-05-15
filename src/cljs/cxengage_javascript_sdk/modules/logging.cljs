@@ -42,8 +42,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn dump-logs
-  ::dump-logs-params
-  (p/get-topic :logs-dumped)
+  {:validation ::dump-logs-params
+   :topic-key :logs-dumped}
   [params]
   (let [{:keys [topic callback]} params]
     (p/publish {:topics topic
@@ -61,8 +61,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn set-level
-  ::set-level-params
-  (p/get-topic :log-level-set)
+  {:validation ::set-level-params
+   :topic-key :log-level-set}
   [params]
   (let [{:keys [level topic callback]} params
         level (keyword level)]
@@ -82,8 +82,8 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn save-logs
-  ::save-logs-params
-  (p/get-topic :logs-saved)
+  {:validation ::save-logs-params
+   :topic-key :logs-saved}
   [params]
   (let [{:keys [topic callback]} params
         logs (reduce (fn [acc x] (let [log (format-request-logs x)]
