@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.next-modules.entities
+(ns cxengage-javascript-sdk.modules.entities
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]

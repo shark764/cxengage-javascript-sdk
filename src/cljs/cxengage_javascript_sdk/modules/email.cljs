@@ -251,26 +251,17 @@
                                        :callback callback})))))))
          nil)))))
 
-(def initial-state
-  {:module-name :email})
-
-(defrecord EmailModule [config state core-messages<]
+(defrecord EmailModule []
   pr/SDKModule
   (start [this]
-    (reset! (:state this) initial-state)
-    (let [module-name (get @(:state this) :module-name)
-          email-integration true]
-      (if-not email-integration
-        (ih/send-core-message {:type :module-registration-status
-                               :status :failure
-                               :module-name module-name})
-        (do (ih/register {:api {:interactions {:email {:add-attachment (partial add-attachment this)
-                                                       :remove-attachment (partial remove-attachment this)
-                                                       :get-attachment-url (partial get-attachment-url this)
-                                                       :send-reply (partial send-reply this)}}}
-                          :module-name module-name})
-            (ih/send-core-message {:type :module-registration-status
-                                   :status :success
-                                   :module-name module-name})))))
+    (let [module-name :email]
+      (ih/register {:api {:interactions {:email {:add-attachment (partial add-attachment this)
+                                                 :remove-attachment (partial remove-attachment this)
+                                                 :get-attachment-url (partial get-attachment-url this)
+                                                 :send-reply (partial send-reply this)}}}
+                    :module-name module-name})
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

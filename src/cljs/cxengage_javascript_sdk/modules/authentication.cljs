@@ -1,4 +1,4 @@
-(ns cxengage-javascript-sdk.next-modules.authentication
+(ns cxengage-javascript-sdk.modules.authentication
   (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]

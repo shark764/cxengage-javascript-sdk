@@ -1,6 +1,6 @@
-(ns cxengage-javascript-sdk.next-modules.contacts-test
+(ns cxengage-javascript-sdk.modules.contacts-test
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cxengage-javascript-sdk.next-modules.contacts :as contacts]
+  (:require [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cljs.core.async :as a]
             [cljs-uuid-utils.core :as uuid]
             [cxengage-javascript-sdk.internal-utils :as iu]
