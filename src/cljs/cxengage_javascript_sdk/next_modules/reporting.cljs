@@ -197,27 +197,29 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.reporting.getContactHistory({
-;;   interactionId: {{uuid}}
+;; CxEngage.reporting.getContactInteractionHistory({
+;;   contactId: {{uuid}}
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::get-contact-interaction-history-params
-  (s/keys :req-un [::specs/interaction-id]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [::specs/contact-id]
+          :opt-un [::specs/callback ::specs/page]))
 
 (def-sdk-fn get-contact-interaction-history
   ::get-contact-interaction-history-params
   (p/get-topic :get-contact-interaction-history-response)
   [params]
-  (let [{:keys [callback topic interaction-id]} params
+  (let [{:keys [callback topic contact-id page]} params
         tenant-id (st/get-active-tenant-id)
-        url (str (st/get-base-api-url) "tenants/tenant-id/contacts/interaction-id/interactions")
+        url (str (st/get-base-api-url) (if page
+                                          (str "tenants/tenant-id/contacts/contact-id/interactions?page=" page)
+                                          "tenants/tenant-id/contacts/contact-id/interactions"))
         get-contact-interaction-history-request {:method :get
-                                     :url (iu/build-api-url-with-params
-                                           url
-                                           {:tenant-id tenant-id
-                                            :interaction-id interaction-id})}
+                                                 :url (iu/build-api-url-with-params
+                                                       url
+                                                       {:tenant-id tenant-id
+                                                        :contact-id contact-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-contact-interaction-history-request))]
     (when (= status 200)
       (p/publish {:topics topic
