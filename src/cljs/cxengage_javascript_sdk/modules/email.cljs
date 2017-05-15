@@ -143,128 +143,124 @@
                          (iu/build-api-url-with-params {:tenant-id tenant-id
                                                         :interaction-id interaction-id
                                                         :artifact-id artifact-id}))]
-    (if-not (s/valid? ::send-reply-params params)
-      (p/publish {:topics topic
-                  :response (e/args-failed-spec-err)
-                  :callback callback})
-      (let [request-list {:html-body nil
-                          :plain-text-body nil}
-            attachments (-> (state/get-all-reply-email-attachments interaction-id)
-                            (assoc :html-body html-body)
-                            (assoc :plain-text-body plain-text-body))
-            all-req-promises (reduce-kv
-                              (fn [acc id file]
-                                (conj acc
-                                      (promise
-                                       (fn [resolve reject]
-                                         (let [attachment-type (cond
-                                                                 (= id :plain-text-body) :plain-text-body
-                                                                 (= id :html-body) :html-body
-                                                                 :else :attachment)
-                                               form-data
-                                               (cond
-                                                 (= id :plain-text-body)
-                                                 (doto (js/FormData.)
-                                                   (.append "plainTextBody"
-                                                            (js/Blob. (clj->js [plain-text-body]) #js {"type" "text/plain"})
-                                                            "plainTextBody"))
+    (let [request-list {:html-body nil
+                        :plain-text-body nil}
+          attachments (-> (state/get-all-reply-email-attachments interaction-id)
+                          (assoc :html-body html-body)
+                          (assoc :plain-text-body plain-text-body))
+          all-req-promises (reduce-kv
+                            (fn [acc id file]
+                              (conj acc
+                                    (promise
+                                     (fn [resolve reject]
+                                       (let [attachment-type (cond
+                                                               (= id :plain-text-body) :plain-text-body
+                                                               (= id :html-body) :html-body
+                                                               :else :attachment)
+                                             form-data
+                                             (cond
+                                               (= id :plain-text-body)
+                                               (doto (js/FormData.)
+                                                 (.append "plainTextBody"
+                                                          (js/Blob. (clj->js [plain-text-body]) #js {"type" "text/plain"})
+                                                          "plainTextBody"))
 
-                                                 (= id :html-body)
-                                                 (doto (js/FormData.)
-                                                   (.append "htmlBody"
-                                                            (js/Blob. (clj->js [html-body]) #js {"type" "text/html"})
-                                                            "htmlBody"))
+                                               (= id :html-body)
+                                               (doto (js/FormData.)
+                                                 (.append "htmlBody"
+                                                          (js/Blob. (clj->js [html-body]) #js {"type" "text/html"})
+                                                          "htmlBody"))
 
-                                                 :else (do (js/console.log "[Email Processing] Name property on attachment file passed:" (.-name file))
-                                                           (js/console.log "[Email Processing] File passed:" file)
-                                                           (doto (js/FormData.) (.append (.-name file) file (.-name file)))))
+                                               :else (do (js/console.log "[Email Processing] Name property on attachment file passed:" (.-name file))
+                                                         (js/console.log "[Email Processing] File passed:" file)
+                                                         (doto (js/FormData.) (.append (.-name file) file (.-name file)))))
 
-                                               filename (cond
-                                                          (= attachment-type :plain-text-body) :plainTextBody
-                                                          (= attachment-type :html-body) :htmlBody
-                                                          :else (keyword (.-name file)))
-                                               content-type (cond
-                                                              (= attachment-type :plain-text-body) "text/plain"
-                                                              (= attachment-type :html-body) "text/html"
-                                                              :else (.-type file))]
-                                           (js/console.log "[Email Processing] File name:" filename)
-                                           (js/console.log "[Email Processing] File content-type:" content-type)
-                                           (js/console.log "[Email Processing] Form data:" form-data)
-                                           (js/console.log "[Email Processing] Attachment Type:" attachment-type)
-                                           (js/console.log "[Email Processing] Artifact URL:" artifact-url)
-                                           (iu/file-api-request
-                                            {:method :post
+                                             filename (cond
+                                                        (= attachment-type :plain-text-body) :plainTextBody
+                                                        (= attachment-type :html-body) :htmlBody
+                                                        :else (keyword (.-name file)))
+                                             content-type (cond
+                                                            (= attachment-type :plain-text-body) "text/plain"
+                                                            (= attachment-type :html-body) "text/html"
+                                                            :else (.-type file))]
+                                         (js/console.log "[Email Processing] File name:" filename)
+                                         (js/console.log "[Email Processing] File content-type:" content-type)
+                                         (js/console.log "[Email Processing] Form data:" form-data)
+                                         (js/console.log "[Email Processing] Attachment Type:" attachment-type)
+                                         (js/console.log "[Email Processing] Artifact URL:" artifact-url)
+                                         (iu/file-api-request
+                                          {:method :post
+                                           :url artifact-url
+                                           :body form-data
+                                           :callback (fn [{:keys [api-response status]} response]
+                                                       (js/console.log "[Email Processing] API response for file upload:" api-response)
+                                                       (js/console.log "[Email Processing] Filename from API response" filename)
+                                                       (js/console.log "[Email Processing] String'd filename:" (name filename))
+                                                       (resolve {:artifact-file-id (first (vals api-response))
+                                                                 :filename (name filename)
+                                                                 :content-type content-type}))}))))))
+                            []
+                            attachments)
+          all-req-promises (all all-req-promises)]
+      (then all-req-promises
+            (fn [results]
+              (js/console.log "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (ih/camelify results) nil 2))
+              (let [in-reply-to-id (state/get-email-reply-to-id interaction-id)
+                    manifest-map {:attachments (build-attachments results)
+                                  :cc cc
+                                  :bcc bcc
+                                  :headers []
+                                  :in-reply-to-id in-reply-to-id
+                                  :body {:html {:artifact-file-id (html-body-id results)}
+                                         :plain {:artifact-file-id (plain-body-id results)}}
+                                  :subject subject
+                                  :to to}
+                    manifest-string (js/JSON.stringify (ih/camelify manifest-map))
+                    _ (js/console.log "[Email Processing] Manifest we're creating:" manifest-string)
+                    form-data (doto (js/FormData.)
+                                (.append "manifest.json"
+                                         (js/Blob. (clj->js [manifest-string]) #js {"type" "application/json"})
+                                         "manifest.json"))
+                    create-manifest-request {:method :post
                                              :url artifact-url
-                                             :body form-data
-                                             :callback (fn [{:keys [api-response status]} response]
-                                                         (js/console.log "[Email Processing] API response for file upload:" api-response)
-                                                         (js/console.log "[Email Processing] Filename from API response" filename)
-                                                         (js/console.log "[Email Processing] String'd filename:" (name filename))
-                                                         (resolve {:artifact-file-id (first (vals api-response))
-                                                                   :filename (name filename)
-                                                                   :content-type content-type}))}))))))
-                              []
-                              attachments)
-            all-req-promises (all all-req-promises)]
-        (then all-req-promises
-              (fn [results]
-                (js/console.log "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (ih/camelify results) nil 2))
-                (let [in-reply-to-id (state/get-email-reply-to-id interaction-id)
-                      manifest-map {:attachments (build-attachments results)
-                                    :cc cc
-                                    :bcc bcc
-                                    :headers []
-                                    :in-reply-to-id in-reply-to-id
-                                    :body {:html {:artifact-file-id (html-body-id results)}
-                                           :plain {:artifact-file-id (plain-body-id results)}}
-                                    :subject subject
-                                    :to to}
-                      manifest-string (js/JSON.stringify (ih/camelify manifest-map))
-                      _ (js/console.log "[Email Processing] Manifest we're creating:" manifest-string)
-                      form-data (doto (js/FormData.)
-                                  (.append "manifest.json"
-                                           (js/Blob. (clj->js [manifest-string]) #js {"type" "application/json"})
-                                           "manifest.json"))
-                      create-manifest-request {:method :post
-                                               :url artifact-url
-                                               :body form-data}]
-                  (go (let [manifest-response (a/<! (iu/file-api-request create-manifest-request))
-                            _ (js/console.log "[Email Processing] Manifest creation response:" (ih/camelify manifest-response))
-                            {:keys [api-response status]} manifest-response
-                            manifest-id (get api-response :manifest.json)
-                            artifact-update-request {:method :put
-                                                     :url artifact-url
-                                                     :body {:manifest-id manifest-id
-                                                            :artifactType "email"}}
-                            artifact-update-response (a/<! (iu/api-request artifact-update-request))
-                            _ (js/console.log "[Email Processing] Artifact update response:" (ih/camelify artifact-update-response))
-                            flow-url (-> (state/get-base-api-url)
-                                         (str "tenants/tenant-id/interactions/interaction-id/interrupts")
-                                         (iu/build-api-url-with-params
-                                          {:tenant-id tenant-id
-                                           :interaction-id interaction-id}))
-                            flow-body {:interrupt {:resource-id (state/get-active-user-id)
-                                                   :artifact-id artifact-id}
-                                       :interrupt-type "send-email"
-                                       :source "client"}
-                            flow-send-email-request {:method :post
-                                                     :url flow-url
-                                                     :body flow-body}
-                            flow-response (a/<! (iu/api-request flow-send-email-request))
-                            {:keys [api-response status]} flow-response]
-                        (when (= status 200)
-                          (p/publish {:topics topic
-                                      :response {:interaction-id interaction-id}
-                                      :callback callback})))))))))))
+                                             :body form-data}]
+                (go (let [manifest-response (a/<! (iu/file-api-request create-manifest-request))
+                          _ (js/console.log "[Email Processing] Manifest creation response:" (ih/camelify manifest-response))
+                          {:keys [api-response status]} manifest-response
+                          manifest-id (get api-response :manifest.json)
+                          artifact-update-request {:method :put
+                                                   :url artifact-url
+                                                   :body {:manifest-id manifest-id
+                                                          :artifactType "email"}}
+                          artifact-update-response (a/<! (iu/api-request artifact-update-request))
+                          _ (js/console.log "[Email Processing] Artifact update response:" (ih/camelify artifact-update-response))
+                          flow-url (-> (state/get-base-api-url)
+                                       (str "tenants/tenant-id/interactions/interaction-id/interrupts")
+                                       (iu/build-api-url-with-params
+                                        {:tenant-id tenant-id
+                                         :interaction-id interaction-id}))
+                          flow-body {:interrupt {:resource-id (state/get-active-user-id)
+                                                 :artifact-id artifact-id}
+                                     :interrupt-type "send-email"
+                                     :source "client"}
+                          flow-send-email-request {:method :post
+                                                   :url flow-url
+                                                   :body flow-body}
+                          flow-response (a/<! (iu/api-request flow-send-email-request))
+                          {:keys [api-response status]} flow-response]
+                      (when (= status 200)
+                        (p/publish {:topics topic
+                                    :response {:interaction-id interaction-id}
+                                    :callback callback}))))))))))
 
 (defrecord EmailModule []
   pr/SDKModule
   (start [this]
     (let [module-name :email]
-      (ih/register {:api {:interactions {:email {:add-attachment (partial add-attachment this)
-                                                 :remove-attachment (partial remove-attachment this)
-                                                 :get-attachment-url (partial get-attachment-url this)
-                                                 :send-reply (partial send-reply this)}}}
+      (ih/register {:api {:interactions {:email {:add-attachment add-attachment
+                                                 :remove-attachment remove-attachment
+                                                 :get-attachment-url get-attachment-url
+                                                 :send-reply send-reply}}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
