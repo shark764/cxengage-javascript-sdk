@@ -16,7 +16,7 @@
      ([& args#]
       (let [validation# (:validation ~options)
             topic-key# (:topic-key ~options)
-            preserve-casing?# (:preserve-casing? ~options)
+            preserve-casing?# (or (:preserve-casing? ~options) false)
             topic# (cxengage-javascript-sdk.pubsub/get-topic topic-key#)
             args# (map #(cxengage-javascript-sdk.interop-helpers/extract-params % preserve-casing?#) args#)
             callback# (if (fn? (first args#)) (first args#) (second args#))]
