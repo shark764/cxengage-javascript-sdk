@@ -219,7 +219,7 @@
   ::send-sms-by-interrupt-params
   (p/get-topic :send-outbound-sms-response)
   [params]
-  (let [{:keys [interaction-id message topic callback] :as params} (ih/extract-params params)
+  (let [{:keys [interaction-id message topic callback]} params
         tenant-id (state/get-active-tenant-id)
         interrupt-body {:interrupt-type "send-sms"
                         :interrupt {:message message}
