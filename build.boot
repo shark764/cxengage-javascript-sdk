@@ -104,7 +104,8 @@
 ;; =============================================
 
 (deftask make-prod-release []
-  (comp (production*)))
+  (comp (production*)
+        (target :dir #{"release"})))
 
 (deftask test-once []
   (comp (testing*)
