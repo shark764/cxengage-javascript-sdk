@@ -67,6 +67,10 @@
   [status]
   (= status 503))
 
+(defn not-found?
+  [status]
+  (= status 404))
+
 (defn client-error?
   [status]
   (and (>= status 400)
@@ -119,6 +123,9 @@
                (recur (inc failed-attempts)))
              (do (when (request-success? status)
                    (a/put! resp-chan response))
+                 (when (not-found? status)
+                   (ih/js-publish {:topics "cxengage/errors/error/api-returned-404-not-found"
+                                   :error (e/resource-not-found-err)}))
                  (when (client-error? status)
                    (ih/js-publish {:topics "cxengage/errors/error/api-rejected-bad-client-request"
                                    :error (e/client-request-err)}))

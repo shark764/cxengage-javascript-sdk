@@ -48,12 +48,17 @@
 (defn client-request-err []
   {:code 1009
    :level "error"
-   :message "The API rejected the values provided (400 status code). Verify your values against the SDK documentation."})
+   :message "The API rejected the request (400-range status code). Verify your values against the SDK documentation."})
 
 (defn unknown-agent-notification-type-err []
   {:code 1010
    :level "error"
    :message "Received an unknown agent notification type. Unable to parse agent notification."})
+
+(defn resource-not-found-err []
+  {:code 1011
+   :level "error"
+   :message "API returned 404. Check your URL and if the resources exists on the system."})
 
 (defn insufficient-permissions-err []
   {:code 2000
