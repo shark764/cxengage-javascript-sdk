@@ -90,7 +90,7 @@
                   resource-id (state/get-active-user-id)
                   config-request {:method :get
                                   :url (iu/api-url
-                                        "tenants/tenant-id/users/resource-id/config"
+                                        "tenants/:tenant-id/users/:resource-id/config"
                                         {:tenant-id tenant-id
                                          :resource-id resource-id})}
                   {:keys [status api-response]} (a/<! (iu/api-request config-request))
