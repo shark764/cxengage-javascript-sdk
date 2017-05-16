@@ -19,6 +19,8 @@
             preserve-casing?# (or (:preserve-casing? ~options) false)
             topic# (cxengage-javascript-sdk.pubsub/get-topic topic-key#)
             args# (map #(cxengage-javascript-sdk.interop-helpers/extract-params % preserve-casing?#) args#)
+            _ (js/console.warn (clj->js args#))
+            _ (js/console.warn args#)
             callback# (if (fn? (first args#)) (first args#) (second args#))]
         (if-let [error# (cond
 
@@ -35,7 +37,7 @@
                             (assoc :topic topic#))
                 ~'params params#]
             (if (not (cljs.spec/valid? validation# params#))
-              (do (js/console.info "Params object failed spec validation: " (cljs.spec/explain-data validation# params#))
+              (do (js/console.warn "Params object failed spec validation.")
                   (cxengage-javascript-sdk.pubsub/publish {:topics topic#
                                                            :error (cxengage-javascript-sdk.domain.errors/args-failed-spec-err)
                                                            :callback callback#}))
