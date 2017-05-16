@@ -35,7 +35,7 @@
                             (assoc :topic topic#))
                 ~'params params#]
             (if (not (cljs.spec/valid? validation# params#))
-              (do (js/console.warn "Params object failed spec validation." (s/explain-data validation# params#))
+              (do (js/console.warn "Params object failed spec validation." (clj->js (s/explain-data validation# params#)))
                   (cxengage-javascript-sdk.pubsub/publish {:topics topic#
                                                            :error (cxengage-javascript-sdk.domain.errors/args-failed-spec-err)
                                                            :callback callback#}))
