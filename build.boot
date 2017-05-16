@@ -81,7 +81,7 @@
 
 (deftask production* []
   (set-env! :source-paths #(conj % "src/cljs" "src/dev_cljs" "src/prod_cljs"))
-  (task-options! cljs {:compiler-options {:optimizations :advanced
+  (task-options! cljs {:compiler-options {:optimizations :simple
                                           :externs ["externs.js"]
                                           :pseudo-names true
                                           :output-wrapper true
