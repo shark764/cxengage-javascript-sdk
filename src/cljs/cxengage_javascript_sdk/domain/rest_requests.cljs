@@ -8,7 +8,7 @@
         tenant-id (state/get-active-tenant-id)
         config-request {:method :get
                         :url (iu/api-url
-                              "tenants/tenant-id/users/resource-id/config"
+                              "tenants/:tenant-id/users/:resource-id/config"
                               {:tenant-id tenant-id
                                :resource-id resource-id})}]
     (iu/api-request config-request)))
@@ -18,7 +18,7 @@
         tenant-id (state/get-active-tenant-id)
         update-user-request {:method :put
                              :url (iu/api-url
-                                   "tenants/tenant-id/users/resource-id"
+                                   "tenants/:tenant-id/users/:resource-id"
                                    {:tenant-id tenant-id
                                     :resource-id resource-id})
                              :body update-user-body}]
@@ -29,7 +29,7 @@
         tenant-id (state/get-active-tenant-id)
         change-state-request {:method :post
                               :url (iu/api-url
-                                    "tenants/tenant-id/presence/resource-id"
+                                    "tenants/:tenant-id/presence/:resource-id"
                                     {:tenant-id tenant-id
                                      :resource-id resource-id})
                               :body change-state-body}]
