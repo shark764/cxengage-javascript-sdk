@@ -19,8 +19,6 @@
             preserve-casing?# (or (:preserve-casing? ~options) false)
             topic# (cxengage-javascript-sdk.pubsub/get-topic topic-key#)
             args# (map #(cxengage-javascript-sdk.interop-helpers/extract-params % preserve-casing?#) args#)
-            _# (js/console.warn (cljs.core/clj->js args#))
-            _# (js/console.warn args#)
             callback# (if (fn? (first args#)) (first args#) (second args#))]
         (if-let [error# (cond
 

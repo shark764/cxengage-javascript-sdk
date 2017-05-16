@@ -35,7 +35,6 @@
                 (p/publish {:topics topic
                             :error (e/reporting-batch-request-failed-err)}))
             (do (js/console.info "Batch request received!")
-                (js/console.info "RESPONSE AFTER API REQUEST IN START POLLING:" results)
                 (p/publish {:topics topic
                             :response results}
                            true)
