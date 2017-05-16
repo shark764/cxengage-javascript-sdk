@@ -144,10 +144,10 @@
                 :update (select-keys params [:title :body :contact-id])
                 :create (select-keys params [:title :body :contact-id]))
          note-url (iu/api-url
-                   "tenants/tenant-id/interactions/interaction-id/notes/note-id"
+                   "tenants/:tenant-id/interactions/:interaction-id/notes/note-id"
                    (select-keys params [:tenant-id :interaction-id :note-id]))
          notes-url (iu/api-url
-                    "tenants/tenant-id/interactions/interaction-id/notes?contents=true"
+                    "tenants/:tenant-id/interactions/:interaction-id/notes?contents=true"
                     (select-keys params [:tenant-id :interaction-id]))
          url (case action
                :get-one note-url
@@ -276,7 +276,7 @@
         ;; element.
         script-request {:method :post
                         :url (iu/api-url
-                              "tenants/tenant-id/interactions/interaction-id/actions/action-id"
+                              "tenants/:tenant-id/interactions/:interaction-id/actions/:action-id"
                               {:tenant-id (state/get-active-tenant-id)
                                :interaction-id interaction-id
                                :action-id action-id})
@@ -314,7 +314,7 @@
                                   :interrupt-type interrupt-type
                                   :interrupt interrupt-body}
                            :url (str (iu/api-url
-                                      "tenants/tenant-id/interactions/interaction-id/interrupts"
+                                      "tenants/:tenant-id/interactions/:interaction-id/interrupts"
                                       {:tenant-id tenant-id
                                        :interaction-id interaction-id}))}
         {:keys [status api-response]} (a/<! (iu/api-request interrupt-request))]

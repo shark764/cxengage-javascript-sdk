@@ -89,7 +89,7 @@
         logs (reduce (fn [acc x] (let [log (format-request-logs x)]
                                    (conj acc log))) [] (state/get-unsaved-logs))
         request-map {:url (iu/api-url
-                           "tenants/tenant-id/users/resource-id/logs"
+                           "tenants/:tenant-id/users/:resource-id/logs"
                            {:tenant-id (state/get-active-tenant-id)
                             :resource-id (state/get-active-user-id)})
                      :method :post

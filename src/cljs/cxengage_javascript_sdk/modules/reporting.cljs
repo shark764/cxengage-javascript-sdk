@@ -26,7 +26,7 @@
         (let [polling-request {:method :post
                                :body {:requests (:statistics @stat-subscriptions)}
                                :url (iu/api-url
-                                     "tenants/tenant-id/realtime-statistics/batch"
+                                     "tenants/:tenant-id/realtime-statistics/batch"
                                      {:tenant-id tenant-id})}
               {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
               {:keys [results]} api-response]
@@ -70,7 +70,7 @@
     (let [polling-request {:method :post
                            :body {:requests (:statistics @stat-subscriptions)}
                            :url (iu/api-url
-                                 "tenants/tenant-id/realtime-statistics/batch"
+                                 "tenants/:tenant-id/realtime-statistics/batch"
                                  {:tenant-id tenant-id})}
           {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
           {:keys [results]} api-response
@@ -123,8 +123,8 @@
   (let [tenant-id (st/get-active-tenant-id)
         {:keys [resource-id topic callback]} params
         url (if resource-id
-              "tenants/tenant-id/users/resource-id/realtime-statistics/resource-capacity"
-              "tenants/tenant-id/realtime-statistics/resource-capacity")
+              "tenants/:tenant-id/users/:resource-id/realtime-statistics/resource-capacity"
+              "tenants/:tenant-id/realtime-statistics/resource-capacity")
         ;; If resource-id is passed to the function, it will return the Capacity
         ;; for the specified resource-id. If no arguments are passed to the function
         ;; it will instead return the capacity for the active user's selected Tenant
@@ -165,7 +165,7 @@
         polling-request {:method :post
                          :body {:requests stat-body}
                          :url (iu/api-url
-                               "tenants/tenant-id/realtime-statistics/batch"
+                               "tenants/:tenant-id/realtime-statistics/batch"
                                {:tenant-id tenant-id})}
         {:keys [api-response status]} (a/<! (iu/api-request polling-request))
         {:keys [results]} api-response]
@@ -191,7 +191,7 @@
         tenant-id (st/get-active-tenant-id)
         get-available-stats-request {:method :get
                                      :url (iu/api-url
-                                           "tenants/tenant-id/realtime-statistics/available?client=toolbar"
+                                           "tenants/:tenant-id/realtime-statistics/available?client=toolbar"
                                            {:tenant-id tenant-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-available-stats-request))]
     (when (= status 200)
@@ -216,8 +216,8 @@
   (let [{:keys [callback topic contact-id page]} params
         tenant-id (st/get-active-tenant-id)
         url (if page
-              (str "tenants/tenant-id/contacts/contact-id/interactions?page=" page)
-              "tenants/tenant-id/contacts/contact-id/interactions")
+              (str "tenants/:tenant-id/contacts/:contact-id/interactions?page=" page)
+              "tenants/:tenant-id/contacts/:contact-id/interactions")
         get-contact-interaction-history-request {:method :get
                                                  :url (iu/api-url
                                                        url
@@ -247,7 +247,7 @@
         tenant-id (st/get-active-tenant-id)
         get-interaction-request {:method :get
                                  :url (iu/api-url
-                                       "tenants/tenant-id/interactions/interaction-id"
+                                       "tenants/:tenant-id/interactions/:interaction-id"
                                        {:tenant-id tenant-id
                                         :interaction-id interaction-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-interaction-request))]
