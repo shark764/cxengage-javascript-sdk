@@ -185,7 +185,7 @@
         :env (state/get-env)}))
     (when (= channel-type "email")
       (let [artifact-url (iu/api-url
-                          "tenants/tenant-id/interactions/interaction-id/artifacts"
+                          "tenants/:tenant-id/interactions/:interaction-id/artifacts"
                           {:tenant-id tenant-id
                            :interaction-id interaction-id})
             artifact-request {:method :post

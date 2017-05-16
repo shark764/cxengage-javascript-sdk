@@ -28,7 +28,7 @@
         tenant-id (state/get-active-tenant-id)
         change-state-request {:method :post
                               :url (iu/api-url
-                                    "tenants/tenant-id/presence/resource-id"
+                                    "tenants/:tenant-id/presence/:resource-id"
                                     {:tenant-id tenant-id
                                      :resource-id resource-id})
                               :body {:session-id session-id

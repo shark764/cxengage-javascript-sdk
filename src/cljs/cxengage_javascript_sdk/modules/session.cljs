@@ -43,7 +43,7 @@
                   :callback callback})
       (let [change-state-request {:method :post
                                   :url (iu/api-url
-                                        "tenants/tenant-id/presence/resource-id"
+                                        "tenants/:tenant-id/presence/:resource-id"
                                         {:tenant-id tenant-id
                                          :resource-id resource-id})
                                   :body {:session-id session-id
@@ -70,7 +70,7 @@
         heartbeat-request {:method :post
                            :body {:session-id session-id}
                            :url (iu/api-url
-                                 "tenants/tenant-id/presence/resource-id/heartbeat"
+                                 "tenants/:tenant-id/presence/:resource-id/heartbeat"
                                  {:tenant-id tenant-id
                                   :resource-id resource-id})}
         topic (p/get-topic :presence-heartbeats-response)]
@@ -99,7 +99,7 @@
         tenant-id (state/get-active-tenant-id)
         start-session-request {:method :post
                                :url (iu/api-url
-                                     "tenants/tenant-id/presence/resource-id/session"
+                                     "tenants/:tenant-id/presence/:resource-id/session"
                                      {:tenant-id tenant-id
                                       :resource-id resource-id})}]
     (go (let [start-session-response (a/<! (iu/api-request start-session-request))
@@ -122,7 +122,7 @@
         tenant-id (state/get-active-tenant-id)
         config-request {:method :get
                         :url (iu/api-url
-                              "tenants/tenant-id/users/resource-id/config"
+                              "tenants/:tenant-id/users/:resource-id/config"
                               {:tenant-id tenant-id
                                :resource-id resource-id})}
         topic (p/get-topic :config-response)]
@@ -189,7 +189,7 @@
         session-id (state/get-session-id)
         set-direction-request {:method :post
                                :url (iu/api-url
-                                     "tenants/tenant-id/presence/resource-id/direction"
+                                     "tenants/:tenant-id/presence/:resource-id/direction"
                                      {:tenant-id tenant-id
                                       :resource-id resource-id})
                                :body {:session-id session-id

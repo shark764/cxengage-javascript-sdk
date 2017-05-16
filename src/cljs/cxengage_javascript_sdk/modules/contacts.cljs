@@ -15,12 +15,12 @@
    (contact-request url body method params topic-key spec preserve-casing? nil))
   ([url body method params topic-key spec preserve-casing? query]
    (let [{:keys [callback]} params
-         urls {:single-contact-url "tenants/tenant-id/contacts/contact-id"
-               :multiple-contact-url "tenants/tenant-id/contacts"
-               :merge-contacts-url "tenants/tenant-id/contacts/merge"
-               :multiple-attribute-url "tenants/tenant-id/contacts/attributes"
-               :multiple-layout-url "tenants/tenant-id/contacts/layouts"
-               :single-layout-url "tenants/tenant-id/contacts/layouts/layout-id"}
+         urls {:single-contact-url "tenants/:tenant-id/contacts/:contact-id"
+               :multiple-contact-url "tenants/:tenant-id/contacts"
+               :merge-contacts-url "tenants/:tenant-id/contacts/merge"
+               :multiple-attribute-url "tenants/:tenant-id/contacts/attributes"
+               :multiple-layout-url "tenants/:tenant-id/contacts/layouts"
+               :single-layout-url "tenants/:tenant-id/contacts/layouts/:layout-id"}
          request-url (iu/api-url
                       (get urls (:base url))
                       (:params url))
@@ -200,7 +200,7 @@
          {:keys [callback] :as params} (ih/extract-params params true)
          method :get
          request-url (iu/api-url
-                      "tenants/tenant-id/contacts/attributes"
+                      "tenants/:tenant-id/contacts/attributes"
                       {:tenant-id (state/get-active-tenant-id)})
          topic (p/get-topic :list-attributes)]
      (if-not (s/valid? ::list-attributes-params params)

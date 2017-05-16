@@ -158,7 +158,7 @@
                    :source "twilio"}
         dial-request {:method :post
                       :url (iu/api-url
-                            "tenants/tenant-id/interactions"
+                            "tenants/:tenant-id/interactions"
                             {:tenant-id tenant-id})
                       :body dial-body}]
     (let [dial-response (a/<! (iu/api-request dial-request))
@@ -334,7 +334,7 @@
               topic (p/get-topic :config-response)
               config-request {:method :get
                               :url (iu/api-url
-                                    "tenants/tenant-id/users/resource-id/config"
+                                    "tenants/:tenant-id/users/:resource-id/config"
                                     {:tenant-id tenant-id
                                      :resource-id resource-id})}
               config-response (a/<! (iu/api-request config-request))
