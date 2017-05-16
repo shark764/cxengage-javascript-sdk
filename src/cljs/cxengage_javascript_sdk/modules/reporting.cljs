@@ -78,7 +78,8 @@
       (when (= status 200)
         (p/publish {:topics batch-topic
                     :response results
-                    :callback callback})))))
+                    :callback callback}
+                   true)))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.removeStatSubscription({
