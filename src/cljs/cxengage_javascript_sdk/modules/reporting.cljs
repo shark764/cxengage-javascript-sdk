@@ -64,7 +64,7 @@
         stat-id (str (uuid/make-random-uuid))]
     (swap! stat-subscriptions assoc-in [:statistics stat-id] stat-bundle)
     (p/publish {:topics topic
-                :response {:stat-id stat-id}
+                :response {:statId stat-id}
                 :callback callback}
                true)
     (let [polling-request {:method :post
@@ -78,8 +78,7 @@
       (when (= status 200)
         (p/publish {:topics batch-topic
                     :response results
-                    :callback callback}
-                   true)))))
+                    :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.removeStatSubscription({
