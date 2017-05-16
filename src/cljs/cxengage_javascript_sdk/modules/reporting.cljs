@@ -35,7 +35,7 @@
                 (p/publish {:topics topic
                             :error (e/reporting-batch-request-failed-err)}))
             (do (js/console.info "Batch request received!")
-                (js/console.info "RESPONSE AFTER API REQUEST IN START POLLING:" api-response)
+                (js/console.info "RESPONSE AFTER API REQUEST IN START POLLING:" results)
                 (p/publish {:topics topic
                             :response results}
                            true)
@@ -74,7 +74,6 @@
                                  "tenants/tenant-id/realtime-statistics/batch"
                                  {:tenant-id tenant-id})}
           {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
-          _ (js/console.log "RESPONSE AFTER API REQUEST IN ADD STAT SUB:" api-response)
           {:keys [results]} api-response
           batch-topic (p/get-topic :batch-response)]
       (when (= status 200)
@@ -98,7 +97,7 @@
    :topic-key :remove-stat
    :preserve-casing? true}
   [params]
-  (js/console.log "stat id:" stat-id)
+  (js/console.log "stat id:" params)
   (let [{:keys [stat-id topic callback]} params
         new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
     (swap! stat-subscriptions assoc :statistics new-stats)
