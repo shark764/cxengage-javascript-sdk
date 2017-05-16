@@ -198,8 +198,7 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response
-                  :callback callback}
-                 true))))
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.getContactInteractionHistory({
