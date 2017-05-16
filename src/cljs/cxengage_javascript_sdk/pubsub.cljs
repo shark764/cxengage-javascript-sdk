@@ -148,6 +148,7 @@
                  :api-rejected-bad-client-request "cxengage/errors/error/api-rejected-bad-client-request"
                  :api-encountered-internal-error "cxengage/errors/error/api-encountered-internal-server-error"
                  :failed-to-send-digits-invalid-interaction "cxengage/errors/error/failed-to-send-digits-invalid-interaction"
+                 :api-returned-404-not-found "cxengage/errors/error/api-returned-404-not-found"
                  })
 
 (defn get-topic
