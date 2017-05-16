@@ -29,7 +29,7 @@
   ([url params]
    (reduce-kv
     (fn [s k v]
-      (clojure.string/replace s (re-pattern (str ":" (name k)) v)))
+      (clojure.string/replace s (re-pattern (str k)) v))
     (str (state/get-base-api-url) url)
     params)))
 

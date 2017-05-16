@@ -33,7 +33,7 @@
         tenant-id (st/get-active-tenant-id)
         get-user-request {:method :get
                           :url (iu/api-url
-                                "tenants/tenant-id/users/resource-id"
+                                "tenants/:tenant-id/users/:resource-id"
                                 {:tenant-id tenant-id
                                  :resource-id resource-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-user-request))]
@@ -58,7 +58,7 @@
         tenant-id (st/get-active-tenant-id)
         get-users-request {:method :get
                            :url (iu/api-url
-                                 "tenants/tenant-id/users"
+                                 "tenants/:tenant-id/users"
                                  {:tenant-id tenant-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-users-request))]
     (when (= status 200)
@@ -84,7 +84,7 @@
         tenant-id (st/get-active-tenant-id)
         get-queue-request {:method :get
                            :url (iu/api-url
-                                 "tenants/tenant-id/queues/queue-id"
+                                 "tenants/:tenant-id/queues/:queue-id"
                                  {:tenant-id tenant-id
                                   :queue-id queue-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-queue-request))]
@@ -109,7 +109,7 @@
         tenant-id (st/get-active-tenant-id)
         get-queues-request {:method :get
                            :url (iu/api-url
-                                 "tenants/tenant-id/queues"
+                                 "tenants/:tenant-id/queues"
                                  {:tenant-id tenant-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-queues-request))]
     (when (= status 200)
@@ -135,7 +135,7 @@
         tenant-id (st/get-active-tenant-id)
         get-transfer-list-request {:method :get
                                    :url (iu/api-url
-                                         "tenants/tenant-id/transfer-lists/transfer-list-id"
+                                         "tenants/:tenant-id/transfer-lists/:transfer-list-id"
                                          {:tenant-id tenant-id
                                           :transfer-list-id transfer-list-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-transfer-list-request))]
@@ -160,7 +160,7 @@
         tenant-id (st/get-active-tenant-id)
         get-transfer-lists-request {:method :get
                                     :url (iu/api-url
-                                          "tenants/tenant-id/transfer-lists"
+                                          "tenants/:tenant-id/transfer-lists"
                                           {:tenant-id tenant-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-transfer-lists-request))]
     (when (= status 200)
@@ -192,7 +192,7 @@
         put-user-request {:method :put
                           :body update-body
                           :url (iu/api-url
-                                "tenants/tenant-id/users/resource-id"
+                                "tenants/:tenant-id/users/:resource-id"
                                 {:tenant-id tenant-id
                                  :resource-id resource-id})}
         {:keys [status api-response]} (a/<! (iu/api-request put-user-request))]

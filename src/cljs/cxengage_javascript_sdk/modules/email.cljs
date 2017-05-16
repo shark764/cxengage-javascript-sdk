@@ -33,7 +33,7 @@
   (let [{:keys [topic interaction-id artifact-file-id artifact-id callback]} params
         tenant-id (state/get-active-tenant-id)
         url (iu/api-url
-             "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
+             "tenants/:tenant-id/interactions/:interaction-id/artifacts/:artifact-id"
              {:tenant-id tenant-id
               :interaction-id interaction-id
               :artifact-id artifact-id})
@@ -138,7 +138,7 @@
         artifact-id (state/get-reply-artifact-id-by-interaction-id interaction-id)
         tenant-id (state/get-active-tenant-id)
         artifact-url (iu/api-url
-                      "tenants/tenant-id/interactions/interaction-id/artifacts/artifact-id"
+                      "tenants/:tenant-id/interactions/:interaction-id/artifacts/:artifact-id"
                       {:tenant-id tenant-id
                        :interaction-id interaction-id
                        :artifact-id artifact-id})]
@@ -234,7 +234,7 @@
                           artifact-update-response (a/<! (iu/api-request artifact-update-request))
                           _ (js/console.log "[Email Processing] Artifact update response:" (ih/camelify artifact-update-response))
                           flow-url (iu/api-url
-                                    "tenants/tenant-id/interactions/interaction-id/interrupts"
+                                    "tenants/:tenant-id/interactions/:interaction-id/interrupts"
                                     {:tenant-id tenant-id
                                      :interaction-id interaction-id})
                           flow-body {:interrupt {:resource-id (state/get-active-user-id)

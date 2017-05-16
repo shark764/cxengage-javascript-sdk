@@ -226,7 +226,7 @@
                         :source "Client"}
         sms-request {:method :post
                      :url (iu/api-url
-                           "tenants/tenant-id/interactions/interaction-id/interrupts"
+                           "tenants/:tenant-id/interactions/:interaction-id/interrupts"
                            {:tenant-id tenant-id
                             :interaction-id interaction-id})
                      :body interrupt-body}
@@ -276,7 +276,7 @@
                                 :resource-id resource-id}}
         sms-request {:method :post
                      :url (iu/api-url
-                           "tenants/tenant-id/interactions"
+                           "tenants/:tenant-id/interactions"
                            {:tenant-id tenant-id})
                      :body sms-body}
         sms-response (a/<! (iu/api-request sms-request))
