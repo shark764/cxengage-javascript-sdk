@@ -35,8 +35,10 @@
                 (p/publish {:topics topic
                             :error (e/reporting-batch-request-failed-err)}))
             (do (js/console.info "Batch request received!")
+                (js/console.info "RESPONSE AFTER API REQUEST IN START POLLING:" api-response)
                 (p/publish {:topics topic
-                            :response results})
+                            :response results}
+                           true)
 
                 (recur))))))
     nil))
@@ -64,13 +66,15 @@
     (swap! stat-subscriptions assoc-in [:statistics stat-id] stat-bundle)
     (p/publish {:topics topic
                 :response {:stat-id stat-id}
-                :callback callback})
+                :callback callback}
+               true)
     (let [polling-request {:method :post
                            :body {:requests (:statistics @stat-subscriptions)}
                            :url (iu/api-url
                                  "tenants/tenant-id/realtime-statistics/batch"
                                  {:tenant-id tenant-id})}
           {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
+          _ (js/console.log "RESPONSE AFTER API REQUEST IN ADD STAT SUB:" api-response)
           {:keys [results]} api-response
           batch-topic (p/get-topic :batch-response)]
       (when (= status 200)
@@ -94,12 +98,14 @@
    :topic-key :remove-stat
    :preserve-casing? true}
   [params]
+  (js/console.log "stat id:" stat-id)
   (let [{:keys [stat-id topic callback]} params
         new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
     (swap! stat-subscriptions assoc :statistics new-stats)
     (p/publish {:topics topic
                 :response new-stats
-                :callback callback})))
+                :callback callback}
+               true)))
 
 
 ;; -------------------------------------------------------------------------- ;;
@@ -168,7 +174,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response results
-                  :callback callback}))))
+                  :callback callback}
+                 true))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.getAvailableStats();
@@ -192,7 +199,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response
-                  :callback callback}))))
+                  :callback callback}
+                 true))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.getContactInteractionHistory({
