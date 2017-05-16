@@ -93,8 +93,7 @@
 
 (def-sdk-fn remove-stat-subscription
   {:validation ::remove-statistics-params
-   :topic-key :remove-stat
-   :preserve-casing? true}
+   :topic-key :remove-stat}
   [params]
   (js/console.log "stat id:" params)
   (let [{:keys [stat-id topic callback]} params
