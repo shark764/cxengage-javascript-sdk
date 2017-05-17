@@ -129,7 +129,6 @@
      (note-action module action (merge (ih/extract-params client-params) {:callback (first others)}))))
   ([module action client-params]
    (let [params (ih/extract-params client-params)
-         module-state @(:state module)
          {:keys [callback interaction-id note-id]} params
          params (assoc params :resource-id (state/get-active-user-id))
          params (assoc params :tenant-id (state/get-active-tenant-id))
