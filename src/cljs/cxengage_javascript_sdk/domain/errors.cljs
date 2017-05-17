@@ -165,6 +165,11 @@
    :level "error"
    :message "Failed to retrieve email artifact data."})
 
+(defn failed-to-create-outbound-email-interaction-err []
+  {:code 10002
+   :level "error"
+   :message "Failed to create outbound email interaction."})
+
 (defn reporting-batch-request-failed-err []
   {:code 12000
    :level "error"

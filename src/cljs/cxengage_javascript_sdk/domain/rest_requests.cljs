@@ -121,3 +121,12 @@
                                     "tenants/:tenant-id/contacts/layouts"
                                     {:tenant-id tenant-id})}]
     (iu/api-request list-layouts-request true)))
+
+(defn create-interaction-request [interaction-body]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-interaction-request {:method :post
+                                    :url (iu/api-url
+                                          "tenants/:tenant-id/interactions"
+                                          {:tenant-id tenant-id})
+                                    :body interaction-body}]
+    (iu/api-request create-interaction-request)))
