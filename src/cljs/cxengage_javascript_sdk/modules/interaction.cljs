@@ -143,7 +143,7 @@
                 :update (select-keys params [:title :body :contact-id])
                 :create (select-keys params [:title :body :contact-id]))
          note-url (iu/api-url
-                   "tenants/:tenant-id/interactions/:interaction-id/notes/note-id"
+                   "tenants/:tenant-id/interactions/:interaction-id/notes/:note-id"
                    (select-keys params [:tenant-id :interaction-id :note-id]))
          notes-url (iu/api-url
                     "tenants/:tenant-id/interactions/:interaction-id/notes?contents=true"
