@@ -1,12 +1,14 @@
 (ns cxengage-javascript-sdk.modules.email
   (:require-macros [cljs.core.async.macros :refer [go]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
+                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+                   [clojure.string :as str])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [promesa.core :as prom :refer [promise all then]]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
@@ -251,6 +253,34 @@
                                     :response {:interaction-id interaction-id}
                                     :callback callback}))))))))))
 
+(s/def ::start-outbound-email-params
+  (s/keys :req-un [::specs/address]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn start-outbound-email
+  {:validation ::start-outbound-email-params
+   :topic-key :start-outbound-email}
+  [params]
+  (let [{:keys [address callback topic]} params
+        resource-id (state/get-active-user-id)
+        interaction-id (str (id/make-random-squuid))
+        interaction-body {:source "email"
+                          :customer address
+                          :contact-point "outbound-email"
+                          :channel-type "email"
+                          :direction "outbound"
+                          :interaction {:resource-id resource-id}
+                          :metadata {}
+                          :id interaction-id}
+        {:keys [api-response status]} (a/<! (rest/create-interaction-request interaction-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics (p/get-topic :failed-to-create-outbound-email-interaction)
+                  :error (e/failed-to-create-outbound-email-interaction-err)
+                  :callback callback}))))
+
 (defrecord EmailModule []
   pr/SDKModule
   (start [this]
@@ -258,7 +288,8 @@
       (ih/register {:api {:interactions {:email {:add-attachment add-attachment
                                                  :remove-attachment remove-attachment
                                                  :get-attachment-url get-attachment-url
-                                                 :send-reply send-reply}}}
+                                                 :send-reply send-reply
+                                                 :start-outbound-email start-outbound-email}}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

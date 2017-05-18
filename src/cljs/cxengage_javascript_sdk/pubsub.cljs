@@ -103,6 +103,7 @@
                  :add-attachment "cxengage/interactions/email/attachment-added"
                  :remove-attachment "cxengage/interactions/email/attachment-removed"
                  :send-reply "cxengage/interactions/email/send-reply"
+                 :start-outbound-email "cxengage/interactions/email/start-outbound-email"
 
                  ;; Voice Interaction Topics
                  :recording-response "cxengage/interactions/voice/recording-received"
@@ -144,6 +145,7 @@
                  :failed-to-retrieve-messaging-history "cxengage/errors/error/failed-to-retrieve-messaging-history"
                  :failed-to-retrieve-messaging-metadata "cxengage/errors/error/failed-to-retrieve-messaging-metadata"
                  :failed-to-create-email-reply-artifact "cxengage/errors/error/failed-to-create-email-reply-artifact"
+                 :failed-to-create-outbound-email-interaction "cxengage/errors/error/failed-to-create-outbound-email-interaction"
                  :unknown-agent-notification-type-received "cxengage/errors/error/unknown-agent-notification-type"
                  :api-rejected-bad-client-request "cxengage/errors/error/api-rejected-bad-client-request"
                  :api-encountered-internal-error "cxengage/errors/error/api-encountered-internal-server-error"

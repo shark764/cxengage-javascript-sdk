@@ -46,7 +46,7 @@
             (do (js/console.log (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
                 (state/add-email-artifact-data interaction-id api-response)))))))
 
-(defn get-email-bodies [interaction-id]
+(defn get-incoming-email-bodies [interaction-id]
   (let [interaction (state/get-interaction interaction-id)
         tenant-id (state/get-active-tenant-id)
         manifest-id (get-in interaction [:email-artifact :manifest-id])
@@ -97,7 +97,7 @@
 
 (defn handle-work-offer [message]
   (state/add-interaction! :pending message)
-  (let [{:keys [channel-type interaction-id timeout]} message
+  (let [{:keys [channel-type interaction-id timeout direction]} message
         now (iu/get-now)
         expiry (.getTime (js/Date. timeout))]
     (if (> now expiry)
@@ -107,7 +107,7 @@
                   (= channel-type "messaging"))
           (let [{:keys [tenant-id interaction-id]} message]
             (get-messaging-metadata tenant-id interaction-id)))
-        (when (= channel-type "email")
+        (when (and (= channel-type "email") (= direction "inbound"))
           (let [{:keys [tenant-id interaction-id artifact-id]} message]
             (get-email-artifact-data tenant-id interaction-id artifact-id)))
         (p/publish {:topics (p/get-topic :work-offer-received)
@@ -168,7 +168,7 @@
   nil)
 
 (defn handle-work-accepted [message]
-  (let [{:keys [interaction-id tenant-id active-resources customer-on-hold recording]} message
+  (let [{:keys [interaction-id tenant-id active-resources customer-on-hold recording direction]} message
         interaction (state/get-pending-interaction interaction-id)
         channel-type (get interaction :channel-type)]
     (state/transition-interaction! :pending :active interaction-id)
@@ -196,7 +196,8 @@
               (if (= status 200)
                 (let [{:keys [artifact-id]} api-response]
                   (state/store-email-reply-artifact-id artifact-id interaction-id)
-                  (get-email-bodies interaction-id))
+                  (when (= direction "inbound")
+                    (get-incoming-email-bodies interaction-id)))
                 (p/publish {:topics (p/get-topic :failed-to-create-email-reply-artifact)
                             :error (e/failed-to-create-email-reply-artifact-err)}))))))))
 

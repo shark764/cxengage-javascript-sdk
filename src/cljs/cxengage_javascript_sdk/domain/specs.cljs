@@ -4,6 +4,10 @@
             [cljs-uuid-utils.core :as id]))
 
 (s/def ::uuid id/valid-uuid?)
+(s/def ::name string?)
+(s/def ::address string?)
+(s/def ::recipient
+  (s/keys :req-un [::address ::name]))
 
 (s/def ::answers map?)
 (s/def ::artifact-file-id ::uuid)
@@ -11,11 +15,15 @@
 (s/def ::attachment-id ::uuid)
 (s/def ::attributes map?)
 (s/def ::base-url string?)
-(s/def ::bcc vector?)
+(s/def ::bcc (s/or
+              :empty (s/and vector? empty?)
+              :recipient (s/coll-of ::recipient)))
 (s/def ::blast-sqs-output boolean?)
 (s/def ::body string?)
 (s/def ::callback (s/or :callback fn? :callback nil?))
-(s/def ::cc vector?)
+(s/def ::cc (s/or
+             :empty (s/and vector? empty?)
+             :recipient (s/coll-of ::recipient)))
 (s/def ::contact-id ::uuid)
 (s/def ::contact-ids (s/coll-of ::contact-id))
 (s/def ::contact-point string?)
@@ -55,7 +63,7 @@
 (s/def ::subscription-id ::uuid)
 (s/def ::tenant-id ::uuid)
 (s/def ::title string?)
-(s/def ::to vector?)
+(s/def ::to (s/coll-of ::recipient))
 (s/def ::topic string?)
 (s/def ::transfer-extension map?)
 (s/def ::transfer-type #{"cold" "warm"})
