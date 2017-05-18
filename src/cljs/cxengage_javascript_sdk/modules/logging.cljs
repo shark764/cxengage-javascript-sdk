@@ -32,9 +32,7 @@
     nil))
 
 ;; -------------------------------;;
-;;
 ;; CxEngage.logging.dumpLogs();
-;;
 ;; -------------------------------;;
 
 (s/def ::dump-logs-params
@@ -51,9 +49,7 @@
                 :callback callback})))
 
 ;; -------------------------------;;
-;;
-;; CxEngage.logging.setLevel({level: "info"});
-;;
+;; CxEngage.logging.setLevel({ level: "info" });
 ;; -------------------------------;;
 
 (s/def ::set-level-params
@@ -72,9 +68,7 @@
                 :callback callback})))
 
 ;; -------------------------------;;
-;;
 ;; CxEngage.logging.saveLogs();
-;;
 ;; -------------------------------;;
 
 (s/def ::save-logs-params
@@ -103,6 +97,10 @@
                   :response api-response
                   :callback callback})
       (state/save-logs))))
+
+;; -------------------------------------------------------------------------- ;;
+;; SDK Logging Module
+;; -------------------------------------------------------------------------- ;;
 
 (defrecord LoggingModule []
   pr/SDKModule

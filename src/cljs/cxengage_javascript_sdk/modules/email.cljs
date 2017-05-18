@@ -281,6 +281,10 @@
                   :error (e/failed-to-create-outbound-email-interaction-err)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; SDK Entities Module
+;; -------------------------------------------------------------------------- ;;
+
 (defrecord EmailModule []
   pr/SDKModule
   (start [this]

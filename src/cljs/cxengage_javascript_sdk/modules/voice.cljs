@@ -211,10 +211,10 @@
         (.-mediaDevices)
         (.getUserMedia audio-params)
         (.then script-init)
+        ;; If a user "blocks" microphone access through their browser
+        ;; it causes issues with Twilio. This is a our way of detecting
+        ;; and notifying the user of this problem.
         (.catch (fn [err] (e/no-microphone-access-error))))))
-;; If a user "blocks" microphone access through their browser
-;; it causes issues with Twilio. This is a our way of detecting
-;; and notifying the user of this problem.
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.sendDigits({
@@ -249,7 +249,6 @@
       (p/publish {:topics (p/get-topic :failed-to-send-digits-invalid-interaction)
                   :error (e/failed-to-send-digits-invalid-interaction-err)
                   :callback callback}))))
-
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.getRecordings({

@@ -15,8 +15,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::logout-spec
-  (s/keys :req-un []
-          :opt-un []))
+  (s/keys :req-un []))
 
 (def-sdk-fn logout
   {:validation ::logout-spec

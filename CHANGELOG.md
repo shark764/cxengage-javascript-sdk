@@ -17,6 +17,7 @@
 * migrated session & authentication modules to use the sdk macro
 * added lots of code comments, tided up namespace deps, removed lots of dead code
 * fixed capacity callbacks
+* fixed reason id/reason/reason list id on go-not-ready not being passed correctly
 
 ## [4.1.0]
 * added support for click-to-sms and send-sms-by-interrupt

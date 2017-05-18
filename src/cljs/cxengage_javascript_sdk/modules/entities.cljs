@@ -108,9 +108,9 @@
   (let [{:keys [callback topic]} params
         tenant-id (st/get-active-tenant-id)
         get-queues-request {:method :get
-                           :url (iu/api-url
-                                 "tenants/:tenant-id/queues"
-                                 {:tenant-id tenant-id})}
+                            :url (iu/api-url
+                                  "tenants/:tenant-id/queues"
+                                  {:tenant-id tenant-id})}
         {:keys [status api-response]} (a/<! (iu/api-request get-queues-request))]
     (when (= status 200)
       (p/publish {:topics topic

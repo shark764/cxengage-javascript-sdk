@@ -43,7 +43,7 @@
     nil))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.reporting.addStatisticSubscription({
+;; CxEngage.reporting.addStatSubscription({
 ;;   statistic: "{{string}}",
 ;;   resourceId: "{{uuid}}",
 ;;   queueId: "{{queueId}}"
