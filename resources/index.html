@@ -135,6 +135,9 @@
         case 'cxengage/session/started':
           handleSessionEnd(error, topic, response);
           break;
+        case 'cxengage/session/ended':
+          switchScreens('login-screen');
+          break;
         case 'cxengage/session/state-change-response':
           handleStateChange(error, topic, response);
           break;
@@ -542,7 +545,7 @@
       CxEngage.session.goNotReady();
     };
     var goOffline = function() {
-      CxEngage.session.end();
+      CxEngage.authentication.logout();
     };
     var goInbound = function() {
       CxEngage.session.setDirection({direction:'inbound'});

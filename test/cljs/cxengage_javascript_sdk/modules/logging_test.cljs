@@ -16,7 +16,7 @@
 
 (deftest log*-test
   (testing "the log* function"
-    (state/reset-state)
+    (state/destroy-state)
     (log/log* :debug "Unit" "Test")
     (is (= [{:level :debug :data ["Unit" "Test"]}] (state/get-unsaved-logs)))
     (log/log* :info "Test" "Unit")
@@ -26,7 +26,7 @@
 (deftest dump-logs-test
   (testing "the dump logs function"
     (async done
-           (state/reset-state)
+           (state/destroy-state)
            (p/subscribe "cxengage/logging/logs-dumped" (fn [error topic response]
                                                          (is (= [{:level "info"
                                                                   :data ["Test" "Unit"]}
@@ -48,7 +48,7 @@
 (deftest save-logs-happy-test
   (testing "The save logs function happy path"
     (async done
-           (state/reset-state)
+           (state/destroy-state)
            (go (let [the-chan (a/promise-chan)
                      old iu/api-request
                      tenant-id (str (id/make-random-uuid))

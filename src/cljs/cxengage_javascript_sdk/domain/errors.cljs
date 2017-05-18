@@ -110,6 +110,11 @@
    :level "error"
    :message "Logout attempt failed"})
 
+(defn active-interactions-err []
+  {:code 4000
+   :level "error"
+   :message "Unable to perform this action as there are interactions still active."})
+
 (defn failed-to-refresh-sqs-integration-err []
   {:code 5000
    :level "fatal"

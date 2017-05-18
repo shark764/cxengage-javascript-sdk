@@ -21,11 +21,6 @@
             [cljs.spec :as s])
   (:import goog.crypt))
 
-(def module-state (atom {}))
-
-(defn get-mqtt-client []
-  (get @module-state :mqtt-client))
-
 (def service-name "iotdevicegateway")
 (def algorithm "AWS4-HMAC-SHA256")
 (def method "GET")
@@ -95,12 +90,12 @@
 
 (defn subscribe
   [topic]
-  (.subscribe (get-mqtt-client) topic #js {:qos 1})
+  (.subscribe (state/get-mqtt-client) topic #js {:qos 1})
   (js/console.log (str "Subscribed to MQTT topic: " topic)))
 
 (defn unsubscribe
   [topic]
-  (.unsubscribe (get-mqtt-client) topic))
+  (.unsubscribe (state/get-mqtt-client) topic))
 
 (defn send-message-impl
   [payload topic callback]
@@ -108,7 +103,7 @@
         pubsub-topic (p/get-topic :send-message-acknowledged)]
     (set! (.-destinationName msg) topic)
     (set! (.-qos msg) 1)
-    (.send (get-mqtt-client) msg)
+    (.send (state/get-mqtt-client) msg)
     (p/publish {:topics pubsub-topic
                 :response true
                 :callback callback})))
@@ -133,8 +128,10 @@
   (let [mqtt (Paho.MQTT.Client. endpoint client-id)
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
-                                      (js/console.error "Mqtt Connection Lost" {:reasonCode reason-code
-                                                                                :reasonMessage reason-message})))
+                                      (if (= (get (js->clj reason-code :keywordize-keys true) :errorCode) 0)
+                                        (js/console.log "Previous Mqtt Session Successfully Disconnected")
+                                        (js/console.error "Mqtt Connection Lost" {:reasonCode reason-code
+                                                                                  :reasonMessage reason-message}))))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
     (set! (.-onSuccess connect-options) (fn [] (on-connect)))
@@ -149,7 +146,7 @@
 (defn mqtt-init
   [mqtt-conf client-id on-received]
   (let [mqtt-client (connect (get-iot-url (time/now) mqtt-conf) client-id on-received)]
-    (swap! module-state assoc :mqtt-client mqtt-client)))
+    (state/set-mqtt-client mqtt-client)))
 
 (defn subscribe-to-messaging-interaction [message]
   (let [{:keys [tenant-id interaction-id env]} message
