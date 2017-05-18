@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [5.0.0]
 * ** BREAKING ** refactored entities module - each entity now has it's own function and will require passing the proper type-id ie; "resource-id" rather than the generic "entity-id".
 * ** BREAKING ** changed global window exposure from "serenova.cxengage.api...." to just "CxEngage"
 * ** BREAKING ** removed (due to them now being necessary) the "capabilities" pub/sub messages
@@ -15,6 +17,7 @@
 * fixed pub/sub system to only call callbacks for the subscribers whose topics match
 * removed the ability to pass callbacks as a part of the params object (must be passed as a 2nd parameter)
 * migrated session & authentication modules to use the sdk macro
+* added click to email functionality
 * added lots of code comments, tided up namespace deps, removed lots of dead code
 * fixed capacity callbacks
 * fixed reason id/reason/reason list id on go-not-ready not being passed correctly
