@@ -9,102 +9,275 @@
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.domain.errors :as err]
             [cxengage-javascript-sdk.domain.protocols :as pr]
-            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.interaction-management :as int]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.interop-helpers :as ih]))
+            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]))
 
 (s/def ::generic-interaction-fn-params
   (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(s/def ::disposition-operation-params
+  (s/keys :req-un [::specs/interaction-id ::specs/disposition-id]
           :opt-un [::specs/callback]))
 
 (s/def ::contact-operation-params
   (s/keys :req-un [::specs/interaction-id ::specs/contact-id]
           :opt-un [::specs/callback]))
 
-(defn send-interrupt
-  ([type] (e/wrong-number-of-sdk-fn-args-err))
-  ([type client-params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/callback-isnt-a-function-err)
-     (send-interrupt type (merge (ih/extract-params client-params) {:callback (first others)}))))
-  ([type client-params]
-   (let [client-params (ih/extract-params client-params)
-         {:keys [callback interaction-id contact-id disposition]} client-params
-         {:keys [sub-id action-id channel-type resource-id tenant-id resource direction channel-type timeout timeout-end]} (state/get-interaction interaction-id)
-         {:keys [extension role-id session-id work-offer-id]} resource
-         basic-interrupt-body {:resource-id (state/get-active-user-id)}
-         detailed-interaction-interrupt-body {:tenant-id tenant-id
-                                              :interaction-id interaction-id
-                                              :sub-id sub-id
-                                              :action-id action-id
-                                              :work-offer-id work-offer-id
-                                              :session-id session-id
-                                              :resource-id resource-id
-                                              :direction direction
-                                              :channel-type channel-type}
-         interrupt-params (case type
-                            :end {:validation ::generic-interaction-fn-params
-                                  :interrupt-type "resource-disconnect"
-                                  :topic (p/get-topic :interaction-end-acknowledged)
-                                  :interrupt-body basic-interrupt-body}
-                            :accept {:validation ::generic-interaction-fn-params
-                                     :interrupt-type "offer-accept"
-                                     :topic (p/get-topic :interaction-accept-acknowledged)
-                                     :interrupt-body basic-interrupt-body
-                                     :on-confirm-fn (fn []
-                                                      (when-not (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
-                                                        (when (= channel-type "voice")
-                                                          (let [connection (state/get-twilio-connection)]
-                                                            (.accept connection)))
-                                                        (when (or (= channel-type "sms")
-                                                                  (= channel-type "messaging"))
-                                                          (int/get-messaging-history tenant-id interaction-id))))}
-                            :focus {:validation ::generic-interaction-fn-params
-                                    :interrupt-type "interaction-focused"
-                                    :topic (p/get-topic :interaction-focus-acknowledged)
-                                    :interrupt-body detailed-interaction-interrupt-body}
-                            :unfocus {:validation ::generic-interaction-fn-params
-                                      :interrupt-type "interaction-unfocused"
-                                      :topic (p/get-topic :interaction-unfocus-acknowledged)
-                                      :interrupt-body detailed-interaction-interrupt-body}
-                            :assign {:validation ::contact-operation-params
-                                     :interrupt-type "interaction-contact-selected"
-                                     :topic (p/get-topic :contact-assignment-acknowledged)
-                                     :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
-                            :unassign {:validation ::contact-operation-params
-                                       :interrupt-type "interaction-contact-deselected"
-                                       :topic (p/get-topic :contact-unassignment-acknowledged)
-                                       :interrupt-body (assoc detailed-interaction-interrupt-body :contact-id contact-id)}
-                            :enable-wrapup {:validation ::generic-interaction-fn-params
-                                            :interrupt-type "wrapup-on"
-                                            :topic (p/get-topic :enable-wrapup-acknowledged)
-                                            :interrupt-body basic-interrupt-body}
-                            :deselect-disposition {:validation ::generic-interaction-fn-params
-                                                   :interrupt-type "disposition-select"
-                                                   :topic (p/get-topic :disposition-code-changed)
-                                                   :interrupt-body basic-interrupt-body}
-                            :disable-wrapup {:validation ::generic-interaction-fn-params
-                                             :interrupt-type "wrapup-off"
-                                             :topic (p/get-topic :disable-wrapup-acknowledged)
-                                             :interrupt-body basic-interrupt-body}
-                            :end-wrapup {:validation ::generic-interaction-fn-params
-                                         :interrupt-type "wrapup-end"
-                                         :topic (p/get-topic :end-wrapup-acknowledged)
-                                         :interrupt-body basic-interrupt-body}
-                            :select-disposition-code {:validation ::generic-interaction-fn-params
-                                                      :interrupt-type "disposition-select"
-                                                      :topic (p/get-topic :disposition-code-changed)
-                                                      :interrupt-body {:disposition disposition
-                                                                       :resource-id resource-id}})]
-     (if-not (s/valid? (:validation interrupt-params) client-params)
-       (p/publish {:topics (:topic interrupt-params)
-                   :error (e/args-failed-spec-err)
-                   :callback callback})
-       (iu/send-interrupt* (assoc interrupt-params
-                                  :interaction-id interaction-id
-                                  :callback callback))))))
+(defn build-detailed-interrupt-body
+  [interaction-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        {:keys [sub-id action-id channel-type resource-id tenant-id
+                resource direction timeout timeout-end]} (state/get-interaction interaction-id)
+        {:keys [extension role-id session-id work-offer-id]} resource]
+    {:tenant-id tenant-id
+     :interaction-id interaction-id
+     :sub-id sub-id
+     :action-id action-id
+     :work-offer-id work-offer-id
+     :session-id session-id
+     :resource-id resource-id
+     :direction direction
+     :channel-type channel-type}))
+
+;; -------------------------------------------------------------------------- ;;
+;; //End interaction
+;; CxEngage.interactions.end({
+;;   interactionId: "{{uuid}}"
+;; });
+;;
+;; //Reject interaction
+;; CxEngage.interactions.reject({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn end
+  {:validation ::generic-interaction-fn-params
+   :topic-key :interaction-end-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        interrupt-type "resource-disconnect"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.accept({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn accept
+  {:validation ::generic-interaction-fn-params
+   :topic-key :interaction-accept-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        tenant-id (state/get-active-tenant-id)
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        interrupt-type "offer-accept"
+        {:keys [timeout timeout-end channel-type]} (state/get-interaction interaction-id)
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (when-not (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
+        (when (= channel-type "voice")
+          (let [connection (state/get-twilio-connection)]
+            (.accept connection)))
+        (when (or (= channel-type "sms")
+                  (= channel-type "messaging"))
+          (int/get-messaging-history tenant-id interaction-id))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.focus({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn focus
+  {:validation ::generic-interaction-fn-params
+   :topic-key :interaction-focus-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        interrupt-body (build-detailed-interrupt-body interaction-id)
+        interrupt-type "interaction-focused"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.unfocus({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn unfocus
+  {:validation ::generic-interaction-fn-params
+   :topic-key :interaction-unfocus-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        interrupt-body (build-detailed-interrupt-body interaction-id)
+        interrupt-type "interaction-unfocused"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.assignContact({
+;;   interactionId: "{{uuid}}",
+;;   contactId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn assign
+  {:validation ::contact-operation-params
+   :topic-key :contact-assignment-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id contact-id]} params
+        interrupt-body (assoc (build-detailed-interrupt-body interaction-id) :contact-id contact-id)
+        interrupt-type "interaction-contact-selected"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.unassignContact({
+;;   interactionId: "{{uuid}}",
+;;   contactId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn unassign
+  {:validation ::contact-operation-params
+   :topic-key :contact-unassignment-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id contact-id]} params
+        interrupt-body (assoc (build-detailed-interrupt-body interaction-id) :contact-id contact-id)
+        interrupt-type "interaction-contact-deselected"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.enableWrapup({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn enable-wrapup
+  {:validation ::generic-interaction-fn-params
+   :topic-key :enable-wrapup-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        interrupt-type "wrapup-on"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.disableWrapup({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn disable-wrapup
+  {:validation ::generic-interaction-fn-params
+   :topic-key :disable-wrapup-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        interrupt-type "wrapup-off"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.endWrapup({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn end-wrapup
+  {:validation ::generic-interaction-fn-params
+   :topic-key :end-wrapup-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        interrupt-type "wrapup-end"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.deselectdispositioncode({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn deselect-disposition
+  {:validation ::generic-interaction-fn-params
+   :topic-key :disposition-code-changed}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        interrupt-type "disposition-select"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.selectDispositionCode({
+;;   interactionId: "{{uuid}}",
+;;   dispositionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn select-disposition
+  {:validation ::disposition-operation-params
+   :topic-key :disposition-code-changed}
+  [params]
+  (let [{:keys [topic interaction-id disposition-id callback]} params
+        dispositions (state/get-interaction-disposition-codes interaction-id)
+        dv (filterv #(= (:disposition-id %1) disposition-id) dispositions)]
+    (if (empty? dv)
+      (p/publish {:topics topic
+                  :error (e/args-failed-spec-err)
+                  :callback callback})
+      (let [disposition (first dv)
+            interrupt-disposition (assoc disposition :selected true)
+            interrupt-body {:resource-id (state/get-active-user-id)
+                            :disposition interrupt-disposition}
+            interrupt-type "disposition-select"
+            {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        (when (= status 200)
+          (p/publish {:topics topic
+                      :response (merge {:interaction-id interaction-id} interrupt-body)
+                      :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interaction.getNote({
@@ -200,33 +373,6 @@
       (p/publish {:topics topic
                   :response api-response
                   :callback callback}))))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.selectDispositionCode({
-;;   interactionId: "{{uuid}}",
-;;   dispositionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
-(s/def ::disposition-code-params
-  (s/keys :req-un [::specs/interaction-id ::specs/disposition-id]
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn select-disposition-code
-  {:validation ::disposition-code-params
-   :topic-key :disposition-code-changed}
-  [params]
-  (let [{:keys [topic interaction-id disposition-id callback]} params
-        dispositions (state/get-interaction-disposition-codes interaction-id)
-        dv (filterv #(= (:disposition-id %1) disposition-id) dispositions)]
-    (if (empty? dv)
-      (p/publish {:topics topic
-                  :error (e/args-failed-spec-err)
-                  :callback callback})
-      (let [disposition (first dv)
-            interrupt-disposition (merge disposition {:selected true})
-            params (merge params {:disposition interrupt-disposition})]
-        (send-interrupt :select-disposition-code params)))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.sendScript({
@@ -350,22 +496,22 @@
   pr/SDKModule
   (start [this]
     (let [module-name :interactions]
-      (ih/register {:api {module-name {:accept (partial send-interrupt :accept)
-                                       :end (partial send-interrupt :end)
-                                       :reject (partial send-interrupt :end)
-                                       :assignContact (partial send-interrupt :assign)
-                                       :unassignContact (partial send-interrupt :unassign)
-                                       :enableWrapup (partial send-interrupt :enable-wrapup)
-                                       :disableWrapup (partial send-interrupt :disable-wrapup)
-                                       :endWrapup (partial send-interrupt :end-wrapup)
-                                       :focus (partial send-interrupt :focus)
-                                       :unfocus (partial send-interrupt :unfocus)
+      (ih/register {:api {module-name {:accept accept
+                                       :end end
+                                       :reject end
+                                       :assignContact assign
+                                       :unassignContact unassign
+                                       :enableWrapup enable-wrapup
+                                       :disableWrapup disable-wrapup
+                                       :endWrapup end-wrapup
+                                       :focus focus
+                                       :unfocus unfocus
                                        :createNote create-note
                                        :updateNote update-note
                                        :getNote get-note
                                        :getAllNotes get-all-notes
-                                       :selectDispositionCode select-disposition-code
-                                       :deselectDispositionCode (partial send-interrupt :deselect-disposition)
+                                       :selectDispositionCode select-disposition
+                                       :deselectDispositionCode deselect-disposition
                                        :sendScript send-script
                                        :sendCustomInterrupt custom-interrupt}}
                     :module-name module-name})
