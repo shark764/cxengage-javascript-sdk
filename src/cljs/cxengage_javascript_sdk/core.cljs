@@ -27,7 +27,7 @@
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cxengage-javascript-sdk.modules.email :as email]))
 
-(def *SDK-VERSION* "5.0.0")
+(def *SDK-VERSION* "5.1.0-SNAPSHOT")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
