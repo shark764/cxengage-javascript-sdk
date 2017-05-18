@@ -22,27 +22,31 @@
   {:validation ::logout-spec
    :topic-key :presence-state-change-request-acknowledged}
   [params]
-  (let [{:keys [callback topic]} params
-        session-id (state/get-session-id)
-        resource-id (state/get-active-user-id)
-        tenant-id (state/get-active-tenant-id)
-        change-state-request {:method :post
-                              :url (iu/api-url
-                                    "tenants/:tenant-id/presence/:resource-id"
-                                    {:tenant-id tenant-id
-                                     :resource-id resource-id})
-                              :body {:session-id session-id
-                                     :state "offline"}}
-        {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
-        new-state-data (:result api-response)]
-    (if (= status 200)
-      (do (state/set-session-expired! true)
-          (p/publish {:topics topic
-                      :response new-state-data
-                      :callback callback}))
-      (p/publish {:topic topic
-                  :callback callback
-                  :error (e/logout-failed-err)}))))
+  (let [{:keys [callback topic]} params]
+    (if (state/active-interactions?)
+      (p/publish {:topics topic
+                  :error (e/active-interactions-err)
+                  :callback callback})
+      (let [session-id (state/get-session-id)
+            resource-id (state/get-active-user-id)
+            tenant-id (state/get-active-tenant-id)
+            change-state-request {:method :post
+                                  :url (iu/api-url
+                                        "tenants/:tenant-id/presence/:resource-id"
+                                        {:tenant-id tenant-id
+                                         :resource-id resource-id})
+                                  :body {:session-id session-id
+                                         :state "offline"}}
+            {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
+            new-state-data (:result api-response)]
+        (if (= status 200)
+          (do (state/set-session-expired! true)
+              (p/publish {:topics topic
+                          :response new-state-data
+                          :callback callback}))
+          (p/publish {:topic topic
+                      :callback callback
+                      :error (e/logout-failed-err)}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.authentication.login({
@@ -64,24 +68,30 @@
                        :url (iu/api-url "tokens")
                        :body {:username username
                               :password password}}
+        _ (state/reset-state)
         {:keys [status api-response]} (a/<! (iu/api-request token-request))]
-    (when (= status 200)
-      (state/set-token! (:token api-response))
-      (let [login-request {:method :post
-                           :url (iu/api-url "login")}
-            {:keys [status api-response]} (a/<! (iu/api-request login-request))]
-        (if (= status 200)
-          (let [user-identity (:result api-response)
-                tenants (:tenants user-identity)]
-            (state/set-user-identity! user-identity)
-            (p/publish {:topics (p/get-topic :tenant-list)
-                        :response tenants})
+    (if (not (= status 200))
+      (p/publish {:topics topic
+                  :callback callback
+                  :error (e/login-failed-err)})
+      (do
+        (state/set-token! (:token api-response))
+        (let [login-request {:method :post
+                             :url (iu/api-url "login")}
+              {:keys [status api-response]} (a/<! (iu/api-request login-request))]
+          (if (not (= status 200))
             (p/publish {:topics topic
-                        :response user-identity
-                        :callback callback}))
-          (p/publish {:topics topic
-                      :callback callback
-                      :error (e/login-failed-err)}))))))
+                        :callback callback
+                        :error (e/login-failed-err)})
+            (let [user-identity (:result api-response)
+                  tenants (:tenants user-identity)]
+              (state/set-user-identity! user-identity)
+              (p/publish {:topics (p/get-topic :tenant-list)
+                          :response tenants})
+              (p/publish {:topics topic
+                          :response user-identity
+                          :callback callback}))))))))
+
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Authentication Module

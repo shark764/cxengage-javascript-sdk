@@ -121,8 +121,7 @@
                (js/console.error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
                (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
                (recur (inc failed-attempts)))
-             (do (when (request-success? status)
-                   (a/put! resp-chan response))
+             (do (a/put! resp-chan response)
                  (when (not-found? status)
                    (ih/js-publish {:topics "cxengage/errors/error/api-returned-404-not-found"
                                    :error (e/resource-not-found-err)}))

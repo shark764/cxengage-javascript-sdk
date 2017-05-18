@@ -121,7 +121,8 @@
                             response< (receive-message* new-sqs-queue new-sqs-queue-url)
                             value (a/<! response<)]
                         (if (= value :shutdown)
-                          nil
+                          (do (js/console.log "Shutting down SQS")
+                              nil)
                           (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
                             (when-let [msg (js/JSON.parse message)]
                               (on-received msg))
@@ -132,7 +133,8 @@
         (let [response< (receive-message* sqs-queue sqs-queue-url)
               value (a/<! response<)]
           (if (= value :shutdown)
-            nil
+            (do (js/console.log "Shutting down SQS")
+                nil)
             (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
               (when-let [msg (js/JSON.parse message)]
                 (on-received msg))

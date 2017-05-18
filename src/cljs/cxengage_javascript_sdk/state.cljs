@@ -17,11 +17,16 @@
 (defonce sdk-state
   (atom initial-state))
 
-(defn reset-state []
-  (reset! sdk-state initial-state))
-
 (defn get-state []
   @sdk-state)
+
+(defn reset-state []
+  (when-let [mqtt-client (get-in @sdk-state [:internal :mqtt-client])]
+    (.disconnect mqtt-client))
+  (reset! sdk-state (merge initial-state (dissoc (get-state) :authentication :user :session :interactions :internal))))
+
+(defn destroy-state []
+  (reset! sdk-state initial-state))
 
 (defn get-state-js []
   (clj->js @sdk-state))
@@ -80,6 +85,9 @@
 
 (defn get-active-interaction [interaction-id]
   (get-in @sdk-state [:interactions :active interaction-id]))
+
+(defn active-interactions? []
+  (not (empty? (get-in @sdk-state [:interactions :active]))))
 
 (defn get-interaction [interaction-id]
   (let [location (find-interaction-location interaction-id)]
@@ -344,6 +352,18 @@
 (defn get-twilio-connection
   []
   (get-in @sdk-state [:internal :twilio-connection]))
+
+;;;;;;;;;;;;;
+;; Messaging
+;;;;;;;;;;;;;
+
+(defn set-mqtt-client
+  [client]
+  (swap! sdk-state assoc-in [:internal :mqtt-client] client))
+
+(defn get-mqtt-client
+  []
+  (get-in @sdk-state [:internal :mqtt-client]))
 
 ;;;;;;;;;;;
 ;; Logging
