@@ -11,6 +11,12 @@
   (let [f (aget js/window "CxEngage" "sendCoreMessage")]
     (f message)))
 
+(defn set-log-level! [level]
+  (aset js/window "CxEngage" "logging" "level" (name level)))
+
+(defn get-log-level []
+  (or (aget js/window "CxEngage" "logging" "level") "debug"))
+
 (defn set-sdk-global [sdk]
   (aset js/window "CxEngage" sdk))
 

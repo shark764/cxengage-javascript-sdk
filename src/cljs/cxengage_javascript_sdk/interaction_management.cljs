@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.interaction-management
-  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [clojure.string :refer [starts-with? lower-case]]
             [cxengage-javascript-sdk.state :as state]
@@ -35,7 +36,7 @@
                 (get-messaging-history tenant-id interaction-id)))))))
 
 (defn get-email-artifact-data [tenant-id interaction-id artifact-id]
-  (js/console.log "[Email Processing] Tenant, Interaction, and Artifact IDs from work offer:" tenant-id interaction-id artifact-id)
+  (log :info "[Email Processing] Tenant, Interaction, and Artifact IDs from work offer:" tenant-id interaction-id artifact-id)
   (let [artifact-request {:method :get
                           :url (str (state/get-base-api-url) "tenants/" tenant-id "/interactions/" interaction-id "/artifacts/" artifact-id)}]
     (go (let [artifact-response (a/<! (iu/api-request artifact-request))
@@ -43,7 +44,7 @@
           (if (not= status 200)
             (p/publish {:topics (p/get-topic :email-artifact-received)
                         :error (e/failed-to-retrieve-email-artifact-err)})
-            (do (js/console.log (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
+            (do (log :info (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
                 (state/add-email-artifact-data interaction-id api-response)))))))
 
 (defn get-incoming-email-bodies [interaction-id]
@@ -56,7 +57,7 @@
         manifest-url (:url (first (filter #(= (:artifact-file-id %) manifest-id) files)))
         manifest-request (iu/api-request {:method :get
                                           :url manifest-url})]
-    (js/console.log (str "[Email Processing] Fetching email manifest: " manifest-url))
+    (log :info (str "[Email Processing] Fetching email manifest: " manifest-url))
     (go (let [manifest-response (a/<! manifest-request)
               manifest-body (ih/kebabify (js/JSON.parse (:api-response manifest-response)))
               plain-body-url (:url (first (filter #(and (= (:filename %) "body")
@@ -64,7 +65,7 @@
               html-body-url (:url (first (filter #(and (= (:filename %) "body")
                                                        (starts-with? (lower-case (:content-type %)) "text/html")) files)))
               manifest-body (assoc manifest-body :artifact-id artifact-id)]
-          (js/console.log (str "[Email Processing] Email manifest received: " (js/JSON.stringify (clj->js manifest-body) nil 2)))
+          (log :info (str "[Email Processing] Email manifest received: " (js/JSON.stringify (clj->js manifest-body) nil 2)))
           (p/publish {:topics (p/get-topic :details-received)
                       :response {:interaction-id interaction-id
                                  :body manifest-body}})
@@ -73,7 +74,7 @@
             (let [plain-body-response (a/<! (iu/api-request {:method :get
                                                              :url plain-body-url}))
                   plain-body (:api-response plain-body-response)]
-              (js/console.log (str "[Email Processing] Email plain body received: " plain-body))
+              (log :info (str "[Email Processing] Email plain body received: " plain-body))
               (p/publish {:topics (p/get-topic :plain-body-received)
                           :response {:interaction-id interaction-id
                                      :body plain-body}})))
@@ -83,14 +84,14 @@
                                          (dissoc :filename)
                                          (dissoc :url)
                                          (assoc :artifact-id artifact-id)) attachments)]
-              (js/console.log (str "[Email Processing] Attachment list received: " (js/JSON.stringify (clj->js attachments) nil 2)))
+              (log :info (str "[Email Processing] Attachment list received: " (js/JSON.stringify (clj->js attachments) nil 2)))
               (p/publish {:topics (p/get-topic :attachment-list)
                           :response attachments})))
           (when html-body-url
             (let [html-body-response (a/<! (iu/api-request {:method :get
                                                             :url html-body-url}))
                   html-body (:api-response html-body-response)]
-              (js/console.log (str "[Email Processing] HTML body received: " html-body))
+              (log :info (str "[Email Processing] HTML body received: " html-body))
               (p/publish {:topics (p/get-topic :html-body-received)
                           :response {:interaction-id interaction-id
                                      :body html-body}})))))))
@@ -101,7 +102,7 @@
         now (iu/get-now)
         expiry (.getTime (js/Date. timeout))]
     (if (> now expiry)
-      (js/console.warn "Received an expired work offer; doing nothing")
+      (log :warn "Received an expired work offer; doing nothing")
       (do
         (when (or (= channel-type "sms")
                   (= channel-type "messaging"))
@@ -121,7 +122,7 @@
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (js/console.log "[Messaging] payload prior to filtering:" payload)
+    (log :info "[Messaging] payload prior to filtering:" payload)
     (when (= (:type payload) "message")
       (p/publish {:topics (p/get-topic :new-message-received)
                   :response (:payload (state/augment-messaging-payload {:payload payload}))})
@@ -343,7 +344,7 @@
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
                (not= (get message :type) "send-script"))
-      (js/console.log (str "Acknowledging receipt of flow action: "
+      (log :info (str "Acknowledging receipt of flow action: "
                            (or (:notification-type message) (:type message))))
       (when (or (:notification-type message) (:type message))
         (let [{:keys [action-id sub-id resource-id tenant-id interaction-id]} message
@@ -356,10 +357,10 @@
           (go (let [ack-response (a/<! (iu/api-request ack-request))
                     {:keys [api-response status]} ack-response]
                 (when (not= status 200)
-                  (js/console.error "Failed to acknowledge flow action")))))))
+                  (log :error "Failed to acknowledge flow action")))))))
     (if handling-fn
       (handling-fn message)
-      (js/console.warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))
+      (log :warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))
     nil))
 
 (defn infer-notification-type [message]
@@ -400,10 +401,10 @@
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (when (state/get-blast-sqs-output)
-      (js/console.log (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
+      (log :debug (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
     (if inferred-msg
       (msg-router inferred-msg)
-      (do (js/console.warn "Unable to infer message type from sqs")
+      (do (log :warn "Unable to infer message type from sqs")
           (p/publish {:topics (p/get-topic :unknown-agent-notification-type-received)
                       :error (e/unknown-agent-notification-type-err)})
           nil))))
@@ -412,4 +413,4 @@
   (handle-new-messaging-message message))
 
 (defn twilio-msg-router [message type]
-  (js/console.warn "message in twilio msg router" message))
+  (log :warn "message in twilio msg router" message))

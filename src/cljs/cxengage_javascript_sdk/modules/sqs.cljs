@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.modules.sqs
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [lumbajack.macros :refer [log]])
   (:require [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
             [cljs.core.async :as a]
@@ -15,7 +16,7 @@
   [response<]
   (fn [err data]
     (if err
-      (js/console.error err)
+      (log :error err)
       (go
         (>! response< (->> data
                            js->clj
@@ -25,7 +26,7 @@
   [sqs queue-url]
   (let [response (a/promise-chan)]
     (if (state/get-session-expired)
-      (do (js/console.log :error "Session expired, shutting down SQS")
+      (do (log :info "Session expired, shutting down SQS")
           (go (a/>! response :shutdown))
           response)
       (let [params (clj->js {:QueueUrl queue-url
@@ -45,7 +46,7 @@
           msg-type (or (:notification-type parsed-body)
                        (:type parsed-body))]
       (if (not= (state/get-session-id) session-id)
-        (do #_(js/console.log :warn (str "Received a message from a different session than the current one."
+        (do #_(log :warn (str "Received a message from a different session than the current one."
                                          "Current session ID: " current-session-id
                                          " - Session ID on message received: " session-id
                                          " Message type: " msg-type))
@@ -59,7 +60,7 @@
                          :ReceiptHandle receipt-handle})]
     (.deleteMessage sqs params (fn [err data]
                                  (when err
-                                   (js/console.log :error err))))))
+                                   (log :error err))))))
 
 (defn sqs-init*
   [integration on-received]
@@ -85,7 +86,7 @@
               sqs-needs-refresh-time original-sqs-needs-refresh-time]
       (if (> (.getTime (js/Date.)) sqs-needs-refresh-time)
         ;; 3/4 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
-        (do (js/console.info "Refreshing SQS integration")
+        (do (log :info "Refreshing SQS integration")
             (let [tenant-id (state/get-active-tenant-id)
                   resource-id (state/get-active-user-id)
                   config-request {:method :get
@@ -121,7 +122,7 @@
                             response< (receive-message* new-sqs-queue new-sqs-queue-url)
                             value (a/<! response<)]
                         (if (= value :shutdown)
-                          (do (js/console.log "Shutting down SQS")
+                          (do (log :info "Shutting down SQS")
                               nil)
                           (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
                             (when-let [msg (js/JSON.parse message)]
@@ -133,7 +134,7 @@
         (let [response< (receive-message* sqs-queue sqs-queue-url)
               value (a/<! response<)]
           (if (= value :shutdown)
-            (do (js/console.log "Shutting down SQS")
+            (do (log :info "Shutting down SQS")
                 nil)
             (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
               (when-let [msg (js/JSON.parse message)]

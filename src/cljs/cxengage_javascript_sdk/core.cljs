@@ -1,4 +1,5 @@
 (ns cxengage-javascript-sdk.core
+  (:require-macros [lumbajack.macros :refer [log]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
             [camel-snake-kebab.core :as camel]
@@ -28,7 +29,7 @@
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.modules.twilio :as twilio]))
 
-(def *SDK-VERSION* "5.0.3-SNAPSHOT")
+(def *SDK-VERSION* "5.1.0-SNAPSHOT")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -80,8 +81,8 @@
   [m]
   (let [{:keys [status module-name]} m]
     (if (= status :failure)
-      (js/console.error (clj->js (e/required-module-failed-to-start-err)))
-      (do (js/console.info (str "<----- Started " (name module-name) " module! ----->"))
+      (log :error (clj->js (e/required-module-failed-to-start-err)))
+      (do (log :info (str "<----- Started " (name module-name) " module! ----->"))
           (state/set-module-enabled! (name module-name))))))
 
 (defn route-module-message [comm< m]
@@ -98,8 +99,8 @@
   "Internal initialization function (called by the CxEngage namespace where an external initalize() function is exposed). Validates the SDK options provided & bootstraps the whole system."
   [& options]
   (if (> 1 (count (flatten (ih/kebabify options))))
-    (do (js/console.error (clj->js (e/wrong-number-sdk-opts-err))
-                          nil))
+    (do (log :error (clj->js (e/wrong-number-sdk-opts-err))
+             nil))
     (let [opts (first (flatten (ih/kebabify options)))
           opts (-> opts
                    (assoc :base-url (or (:base-url opts) "https://api.cxengage.net/v1/"))
@@ -109,7 +110,7 @@
                    (assoc :blast-sqs-output (or (:blast-sqs-output opts) false))
                    (assoc :environment (keyword (or (:environment opts) :prod))))]
       (if-not (s/valid? ::initialize-options opts)
-        (do (js/console.error (clj->js (e/bad-sdk-init-opts-err)))
+        (do (log :error (clj->js (e/bad-sdk-init-opts-err)))
             nil)
         (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} opts
               module-comm-chan (a/chan 1024)
@@ -121,11 +122,12 @@
                                  :dump-state state/get-state-js
                                  :send-core-message #(a/put! module-comm-chan %)
                                  :register-module register-module
+                                 :logging {:level log-level}
                                  :start-module start-external-module})]
           (ih/set-sdk-global core)
+          (ih/set-log-level! log-level)
           (state/set-base-api-url! base-url)
           (state/set-consumer-type! consumer-type)
-          (state/set-log-level! log-level l/levels)
           (state/set-reporting-refresh-rate! reporting-refresh-rate)
           (state/set-env! environment)
           (state/set-blast-sqs-output! blast-sqs-output)

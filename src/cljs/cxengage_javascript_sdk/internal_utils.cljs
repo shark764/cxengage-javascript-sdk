@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.internal-utils
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [goog.crypt :as c]
             [ajax.core :as ajax]
@@ -118,7 +119,7 @@
                {:keys [status]} response]
            (if (and (service-unavailable? status) (< failed-attempts 3))
              (do
-               (js/console.error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
+               (log :error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
                (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
                (recur (inc failed-attempts)))
              (do (a/put! resp-chan response)

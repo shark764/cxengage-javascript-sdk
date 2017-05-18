@@ -1,6 +1,7 @@
 (ns cxengage-javascript-sdk.modules.twilio
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
+                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+                   [lumbajack.macros :refer [log]])
   (:require [cljsjs.paho]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.state :as state]
@@ -19,7 +20,7 @@
   (state/set-twilio-connection connection))
 
 (defn handle-twilio-error [script config error]
-  (js/console.error error script config))
+  (log :error error script config))
 
 (defn ^:private twilio-init
   [config]
@@ -29,7 +30,7 @@
                             {:keys [token]} credentials
                             script (js/document.createElement "script")
                             body (.-body js/document)
-                            debug-twilio? (= (state/get-log-level) :debug)]
+                            debug-twilio? (= (keyword (ih/get-log-level)) :debug)]
                         (.setAttribute script "type" "text/javascript")
                         (.setAttribute script "src" js-api-url)
                         (.appendChild body script)
@@ -69,7 +70,7 @@
     (let [module-name :twilio
           twilio-integration (state/get-integration-by-type "twilio")]
       (if-not twilio-integration
-        (js/console.log "<----- Twilio integration not found, not starting module ----->")
+        (log :info "<----- Twilio integration not found, not starting module ----->")
         (do (twilio-init twilio-integration)
             (ih/send-core-message {:type :module-registration-status
                                    :status :success

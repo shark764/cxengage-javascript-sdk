@@ -1,4 +1,5 @@
 (ns cxengage-javascript-sdk.state
+  (:require-macros [lumbajack.macros :refer [log]])
   (:require [lumbajack.core]
             [cljs-uuid-utils.core :as id]))
 
@@ -76,7 +77,7 @@
     (not= nil (get-in @sdk-state [:interactions :pending interaction-id])) :pending
     (not= nil (get-in @sdk-state [:interactions :active interaction-id])) :active
     (not= nil (get-in @sdk-state [:interactions :past interaction-id])) :past
-    :else (js/console.error "Unable to find interaction location - we have never received that interaction")))
+    :else (log :error "Unable to find interaction location - we have never received that interaction")))
 
 (defn get-all-pending-interactions []
   (get-in @sdk-state [:interactions :pending]))
@@ -369,45 +370,6 @@
 (defn get-mqtt-client
   []
   (get-in @sdk-state [:internal :mqtt-client]))
-
-;;;;;;;;;;;
-;; Logging
-;;;;;;;;;;;
-
-(defn get-log-level []
-  (get-in @sdk-state [:config :log-level]))
-
-(defn set-valid-log-levels! [levels]
-  (swap! sdk-state assoc-in [:logs :valid-levels] levels))
-
-(defn get-valid-log-levels []
-  (get-in @sdk-state [:logs :valid-levels]))
-
-(defn set-log-level! [level levels]
-  (if (not= -1 (.indexOf (vec (keys levels)) level))
-    (let [idx {:fatal 1 :error 2 :warn 3 :info 4 :debug 5}
-          updated-valid-levels (take (or (get idx level) 0) (vec (reverse (keys levels))))]
-      (set-valid-log-levels! updated-valid-levels)
-      (swap! sdk-state assoc-in [:config :log-level] level))))
-
-(defn get-saved-logs []
-  (get-in @sdk-state [:logs :saved-logs]))
-
-(defn get-unsaved-logs []
-  (get-in @sdk-state [:logs :unsaved-logs]))
-
-(defn append-logs!
-  [& logs]
-  (let [unsaved (get-unsaved-logs)
-        appended (into unsaved logs)]
-    (swap! sdk-state assoc-in [:logs :unsaved-logs] appended)))
-
-(defn save-logs []
-  (let [unsaved (get-unsaved-logs)
-        saved (get-saved-logs)
-        appended (into saved unsaved)]
-    (swap! sdk-state assoc-in [:logs :saved-logs] appended)
-    (swap! sdk-state assoc-in [:logs :unsaved-logs] [])))
 
 ;;;;;;;;;;;
 ;; Time

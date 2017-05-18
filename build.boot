@@ -4,11 +4,9 @@
 
  :source-paths #{}
 
- :dependencies '[[org.clojure/tools.nrepl "0.2.13" :scope "test"]
+ :dependencies '[[org.clojure/core.async "0.3.442" :exclusions [org.clojure/tools.reader]]
                  [org.clojure/clojure "1.9.0-alpha16"]
                  [org.clojure/clojurescript "1.9.521"]
-                 [org.clojure/core.async "0.3.442"
-                  :exclusions [org.clojure/tools.reader]]
 
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
                  [com.cognitect/transit-cljs "0.8.239"]
@@ -20,14 +18,15 @@
                  [cljsjs/paho "1.0.1-0"]
 
                  [serenova/cxengage-cljs-utils "2.0.0"]
-                 [serenova/lumbajack "2.0.4"]
+                 [serenova/lumbajack "3.0.0"]
 
                  [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
+                 [org.clojure/tools.nrepl "0.2.13" :scope "test"]
                  [com.cemerick/piggieback "0.2.1" :scope "test"]
                  [adzerk/boot-cljs-repl "0.3.3" :scope "test"]
-                 [adzerk/boot-cljs "2.0.0" :scope "test"]
                  [adzerk/boot-reload "0.5.1" :scope "test"]
                  [pandeiro/boot-http "0.8.0" :scope "test"]
+                 [adzerk/boot-cljs "2.0.0" :scope "test"]
                  [weasel "0.7.0" :scope "test"]]
 
  :repositories #(apply conj %
@@ -116,7 +115,7 @@
   (comp (testing*)
         (watch)
         (test-cljs :js-env :phantom
-                   ;;:namespaces ["cxengage-javascript-sdk.modules.session-test"]
+                   ;;:namespaces ["cxengage-javascript-sdk.modules.reporting-test"]
                    )))
 
 (deftask dev []

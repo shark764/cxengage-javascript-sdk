@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.modules.session
   (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+                   [lumbajack.macros :refer [log]]
                    [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
@@ -67,7 +68,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (defn- start-heartbeats* []
-  (js/console.info "Sending heartbeats...")
+  (log :info "Sending heartbeats...")
   (let [session-id (state/get-session-id)
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
@@ -80,19 +81,19 @@
         topic (p/get-topic :presence-heartbeats-response)]
     (go-loop []
       (if (= "offline" (state/get-user-session-state))
-        (do (js/console.info "Session is now offline; ceasing future heartbeats.")
+        (do (log :info "Session is now offline; ceasing future heartbeats.")
             (state/set-session-expired! true)
             nil)
         (let [{:keys [api-response status]} (a/<! (iu/api-request heartbeat-request))
               {:keys [result]} api-response
               next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
           (if (= status 200)
-            (do (js/console.log "Heartbeat sent!")
+            (do (log :info "Heartbeat sent!")
                 (p/publish {:topics topic
                             :response result})
                 (a/<! (a/timeout next-heartbeat-delay))
                 (recur))
-            (do (js/console.error "Heartbeat failed; ceasing future heartbeats.")
+            (do (log :error "Heartbeat failed; ceasing future heartbeats.")
                 (state/set-session-expired! true)
                 (p/publish {:topics topic
                             :error (e/session-heartbeats-failed-err)})

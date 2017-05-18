@@ -1,4 +1,5 @@
 (ns cxengage-javascript-sdk.pubsub
+  (:require-macros [lumbajack.macros :refer [log]])
   (:require [cljs.spec :as s]
             [clojure.string :as string]
             [cxengage-javascript-sdk.interop-helpers :as ih]
@@ -164,7 +165,7 @@
   [k]
   (if-let [topic (get sdk-topics k)]
     topic
-    (js/console.error "Topic not found in topic list" k)))
+    (log :error "Topic not found in topic list" k)))
 
 (defn get-topic-permutations
   "Given an SDK consumer topic string, returns a list of all possible permutatations of that topic string. I.E. 'cxengage/authentication' returns 'cxengage' & 'cxengage/authentication'."
@@ -201,7 +202,7 @@
       (s/explain-data ::subscribe-params params)
       (let [subscription-id (str (id/make-random-uuid))]
         (if-not (valid-topic? topic)
-          (js/console.error (str "(" topic ") is not a valid subscription topic."))
+          (log :error (str "(" topic ") is not a valid subscription topic."))
           (do (swap! sdk-subscriptions assoc-in [topic subscription-id] callback)
               subscription-id))))))
 
@@ -221,8 +222,8 @@
                       @sdk-subscriptions)]
     (reset! sdk-subscriptions new-sub-list)
     (if (= new-sub-list original-subs)
-      (js/console.error "Subscription ID not found")
-      (do (js/console.info "Successfully unsubscribed")
+      (log :error "Subscription ID not found")
+      (do (log :info "Successfully unsubscribed")
           true))))
 
 (defn get-subscribers-by-topic
