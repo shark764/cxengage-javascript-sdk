@@ -20,14 +20,9 @@
             topic# (cxengage-javascript-sdk.pubsub/get-topic topic-key#)
             args# (map #(cxengage-javascript-sdk.interop-helpers/extract-params % preserve-casing?#) args#)
             callback# (if (fn? (first args#)) (first args#) (second args#))]
-        (if-let [error# (cond
-
-                          (or (> (count args#) 2))
-                          (cxengage-javascript-sdk.domain.errors/wrong-number-of-sdk-fn-args-err)
-
-                          :else false)]
+        (if (> (count args#) 2)
           (cxengage-javascript-sdk.pubsub/publish {:topics topic#
-                                                   :error error#
+                                                   :error (cxengage-javascript-sdk.domain.errors/wrong-number-of-sdk-fn-args-err)
                                                    :callback callback#})
           (let [params# (if (fn? (first args#)) {:callback (first args#)} (first args#))
                 params# (-> params#

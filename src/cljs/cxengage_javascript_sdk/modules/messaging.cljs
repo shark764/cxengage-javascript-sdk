@@ -26,16 +26,8 @@
 (def method "GET")
 (def canonical-uri "/mqtt")
 
-;;;;;;;;;;;;
-;; spec
-;;;;;;;;;;;;
-
 (s/def ::mqtt-conf (s/keys :req-un [::endpoint ::region-name ::secret-key ::access-key]
                            :opt-un [::session-token]))
-
-;;;;;;;;;;;;
-;; fns
-;;;;;;;;;;;;
 
 (def get-host
   (memoize
@@ -240,7 +232,6 @@
 ;;   message: "The message you want to send"
 ;; });
 ;; ----------------------------------------------------------------;;
-
 
 (s/def ::click-to-sms-params
   (s/keys :req-un [::specs/phone-number

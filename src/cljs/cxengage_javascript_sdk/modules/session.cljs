@@ -41,13 +41,17 @@
       (p/publish {:topics topic
                   :error (e/invalid-reason-info-err)
                   :callback callback})
-      (let [change-state-request {:method :post
+      (let [change-state-body (cond-> {:session-id session-id
+                                       :state "notready"}
+                                reason-info (assoc :reason reason
+                                                   :reason-id reason-id
+                                                   :reason-list-id reason-list-id))
+            change-state-request {:method :post
                                   :url (iu/api-url
                                         "tenants/:tenant-id/presence/:resource-id"
                                         {:tenant-id tenant-id
                                          :resource-id resource-id})
-                                  :body {:session-id session-id
-                                         :state "notready"}}
+                                  :body change-state-body}
             {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
             new-state-data (:result api-response)]
         (if (= status 200)

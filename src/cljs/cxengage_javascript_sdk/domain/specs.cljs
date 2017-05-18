@@ -53,6 +53,8 @@
 (s/def ::reason string?)
 (s/def ::reason-id ::uuid)
 (s/def ::reason-list-id ::uuid)
+(s/def ::reason-info
+  (s/keys :req-un [::reason ::reason-id ::reason-list-id]))
 (s/def ::resource-id ::uuid)
 (s/def ::script-id ::uuid)
 (s/def ::stat-id ::uuid)

@@ -215,7 +215,6 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-
 (defn modify-elements
   "One of two helper functions for prepping the send-script payload. Modifies the keys to be the same as the front-end element's name."
   [elements]

@@ -16,7 +16,6 @@
                     (into ["?"]))]
     (clojure.string/join queryv)))
 
-
 ;; -------------------------------------------------------------------------- ;;
 ;; Cxengage.contacts.get({contactId: "{{contact-id}}" });
 ;; -------------------------------------------------------------------------- ;;
@@ -228,6 +227,10 @@
       (p/publish {:topics topic
                   :response retrieved-layouts
                   :callback callback} true))))
+
+;; -------------------------------------------------------------------------- ;;
+;; SDK Contacts Module
+;; -------------------------------------------------------------------------- ;;
 
 (defrecord ContactsModule []
   pr/SDKModule

@@ -185,8 +185,7 @@
       topic)))
 
 (s/def ::subscribe-params
-  (s/keys :req-un [::specs/topic ::specs/callback]
-          :opt-un []))
+  (s/keys :req-un [::specs/topic ::specs/callback]))
 
 (defn subscribe
   "Adds a subscription callback associated with a specific topic. Any time that topic is published to all subscription callbacks for that topic will be fired. Returns a subscription ID which can be later unsubscribed with."
@@ -201,8 +200,7 @@
               subscription-id))))))
 
 (s/def ::unsubscribe-params
-  (s/keys :req-un [::specs/subscription-id]
-          :opt-un []))
+  (s/keys :req-un [::specs/subscription-id]))
 
 (defn unsubscribe
   "Removes a subscription callback from the SDK subscribers list."
@@ -253,4 +251,5 @@
      (doseq [cb relevant-subscribers]
        (doseq [t topics]
          (cb error t response)))
-     (when (and (fn? callback) callback) (callback error topics response)))))
+     (when (and (fn? callback) callback) (callback error topics response)))
+   nil))
