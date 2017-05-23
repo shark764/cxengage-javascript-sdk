@@ -168,8 +168,9 @@
   nil)
 
 (defn handle-work-accepted [message]
-  (let [{:keys [interaction-id tenant-id active-resources customer-on-hold recording direction]} message
+  (let [{:keys [interaction-id tenant-id active-resources customer-on-hold recording]} message
         interaction (state/get-pending-interaction interaction-id)
+        {:keys [direction]} interaction
         channel-type (get interaction :channel-type)]
     (state/transition-interaction! :pending :active interaction-id)
     (p/publish {:topics (p/get-topic :work-accepted-received)

@@ -1,7 +1,11 @@
 # Change Log
 
 ## [Unreleased]
+
+
+## [5.0.1]
 * CXV1-9346 - Split note actions out into their own independent public-facing functions. Does not impact the front-end.
+* CXV1-9428 - Fixed failing to retrieve email bodies on incoming emails
 
 ## [5.0.0]
 * ** BREAKING ** refactored entities module - each entity now has it's own function and will require passing the proper type-id ie; "resource-id" rather than the generic "entity-id".
