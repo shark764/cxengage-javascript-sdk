@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CXV1-9346 - Split note actions out into their own independent public-facing functions. Does not impact the front-end.
 
 ## [5.0.0]
 * ** BREAKING ** refactored entities module - each entity now has it's own function and will require passing the proper type-id ie; "resource-id" rather than the generic "entity-id".

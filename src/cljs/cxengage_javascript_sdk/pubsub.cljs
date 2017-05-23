@@ -93,6 +93,10 @@
                  :resource-hold-received "cxengage/interactions/resource-hold-received"
                  :resource-resume-received "cxengage/interactions/resource-resume-received"
                  :send-custom-interrupt-acknowledged "cxengage/interactions/send-custom-interrupt-acknowledged"
+                 :get-note-response "cxengage/interactions/get-note-response"
+                 :get-notes-response "cxengage/interactions/get-notes-response"
+                 :create-note-response "cxengage/interactions/create-note-response"
+                 :update-note-response "cxengage/interactions/update-note-response"
 
                  ;; Email Interaction Topics
                  :attachment-received "cxengage/interactions/email/attachment-received"

@@ -9,6 +9,7 @@
             [cxengage-cljs-utils.core :as cxu]
             [cxengage-javascript-sdk.domain.errors :as err]
             [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.interaction-management :as int]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
@@ -105,80 +106,100 @@
                                   :interaction-id interaction-id
                                   :callback callback))))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interaction.getNote({
+;;  interactionId: {{uuid}},
+;;  noteId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
 (s/def ::get-one-note-params
   (s/keys :req-un [::specs/interaction-id ::specs/note-id]
           :opt-un [::specs/callback]))
+
+(def-sdk-fn get-note
+  {:validation ::get-one-note-params
+   :topic-key :get-note-response}
+  [params]
+  (let [{:keys [callback topic interaction-id note-id]} params
+        tenant-id (state/get-active-tenant-id)
+        {:keys [status api-response]} (a/<! (rest/get-note-request interaction-id note-id))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interaction.getAllNotes({
+;;  interactionId: {{uuid}},
+;;  noteId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (s/def ::get-all-notes-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
+(def-sdk-fn get-all-notes
+  {:validation ::get-all-notes-params
+   :topic-key :get-notes-response}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        tenant-id (state/get-active-tenant-id)
+        {:keys [status api-response]} (a/<! (rest/get-notes-request interaction-id))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interaction.updateNote({
+;;  interactionId: {{uuid}},
+;;  noteId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
 (s/def ::update-note-params
   (s/keys :req-un [::specs/interaction-id ::specs/note-id]
           :opt-un [::specs/callback ::specs/title ::specs/body ::specs/contact-id]))
+
+(def-sdk-fn update-note
+  {:validation ::update-note-params
+   :topic-key :update-note-response}
+  [params]
+  (let [{:keys [callback topic interaction-id note-id]} params
+        tenant-id (state/get-active-tenant-id)
+        body (select-keys params [:title :body :contact-id])
+        {:keys [status api-response]} (a/<! (rest/update-note-request interaction-id note-id body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interaction.createNote({
+;;  interactionId: {{uuid}},
+;;  title: {{string}},
+;;  body: {{string}}
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (s/def ::create-note-params
   (s/keys :req-un [::specs/interaction-id ::specs/title ::specs/body]
           :opt-un [::specs/callback ::specs/contact-id ::specs/tenant-id ::specs/resource-id]))
 
-(defn note-action
-  ([module action] (e/wrong-number-of-sdk-fn-args-err))
-  ([module action client-params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/callback-isnt-a-function-err)
-     (note-action module action (merge (ih/extract-params client-params) {:callback (first others)}))))
-  ([module action client-params]
-   (let [params (ih/extract-params client-params)
-         {:keys [callback interaction-id note-id]} params
-         params (assoc params :resource-id (state/get-active-user-id))
-         params (assoc params :tenant-id (state/get-active-tenant-id))
-         validation (case action
-                      :get-one ::get-one-note-params
-                      :get-all ::get-all-notes-params
-                      :update ::update-note-params
-                      :create ::create-note-params)
-         body (case action
-                :get-one nil
-                :get-all nil
-                :update (select-keys params [:title :body :contact-id])
-                :create (select-keys params [:title :body :contact-id]))
-         note-url (iu/api-url
-                   "tenants/:tenant-id/interactions/:interaction-id/notes/:note-id"
-                   (select-keys params [:tenant-id :interaction-id :note-id]))
-         notes-url (iu/api-url
-                    "tenants/:tenant-id/interactions/:interaction-id/notes?contents=true"
-                    (select-keys params [:tenant-id :interaction-id]))
-         url (case action
-               :get-one note-url
-               :get-all notes-url
-               :update note-url
-               :create notes-url)
-         method (case action
-                  :get-one :get
-                  :get-all :get
-                  :update :put
-                  :create :post)
-         topic (case action
-                 :get-one "cxengage/interactions/get-note-response"
-                 :get-all "cxengage/interactions/get-notes-response"
-                 :update "cxengage/interactions/update-note-response"
-                 :create "cxengage/interactions/create-note-response")
-         contact-note-request {:method method
-                               :url url}
-         contact-note-request (if body
-                                (assoc contact-note-request :body body)
-                                contact-note-request)]
-     (if-not (s/valid? validation params)
-       (p/publish {:topics topic
-                   :error (e/args-failed-spec-err)
-                   :callback callback})
-       (do (go (let [note-response (a/<! (iu/api-request contact-note-request))
-                     {:keys [status api-response]} note-response]
-                 (when (= status 200)
-                   (p/publish {:topics topic
-                               :response api-response
-                               :callback callback}))))
-           nil)))))
+(def-sdk-fn create-note
+  {:validation ::create-note-params
+   :topic-key :create-note-response}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        tenant-id (state/get-active-tenant-id)
+        body (select-keys params [:title :body :contact-id :tenant-id :resource-id])
+        {:keys [status api-response]} (a/<! (rest/create-note-request interaction-id body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.selectDispositionCode({
@@ -339,10 +360,10 @@
                                        :endWrapup (partial send-interrupt :end-wrapup)
                                        :focus (partial send-interrupt :focus)
                                        :unfocus (partial send-interrupt :unfocus)
-                                       :createNote (partial note-action this :create)
-                                       :updateNote (partial note-action this :update)
-                                       :getNote (partial note-action this :get-one)
-                                       :getAllNotes (partial note-action this :get-all)
+                                       :createNote create-note
+                                       :updateNote update-note
+                                       :getNote get-note
+                                       :getAllNotes get-all-notes
                                        :selectDispositionCode select-disposition-code
                                        :deselectDispositionCode (partial send-interrupt :deselect-disposition)
                                        :sendScript send-script

@@ -130,3 +130,43 @@
                                           {:tenant-id tenant-id})
                                     :body interaction-body}]
     (iu/api-request create-interaction-request)))
+
+(defn get-note-request [interaction-id note-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        get-note-request {:method :get
+                          :url (iu/api-url
+                                "tenants/:tenant-id/interactions/:interaction-id/notes/:note-id"
+                                {:tenant-id tenant-id
+                                 :interaction-id interaction-id
+                                 :note-id note-id})}]
+    (iu/api-request get-note-request)))
+
+(defn get-notes-request [interaction-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        get-notes-request {:method :get
+                           :url (iu/api-url
+                                 "tenants/:tenant-id/interactions/:interaction-id/notes?contents=true"
+                                 {:tenant-id tenant-id
+                                  :interaction-id interaction-id})}]
+    (iu/api-request get-notes-request)))
+
+(defn update-note-request [interaction-id note-id body]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-note-request {:method :put
+                             :body body
+                             :url (iu/api-url
+                                   "tenants/:tenant-id/interactions/:interaction-id/notes/:note-id"
+                                   {:tenant-id tenant-id
+                                    :interaction-id interaction-id
+                                    :note-id note-id})}]
+    (iu/api-request update-note-request)))
+
+(defn create-note-request [interaction-id body]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-note-request {:method :post
+                             :body body
+                             :url (iu/api-url
+                                   "tenants/:tenant-id/interactions/:interaction-id/notes?contents=true"
+                                   {:tenant-id tenant-id
+                                    :interaction-id interaction-id})}]
+    (iu/api-request create-note-request)))
