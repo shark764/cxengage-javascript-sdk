@@ -7,7 +7,383 @@
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs.test :refer-macros [deftest is testing async]]))
+
+(deftest end-test
+  (testing "the end interaction function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 topic (p/get-topic :interaction-end-acknowledged)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :resourceId resource-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/end {:interaction-id interaction-id})))))
+
+(deftest accept-test
+  (testing "the accept interaction function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 topic (p/get-topic :interaction-accept-acknowledged)
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 sub-id (str (id/make-random-uuid))
+                 action-id (str (id/make-random-uuid))
+                 role-id (str (id/make-random-uuid))
+                 session-id (str (id/make-random-uuid))
+                 work-offer-id (str (id/make-random-uuid))
+                 resource {:extension "twilio"
+                           :role-id role-id
+                           :session-id session-id
+                           :work-offer-id work-offer-id}
+                 interaction {:interaction-id interaction-id
+                              :sub-id sub-id
+                              :action-id action-id
+                              :resource-id resource-id
+                              :tenant-id tenant-id
+                              :direction "inbound"
+                              :resource resource
+                              :timeout 30
+                              :channel-type "Test"}]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (state/add-interaction! :pending interaction)
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :resourceId resource-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/accept {:interaction-id interaction-id})))))
+
+(deftest focus-test
+  (testing "the focus interaction function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 sub-id (str (id/make-random-uuid))
+                 action-id (str (id/make-random-uuid))
+                 role-id (str (id/make-random-uuid))
+                 session-id (str (id/make-random-uuid))
+                 work-offer-id (str (id/make-random-uuid))
+                 resource {:extension "twilio"
+                           :role-id role-id
+                           :session-id session-id
+                           :work-offer-id work-offer-id}
+                 interaction {:interaction-id interaction-id
+                              :sub-id sub-id
+                              :action-id action-id
+                              :resource-id resource-id
+                              :tenant-id tenant-id
+                              :direction "inbound"
+                              :resource resource
+                              :timeout 30
+                              :channel-type "Test"}
+                 topic (p/get-topic :interaction-focus-acknowledged)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (state/add-interaction! :active interaction)
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :subId sub-id
+                                          :actionId action-id
+                                          :resourceId resource-id
+                                          :tenantId tenant-id
+                                          :sessionId session-id
+                                          :workOfferId work-offer-id
+                                          :direction "inbound"
+                                          :channelType "Test"} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/focus {:interaction-id interaction-id})))))
+
+(deftest unfocus-test
+  (testing "the unfocus interaction function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 sub-id (str (id/make-random-uuid))
+                 action-id (str (id/make-random-uuid))
+                 role-id (str (id/make-random-uuid))
+                 session-id (str (id/make-random-uuid))
+                 work-offer-id (str (id/make-random-uuid))
+                 resource {:extension "twilio"
+                           :role-id role-id
+                           :session-id session-id
+                           :work-offer-id work-offer-id}
+                 interaction {:interaction-id interaction-id
+                              :sub-id sub-id
+                              :action-id action-id
+                              :resource-id resource-id
+                              :tenant-id tenant-id
+                              :direction "inbound"
+                              :resource resource
+                              :timeout 30
+                              :channel-type "Test"}
+                 topic (p/get-topic :interaction-unfocus-acknowledged)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (state/add-interaction! :active interaction)
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :subId sub-id
+                                          :actionId action-id
+                                          :resourceId resource-id
+                                          :tenantId tenant-id
+                                          :sessionId session-id
+                                          :workOfferId work-offer-id
+                                          :direction "inbound"
+                                          :channelType "Test"} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/unfocus {:interaction-id interaction-id})))))
+
+(deftest assign-test
+  (testing "the assign contact to interaction function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 sub-id (str (id/make-random-uuid))
+                 action-id (str (id/make-random-uuid))
+                 role-id (str (id/make-random-uuid))
+                 session-id (str (id/make-random-uuid))
+                 work-offer-id (str (id/make-random-uuid))
+                 contact-id (str (id/make-random-uuid))
+                 resource {:extension "twilio"
+                           :role-id role-id
+                           :session-id session-id
+                           :work-offer-id work-offer-id}
+                 interaction {:interaction-id interaction-id
+                              :sub-id sub-id
+                              :action-id action-id
+                              :resource-id resource-id
+                              :tenant-id tenant-id
+                              :direction "inbound"
+                              :resource resource
+                              :timeout 30
+                              :channel-type "Test"}
+                 topic (p/get-topic :contact-assignment-acknowledged)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (state/add-interaction! :active interaction)
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :subId sub-id
+                                          :actionId action-id
+                                          :resourceId resource-id
+                                          :tenantId tenant-id
+                                          :sessionId session-id
+                                          :workOfferId work-offer-id
+                                          :direction "inbound"
+                                          :channelType "Test"
+                                          :contactId contact-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/assign {:contact-id contact-id :interaction-id interaction-id})))))
+
+(deftest unassign-test
+  (testing "the assign contact to interaction function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 sub-id (str (id/make-random-uuid))
+                 action-id (str (id/make-random-uuid))
+                 role-id (str (id/make-random-uuid))
+                 session-id (str (id/make-random-uuid))
+                 work-offer-id (str (id/make-random-uuid))
+                 contact-id (str (id/make-random-uuid))
+                 resource {:extension "twilio"
+                           :role-id role-id
+                           :session-id session-id
+                           :work-offer-id work-offer-id}
+                 interaction {:interaction-id interaction-id
+                              :sub-id sub-id
+                              :action-id action-id
+                              :resource-id resource-id
+                              :tenant-id tenant-id
+                              :direction "inbound"
+                              :resource resource
+                              :timeout 30
+                              :channel-type "Test"}
+                 topic (p/get-topic :contact-unassignment-acknowledged)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (state/add-interaction! :active interaction)
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :subId sub-id
+                                          :actionId action-id
+                                          :resourceId resource-id
+                                          :tenantId tenant-id
+                                          :sessionId session-id
+                                          :workOfferId work-offer-id
+                                          :direction "inbound"
+                                          :channelType "Test"
+                                          :contactId contact-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/unassign {:contact-id contact-id :interaction-id interaction-id})))))
+
+(deftest enable-wrapup-test
+  (testing "the enable-wrapup function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 topic (p/get-topic :enable-wrapup-acknowledged)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :resourceId resource-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/enable-wrapup {:interaction-id interaction-id})))))
+
+(deftest disable-wrapup-test
+  (testing "the enable-wrapup function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 topic (p/get-topic :disable-wrapup-acknowledged)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :resourceId resource-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/disable-wrapup {:interaction-id interaction-id})))))
+
+(deftest end-wrapup-test
+  (testing "the end-wrapup function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 topic (p/get-topic :end-wrapup-acknowledged)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :resourceId resource-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/end-wrapup {:interaction-id interaction-id})))))
+
+(deftest deselect-disposition-test
+  (testing "the deselect disposition function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 topic (p/get-topic :disposition-code-changed)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :resourceId resource-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/deselect-disposition {:interaction-id interaction-id})))))
+
+(deftest select-disposition-test
+  (testing "the select disposition function"
+    (async done
+           (reset! state/sdk-state)
+           (reset! p/sdk-subscriptions)
+           (let [old rest/send-interrupt-request
+                 tenant-id (str (id/make-random-uuid))
+                 resource-id (str (id/make-random-uuid))
+                 interaction-id (str (id/make-random-uuid))
+                 disposition-id (str (id/make-random-uuid))
+                 disposition {:disposition-id disposition-id}
+                 topic (p/get-topic :disposition-code-changed)]
+             (state/set-active-tenant! tenant-id)
+             (state/set-user-identity! {:user-id resource-id})
+             (state/add-interaction! :active {:interaction-id interaction-id
+                                              :disposition-code-details {:dispositions [disposition]}})
+             (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
+                                                 (when (and interaction-id interrupt-type interrupt-body)
+                                                   (go {:status 200}))))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:interactionId interaction-id
+                                          :resourceId resource-id
+                                          :disposition {:dispositionId disposition-id
+                                                        :selected true}} (js->clj r :keywordize-keys true)))
+                                  (set! rest/send-interrupt-request old)
+                                  (done)))
+             (interaction/select-disposition {:interaction-id interaction-id :disposition-id disposition-id})))))
 
 (deftest custom-interrupt-test
   (testing "the custom-interrupt fn"

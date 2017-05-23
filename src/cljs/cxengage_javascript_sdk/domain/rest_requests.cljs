@@ -170,3 +170,15 @@
                                    {:tenant-id tenant-id
                                     :interaction-id interaction-id})}]
     (iu/api-request create-note-request)))
+
+(defn send-interrupt-request [interaction-id interrupt-type interrupt-body]
+  (let [tenant-id (state/get-active-tenant-id)
+        interrupt-request {:method :post
+                           :url (iu/api-url
+                                 "tenants/:tenant-id/interactions/:interaction-id/interrupts"
+                                 {:tenant-id tenant-id
+                                  :interaction-id interaction-id})
+                           :body {:source "client"
+                                  :interrupt-type interrupt-type
+                                  :interrupt interrupt-body}}]
+    (iu/api-request interrupt-request)))

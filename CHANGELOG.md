@@ -1,7 +1,7 @@
 # Change Log
 
 ## [Unreleased]
-
+* CXV1-9332 Seperated interrupts into their own front facing functions. No changes to public-facing API, just internal cleanup.
 
 ## [5.0.1]
 * CXV1-9346 - Split note actions out into their own independent public-facing functions. Does not impact the front-end.
