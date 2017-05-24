@@ -28,7 +28,7 @@
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.modules.twilio :as twilio]))
 
-(def *SDK-VERSION* "5.0.2")
+(def *SDK-VERSION* "5.0.3-SNAPSHOT")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."

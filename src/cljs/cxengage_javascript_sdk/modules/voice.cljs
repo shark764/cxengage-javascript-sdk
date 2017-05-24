@@ -10,6 +10,7 @@
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec :as s]))
 
@@ -169,6 +170,30 @@
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.cancelDial({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::cancel-dial-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn cancel-dial
+  {:validation ::cancel-dial-params
+   :topic-key :cancel-dial-acknowledged}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        tenant-id (state/get-active-tenant-id)
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        interrupt-type "work-cancel"
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.sendDigits({
 ;;   interactionId: "{{uuid}}",
 ;;   digit: "{{number}}"
@@ -250,28 +275,29 @@
   pr/SDKModule
   (start [this]
     (let [module-name :voice]
-        (ih/register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
-                                                   :customer-resume (partial send-interrupt this :resume)
-                                                   :mute (partial send-interrupt this :mute)
-                                                   :unmute (partial send-interrupt this :unmute)
-                                                   :start-recording (partial send-interrupt this :start-recording)
-                                                   :stop-recording (partial send-interrupt this :stop-recording)
-                                                   :transfer-to-resource (partial send-interrupt this :transfer-to-resource)
-                                                   :transfer-to-queue (partial send-interrupt this :transfer-to-queue)
-                                                   :transfer-to-extension (partial send-interrupt this :transfer-to-extension)
-                                                   :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
-                                                   :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
-                                                   :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
-                                                   :dial dial
-                                                   :send-digits send-digits
-                                                   :get-recordings get-recordings
-                                                   :resource-remove (partial send-interrupt this :remove-resource)
-                                                   :resource-hold (partial send-interrupt this :resource-hold)
-                                                   :resource-resume (partial send-interrupt this :resource-resume)
-                                                   :resume-all (partial send-interrupt this :resume-all)}}}
-                      :module-name module-name})
-        (ih/send-core-message {:type :module-registration-status
-                               :status :success
-                               :module-name module-name})))
+      (ih/register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
+                                                 :customer-resume (partial send-interrupt this :resume)
+                                                 :mute (partial send-interrupt this :mute)
+                                                 :unmute (partial send-interrupt this :unmute)
+                                                 :start-recording (partial send-interrupt this :start-recording)
+                                                 :stop-recording (partial send-interrupt this :stop-recording)
+                                                 :transfer-to-resource (partial send-interrupt this :transfer-to-resource)
+                                                 :transfer-to-queue (partial send-interrupt this :transfer-to-queue)
+                                                 :transfer-to-extension (partial send-interrupt this :transfer-to-extension)
+                                                 :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
+                                                 :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
+                                                 :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
+                                                 :dial dial
+                                                 :cancel-dial cancel-dial
+                                                 :send-digits send-digits
+                                                 :get-recordings get-recordings
+                                                 :resource-remove (partial send-interrupt this :remove-resource)
+                                                 :resource-hold (partial send-interrupt this :resource-hold)
+                                                 :resource-resume (partial send-interrupt this :resource-resume)
+                                                 :resume-all (partial send-interrupt this :resume-all)}}}
+                    :module-name module-name})
+      (ih/send-core-message {:type :module-registration-status
+                             :status :success
+                             :module-name module-name})))
   (stop [this])
   (refresh-integration [this]))

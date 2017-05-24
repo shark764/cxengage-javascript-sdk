@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CXV1-9468 work-cancel interrupt for Click-to-dial interactions
 
 ## [5.0.2]
 * CXV1-9374 Decoupled voice module from twilio, fixed PSTN functionality in the absence of twilio integration.

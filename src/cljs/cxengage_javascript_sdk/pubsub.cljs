@@ -121,6 +121,7 @@
                  :customer-resume-received "cxengage/interactions/voice/customer-resume-received"
                  :customer-transfer-acknowledged "cxengage/interactions/voice/customer-transfer-acknowledged"
                  :cancel-transfer-acknowledged "cxengage/interactions/voice/cancel-transfer-acknowledged"
+                 :cancel-dial-acknowledged "cxengage/interactions/voice/cancel-dial-acknowledged"
                  :customer-hold "cxengage/interactions/voice/customer-hold-received"
                  :customer-resume "cxengage/interactions/voice/customer-resume-received"
                  :resource-muted "cxengage/interactions/voice/resource-mute-received"
