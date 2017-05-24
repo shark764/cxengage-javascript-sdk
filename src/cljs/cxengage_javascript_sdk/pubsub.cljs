@@ -155,6 +155,7 @@
                  :api-encountered-internal-error "cxengage/errors/error/api-encountered-internal-server-error"
                  :failed-to-send-digits-invalid-interaction "cxengage/errors/error/failed-to-send-digits-invalid-interaction"
                  :api-returned-404-not-found "cxengage/errors/error/api-returned-404-not-found"
+                 :no-twilio-integration "cxengage/errors/error/no-twilio-integration"
                  })
 
 (defn get-topic

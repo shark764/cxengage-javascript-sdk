@@ -140,6 +140,11 @@
    :level "error"
    :message "Unable to send digits to specified interaction. Interaction must be active and of type voice."})
 
+(defn no-twilio-integration-err []
+  {:code 7002
+   :level "error"
+   :message "Unable to perform action - no twilio integration set up"})
+
 (defn no-microphone-access-error []
   {:code 8000
    :level "fatal"

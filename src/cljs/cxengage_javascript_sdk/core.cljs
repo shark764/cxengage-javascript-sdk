@@ -25,9 +25,10 @@
             [cxengage-javascript-sdk.modules.sqs :as sqs]
             [cxengage-javascript-sdk.modules.logging :as logging]
             [cxengage-javascript-sdk.modules.contacts :as contacts]
-            [cxengage-javascript-sdk.modules.email :as email]))
+            [cxengage-javascript-sdk.modules.email :as email]
+            [cxengage-javascript-sdk.modules.twilio :as twilio]))
 
-(def *SDK-VERSION* "5.0.1")
+(def *SDK-VERSION* "5.0.2")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -52,32 +53,36 @@
 (defn start-base-modules
   "Starts any core SDK modules which are not considered 'session-based', I.E. aren't dependent on any user-session specific integrations."
   [comm<]
-  (let [auth-module (authentication/map->AuthenticationModule.)
-        session-module (session/map->SessionModule.)
-        interaction-module (interaction/map->InteractionModule.)
-        entities-module (entities/map->EntitiesModule.)
-        contacts-module (contacts/map->ContactsModule.)
-        logging-module (logging/map->LoggingModule.)]
-    (doseq [module [auth-module session-module interaction-module entities-module contacts-module logging-module]]
+  (let [authentication (authentication/map->AuthenticationModule.)
+        session (session/map->SessionModule.)
+        interaction (interaction/map->InteractionModule.)
+        entities (entities/map->EntitiesModule.)
+        contacts (contacts/map->ContactsModule.)
+        logging (logging/map->LoggingModule.)]
+    (doseq [module [authentication session interaction entities contacts logging]]
       (start-internal-module module))))
 
 (defn start-session-dependant-modules
   "Starts any core SDK modules which are only able to be turned on once we have the users integrations by way of having started a session."
   [comm<]
-  (let [sqs-module (sqs/map->SQSModule. {:on-msg-fn int/sqs-msg-router})
-        messaging-module (messaging/map->MessagingModule {:on-msg-fn int/messaging-msg-router})
-        voice-module (voice/map->VoiceModule.)
-        email-module (email/map->EmailModule.)
-        reporting-module (reporting/map->ReportingModule.)]
-    (doseq [module [sqs-module messaging-module voice-module email-module reporting-module]]
-      (start-internal-module module))))
+  (let [enabled-modules (state/get-enabled-modules)
+        sqs {:name "sqs" :record (sqs/map->SQSModule. {:on-msg-fn int/sqs-msg-router})}
+        messaging {:name "messaging" :record (messaging/map->MessagingModule {:on-msg-fn int/messaging-msg-router})}
+        voice {:name "voice" :record (voice/map->VoiceModule.)}
+        email {:name "email" :record (email/map->EmailModule.)}
+        reporting {:name "reporting" :record (reporting/map->ReportingModule.)}
+        twilio {:name "twilio" :record (twilio/map->TwilioModule.)}]
+    (doseq [module [sqs messaging voice email reporting twilio]]
+      (when-not (some #(= % (get module :name)) enabled-modules)
+        (start-internal-module (get module :record))))))
 
 (defn handle-module-registration-status
   [m]
   (let [{:keys [status module-name]} m]
     (if (= status :failure)
       (js/console.error (clj->js (e/required-module-failed-to-start-err)))
-      (js/console.info (str "<----- Started " (name module-name) " module! ----->")))))
+      (do (js/console.info (str "<----- Started " (name module-name) " module! ----->"))
+          (state/set-module-enabled! (name module-name))))))
 
 (defn route-module-message [comm< m]
   (case (:type m)

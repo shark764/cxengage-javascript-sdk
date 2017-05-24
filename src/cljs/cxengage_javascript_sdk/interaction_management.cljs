@@ -206,7 +206,9 @@
   (let [{:keys [interaction-id]} message
         interaction (state/get-interaction interaction-id)
         channel-type (get interaction :channel-type)]
-    (when (= channel-type "voice")
+    (when (and (= channel-type "voice")
+               (state/get-integration-by-type "twilio")
+               (= (:provider (state/get-active-extension)) "twilio"))
       (let [connection (state/get-twilio-device)]
         (.disconnectAll connection)))
     (state/transition-interaction! :active :past interaction-id)

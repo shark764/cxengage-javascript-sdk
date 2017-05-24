@@ -1,6 +1,9 @@
 # Change Log
 
 ## [Unreleased]
+
+## [5.0.2]
+* CXV1-9374 Decoupled voice module from twilio, fixed PSTN functionality in the absence of twilio integration.
 * CXV1-9332 Seperated interrupts into their own front facing functions. No changes to public-facing API, just internal cleanup.
 
 ## [5.0.1]

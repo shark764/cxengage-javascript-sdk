@@ -233,10 +233,10 @@
    :topic-key :presence-state-change-request-acknowledged}
   [params]
   (let [{:keys [callback topic extension-value]} params
-        {:keys [status api-response]} (a/<! (rest/get-config-request))
-        user-config (:result api-response)]
+        {:keys [status api-response]} (a/<! (rest/get-user-request))
+        extensions (get-in api-response [:result :extensions])]
     (when (= status 200)
-      (state/set-config! user-config)
+      (state/set-extensions! extensions)
       (let [new-extension (state/get-extension-by-value extension-value)
             active-extension (state/get-active-extension)]
         (if-not new-extension
@@ -250,11 +250,22 @@
             ;; session they're starting. Update their user prior to changing
             ;; state, so they go ready with the correct extension.
             (let [{:keys [status api-response]} (a/<! (rest/update-user-request {:activeExtension new-extension}))]
-              (if (= status 200)
-                (go-ready* topic callback)
+              (if-not (= status 200)
                 (p/publish {:topics topic
                             :error (e/failed-to-update-extension-err)
-                            :callback callback})))
+                            :callback callback}))
+              (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
+                    user-config (:result api-response)]
+                (if (not (= status 200))
+                  (p/publish {:topics topic
+                              :error (e/failed-to-get-session-config-err)
+                              :callback callback})
+                  (do (state/set-config! user-config)
+                      (ih/send-core-message {:type :config-ready})
+                      (p/publish {:topics (p/get-topic :config-response)
+                                  :response user-config
+                                  :callback callback})
+                      (go-ready* topic callback)))))
 
             ;; Their active extension and the extension they passed in are the
             ;; same, no user update request is necessary, simply go ready.

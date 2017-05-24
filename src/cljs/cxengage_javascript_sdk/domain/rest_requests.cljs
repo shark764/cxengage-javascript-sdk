@@ -13,6 +13,16 @@
                                :resource-id resource-id})}]
     (iu/api-request config-request)))
 
+(defn get-user-request []
+  (let [resource-id (state/get-active-user-id)
+        tenant-id (state/get-active-tenant-id)
+        get-user-request {:method :get
+                          :url (iu/api-url
+                                "tenants/:tenant-id/users/:resource-id"
+                                {:tenant-id tenant-id
+                                 :resource-id resource-id})}]
+    (iu/api-request get-user-request)))
+
 (defn update-user-request [update-user-body]
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
