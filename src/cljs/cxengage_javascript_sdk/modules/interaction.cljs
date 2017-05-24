@@ -88,14 +88,17 @@
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
-      (when-not (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
-        (when (and (= channel-type "voice")
-                   (= (:provider (state/get-active-extension)) "twilio"))
-          (let [connection (state/get-twilio-connection)]
-            (.accept connection)))
-        (when (or (= channel-type "sms")
-                  (= channel-type "messaging"))
-          (int/get-messaging-history tenant-id interaction-id))))))
+      (if-not (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
+        (p/publish {:topics topic
+                    :error (e/work-offer-expired-err)
+                    :callback callback})
+        (do (when (and (= channel-type "voice")
+                       (= (:provider (state/get-active-extension)) "twilio"))
+              (let [connection (state/get-twilio-connection)]
+                (.accept connection)))
+            (when (or (= channel-type "sms")
+                      (= channel-type "messaging"))
+              (int/get-messaging-history tenant-id interaction-id)))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.focus({

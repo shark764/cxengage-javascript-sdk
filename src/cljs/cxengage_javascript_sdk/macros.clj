@@ -24,7 +24,11 @@
           (cxengage-javascript-sdk.pubsub/publish {:topics topic#
                                                    :error (cxengage-javascript-sdk.domain.errors/wrong-number-of-sdk-fn-args-err)
                                                    :callback callback#})
-          (let [params# (if (fn? (first args#)) {:callback (first args#)} (first args#))
+          (let [params# (if (fn? (first args#))
+                          {:callback (first args#)}
+                          (if (map? (first args#))
+                            (first args#)
+                            {}))
                 params# (-> params#
                             (assoc :callback callback#)
                             (assoc :topic topic#))

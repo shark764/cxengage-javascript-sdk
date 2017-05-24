@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 * CXV1-9468 work-cancel interrupt for Click-to-dial interactions
+* Fixed an issue where passing a non-map to an SDK fn from the consumers side would throw an error
+* Added additional error messaging around attempting to accept an expired work offer
 
 ## [5.0.2]
 * CXV1-9374 Decoupled voice module from twilio, fixed PSTN functionality in the absence of twilio integration.
