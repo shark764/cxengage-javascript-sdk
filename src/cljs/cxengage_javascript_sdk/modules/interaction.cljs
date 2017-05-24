@@ -89,7 +89,8 @@
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (when-not (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
-        (when (= channel-type "voice")
+        (when (and (= channel-type "voice")
+                   (= (:provider (state/get-active-extension)) "twilio"))
           (let [connection (state/get-twilio-connection)]
             (.accept connection)))
         (when (or (= channel-type "sms")

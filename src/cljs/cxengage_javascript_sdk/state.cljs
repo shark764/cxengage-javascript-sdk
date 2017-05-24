@@ -6,6 +6,7 @@
                     :user {}
                     :session {}
                     :config {}
+                    :internal {:enabled-modules []}
                     :interactions {:pending {}
                                    :active {}
                                    :past {}}
@@ -274,6 +275,10 @@
   [config]
   (swap! sdk-state assoc-in [:session :config] config))
 
+(defn set-extensions!
+  [extensions]
+  (swap! sdk-state assoc-in [:session :config :extensions] extensions))
+
 (defn get-all-extensions []
   (get-in @sdk-state [:session :config :extensions]))
 
@@ -423,3 +428,17 @@
         resource-perms (set resource-perms)
         check (clojure.set/intersection resource-perms req-perms)]
     (= check req-perms)))
+
+;;;;;;;;;;;;;;;;;;
+;; Module status
+;;;;;;;;;;;;;;;;;;
+
+(defn get-enabled-modules
+  []
+  (get-in @sdk-state [:internal :enabled-modules]))
+
+(defn set-module-enabled!
+  [module-name]
+  (let [modules (get-enabled-modules)
+        appended (conj modules module-name)]
+    (swap! sdk-state assoc-in [:internal :enabled-modules] appended)))

@@ -44,6 +44,7 @@
             :env "dev"
             :consumer-type "js"
             :log-level "debug"}
+   :internal {:enabled-modules []}
    :interactions {:pending {}
                   :active {}
                   :past {}}

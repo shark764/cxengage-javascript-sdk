@@ -169,54 +169,6 @@
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; Twilio Initialization Functions
-;; -------------------------------------------------------------------------- ;;
-
-(defn update-twilio-connection [connection]
-  (state/set-twilio-connection connection))
-
-(defn handle-twilio-error [script config error]
-  (js/console.error error script config))
-
-(defn ^:private twilio-init
-  [config]
-  (let [audio-params (ih/camelify {"audio" true})
-        script-init (fn [& args]
-                      (let [{:keys [js-api-url credentials]} config
-                            {:keys [token]} credentials
-                            script (js/document.createElement "script")
-                            body (.-body js/document)
-                            debug-twilio? (= (state/get-log-level) :debug)]
-                        (.setAttribute script "type" "text/javascript")
-                        (.setAttribute script "src" js-api-url)
-                        (.appendChild body script)
-                        ;; The active user's Twilio token as well as the specific twilio
-                        ;; SDK version is retrieved from their config details. The url
-                        ;; to the twilio SDK is then appended to the window on a script
-                        ;; element - which allows us to further initialize the Twilio
-                        ;; Device in order to receive voice interactions.
-                        (go-loop []
-                          (if (ih/twilio-ready?)
-                            (do
-                              (state/set-twilio-device (js/Twilio.Device.setup token #js {"debug" debug-twilio?}))
-                              (js/Twilio.Device.incoming update-twilio-connection)
-                              (js/Twilio.Device.ready update-twilio-connection)
-                              (js/Twilio.Device.cancel update-twilio-connection)
-                              (js/Twilio.Device.offline update-twilio-connection)
-                              (js/Twilio.Device.disconnect update-twilio-connection)
-                              (js/Twilio.Device.error handle-twilio-error))
-                            (do (a/<! (a/timeout 250))
-                                (recur))))))]
-    (-> js/navigator
-        (.-mediaDevices)
-        (.getUserMedia audio-params)
-        (.then script-init)
-        ;; If a user "blocks" microphone access through their browser
-        ;; it causes issues with Twilio. This is a our way of detecting
-        ;; and notifying the user of this problem.
-        (.catch (fn [err] (e/no-microphone-access-error))))))
-
-;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.sendDigits({
 ;;   interactionId: "{{uuid}}",
 ;;   digit: "{{number}}"
@@ -236,19 +188,24 @@
         {:keys [interaction-id topic digit callback]} params
         pubsub-response {:interaction-id interaction-id
                          :digit-sent digit}]
-    (if (and (= :active (state/find-interaction-location interaction-id))
-             (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
-      (try
-        (do (.sendDigits connection digit)
-            (p/publish {:topics topic
-                        :response pubsub-response
-                        :callback callback}))
-        (catch js/Object e (p/publish {:topics topic
-                                       :error (e/failed-to-send-twilio-digits-err)
-                                       :callback callback})))
-      (p/publish {:topics (p/get-topic :failed-to-send-digits-invalid-interaction)
-                  :error (e/failed-to-send-digits-invalid-interaction-err)
-                  :callback callback}))))
+    (if-not (and (state/get-integration-by-type "twilio")
+                 (= (:provider (state/get-active-extension)) "twilio"))
+      (p/publish {:topics (p/get-topic :no-twilio-integration)
+                  :error (e/no-twilio-integration-err)
+                  :callback callback})
+      (if (and (= :active (state/find-interaction-location interaction-id))
+               (= "voice" (:channel-type (state/get-active-interaction interaction-id))))
+        (try
+          (do (.sendDigits connection digit)
+              (p/publish {:topics topic
+                          :response pubsub-response
+                          :callback callback}))
+          (catch js/Object e (p/publish {:topics topic
+                                         :error (e/failed-to-send-twilio-digits-err)
+                                         :callback callback})))
+        (p/publish {:topics (p/get-topic :failed-to-send-digits-invalid-interaction)
+                    :error (e/failed-to-send-digits-invalid-interaction-err)
+                    :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.getRecordings({
@@ -292,59 +249,29 @@
 (defrecord VoiceModule []
   pr/SDKModule
   (start [this]
-    (let [module-name :voice
-          twilio-integration (state/get-integration-by-type "twilio")]
-      (if-not twilio-integration
+    (let [module-name :voice]
+        (ih/register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
+                                                   :customer-resume (partial send-interrupt this :resume)
+                                                   :mute (partial send-interrupt this :mute)
+                                                   :unmute (partial send-interrupt this :unmute)
+                                                   :start-recording (partial send-interrupt this :start-recording)
+                                                   :stop-recording (partial send-interrupt this :stop-recording)
+                                                   :transfer-to-resource (partial send-interrupt this :transfer-to-resource)
+                                                   :transfer-to-queue (partial send-interrupt this :transfer-to-queue)
+                                                   :transfer-to-extension (partial send-interrupt this :transfer-to-extension)
+                                                   :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
+                                                   :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
+                                                   :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
+                                                   :dial dial
+                                                   :send-digits send-digits
+                                                   :get-recordings get-recordings
+                                                   :resource-remove (partial send-interrupt this :remove-resource)
+                                                   :resource-hold (partial send-interrupt this :resource-hold)
+                                                   :resource-resume (partial send-interrupt this :resource-resume)
+                                                   :resume-all (partial send-interrupt this :resume-all)}}}
+                      :module-name module-name})
         (ih/send-core-message {:type :module-registration-status
-                               :status :failure
-                               :module-name module-name})
-        (do (twilio-init twilio-integration)
-            (ih/register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
-                                                       :customer-resume (partial send-interrupt this :resume)
-                                                       :mute (partial send-interrupt this :mute)
-                                                       :unmute (partial send-interrupt this :unmute)
-                                                       :start-recording (partial send-interrupt this :start-recording)
-                                                       :stop-recording (partial send-interrupt this :stop-recording)
-                                                       :transfer-to-resource (partial send-interrupt this :transfer-to-resource)
-                                                       :transfer-to-queue (partial send-interrupt this :transfer-to-queue)
-                                                       :transfer-to-extension (partial send-interrupt this :transfer-to-extension)
-                                                       :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
-                                                       :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
-                                                       :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
-                                                       :dial dial
-                                                       :send-digits send-digits
-                                                       :get-recordings get-recordings
-                                                       :resource-remove (partial send-interrupt this :remove-resource)
-                                                       :resource-hold (partial send-interrupt this :resource-hold)
-                                                       :resource-resume (partial send-interrupt this :resource-resume)
-                                                       :resume-all (partial send-interrupt this :resume-all)}}}
-                          :module-name module-name})
-            (ih/send-core-message {:type :module-registration-status
-                                   :status :success
-                                   :module-name module-name})))))
+                               :status :success
+                               :module-name module-name})))
   (stop [this])
-  (refresh-integration [this]
-    (go-loop []
-      (let [twilio-token-ttl (get-in (state/get-integration-by-type "twilio") [:credentials :ttl])
-            min-ttl (* twilio-token-ttl 500)]
-        (a/<! (a/timeout min-ttl))
-        (let [resource-id (state/get-active-user-id)
-              tenant-id (state/get-active-tenant-id)
-              topic (p/get-topic :config-response)
-              config-request {:method :get
-                              :url (iu/api-url
-                                    "tenants/:tenant-id/users/:resource-id/config"
-                                    {:tenant-id tenant-id
-                                     :resource-id resource-id})}
-              config-response (a/<! (iu/api-request config-request))
-              {:keys [status api-response]} config-response
-              {:keys [result]} api-response
-              {:keys [integrations]} result
-              twilio-integration (peek (filterv #(= (:type %1) "twilio") integrations))
-              twilio-token (get-in twilio-integration [:credentials :token])]
-          (state/update-integration "twilio" twilio-integration)
-          (if (not= status 200)
-            (p/publish {:topics topic
-                        :error (e/failed-to-refresh-twilio-integration-err)})
-            (state/set-twilio-device (js/Twilio.Device.setup twilio-token))))
-        (recur)))))
+  (refresh-integration [this]))
