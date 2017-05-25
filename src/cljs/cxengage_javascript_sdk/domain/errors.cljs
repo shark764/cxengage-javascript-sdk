@@ -115,6 +115,11 @@
    :level "error"
    :message "Unable to perform this action as there are interactions still active."})
 
+(defn work-offer-expired-err []
+  {:code 4001
+   :level "error"
+   :message "Attempted to accept a work offer that is already expired."})
+
 (defn failed-to-refresh-sqs-integration-err []
   {:code 5000
    :level "fatal"
