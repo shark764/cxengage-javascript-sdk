@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ## [5.1.0]
-* CXV1-9468 work-cancel interrupt for Click-to-dial interactions
+* CXV1-9468 Added work-cancel interrupt for Click-to-dial interactions
 * CXV1-9325 Added new public-facing logging functions CxEngage.logging.[debug/info/warn/error/fatal], to allow agent desktop logs to be sent to kibana alongside SDK logs
 * CXV1-9495 Fixed an issue where passing a non-map to an SDK fn from the consumers side would throw an error
 * CXV1-9496 Added additional error messaging around attempting to accept an expired work offer
