@@ -5,6 +5,7 @@
 * CXV1-9325 Added new public-facing logging functions CxEngage.logging.[debug/info/warn/error/fatal], to allow agent desktop logs to be sent to kibana alongside SDK logs
 * CXV1-9495 Fixed an issue where passing a non-map to an SDK fn from the consumers side would throw an error
 * CXV1-9496 Added additional error messaging around attempting to accept an expired work offer
+* CXV1-9361 Dynamically choose which interrupt type + body to send when calling interaction end, to account for voice interactions needing to be ended differently
 
 ## [5.0.2]
 * CXV1-9374 Decoupled voice module from twilio, fixed PSTN functionality in the absence of twilio integration.
