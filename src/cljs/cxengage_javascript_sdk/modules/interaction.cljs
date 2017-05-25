@@ -61,8 +61,14 @@
    :topic-key :interaction-end-acknowledged}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-        interrupt-body {:resource-id (state/get-active-user-id)}
-        interrupt-type "resource-disconnect"
+        interaction (state/get-interaction interaction-id)
+        {:keys [channel-type]} interaction
+        interrupt-body (if (= channel-type "voice")
+                         {:resource-id (state/get-active-user-id) :target-resource (state/get-active-user-id)}
+                         {:resource-id (state/get-active-user-id)})
+        interrupt-type (if (= channel-type "voice")
+                         "remove-resource"
+                         "resource-disconnect")
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (when (= status 200)
       (p/publish {:topics topic
