@@ -34,6 +34,17 @@
                              :body update-user-body}]
     (iu/api-request update-user-request)))
 
+(defn save-logs-request [body]
+  (let [resource-id (state/get-active-user-id)
+        tenant-id (state/get-active-tenant-id)
+        save-logs-request {:url (iu/api-url
+                                 "tenants/:tenant-id/users/:resource-id/logs"
+                                 {:tenant-id (state/get-active-tenant-id)
+                                  :resource-id (state/get-active-user-id)})
+                           :method :post
+                           :body body}]
+    (iu/api-request save-logs-request true)))
+
 (defn change-state-request [change-state-body]
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)

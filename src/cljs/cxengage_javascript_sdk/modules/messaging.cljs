@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.modules.messaging
   (:require-macros [cljs.core.async.macros :refer [go]]
+                   [lumbajack.macros :refer [log]]
                    [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljsjs.paho]
             [camel-snake-kebab.core :as camel]
@@ -83,7 +84,7 @@
 (defn subscribe
   [topic]
   (.subscribe (state/get-mqtt-client) topic #js {:qos 1})
-  (js/console.log (str "Subscribed to MQTT topic: " topic)))
+  (log :info (str "Subscribed to MQTT topic: " topic)))
 
 (defn unsubscribe
   [topic]
@@ -101,10 +102,10 @@
                 :callback callback})))
 
 (defn on-connect []
-  (js/console.log "Mqtt client connected"))
+  (log :info "Mqtt client connected"))
 
 (defn on-failure [msg]
-  (js/console.log "Mqtt Client failed to connect " msg)
+  (log :error "Mqtt Client failed to connect " msg)
   (p/publish {:topics (p/get-topic :mqtt-failed-to-connect)
               :error (e/failed-to-connect-to-mqtt-err)})
   (ih/send-core-message {:type :module-registration-status
@@ -112,7 +113,7 @@
                          :module-name :messaging}))
 
 (defn disconnect [client]
-  (js/console.log "Disconnecting mqtt client")
+  (log :info "Disconnecting mqtt client")
   (.disconnect client))
 
 (defn connect
@@ -121,8 +122,8 @@
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
                                       (if (= (get (js->clj reason-code :keywordize-keys true) :errorCode) 0)
-                                        (js/console.log "Previous Mqtt Session Successfully Disconnected")
-                                        (js/console.error "Mqtt Connection Lost" {:reasonCode reason-code
+                                        (log :info "Previous Mqtt Session Successfully Disconnected")
+                                        (log :error "Mqtt Connection Lost" {:reasonCode reason-code
                                                                                   :reasonMessage reason-message}))))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))

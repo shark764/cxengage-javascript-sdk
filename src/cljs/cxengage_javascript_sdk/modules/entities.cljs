@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.modules.entities
   (:require-macros [cljs.core.async.macros :refer [go]]
+                   [lumbajack.macros :refer [log]]
                    [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]

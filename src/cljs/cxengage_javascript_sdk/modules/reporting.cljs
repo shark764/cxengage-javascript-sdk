@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.modules.reporting
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [lumbajack.macros :refer [log]]
                    [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
@@ -31,10 +32,10 @@
               {:keys [api-response status]} (a/<! (iu/api-request polling-request true))
               {:keys [results]} api-response]
           (if (not= status 200)
-            (do (js/console.error "Batch request failed.")
+            (do (log :error "Batch request failed.")
                 (p/publish {:topics topic
                             :error (e/reporting-batch-request-failed-err)}))
-            (do (js/console.info "Batch request received!")
+            (do (log :info "Batch request received!")
                 (p/publish {:topics topic
                             :response results}
                            true)
@@ -95,7 +96,6 @@
   {:validation ::remove-statistics-params
    :topic-key :remove-stat}
   [params]
-  (js/console.log "stat id:" params)
   (let [{:keys [stat-id topic callback]} params
         new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
     (swap! stat-subscriptions assoc :statistics new-stats)

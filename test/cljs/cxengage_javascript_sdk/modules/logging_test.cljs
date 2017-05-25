@@ -8,37 +8,21 @@
             [cljs.test :refer-macros [deftest is testing async]]
             [cljs-uuid-utils.core :as id]))
 
+(defn setup-fake-logging-global []
+  (aset js/window "CxEngage" {})
+  (aset js/window "CxEngage" "logging" {})
+  (aset js/window "CxEngage" "logging" "level" "debug"))
+
 (deftest format-request-logs
   (testing "The format request logs"
+    (setup-fake-logging-global)
     (let [a-log {:level :debug
                  :data ["blah" "blah" "blah"]}]
       (is (= {:level "info", :message "{\"data\":\"blah blah blah\",\"originalClientLogLevel\":\"debug\"}"} (dissoc (log/format-request-logs a-log) :timestamp))))))
 
-(deftest log*-test
-  (testing "the log* function"
-    (state/destroy-state)
-    (log/log* :debug "Unit" "Test")
-    (is (= [{:level :debug :data ["Unit" "Test"]}] (state/get-unsaved-logs)))
-    (log/log* :info "Test" "Unit")
-    (is (= [{:level :debug :data ["Unit" "Test"]}
-            {:level :info :data ["Test" "Unit"]}] (state/get-unsaved-logs)))))
-
-(deftest dump-logs-test
-  (testing "the dump logs function"
-    (async done
-           (state/destroy-state)
-           (p/subscribe "cxengage/logging/logs-dumped" (fn [error topic response]
-                                                         (is (= [{:level "info"
-                                                                  :data ["Test" "Unit"]}
-                                                                 {:level "debug"
-                                                                  :data ["Unit" "Test"]}] (js->clj response :keywordize-keys true)))
-                                                         (done)))
-           (log/log* :info "Test" "Unit")
-           (log/log* :debug "Unit" "Test")
-           (log/dump-logs))))
-
 (deftest set-level-test
   (testing "the set log level function"
+    (setup-fake-logging-global)
     (async done
            (p/subscribe "cxengage/logging/log-level-set" (fn [error topic response]
                                                            (is (= "info" (js->clj response :keywordize-keys true)))
