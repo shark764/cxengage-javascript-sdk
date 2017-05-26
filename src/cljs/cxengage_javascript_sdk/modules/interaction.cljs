@@ -95,7 +95,7 @@
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
-      (if-not (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
+      (if (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
         (p/publish {:topics topic
                     :error (e/work-offer-expired-err)
                     :callback callback})
