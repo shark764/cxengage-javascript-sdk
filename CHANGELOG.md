@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CXV1-8548 Expose branding API via SDK
 
 ## [5.1.1]
 * CXV1-9536 Fixed work offers not accepting the call, and sending expired error

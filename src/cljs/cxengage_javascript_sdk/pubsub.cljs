@@ -47,6 +47,7 @@
                  :get-user-response "cxengage/entities/get-user-response"
                  :get-users-response "cxengage/entities/get-users-response"
                  :update-user-response "cxengage/entities/update-user-response"
+                 :get-branding-response "cxengage/entities/get-branding-response"
 
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"

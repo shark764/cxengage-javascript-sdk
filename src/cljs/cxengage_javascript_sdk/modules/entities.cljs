@@ -10,6 +10,7 @@
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -170,6 +171,25 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getBranding();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-branding-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-branding
+  {:validation ::get-branding-params
+   :topic-key :get-branding-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response]} (a/<! (rest/get-branding-request))]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response (:result api-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
 ;; -------------------------------------------------------------------------- ;;
 
@@ -216,7 +236,8 @@
                                        :get-queue get-queue
                                        :get-transfer-lists get-transfer-lists
                                        :get-transfer-list get-transfer-list
-                                       :update-user update-user}}
+                                       :update-user update-user
+                                       :get-branding get-branding}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

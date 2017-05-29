@@ -203,3 +203,11 @@
                                   :interrupt-type interrupt-type
                                   :interrupt interrupt-body}}]
     (iu/api-request interrupt-request)))
+
+(defn get-branding-request []
+  (let [tenant-id (state/get-active-tenant-id)
+        get-branding-request {:method :get
+                              :url (iu/api-url
+                                    "tenants/:tenant-id/branding"
+                                    {:tenant-id tenant-id})}]
+    (iu/api-request get-branding-request)))

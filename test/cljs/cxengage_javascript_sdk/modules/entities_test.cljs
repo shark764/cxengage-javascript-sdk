@@ -6,6 +6,7 @@
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.modules.entities :as ent]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs-uuid-utils.core :as uuid]
             [cljs.test :refer-macros [deftest is testing async]]))
 
@@ -66,6 +67,34 @@
                                 (set! iu/api-request old)
                                 (done)))
                  (ent/get-users))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; Get Branding Test
+;; -------------------------------------------------------------------------- ;;
+
+(deftest get-branding-test
+  (testing "get the branding for a tenant"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (let [old rest/get-branding-request
+                 tenant-id (str (uuid/make-random-uuid))
+                 topic (p/get-topic :get-branding-response)]
+             (st/reset-state)
+             (st/set-active-tenant! tenant-id)
+             (set! rest/get-branding-request (fn []
+                                               (go {:status 200
+                                                    :api-response {:result {:logo "unit test"
+                                                                            :favicon "test favicon"
+                                                                            :styles "some css"
+                                                                            :tenant-id tenant-id}}})))
+             (p/subscribe topic (fn [e t r]
+                                  (is (= {:logo "unit test"
+                                          :favicon "test favicon"
+                                          :styles "some css"
+                                          :tenantId tenant-id} (js->clj r :keywordize-keys true)))
+                                  (set! rest/get-branding-request old)
+                                  (done)))
+             (ent/get-branding)))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Get Queue Tests
