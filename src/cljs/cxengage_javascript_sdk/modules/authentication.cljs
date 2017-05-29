@@ -7,6 +7,7 @@
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.interop-helpers :as ih]))
@@ -28,16 +29,9 @@
                   :error (e/active-interactions-err)
                   :callback callback})
       (let [session-id (state/get-session-id)
-            resource-id (state/get-active-user-id)
-            tenant-id (state/get-active-tenant-id)
-            change-state-request {:method :post
-                                  :url (iu/api-url
-                                        "tenants/:tenant-id/presence/:resource-id"
-                                        {:tenant-id tenant-id
-                                         :resource-id resource-id})
-                                  :body {:session-id session-id
-                                         :state "offline"}}
-            {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
+            change-state-body {:session-id session-id
+                               :state "offline"}
+            {:keys [status api-response]} (a/<! (rest/change-state-request change-state-body))
             new-state-data (:result api-response)]
         (if (= status 200)
           (do (state/set-session-expired! true)
@@ -64,21 +58,17 @@
    :topic-key :login-response}
   [params]
   (let [{:keys [callback topic username password]} params
-        token-request {:method :post
-                       :url (iu/api-url "tokens")
-                       :body {:username username
-                              :password password}}
+        token-body {:username username
+                    :password password}
         _ (state/reset-state)
-        {:keys [status api-response]} (a/<! (iu/api-request token-request))]
+        {:keys [status api-response]} (a/<! (rest/token-request token-body))]
     (if (not (= status 200))
       (p/publish {:topics topic
                   :callback callback
                   :error (e/login-failed-err)})
       (do
         (state/set-token! (:token api-response))
-        (let [login-request {:method :post
-                             :url (iu/api-url "login")}
-              {:keys [status api-response]} (a/<! (iu/api-request login-request))]
+        (let [{:keys [status api-response]} (a/<! (rest/login-request))]
           (if (not (= status 200))
             (p/publish {:topics topic
                         :callback callback

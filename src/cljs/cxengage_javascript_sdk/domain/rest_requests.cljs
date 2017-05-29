@@ -34,6 +34,38 @@
                              :body update-user-body}]
     (iu/api-request update-user-request)))
 
+(defn token-request [token-body]
+  (let [token-request {:method :post
+                       :url (iu/api-url "tokens")
+                       :body token-body}]
+    (iu/api-request token-request)))
+
+(defn login-request []
+  (let [login-request {:method :post
+                       :url (iu/api-url "login")}]
+    (iu/api-request login-request)))
+
+(defn update-artifact-request [artifact-body artifact-id interaction-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        artifact-req {:method :put
+                      :url (iu/api-url
+                            "tenants/:tenant-id/interactions/:interaction-id/artifacts/:artifact-id"
+                            {:artifact-id artifact-id
+                             :interaction-id interaction-id
+                             :tenant-id tenant-id})
+                      :body artifact-body}]
+    (iu/api-request artifact-req)))
+
+(defn get-artifact-by-id-request [artifact-id interaction-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        artifact-request {:method :get
+                          :url (iu/api-url
+                                "tenants/:tenant-id/interactions/:interaction-id/artifacts/:artifact-id"
+                                {:artifact-id artifact-id
+                                 :interaction-id interaction-id
+                                 :tenant-id tenant-id})}]
+    (iu/api-request artifact-request)))
+
 (defn save-logs-request [body]
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
@@ -44,6 +76,28 @@
                            :method :post
                            :body body}]
     (iu/api-request save-logs-request true)))
+
+(defn start-session-request []
+  (let [resource-id (state/get-active-user-id)
+        tenant-id (state/get-active-tenant-id)
+        start-session-req {:method :post
+                           :url (iu/api-url
+                                 "tenants/:tenant-id/presence/:resource-id/session"
+                                 {:tenant-id tenant-id
+                                  :resource-id resource-id})}]
+    (iu/api-request start-session-req)))
+
+(defn heartbeat-request []
+  (let [resource-id (state/get-active-user-id)
+        tenant-id (state/get-active-tenant-id)
+        session-id (state/get-session-id)
+        heartbeat-req {:method :post
+                       :body {:session-id session-id}
+                       :url (iu/api-url
+                             "tenants/:tenant-id/presence/:resource-id/heartbeat"
+                             {:tenant-id tenant-id
+                              :resource-id resource-id})}]
+    (iu/api-request heartbeat-req)))
 
 (defn change-state-request [change-state-body]
   (let [resource-id (state/get-active-user-id)
@@ -191,6 +245,29 @@
                                    {:tenant-id tenant-id
                                     :interaction-id interaction-id})}]
     (iu/api-request create-note-request)))
+
+(defn crud-entity-request
+  ([method entity-type entity-id]
+   (crud-entity-request method entity-type entity-id nil))
+  ([method entity-type entity-id entity-body]
+   (let [tenant-id (state/get-active-tenant-id)
+         entity-key (keyword (str entity-type "-id"))
+         get-url (iu/api-url
+                  (str "tenants/:tenant-id/" entity-type "s/:" entity-type "-id")
+                  (assoc {:tenant-id tenant-id} entity-key entity-id))
+         get-request (cond-> {:method method
+                              :url get-url}
+                       entity-body (assoc :body entity-body))]
+     (iu/api-request get-request))))
+
+(defn crud-entities-request [method entity-type]
+  (let [tenant-id (state/get-active-tenant-id)
+        get-url (iu/api-url
+                 (str "tenants/:tenant-id/" entity-type "s")
+                 {:tenant-id tenant-id})
+        get-request {:method method
+                     :url get-url}]
+    (iu/api-request get-request)))
 
 (defn send-interrupt-request [interaction-id interrupt-type interrupt-body]
   (let [tenant-id (state/get-active-tenant-id)
