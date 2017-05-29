@@ -105,7 +105,7 @@
                 (.accept connection)))
             (when (or (= channel-type "sms")
                       (= channel-type "messaging"))
-              (int/get-messaging-history tenant-id interaction-id)))))))
+              (int/get-messaging-history interaction-id)))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.focus({
@@ -424,6 +424,17 @@
   (let [{:keys [topic answers script-id interaction-id callback]} params
         original-script (state/get-script interaction-id script-id)
         {:keys [sub-id script action-id]} original-script
+        ;; The send script payload has a somewhat complicated structure due to
+        ;; two major services needing overlapping data in different locations.
+
+        ;; First - Flow needs the answers for the script located in the top level
+        ;; "update" object, where each field from the script is it's own key and
+        ;; contains the value as well as text value (if applicable).
+
+        ;; Second - Reporting parses the scriptResponse object which is the script
+        ;; broken down by front-end elements. The value for each field also needs
+        ;; to be located within the scriptResponse object under it's corresponding
+        ;; element.
         parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
         elements (modify-elements (:elements parsed-script))
         updated-answers (reduce-kv
@@ -439,31 +450,13 @@
         script-body {:source "client"
                      :sub-id (:sub-id original-script)
                      :update (merge script-update updated-answers)}
-        ;; The send script payload has a somewhat complicated structure due to
-        ;; two major services needing overlapping data in different locations.
-
-        ;; First - Flow needs the answers for the script located in the top level
-        ;; "update" object, where each field from the script is it's own key and
-        ;; contains the value as well as text value (if applicable).
-
-        ;; Second - Reporting parses the scriptResponse object which is the script
-        ;; broken down by front-end elements. The value for each field also needs
-        ;; to be located within the scriptResponse object under it's corresponding
-        ;; element.
-        script-request {:method :post
-                        :url (iu/api-url
-                              "tenants/:tenant-id/interactions/:interaction-id/actions/:action-id"
-                              {:tenant-id (state/get-active-tenant-id)
-                               :interaction-id interaction-id
-                               :action-id action-id})
-                        :body script-body}]
-    (do (go (let [script-response (a/<! (iu/api-request script-request))
-                  {:keys [status api-response]} script-response
-                  {:keys [result]} api-response]
-              (when (= status 200)
-                (p/publish {:topics topic
-                            :response interaction-id
-                            :callback callback})))))))
+        script-response (a/<! (rest/send-flow-action-request interaction-id action-id script-body))
+        {:keys [status api-response]} script-response
+        {:keys [result]} api-response]
+    (when (= status 200)
+      (p/publish {:topics topic
+                  :response interaction-id
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.sendCustomInterrupt({
@@ -484,16 +477,7 @@
    :topic-key :send-custom-interrupt-acknowledged}
   [params]
   (let [{:keys [callback topic interrupt-body interrupt-type interaction-id]} params
-        tenant-id (state/get-active-tenant-id)
-        interrupt-request {:method :post
-                           :body {:source "Client"
-                                  :interrupt-type interrupt-type
-                                  :interrupt interrupt-body}
-                           :url (str (iu/api-url
-                                      "tenants/:tenant-id/interactions/:interaction-id/interrupts"
-                                      {:tenant-id tenant-id
-                                       :interaction-id interaction-id}))}
-        {:keys [status api-response]} (a/<! (iu/api-request interrupt-request))]
+        {:keys [status api-response]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response

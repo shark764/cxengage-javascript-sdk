@@ -4,6 +4,7 @@
             [cljs.core.async :as a]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
@@ -390,7 +391,7 @@
     (async done
            (reset! p/sdk-subscriptions {})
            (state/reset-state)
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      interaction-id (str (id/make-random-uuid))
                      flow-id (str (id/make-random-uuid))
                      flow-version (str (id/make-random-uuid))
@@ -398,7 +399,7 @@
                      the-chan (a/promise-chan)
                      cb (fn [error topic response]
                           (is (= {:interactionId interaction-id :flowId flow-id :flowVersion flow-version} (js->clj response :keywordize-keys true)))
-                          (set! iu/api-request old)
+                          (set! rest/api-request old)
                           (done))]
                  (state/set-active-tenant! tenant-id)
                  (p/subscribe "cxengage/interactions/send-custom-interrupt-acknowledged" cb)
@@ -406,10 +407,10 @@
                                                 :flow-id flow-id
                                                 :flow-version flow-version}
                                  :status 200})
-                 (set! iu/api-request (fn [request-map]
-                                        (let [{:keys [url method body]} request-map
-                                              {:keys [interrupt-body interrupt-type interaction-id]} body]
-                                          the-chan)))
+                 (set! rest/api-request (fn [request-map]
+                                          (let [{:keys [url method body]} request-map
+                                                {:keys [interrupt-body interrupt-type interaction-id]} body]
+                                            the-chan)))
                  (interaction/custom-interrupt {:interrupt-type "unit-test" :interrupt-body {} :interaction-id interaction-id}))))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -425,14 +426,14 @@
   (testing "get single note function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      pubsub-expected-response (get-in successful-get-note-response [:api-response])]
-                 (set! iu/api-request (fn [_]
-                                        (go successful-get-note-response)))
+                 (set! rest/api-request (fn [_]
+                                          (go successful-get-note-response)))
                  (p/subscribe "cxengage/interactions/get-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (interaction/get-note {:interaction-id (str (id/make-random-uuid)) :note-id (str (id/make-random-uuid))}))))))
 
@@ -447,14 +448,14 @@
   (testing "get all notes function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      pubsub-expected-response (get-in successful-get-notes-response [:api-response])]
-                 (set! iu/api-request (fn [_]
-                                        (go successful-get-notes-response)))
+                 (set! rest/api-request (fn [_]
+                                          (go successful-get-notes-response)))
                  (p/subscribe "cxengage/interactions/get-notes-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (interaction/get-all-notes {:interaction-id (str (id/make-random-uuid))}))))))
 
@@ -470,14 +471,14 @@
   (testing "get all notes function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      pubsub-expected-response (get-in successful-create-note-response [:api-response])]
-                 (set! iu/api-request (fn [_]
-                                        (go successful-create-note-response)))
+                 (set! rest/api-request (fn [_]
+                                          (go successful-create-note-response)))
                  (p/subscribe "cxengage/interactions/create-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (interaction/create-note {:interaction-id (str (id/make-random-uuid)) :title "Asdf Note" :body "asdasd asdasdasd"}))))))
 
@@ -493,14 +494,14 @@
   (testing "get all notes function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      pubsub-expected-response (get-in successful-update-note-response [:api-response])]
-                 (set! iu/api-request (fn [_]
-                                        (go successful-update-note-response)))
+                 (set! rest/api-request (fn [_]
+                                          (go successful-update-note-response)))
                  (p/subscribe "cxengage/interactions/update-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (interaction/update-note {:interaction-id (str (id/make-random-uuid))
                                            :note-id (str (id/make-random-uuid))

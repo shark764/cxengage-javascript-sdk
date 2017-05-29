@@ -35,7 +35,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response retrieved-contact
-                  :callback callback} true))))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Cxengage.contacts.getAll();
@@ -55,7 +56,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response retrieved-contacts
-                  :callback callback} true))))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; // Search on a specified attribute
@@ -81,7 +83,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response found-contacts
-                  :callback callback} true))))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.create({attributes: {name: "Serenova, LLC."}});
@@ -102,7 +105,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response created-contact
-                  :callback callback} true))))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; ----------------------------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.update({contactId: "{{contact-id}}", attributes: {name: "Serenova, LLC."}});
@@ -144,7 +148,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response deleted-contact?
-                  :callback callback}) true)))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; ----------------------------------------------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.merge({contactIds: ["{{contact-id}}", "{{contact-id}}"], attributes: {name: "Serenova, LLC."}});
@@ -167,7 +172,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response merged-contact
-                  :callback callback} true))))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.listAttributes();
@@ -187,7 +193,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response retrieved-attributes
-                  :callback callback} true))))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.getLayout({layoutId: "{{layout-id}}"});
@@ -207,7 +214,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response retrieved-layout
-                  :callback callback} true))))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.listLayouts();
@@ -227,7 +235,8 @@
     (when (= status 200)
       (p/publish {:topics topic
                   :response retrieved-layouts
-                  :callback callback} true))))
+                  :callback callback
+                  :preserve-casing? true}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Contacts Module

@@ -100,28 +100,21 @@
         nil)))
 
 (defn- get-config* []
-  (let [resource-id (state/get-active-user-id)
-        tenant-id (state/get-active-tenant-id)
-        config-request {:method :get
-                        :url (iu/api-url
-                              "tenants/:tenant-id/users/:resource-id/config"
-                              {:tenant-id tenant-id
-                               :resource-id resource-id})}
-        topic (p/get-topic :config-response)]
-    (go (let [config-response (a/<! (iu/api-request config-request))
-              {:keys [api-response status]} config-response
-              user-config (:result api-response)]
-          (if (= status 200)
-            (do (state/set-config! user-config)
-                (ih/send-core-message {:type :config-ready})
-                (p/publish {:topics topic
-                            :response user-config})
-                (p/publish {:topics (p/get-topic :extension-list)
-                            :response (select-keys user-config [:active-extension :extensions])})
-                (start-session*))
-            (p/publish {:topics topic
-                        :error (e/failed-to-get-session-config-err)}))))
-    nil))
+  (go (let [topic (p/get-topic :config-response)
+            config-response (a/<! (rest/get-config-request))
+            {:keys [api-response status]} config-response
+            user-config (:result api-response)]
+        (if (= status 200)
+          (do (state/set-config! user-config)
+              (ih/send-core-message {:type :config-ready})
+              (p/publish {:topics topic
+                          :response user-config})
+              (p/publish {:topics (p/get-topic :extension-list)
+                          :response (select-keys user-config [:active-extension :extensions])})
+              (start-session*))
+          (p/publish {:topics topic
+                      :error (e/failed-to-get-session-config-err)}))))
+  nil)
 
 (def required-desktop-permissions
   #{"CONTACTS_CREATE"
@@ -166,18 +159,7 @@
    :topic-key :set-direction-response}
   [params]
   (let [{:keys [callback topic direction]} params
-        tenant-id (state/get-active-tenant-id)
-        resource-id (state/get-active-user-id)
-        session-id (state/get-session-id)
-        set-direction-request {:method :post
-                               :url (iu/api-url
-                                     "tenants/:tenant-id/presence/:resource-id/direction"
-                                     {:tenant-id tenant-id
-                                      :resource-id resource-id})
-                               :body {:session-id session-id
-                                      :direction direction
-                                      :initiator-id resource-id}}
-        {:keys [status api-response]} (a/<! (iu/api-request set-direction-request))
+        {:keys [status api-response]} (a/<! (rest/set-direction-request direction))
         direction-details {:direction direction
                            :session-id (get-in api-response [:result :session-id])}]
     (when (= status 200)

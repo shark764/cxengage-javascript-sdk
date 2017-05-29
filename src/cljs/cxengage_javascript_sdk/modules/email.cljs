@@ -14,8 +14,7 @@
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.internal-utils :as iu]
-            [ajax.core :as ax :refer [POST]]))
+            [cxengage-javascript-sdk.internal-utils :as iu]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.email.getAttachmentUrl({
@@ -185,7 +184,7 @@
                                        (log :info "[Email Processing] Form data:" form-data)
                                        (log :info "[Email Processing] Attachment Type:" attachment-type)
                                        (log :info "[Email Processing] Artifact URL:" artifact-url)
-                                       (iu/file-api-request
+                                       (rest/file-api-request
                                         {:method :post
                                          :url artifact-url
                                          :body form-data
@@ -221,7 +220,7 @@
                   create-manifest-request {:method :post
                                            :url artifact-url
                                            :body form-data}]
-              (go (let [manifest-response (a/<! (iu/file-api-request create-manifest-request))
+              (go (let [manifest-response (a/<! (rest/file-api-request create-manifest-request))
                         _ (log :info "[Email Processing] Manifest creation response:" (ih/camelify manifest-response))
                         {:keys [api-response status]} manifest-response
                         manifest-id (get api-response :manifest.json)
