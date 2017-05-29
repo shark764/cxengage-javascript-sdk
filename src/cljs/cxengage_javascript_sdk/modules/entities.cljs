@@ -10,8 +10,8 @@
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cxengage-javascript-sdk.domain.specs :as specs]))
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; GET Entity Functions
@@ -32,13 +32,7 @@
    :topic-key :get-user-response}
   [params]
   (let [{:keys [callback topic resource-id]} params
-        tenant-id (st/get-active-tenant-id)
-        get-user-request {:method :get
-                          :url (iu/api-url
-                                "tenants/:tenant-id/users/:resource-id"
-                                {:tenant-id tenant-id
-                                 :resource-id resource-id})}
-        {:keys [status api-response]} (a/<! (iu/api-request get-user-request))]
+        {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "user" resource-id))]
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -57,12 +51,7 @@
    :topic-key :get-users-response}
   [params]
   (let [{:keys [callback topic]} params
-        tenant-id (st/get-active-tenant-id)
-        get-users-request {:method :get
-                           :url (iu/api-url
-                                 "tenants/:tenant-id/users"
-                                 {:tenant-id tenant-id})}
-        {:keys [status api-response]} (a/<! (iu/api-request get-users-request))]
+        {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "user"))]
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -83,13 +72,7 @@
    :topic-key :get-queue-response}
   [params]
   (let [{:keys [callback topic queue-id]} params
-        tenant-id (st/get-active-tenant-id)
-        get-queue-request {:method :get
-                           :url (iu/api-url
-                                 "tenants/:tenant-id/queues/:queue-id"
-                                 {:tenant-id tenant-id
-                                  :queue-id queue-id})}
-        {:keys [status api-response]} (a/<! (iu/api-request get-queue-request))]
+        {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "queue" queue-id))]
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -108,12 +91,7 @@
    :topic-key :get-queues-response}
   [params]
   (let [{:keys [callback topic]} params
-        tenant-id (st/get-active-tenant-id)
-        get-queues-request {:method :get
-                            :url (iu/api-url
-                                  "tenants/:tenant-id/queues"
-                                  {:tenant-id tenant-id})}
-        {:keys [status api-response]} (a/<! (iu/api-request get-queues-request))]
+        {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "queue"))]
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -134,13 +112,7 @@
    :topic-key :get-transfer-list-response}
   [params]
   (let [{:keys [callback topic transfer-list-id]} params
-        tenant-id (st/get-active-tenant-id)
-        get-transfer-list-request {:method :get
-                                   :url (iu/api-url
-                                         "tenants/:tenant-id/transfer-lists/:transfer-list-id"
-                                         {:tenant-id tenant-id
-                                          :transfer-list-id transfer-list-id})}
-        {:keys [status api-response]} (a/<! (iu/api-request get-transfer-list-request))]
+        {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "transfer-list" transfer-list-id))]
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -159,12 +131,7 @@
    :topic-key :get-transfer-lists-response}
   [params]
   (let [{:keys [callback topic]} params
-        tenant-id (st/get-active-tenant-id)
-        get-transfer-lists-request {:method :get
-                                    :url (iu/api-url
-                                          "tenants/:tenant-id/transfer-lists"
-                                          {:tenant-id tenant-id})}
-        {:keys [status api-response]} (a/<! (iu/api-request get-transfer-lists-request))]
+        {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "transfer-list"))]
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -209,14 +176,7 @@
    :topic-key :update-user-response}
   [params]
   (let [{:keys [callback topic update-body resource-id]} params
-        tenant-id (st/get-active-tenant-id)
-        put-user-request {:method :put
-                          :body update-body
-                          :url (iu/api-url
-                                "tenants/:tenant-id/users/:resource-id"
-                                {:tenant-id tenant-id
-                                 :resource-id resource-id})}
-        {:keys [status api-response]} (a/<! (iu/api-request put-user-request))]
+        {:keys [status api-response]} (a/<! (rest/crud-entity-request :put "user" resource-id update-body))]
     (when (= status 200)
       (p/publish {:topics topic
                   :response api-response

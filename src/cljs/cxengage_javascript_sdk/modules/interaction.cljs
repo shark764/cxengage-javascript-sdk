@@ -510,21 +510,21 @@
       (ih/register {:api {module-name {:accept accept
                                        :end end
                                        :reject end
-                                       :assignContact assign
-                                       :unassignContact unassign
-                                       :enableWrapup enable-wrapup
-                                       :disableWrapup disable-wrapup
-                                       :endWrapup end-wrapup
+                                       :assign-contact assign
+                                       :unassign-contact unassign
+                                       :enable-wrapup enable-wrapup
+                                       :disable-wrapup disable-wrapup
+                                       :end-wrapup end-wrapup
                                        :focus focus
                                        :unfocus unfocus
-                                       :createNote create-note
-                                       :updateNote update-note
-                                       :getNote get-note
-                                       :getAllNotes get-all-notes
-                                       :selectDispositionCode select-disposition
-                                       :deselectDispositionCode deselect-disposition
-                                       :sendScript send-script
-                                       :sendCustomInterrupt custom-interrupt}}
+                                       :create-note create-note
+                                       :update-note update-note
+                                       :get-note get-note
+                                       :get-all-notes get-all-notes
+                                       :select-disposition-code select-disposition
+                                       :deselect-disposition-code deselect-disposition
+                                       :send-script send-script
+                                       :send-custom-interrupt custom-interrupt}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

@@ -47,13 +47,7 @@
                                 reason-info (assoc :reason reason
                                                    :reason-id reason-id
                                                    :reason-list-id reason-list-id))
-            change-state-request {:method :post
-                                  :url (iu/api-url
-                                        "tenants/:tenant-id/presence/:resource-id"
-                                        {:tenant-id tenant-id
-                                         :resource-id resource-id})
-                                  :body change-state-body}
-            {:keys [status api-response]} (a/<! (iu/api-request change-state-request))
+            {:keys [status api-response]} (a/<! (rest/change-state-request change-state-body))
             new-state-data (:result api-response)]
         (if (= status 200)
           (p/publish {:topics topic
@@ -69,58 +63,41 @@
 
 (defn- start-heartbeats* []
   (log :info "Sending heartbeats...")
-  (let [session-id (state/get-session-id)
-        tenant-id (state/get-active-tenant-id)
-        resource-id (state/get-active-user-id)
-        heartbeat-request {:method :post
-                           :body {:session-id session-id}
-                           :url (iu/api-url
-                                 "tenants/:tenant-id/presence/:resource-id/heartbeat"
-                                 {:tenant-id tenant-id
-                                  :resource-id resource-id})}
-        topic (p/get-topic :presence-heartbeats-response)]
-    (go-loop []
-      (if (= "offline" (state/get-user-session-state))
-        (do (log :info "Session is now offline; ceasing future heartbeats.")
-            (state/set-session-expired! true)
-            nil)
-        (let [{:keys [api-response status]} (a/<! (iu/api-request heartbeat-request))
-              {:keys [result]} api-response
-              next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
-          (if (= status 200)
-            (do (log :info "Heartbeat sent!")
-                (p/publish {:topics topic
-                            :response result})
-                (a/<! (a/timeout next-heartbeat-delay))
-                (recur))
-            (do (log :error "Heartbeat failed; ceasing future heartbeats.")
-                (state/set-session-expired! true)
-                (p/publish {:topics topic
-                            :error (e/session-heartbeats-failed-err)})
-                nil)))))))
+  (go-loop []
+    (if (= "offline" (state/get-user-session-state))
+      (do (log :info "Session is now offline; ceasing future heartbeats.")
+          (state/set-session-expired! true)
+          nil)
+      (let [topic (p/get-topic :presence-heartbeats-response)
+            {:keys [api-response status]} (a/<! (rest/heartbeat-request))
+            {:keys [result]} api-response
+            next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
+        (if (= status 200)
+          (do (log :info "Heartbeat sent!")
+              (p/publish {:topics topic
+                          :response result})
+              (a/<! (a/timeout next-heartbeat-delay))
+              (recur))
+          (do (log :error "Heartbeat failed; ceasing future heartbeats.")
+              (state/set-session-expired! true)
+              (p/publish {:topics topic
+                          :error (e/session-heartbeats-failed-err)})
+              nil))))))
 
 (defn- start-session* []
-  (let [resource-id (state/get-active-user-id)
-        tenant-id (state/get-active-tenant-id)
-        start-session-request {:method :post
-                               :url (iu/api-url
-                                     "tenants/:tenant-id/presence/:resource-id/session"
-                                     {:tenant-id tenant-id
-                                      :resource-id resource-id})}]
-    (go (let [start-session-response (a/<! (iu/api-request start-session-request))
-              {:keys [status api-response]} start-session-response
-              topic (p/get-topic :session-started)
-              session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
-          (if (= status 200)
-            (do (state/set-session-details! session-details)
-                (p/publish {:topics topic
-                            :response session-details})
-                (go-not-ready)
-                (state/set-session-expired! false)
-                (start-heartbeats*))
-            (p/publish {:topics topic
-                        :error (e/failed-to-start-agent-session-err)}))
-          nil))))
+  (go (let [{:keys [status api-response]} (a/<! (rest/start-session-request))
+            topic (p/get-topic :session-started)
+            session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
+        (if (= status 200)
+          (do (state/set-session-details! session-details)
+              (p/publish {:topics topic
+                          :response session-details})
+              (go-not-ready)
+              (state/set-session-expired! false)
+              (start-heartbeats*))
+          (p/publish {:topics topic
+                      :error (e/failed-to-start-agent-session-err)}))
+        nil)))
 
 (defn- get-config* []
   (let [resource-id (state/get-active-user-id)
