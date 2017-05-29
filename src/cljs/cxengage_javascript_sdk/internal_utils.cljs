@@ -41,6 +41,25 @@
         correct-date (- correct-date offset)]
     correct-date))
 
+(defn uuid-to-seconds
+  "As per RFC 4122, extracts the timestamp from a UUID v1, and converts to milliseconds since unix epoch."
+  [uuid]
+  (let [uuid (str uuid)
+        split-id (str/split uuid "-")
+        gregorian-offset 122192928000000000
+        upper-time-bitsv (vector (subs (nth split-id 2) 1))
+        lower-mid-time-bitsv (vec (reverse (subvec split-id 0 2)))]
+    (-> upper-time-bitsv
+        (into lower-mid-time-bitsv)
+        (str/join)
+        (js/parseInt 16)
+        (- gregorian-offset)
+        (/ 10000)
+        (js/Math.floor))))
+
+(defn uuid-came-before? [before after]
+  (< (uuid-to-seconds before) (uuid-to-seconds after)))
+
 (defn update-local-time-offset
   [response]
   (when-let [timestamp (get-in response [:api-response :result :timestamp])]
