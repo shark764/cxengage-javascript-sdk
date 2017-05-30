@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CXV1-9225 Intelligently ack / delete messages from SQS based on timestamp in session-id
 * CXV1-8548 Expose branding API via SDK
 * CXV1-9500 Centralize all API requests under domain
 * CXV1-9595 Filter out disposition code messages that are using the platform default disposition lists
