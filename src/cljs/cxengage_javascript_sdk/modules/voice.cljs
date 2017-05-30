@@ -130,9 +130,9 @@
                             (= type :transfer-to-queue)
                             (= type :transfer-to-extension)))
                (send-interrupt module :hold {:interaction-id interaction-id}))
-           (iu/send-interrupt* (assoc interrupt-params
-                                      :interaction-id interaction-id
-                                      :callback callback)))))))
+           (rest/send-interrupt* (assoc interrupt-params
+                                        :interaction-id interaction-id
+                                        :callback callback)))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.dial({
@@ -149,7 +149,6 @@
    :topic-key :dial-send-acknowledged}
   [params]
   (let [{:keys [topic phone-number callback]} params
-        tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
         dial-body {:channel-type "voice"
                    :contact-point "click to call"
@@ -157,13 +156,8 @@
                    :direction "outbound"
                    :interaction {:resource-id resource-id}
                    :metadata {}
-                   :source "twilio"}
-        dial-request {:method :post
-                      :url (iu/api-url
-                            "tenants/:tenant-id/interactions"
-                            {:tenant-id tenant-id})
-                      :body dial-body}]
-    (let [dial-response (a/<! (iu/api-request dial-request))
+                   :source "twilio"}]
+    (let [dial-response (a/<! (rest/create-interaction-request dial-body))
           {:keys [api-response status]} dial-response]
       (when (= status 200)
         (p/publish {:topics topic
@@ -240,7 +234,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (defn get-recording [interaction-id tenant-id artifact-id callback]
-  (go (let [audio-recording (a/<! (iu/get-artifact interaction-id tenant-id artifact-id))
+  (go (let [audio-recording (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
             {:keys [api-response status]} audio-recording]
         (when (= status 200)
           (p/publish {:topics (p/get-topic :recording-response)
@@ -255,18 +249,18 @@
   {:validation ::get-recordings-params
    :topic-key :recording-response}
   [params]
-  (let [{:keys [interaction-id topic callback]} params]
-    (let [interaction-files (a/<! (iu/get-interaction-files interaction-id))
-          {:keys [api-response status]} interaction-files
-          {:keys [results]} api-response
-          tenant-id (state/get-active-tenant-id)
-          audio-recordings (filterv #(= (:artifact-type %) "audio-recording") results)]
-      (if (= (count audio-recordings) 0)
-        (p/publish {:topics topic
-                    :response []
-                    :callback callback})
-        (doseq [rec audio-recordings]
-          (get-recording interaction-id tenant-id (:artifact-id rec) callback))))))
+  (let [{:keys [interaction-id topic callback]} params
+        interaction-files (a/<! (rest/get-interaction-artifacts-request interaction-id))
+        {:keys [api-response status]} interaction-files
+        {:keys [results]} api-response
+        tenant-id (state/get-active-tenant-id)
+        audio-recordings (filterv #(= (:artifact-type %) "audio-recording") results)]
+    (if (= (count audio-recordings) 0)
+      (p/publish {:topics topic
+                  :response []
+                  :callback callback})
+      (doseq [rec audio-recordings]
+        (get-recording interaction-id tenant-id (:artifact-id rec) callback)))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Voice Module

@@ -3,6 +3,7 @@
   (:require [cxengage-javascript-sdk.pubsub :as p]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.modules.entities :as ent]
@@ -26,17 +27,17 @@
   (testing "get single user function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-get-user-response [:api-response])]
                  (a/>! resp-chan successful-get-user-response)
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_]
-                                        resp-chan))
+                 (set! rest/api-request (fn [_]
+                                          resp-chan))
                  (p/subscribe "cxengage/entities/get-user-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (ent/get-user {:resource-id "76818798-9075-43d5-a00c-9b8ccff7b1df"}))))))
 
@@ -54,17 +55,17 @@
   (testing "get all users function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-get-users-response [:api-response])]
                  (a/>! resp-chan successful-get-users-response)
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_]
-                                        resp-chan))
+                 (set! rest/api-request (fn [_]
+                                          resp-chan))
                  (p/subscribe "cxengage/entities/get-users-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (ent/get-users))))))
 
@@ -110,17 +111,17 @@
   (testing "get single queue function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-get-queue-response [:api-response])]
                  (a/>! resp-chan successful-get-queue-response)
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_]
-                                        resp-chan))
+                 (set! rest/api-request (fn [_]
+                                          resp-chan))
                  (p/subscribe "cxengage/entities/get-queue-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (ent/get-queue {:queue-id "76818798-9075-43d5-a00c-9b8ccff7b1df"}))))))
 
@@ -138,17 +139,17 @@
   (testing "get all queues function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-get-queues-response [:api-response])]
                  (a/>! resp-chan successful-get-queues-response)
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_]
-                                        resp-chan))
+                 (set! rest/api-request (fn [_]
+                                          resp-chan))
                  (p/subscribe "cxengage/entities/get-queues-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (ent/get-queues))))))
 
@@ -166,17 +167,17 @@
   (testing "get single transfer list function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-get-transfer-list-response [:api-response])]
                  (a/>! resp-chan successful-get-transfer-list-response)
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_]
-                                        resp-chan))
+                 (set! rest/api-request (fn [_]
+                                          resp-chan))
                  (p/subscribe "cxengage/entities/get-transfer-list-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (ent/get-transfer-list {:transfer-list-id "76818798-9075-43d5-a00c-9b8ccff7b1df"}))))))
 
@@ -194,17 +195,17 @@
   (testing "get all transfer lists function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-get-transfer-lists-response [:api-response])]
                  (a/>! resp-chan successful-get-transfer-lists-response)
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_]
-                                        resp-chan))
+                 (set! rest/api-request (fn [_]
+                                          resp-chan))
                  (p/subscribe "cxengage/entities/get-transfer-lists-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (ent/get-transfer-lists))))))
 
@@ -222,17 +223,17 @@
   (testing "get single user function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (get-in successful-update-user-response [:api-response])]
                  (a/>! resp-chan successful-update-user-response)
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_]
-                                        resp-chan))
+                 (set! rest/api-request (fn [_]
+                                          resp-chan))
                  (p/subscribe "cxengage/entities/update-user-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (ent/update-user {:resource-id "76818798-9075-43d5-a00c-9b8ccff7b1df"
                                    :update-body {:first-name "asdfasdf"}}))))))

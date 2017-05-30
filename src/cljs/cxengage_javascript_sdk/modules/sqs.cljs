@@ -9,6 +9,7 @@
             [cxengage-javascript-sdk.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]))
 
@@ -99,14 +100,7 @@
       (if (> (.getTime (js/Date.)) sqs-needs-refresh-time)
         ;; 3/4 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
         (do (log :info "Refreshing SQS integration")
-            (let [tenant-id (state/get-active-tenant-id)
-                  resource-id (state/get-active-user-id)
-                  config-request {:method :get
-                                  :url (iu/api-url
-                                        "tenants/:tenant-id/users/:resource-id/config"
-                                        {:tenant-id tenant-id
-                                         :resource-id resource-id})}
-                  {:keys [status api-response]} (a/<! (iu/api-request config-request))
+            (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
                   user-config (:result api-response)]
               (if (not= status 200)
                 (p/publish {:topics (p/get-topic :failed-to-refresh-sqs-integration)

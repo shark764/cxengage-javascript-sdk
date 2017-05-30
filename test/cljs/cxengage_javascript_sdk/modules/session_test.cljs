@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.modules.session :as session]
             [cxengage-javascript-sdk.pubsub :as p]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.interop-helpers :as ih]
@@ -19,16 +20,16 @@
   (testing "go ready sad path - invalid extension provided"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old iu/api-request
+           (go (let [old rest/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (e/invalid-extension-provided-err)]
                  (a/>! resp-chan {:status 200 :api-response {:result {:nothing :nothing}}})
                  (reset! st/sdk-state test-state)
-                 (set! iu/api-request (fn [_] resp-chan))
+                 (set! rest/api-request (fn [_] resp-chan))
                  (p/subscribe "cxengage/session/state-change-request-acknowledged"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (js->clj error :keywordize-keys true)))
-                                (set! iu/api-request old)
+                                (set! rest/api-request old)
                                 (done)))
                  (session/go-ready {:extension-value "test"}))))))
 

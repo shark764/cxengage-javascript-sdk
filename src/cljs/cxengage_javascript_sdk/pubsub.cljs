@@ -238,26 +238,24 @@
 
 (defn publish
   "Publishes a value (or error) to a specific topic, optionally calling the callback provided and optionally leaving the casing of the response unaltered."
-  ([publish-details]
-   (publish publish-details false))
-  ([publish-details preserve-casing]
-   (let [{:keys [topics response error callback]} publish-details
-         topics (if (string? topics) (conj #{} topics) topics)
-         all-topics (all-topics)
-         topics (ih/camelify topics)
-         error (ih/camelify error)
-         response (if preserve-casing
-                    (clj->js response)
-                    (ih/camelify response))
-         relevant-subscribers (->> topics
-                                   (map get-topic-permutations)
-                                   (flatten)
-                                   (distinct)
-                                   (map get-subscribers-by-topic)
-                                   (filter (complement nil?))
-                                   (flatten))]
-     (doseq [cb relevant-subscribers]
-       (doseq [t topics]
-         (cb error t response)))
-     (when (and (fn? callback) callback) (callback error topics response)))
-   nil))
+  [publish-details]
+  (let [{:keys [topics response error callback preserve-casing?]} publish-details
+        topics (if (string? topics) (conj #{} topics) topics)
+        all-topics (all-topics)
+        topics (ih/camelify topics)
+        error (ih/camelify error)
+        response (if preserve-casing?
+                   (clj->js response)
+                   (ih/camelify response))
+        relevant-subscribers (->> topics
+                                  (map get-topic-permutations)
+                                  (flatten)
+                                  (distinct)
+                                  (map get-subscribers-by-topic)
+                                  (filter (complement nil?))
+                                  (flatten))]
+    (doseq [cb relevant-subscribers]
+      (doseq [t topics]
+        (cb error t response)))
+    (when (and (fn? callback) callback) (callback error topics response)))
+  nil)

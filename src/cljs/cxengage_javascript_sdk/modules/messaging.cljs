@@ -18,6 +18,7 @@
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cognitect.transit :as t]
             [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec :as s])
   (:import goog.crypt))
@@ -124,7 +125,7 @@
                                       (if (= (get (js->clj reason-code :keywordize-keys true) :errorCode) 0)
                                         (log :info "Previous Mqtt Session Successfully Disconnected")
                                         (log :error "Mqtt Connection Lost" {:reasonCode reason-code
-                                                                                  :reasonMessage reason-message}))))
+                                                                            :reasonMessage reason-message}))))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
     (set! (.-onSuccess connect-options) (fn [] (on-connect)))
@@ -211,16 +212,8 @@
   [params]
   (let [{:keys [interaction-id message topic callback]} params
         tenant-id (state/get-active-tenant-id)
-        interrupt-body {:interrupt-type "send-sms"
-                        :interrupt {:message message}
-                        :source "Client"}
-        sms-request {:method :post
-                     :url (iu/api-url
-                           "tenants/:tenant-id/interactions/:interaction-id/interrupts"
-                           {:tenant-id tenant-id
-                            :interaction-id interaction-id})
-                     :body interrupt-body}
-        sms-response (a/<! (iu/api-request sms-request))
+        interrupt-body {:message message}
+        sms-response (a/<! (rest/send-interrupt-request interaction-id "send-sms" interrupt-body))
         {:keys [api-response status]} sms-response]
     (when (= status 200)
       (p/publish {:topics topic
@@ -263,12 +256,7 @@
                   :metadata metadata
                   :interaction {:message message
                                 :resource-id resource-id}}
-        sms-request {:method :post
-                     :url (iu/api-url
-                           "tenants/:tenant-id/interactions"
-                           {:tenant-id tenant-id})
-                     :body sms-body}
-        sms-response (a/<! (iu/api-request sms-request))
+        sms-response (a/<! (rest/create-interaction-request sms-body))
         {:keys [api-response status]} sms-response]
     (when (= status 200)
       (p/publish {:topics topic
@@ -286,7 +274,7 @@
           :opt-un [::specs/callback]))
 
 (defn get-transcript [interaction-id tenant-id artifact-id callback]
-  (go (let [transcript (a/<! (iu/get-artifact interaction-id tenant-id artifact-id))
+  (go (let [transcript (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
             {:keys [api-response status]} transcript]
         (when (= status 200)
           (p/publish {:topics (p/get-topic :transcript-response)
@@ -298,7 +286,7 @@
    :topic-key :transcript-response}
   [params]
   (let [{:keys [interaction-id topic callback]} params
-        interaction-files (a/<! (iu/get-interaction-files interaction-id))
+        interaction-files (a/<! (rest/get-interaction-artifacts-request interaction-id))
         {:keys [api-response status]} interaction-files
         {:keys [results]} api-response
         tenant-id (state/get-active-tenant-id)
