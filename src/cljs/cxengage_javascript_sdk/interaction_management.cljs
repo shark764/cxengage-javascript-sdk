@@ -156,8 +156,9 @@
 
 (defn handle-disposition-codes [message]
   (let [{:keys [interaction-id]} message
-        disposition-code-details (:disposition-codes message)]
-    (when disposition-code-details
+        disposition-code-details (:disposition-codes message)
+        dispositions (:dispositions disposition-code-details)]
+    (when (and disposition-code-details dispositions)
       (state/add-interaction-disposition-code-details! disposition-code-details interaction-id)
       (p/publish {:topics (p/get-topic :disposition-codes-received)
                   :response message}))))
