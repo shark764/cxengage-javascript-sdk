@@ -3,6 +3,7 @@
 ## [Unreleased]
 * CXV1-8548 Expose branding API via SDK
 * CXV1-9500 Centralize all API requests under domain
+* CXV1-9595 Filter out disposition code messages that are using the platform default disposition lists
 
 ## [5.1.1]
 * CXV1-9536 Fixed work offers not accepting the call, and sending expired error
