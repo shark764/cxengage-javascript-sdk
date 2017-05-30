@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [5.2.0]
 * CXV1-9225 Intelligently ack / delete messages from SQS based on timestamp in session-id
 * CXV1-8548 Expose branding API via SDK
 * CXV1-9500 Centralize all API requests under domain
