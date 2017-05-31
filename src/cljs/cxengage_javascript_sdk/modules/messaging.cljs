@@ -308,25 +308,25 @@
   (start [this]
     (let [module-name :messaging
           client-id (state/get-active-user-id)
-          mqtt-integration (state/get-integration-by-type "messaging")
-          mqtt-integration (->> (merge (select-keys mqtt-integration [:region :endpoint])
-                                       (select-keys
-                                        (:credentials mqtt-integration)
-                                        [:secret-key :access-key :session-token]))
-                                (transform-keys camel/->kebab-case-keyword)
-                                (#(rename-keys % {:region :region-name})))]
+          mqtt-integration (state/get-integration-by-type "messaging")]
       (if-not mqtt-integration
         (ih/send-core-message {:type :module-registration-status
                                :status :failure
                                :module-name module-name})
-        (do (mqtt-init mqtt-integration client-id on-msg-fn)
-            (ih/register {:api {:interactions {:messaging {:send-message send-message
-                                                           :get-transcripts get-transcripts
-                                                           :initialize-outbound-sms click-to-sms
-                                                           :send-outbound-sms send-sms-by-interrupt}}}
-                          :module-name module-name})
-            (ih/send-core-message {:type :module-registration-status
-                                   :status :success
-                                   :module-name module-name})))))
+        (let [formatted-integration (->> (merge (select-keys mqtt-integration [:region :endpoint])
+                                                (select-keys
+                                                 (:credentials mqtt-integration)
+                                                 [:secret-key :access-key :session-token]))
+                                         (transform-keys camel/->kebab-case-keyword)
+                                         (#(rename-keys % {:region :region-name})))]
+          (do (mqtt-init formatted-integration client-id on-msg-fn)
+              (ih/register {:api {:interactions {:messaging {:send-message send-message
+                                                             :get-transcripts get-transcripts
+                                                             :initialize-outbound-sms click-to-sms
+                                                             :send-outbound-sms send-sms-by-interrupt}}}
+                            :module-name module-name})
+              (ih/send-core-message {:type :module-registration-status
+                                     :status :success
+                                     :module-name module-name}))))))
   (stop [this])
   (refresh-integration [this]))

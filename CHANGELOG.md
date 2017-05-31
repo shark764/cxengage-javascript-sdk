@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* Fixed MQTT startup error
 
 ## [5.2.0]
 * CXV1-9225 Intelligently ack / delete messages from SQS based on timestamp in session-id
