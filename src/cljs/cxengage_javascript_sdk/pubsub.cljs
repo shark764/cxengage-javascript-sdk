@@ -69,6 +69,7 @@
                  ;; Generic Interaction Topics
                  :work-offer-received "cxengage/interactions/work-offer-received"
                  :screen-pop-received "cxengage/interactions/url-pop-received"
+                 :generic-screen-pop-received "cxengage/interactions/screen-pop-received"
                  :work-initiated-received "cxengage/interactions/work-initiated-received"
                  :disposition-codes-received "cxengage/interactions/disposition-codes-received"
                  :disposition-code-changed "cxengage/interactions/disposition-code-changed"

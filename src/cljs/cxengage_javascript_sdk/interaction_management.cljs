@@ -279,7 +279,9 @@
     (when (and pop-uri (or (= pop-type "external-url") (= pop-type "url")))
       (p/publish {:topics (p/get-topic :url-pop-received)
                   :response {:interaction-id interaction-id
-                             :pop-uri pop-uri}}))))
+                             :pop-uri pop-uri}}))
+    (p/publish {:topics (p/get-topic :generic-screen-pop-received)
+                :response message})))
 
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
