@@ -4,6 +4,7 @@
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs-uuid-utils.core :as uuid]
             [cxengage-javascript-sdk.pubsub :as p]
+            [cljs-sdk-utils.api :as api]
             [cxengage-javascript-sdk.state :as state]
             [cljs.test :refer-macros [deftest is testing run-tests async]]))
 

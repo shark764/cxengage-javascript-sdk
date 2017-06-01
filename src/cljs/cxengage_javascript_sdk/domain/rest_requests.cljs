@@ -3,33 +3,10 @@
                    [lumbajack.macros :refer [log]])
   (:require [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.api :as api]
             [ajax.core :as ajax]
             [cljs.core.async :as a]))
-
-(defn update-local-time-offset
-  [response]
-  (when-let [timestamp (get-in response [:api-response :result :timestamp])]
-    (let [local (js/Date.now)
-          server (js/Date.parse timestamp)
-          offset (- local server)]
-      (state/set-time-offset! offset))))
-
-(defn normalize-response-stucture
-  [[ok? response] preserve-casing? third-party-request?]
-  (if (and (false? ok?)
-           (= (:status response) 200))
-    {:api-response nil :status 200}
-    (let [status (if ok? 200 (get response :status))
-          response (if (or preserve-casing? third-party-request?) response (ih/kebabify response))
-          api-response (if (map? response)
-                         (dissoc response :status)
-                         response)]
-      {:api-response api-response :status status})))
-
-(defn service-unavailable?
-  [status]
-  (= status 503))
 
 (defn file-api-request [request-map]
   (let [response-channel (a/promise-chan)
@@ -37,7 +14,7 @@
         request (merge {:uri url
                         :method method
                         :timeout 120000
-                        :handler #(let [normalized-response (normalize-response-stucture % false true)]
+                        :handler #(let [normalized-response (api/normalize-response-stucture % false true)]
                                     (if callback
                                       (callback normalized-response)
                                       (a/put! response-channel normalized-response)))
@@ -51,39 +28,6 @@
       nil
       response-channel)))
 
-(defn api-request
-  [request-map]
-  (let [resp-chan (a/promise-chan)]
-    (go-loop [failed-attempts 0]
-      (let [response-channel (a/promise-chan)
-            {:keys [method url body preserve-casing? third-party-request?]} request-map
-            request (merge {:uri url
-                            :method method
-                            :timeout 120000
-                            :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? third-party-request?)]
-                                        (update-local-time-offset normalized-response)
-                                        (a/put! response-channel normalized-response))
-                            :format (ajax/json-request-format)
-                            :response-format (if third-party-request?
-                                               (ajax/text-response-format)
-                                               (ajax/json-response-format {:keywords? true}))}
-                           (when body
-                             {:params (if preserve-casing? body (ih/camelify body))})
-                           (when-let [token (state/get-token)]
-                             (if third-party-request?
-                               {}
-                               {:headers {"Authorization" (str "Token " token)}})))]
-        (ajax/ajax-request request)
-        (let [response (a/<! response-channel)
-              {:keys [status]} response]
-          (if (and (service-unavailable? status) (< failed-attempts 3))
-            (do
-              (log :error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
-              (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
-              (recur (inc failed-attempts)))
-            (a/put! resp-chan response)))))
-    resp-chan))
-
 (defn set-direction-request [direction]
   (let [tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
@@ -96,7 +40,7 @@
                            :body {:session-id session-id
                                   :direction direction
                                   :initiator-id resource-id}}]
-    (api-request direction-request)))
+    (api/api-request direction-request)))
 
 (defn get-messaging-interaction-history-request [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -105,7 +49,7 @@
                                "messaging/tenants/:tenant-id/channels/:interaction-id/history"
                                {:tenant-id tenant-id
                                 :interaction-id interaction-id})}]
-    (api-request history-request)))
+    (api/api-request history-request)))
 
 (defn get-messaging-interaction-metadata-request [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -114,7 +58,7 @@
                                 "messaging/tenants/:tenant-id/channels/:interaction-id"
                                 {:tenant-id tenant-id
                                  :interaction-id interaction-id})}]
-    (api-request metadata-request)))
+    (api/api-request metadata-request)))
 
 (defn get-config-request []
   (let [resource-id (state/get-active-user-id)
@@ -124,7 +68,7 @@
                               "tenants/:tenant-id/users/:resource-id/config"
                               {:tenant-id tenant-id
                                :resource-id resource-id})}]
-    (api-request config-request)))
+    (api/api-request config-request)))
 
 (defn create-artifact-request [interaction-id artifact-body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -134,7 +78,7 @@
                               {:tenant-id tenant-id
                                :interaction-id interaction-id})
                         :body artifact-body}]
-    (api-request create-request)))
+    (api/api-request create-request)))
 
 (defn get-user-request []
   (let [resource-id (state/get-active-user-id)
@@ -144,7 +88,7 @@
                                 "tenants/:tenant-id/users/:resource-id"
                                 {:tenant-id tenant-id
                                  :resource-id resource-id})}]
-    (api-request get-user-request)))
+    (api/api-request get-user-request)))
 
 (defn update-user-request [update-user-body]
   (let [resource-id (state/get-active-user-id)
@@ -155,18 +99,18 @@
                                    {:tenant-id tenant-id
                                     :resource-id resource-id})
                              :body update-user-body}]
-    (api-request update-user-request)))
+    (api/api-request update-user-request)))
 
 (defn token-request [token-body]
   (let [token-request {:method :post
                        :url (iu/api-url "tokens")
                        :body token-body}]
-    (api-request token-request)))
+    (api/api-request token-request)))
 
 (defn login-request []
   (let [login-request {:method :post
                        :url (iu/api-url "login")}]
-    (api-request login-request)))
+    (api/api-request login-request)))
 
 (defn update-artifact-request [artifact-body artifact-id interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -177,7 +121,7 @@
                              :interaction-id interaction-id
                              :tenant-id tenant-id})
                       :body artifact-body}]
-    (api-request artifact-req)))
+    (api/api-request artifact-req)))
 
 (defn get-contact-interaction-history-request [contact-id page]
   (let [tenant-id (state/get-active-tenant-id)
@@ -190,7 +134,7 @@
                                    url
                                    {:tenant-id tenant-id
                                     :contact-id contact-id})}]
-    (api-request get-history-request)))
+    (api/api-request get-history-request)))
 
 (defn get-available-stats-request []
   (let [tenant-id (state/get-active-tenant-id)
@@ -198,13 +142,13 @@
                                  :url (iu/api-url
                                        "tenants/:tenant-id/realtime-statistics/available?client=toolabr"
                                        {:tenant-id tenant-id})}]
-    (api-request get-available-stats-req)))
+    (api/api-request get-available-stats-req)))
 
 (defn get-raw-url-request [url]
   (let [manifest-request {:method :get
                           :url url
                           :third-party-request? true}]
-    (api-request manifest-request)))
+    (api/api-request manifest-request)))
 
 (defn get-capacity-request [resource-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -219,7 +163,7 @@
                      {:tenant-id tenant-id})
         capacity-request {:method :get
                           :url (iu/api-url url-string url-params)}]
-    (api-request capacity-request)))
+    (api/api-request capacity-request)))
 
 (defn batch-request [batch-body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -229,7 +173,7 @@
                        :url (iu/api-url
                              "tenants/:tenant-id/realtime-statistics/batch"
                              {:tenant-id tenant-id})}]
-    (api-request batch-request)))
+    (api/api-request batch-request)))
 
 (defn get-artifact-by-id-request [artifact-id interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -239,7 +183,7 @@
                                 {:artifact-id artifact-id
                                  :interaction-id interaction-id
                                  :tenant-id tenant-id})}]
-    (api-request artifact-request)))
+    (api/api-request artifact-request)))
 
 (defn get-interaction-history-request [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -248,7 +192,7 @@
                                "tenants/:tenant-id/interactions/:interaction-id"
                                {:tenant-id tenant-id
                                 :interaction-id interaction-id})}]
-    (api-request history-request)))
+    (api/api-request history-request)))
 
 (defn get-interaction-artifacts-request [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -258,7 +202,7 @@
               :tenant-id tenant-id})
         artifacts-request {:method :get
                            :url url}]
-    (api-request artifacts-request)))
+    (api/api-request artifacts-request)))
 
 (defn save-logs-request [body]
   (let [resource-id (state/get-active-user-id)
@@ -270,7 +214,7 @@
                            :method :post
                            :preserve-casing? true
                            :body body}]
-    (api-request save-logs-request)))
+    (api/api-request save-logs-request)))
 
 (defn start-session-request []
   (let [resource-id (state/get-active-user-id)
@@ -280,7 +224,7 @@
                                  "tenants/:tenant-id/presence/:resource-id/session"
                                  {:tenant-id tenant-id
                                   :resource-id resource-id})}]
-    (api-request start-session-req)))
+    (api/api-request start-session-req)))
 
 (defn heartbeat-request []
   (let [resource-id (state/get-active-user-id)
@@ -292,7 +236,7 @@
                              "tenants/:tenant-id/presence/:resource-id/heartbeat"
                              {:tenant-id tenant-id
                               :resource-id resource-id})}]
-    (api-request heartbeat-req)))
+    (api/api-request heartbeat-req)))
 
 (defn change-state-request [change-state-body]
   (let [resource-id (state/get-active-user-id)
@@ -303,7 +247,7 @@
                                     {:tenant-id tenant-id
                                      :resource-id resource-id})
                               :body change-state-body}]
-    (api-request change-state-request)))
+    (api/api-request change-state-request)))
 
 (defn get-contact-request [contact-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -313,7 +257,7 @@
                                    "tenants/:tenant-id/contacts/:contact-id"
                                    {:tenant-id tenant-id
                                     :contact-id contact-id})}]
-    (api-request get-contact-request)))
+    (api/api-request get-contact-request)))
 
 (defn get-contacts-request []
   (let [tenant-id (state/get-active-tenant-id)
@@ -322,7 +266,7 @@
                              :url (iu/api-url
                                    "tenants/:tenant-id/contacts"
                                    {:tenant-id tenant-id})}]
-    (api-request get-contact-request)))
+    (api/api-request get-contact-request)))
 
 (defn search-contacts-request [query]
   (let [tenant-id (state/get-active-tenant-id)
@@ -331,7 +275,7 @@
                                 :url (iu/api-url
                                       (str "tenants/:tenant-id/contacts" query)
                                       {:tenant-id tenant-id})}]
-    (api-request search-contact-request)))
+    (api/api-request search-contact-request)))
 
 (defn create-contact-request [create-contact-body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -341,7 +285,7 @@
                                       "tenants/:tenant-id/contacts"
                                       {:tenant-id tenant-id})
                                 :body create-contact-body}]
-    (api-request create-contact-request)))
+    (api/api-request create-contact-request)))
 
 (defn update-contact-request [contact-id update-contact-body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -352,7 +296,7 @@
                                       {:tenant-id tenant-id
                                        :contact-id contact-id})
                                 :body update-contact-body}]
-    (api-request update-contact-request)))
+    (api/api-request update-contact-request)))
 
 (defn delete-contact-request [contact-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -362,7 +306,7 @@
                                       "tenants/:tenant-id/contacts/:contact-id"
                                       {:tenant-id tenant-id
                                        :contact-id contact-id})}]
-    (api-request delete-contact-request)))
+    (api/api-request delete-contact-request)))
 
 (defn merge-contact-request [merge-contacts-body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -372,7 +316,7 @@
                                      "tenants/:tenant-id/contacts/merge"
                                      {:tenant-id tenant-id})
                                :body merge-contacts-body}]
-    (api-request merge-contact-request)))
+    (api/api-request merge-contact-request)))
 
 (defn list-attributes-request []
   (let [tenant-id (state/get-active-tenant-id)
@@ -381,7 +325,7 @@
                                  :url (iu/api-url
                                        "tenants/:tenant-id/contacts/attributes"
                                        {:tenant-id tenant-id})}]
-    (api-request list-attributes-request)))
+    (api/api-request list-attributes-request)))
 
 (defn get-layout-request [layout-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -391,7 +335,7 @@
                                   "tenants/:tenant-id/contacts/layouts/:layout-id"
                                   {:tenant-id tenant-id
                                    :layout-id layout-id})}]
-    (api-request get-layout-request)))
+    (api/api-request get-layout-request)))
 
 (defn list-layouts-request []
   (let [tenant-id (state/get-active-tenant-id)
@@ -400,7 +344,7 @@
                               :url (iu/api-url
                                     "tenants/:tenant-id/contacts/layouts"
                                     {:tenant-id tenant-id})}]
-    (api-request list-layouts-request)))
+    (api/api-request list-layouts-request)))
 
 (defn create-interaction-request [interaction-body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -409,7 +353,7 @@
                                           "tenants/:tenant-id/interactions"
                                           {:tenant-id tenant-id})
                                     :body interaction-body}]
-    (api-request create-interaction-request)))
+    (api/api-request create-interaction-request)))
 
 (defn get-note-request [interaction-id note-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -419,7 +363,7 @@
                                 {:tenant-id tenant-id
                                  :interaction-id interaction-id
                                  :note-id note-id})}]
-    (api-request get-note-request)))
+    (api/api-request get-note-request)))
 
 (defn get-notes-request [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -428,7 +372,7 @@
                                  "tenants/:tenant-id/interactions/:interaction-id/notes?contents=true"
                                  {:tenant-id tenant-id
                                   :interaction-id interaction-id})}]
-    (api-request get-notes-request)))
+    (api/api-request get-notes-request)))
 
 (defn update-note-request [interaction-id note-id body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -439,7 +383,7 @@
                                    {:tenant-id tenant-id
                                     :interaction-id interaction-id
                                     :note-id note-id})}]
-    (api-request update-note-request)))
+    (api/api-request update-note-request)))
 
 (defn create-note-request [interaction-id body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -449,7 +393,7 @@
                                    "tenants/:tenant-id/interactions/:interaction-id/notes?contents=true"
                                    {:tenant-id tenant-id
                                     :interaction-id interaction-id})}]
-    (api-request create-note-request)))
+    (api/api-request create-note-request)))
 
 (defn crud-entity-request
   ([method entity-type entity-id]
@@ -463,7 +407,7 @@
          get-request (cond-> {:method method
                               :url get-url}
                        entity-body (assoc :body entity-body))]
-     (api-request get-request))))
+     (api/api-request get-request))))
 
 (defn send-flow-action-request [interaction-id action-id body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -474,7 +418,7 @@
                                :interaction-id interaction-id
                                :action-id action-id})
                         :body body}]
-    (api-request action-request)))
+    (api/api-request action-request)))
 
 (defn crud-entities-request [method entity-type]
   (let [tenant-id (state/get-active-tenant-id)
@@ -483,7 +427,7 @@
                  {:tenant-id tenant-id})
         get-request {:method method
                      :url get-url}]
-    (api-request get-request)))
+    (api/api-request get-request)))
 
 (defn send-interrupt-request [interaction-id interrupt-type interrupt-body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -495,7 +439,7 @@
                            :body {:source "client"
                                   :interrupt-type interrupt-type
                                   :interrupt interrupt-body}}]
-    (api-request interrupt-request)))
+    (api/api-request interrupt-request)))
 
 ;; TODO delete me once voice module has been split-out
 (defn send-interrupt*
@@ -517,4 +461,4 @@
                               :url (iu/api-url
                                     "tenants/:tenant-id/branding"
                                     {:tenant-id tenant-id})}]
-    (api-request get-branding-request)))
+    (api/api-request get-branding-request)))

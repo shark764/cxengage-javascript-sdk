@@ -3,10 +3,11 @@
   (:require [cxengage-javascript-sdk.modules.session :as session]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
             [cxengage-javascript-sdk.state :as st]
+            [cljs-sdk-utils.api :as api]
             [cljs.core.async :as a]
             [cljs.test :refer-macros [deftest is testing async]]))
 
@@ -20,16 +21,16 @@
   (testing "go ready sad path - invalid extension provided"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      resp-chan (a/promise-chan)
                      pubsub-expected-response (e/invalid-extension-provided-err)]
                  (a/>! resp-chan {:status 200 :api-response {:result {:nothing :nothing}}})
                  (reset! st/sdk-state test-state)
-                 (set! rest/api-request (fn [_] resp-chan))
+                 (set! api/api-request (fn [_] resp-chan))
                  (p/subscribe "cxengage/session/state-change-request-acknowledged"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (js->clj error :keywordize-keys true)))
-                                (set! rest/api-request old)
+                                (set! api/api-request old)
                                 (done)))
                  (session/go-ready {:extension-value "test"}))))))
 

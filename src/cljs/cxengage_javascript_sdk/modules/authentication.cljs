@@ -1,16 +1,17 @@
 (ns cxengage-javascript-sdk.modules.authentication
-  (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+  (:require-macros [cljs-sdk-utils.macros :refer [def-sdk-fn]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.domain.specs :as specs]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.specs :as specs]
+            [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
+            [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.interop-helpers :as ih]))
+            [cljs-sdk-utils.interop-helpers :as ih]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.authentication.logout();
@@ -76,7 +77,7 @@
             (let [user-identity (:result api-response)
                   tenants (:tenants user-identity)]
               (state/set-user-identity! user-identity)
-              (p/publish {:topics (p/get-topic :tenant-list)
+              (p/publish {:topics (topics/get-topic :tenant-list)
                           :response tenants})
               (p/publish {:topics topic
                           :response user-identity

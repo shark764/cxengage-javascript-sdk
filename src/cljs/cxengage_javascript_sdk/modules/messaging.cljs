@@ -1,7 +1,7 @@
 (ns cxengage-javascript-sdk.modules.messaging
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
+                   [cljs-sdk-utils.macros :refer [def-sdk-fn]])
   (:require [cljsjs.paho]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
@@ -13,11 +13,12 @@
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.domain.specs :as specs]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cljs-sdk-utils.specs :as specs]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.protocols :as pr]
+            [cljs-sdk-utils.topics :as topics]
             [cognitect.transit :as t]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec :as s])
@@ -94,7 +95,7 @@
 (defn send-message-impl
   [payload topic callback]
   (let [msg (Paho.MQTT.Message. payload)
-        pubsub-topic (p/get-topic :send-message-acknowledged)]
+        pubsub-topic (topics/get-topic :send-message-acknowledged)]
     (set! (.-destinationName msg) topic)
     (set! (.-qos msg) 1)
     (.send (state/get-mqtt-client) msg)
@@ -107,7 +108,7 @@
 
 (defn on-failure [msg]
   (log :error "Mqtt Client failed to connect " msg)
-  (p/publish {:topics (p/get-topic :mqtt-failed-to-connect)
+  (p/publish {:topics (topics/get-topic :mqtt-failed-to-connect)
               :error (e/failed-to-connect-to-mqtt-err)})
   (ih/send-core-message {:type :module-registration-status
                          :status :failure
@@ -277,7 +278,7 @@
   (go (let [transcript (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
             {:keys [api-response status]} transcript]
         (when (= status 200)
-          (p/publish {:topics (p/get-topic :transcript-response)
+          (p/publish {:topics (topics/get-topic :transcript-response)
                       :response (:files api-response)
                       :callback callback})))))
 

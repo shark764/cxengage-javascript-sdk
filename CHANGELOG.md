@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CLJS SDK Utils split out
 * Publish the latest extension list in a couple more places
 
 ## [5.2.1]

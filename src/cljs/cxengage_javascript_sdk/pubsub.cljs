@@ -2,9 +2,9 @@
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [cljs.spec :as s]
             [clojure.string :as string]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
             [cljs-uuid-utils.core :as id]
-            [cxengage-javascript-sdk.domain.specs :as specs]))
+            [cljs-sdk-utils.specs :as specs]))
 
 (def sdk-subscriptions (atom {}))
 

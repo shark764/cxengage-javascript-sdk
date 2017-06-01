@@ -1,16 +1,17 @@
 (ns cxengage-javascript-sdk.modules.reporting
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
+                   [cljs-sdk-utils.macros :refer [def-sdk-fn]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.protocols :as pr]
+            [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cljs-sdk-utils.specs :as specs]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs-uuid-utils.core :as uuid]))
 
@@ -18,7 +19,7 @@
 
 (defn start-polling
   [module]
-  (let [topic (p/get-topic :batch-response)
+  (let [topic (topics/get-topic :batch-response)
         polling-delay (st/get-reporting-refresh-rate)]
     (go-loop []
       (a/<! (a/timeout polling-delay))
@@ -65,7 +66,7 @@
     (let [batch-body {:requests (:statistics @stat-subscriptions)}
           {:keys [api-response status]} (a/<! (rest/batch-request batch-body))
           {:keys [results]} api-response
-          batch-topic (p/get-topic :batch-response)]
+          batch-topic (topics/get-topic :batch-response)]
       (when (= status 200)
         (p/publish {:topics batch-topic
                     :response results

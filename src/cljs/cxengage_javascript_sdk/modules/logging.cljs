@@ -1,13 +1,13 @@
 (ns cxengage-javascript-sdk.modules.logging
-  (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+  (:require-macros [cljs-sdk-utils.macros :refer [def-sdk-fn]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cljs-sdk-utils.specs :as specs]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.state :as state]
             [cljs-uuid-utils.core :as uuid]

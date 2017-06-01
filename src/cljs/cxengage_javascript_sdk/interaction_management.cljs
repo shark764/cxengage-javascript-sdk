@@ -5,9 +5,10 @@
             [clojure.string :refer [starts-with? lower-case]]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.modules.messaging :as messaging]))
 
@@ -16,10 +17,10 @@
             {:keys [api-response status]} history-response
             {:keys [result]} api-response]
         (if (not= status 200)
-          (p/publish {:topics (p/get-topic :failed-to-retrieve-messaging-history)
+          (p/publish {:topics (topics/get-topic :failed-to-retrieve-messaging-history)
                       :error (e/failed-to-retrieve-messaging-history-err)})
           (do (state/add-messages-to-history! interaction-id result)
-              (p/publish {:topics (p/get-topic :messaging-history-received)
+              (p/publish {:topics (topics/get-topic :messaging-history-received)
                           :response (state/get-interaction-messaging-history interaction-id)}))))))
 
 (defn get-messaging-metadata [interaction-id]
@@ -27,7 +28,7 @@
             {:keys [api-response status]} metadata-response
             {:keys [result]} api-response]
         (if (not= status 200)
-          (p/publish {:topics (p/get-topic :failed-to-retrieve-messaging-metadata)
+          (p/publish {:topics (topics/get-topic :failed-to-retrieve-messaging-metadata)
                       :error (e/failed-to-retrieve-messaging-metadata-err)})
           (do (state/add-messaging-interaction-metadata! result)
               (get-messaging-history interaction-id))))))
@@ -36,7 +37,7 @@
   (go (let [artifact-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
             {:keys [status api-response]} artifact-response]
         (if (not= status 200)
-          (p/publish {:topics (p/get-topic :email-artifact-received)
+          (p/publish {:topics (topics/get-topic :email-artifact-received)
                       :error (e/failed-to-retrieve-email-artifact-err)})
           (do (log :info (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
               (state/add-email-artifact-data interaction-id api-response))))))
@@ -58,7 +59,7 @@
                                                        (starts-with? (lower-case (:content-type %)) "text/html")) files)))
               manifest-body (assoc manifest-body :artifact-id artifact-id)]
           (log :info (str "[Email Processing] Email manifest received: " (js/JSON.stringify (clj->js manifest-body) nil 2)))
-          (p/publish {:topics (p/get-topic :details-received)
+          (p/publish {:topics (topics/get-topic :details-received)
                       :response {:interaction-id interaction-id
                                  :body manifest-body}})
           (state/add-email-manifest-details interaction-id manifest-body)
@@ -66,7 +67,7 @@
             (let [plain-body-response (a/<! (rest/get-raw-url-request plain-body-url))
                   plain-body (:api-response plain-body-response)]
               (log :info (str "[Email Processing] Email plain body received: " plain-body))
-              (p/publish {:topics (p/get-topic :plain-body-received)
+              (p/publish {:topics (topics/get-topic :plain-body-received)
                           :response {:interaction-id interaction-id
                                      :body plain-body}})))
           (when (not= 0 (count attachments))
@@ -76,13 +77,13 @@
                                          (dissoc :url)
                                          (assoc :artifact-id artifact-id)) attachments)]
               (log :info (str "[Email Processing] Attachment list received: " (js/JSON.stringify (clj->js attachments) nil 2)))
-              (p/publish {:topics (p/get-topic :attachment-list)
+              (p/publish {:topics (topics/get-topic :attachment-list)
                           :response attachments})))
           (when html-body-url
             (let [html-body-response (a/<! (rest/get-raw-url-request html-body-url))
                   html-body (:api-response html-body-response)]
               (log :info (str "[Email Processing] HTML body received: " html-body))
-              (p/publish {:topics (p/get-topic :html-body-received)
+              (p/publish {:topics (topics/get-topic :html-body-received)
                           :response {:interaction-id interaction-id
                                      :body html-body}})))))))
 
@@ -101,7 +102,7 @@
         (when (and (= channel-type "email") (= direction "inbound"))
           (let [{:keys [interaction-id artifact-id]} message]
             (get-email-artifact-data interaction-id artifact-id)))
-        (p/publish {:topics (p/get-topic :work-offer-received)
+        (p/publish {:topics (topics/get-topic :work-offer-received)
                     :response message}))))
   nil)
 
@@ -114,27 +115,27 @@
         from (:from payload)]
     (log :info "[Messaging] payload prior to filtering:" payload)
     (when (= (:type payload) "message")
-      (p/publish {:topics (p/get-topic :new-message-received)
+      (p/publish {:topics (topics/get-topic :new-message-received)
                   :response (:payload (state/augment-messaging-payload {:payload payload}))})
       (state/add-messages-to-history! interaction-id [{:payload payload}]))))
 
 (defn handle-resource-state-change [message]
   (state/set-user-session-state! message)
   (if (not= (:state message) "offline")
-    (p/publish {:topics (p/get-topic :presence-state-changed)
+    (p/publish {:topics (topics/get-topic :presence-state-changed)
                 :response (select-keys message [:state :available-states :direction :reason :reason-id :reason-list-id])})
-    (p/publish {:topics (p/get-topic :session-ended)
+    (p/publish {:topics (topics/get-topic :session-ended)
                 :response true})))
 
 (defn handle-work-initiated [message]
-  (p/publish {:topics (p/get-topic :work-initiated-received)
+  (p/publish {:topics (topics/get-topic :work-initiated-received)
               :response message}))
 
 (defn handle-work-rejected [message]
   (let [{:keys [interaction-id]} message]
     (when (state/find-interaction-location interaction-id)
       (state/transition-interaction! :pending :past interaction-id))
-    (p/publish {:topics (p/get-topic :work-rejected-received)
+    (p/publish {:topics (topics/get-topic :work-rejected-received)
                 :response {:interaction-id interaction-id}})))
 
 (defn handle-custom-fields [message]
@@ -143,7 +144,7 @@
                               :interaction-id interaction-id}]
     (when (state/find-interaction-location interaction-id)
       (state/add-interaction-custom-field-details! custom-field-details interaction-id))
-    (p/publish {:topics (p/get-topic :custom-fields-received)
+    (p/publish {:topics (topics/get-topic :custom-fields-received)
                 :response custom-field-details})))
 
 (defn handle-disposition-codes [message]
@@ -159,7 +160,7 @@
     (when (and disposition-code-details dispositions)
       (when (state/find-interaction-location interaction-id)
         (state/add-interaction-disposition-code-details! disposition-code-details interaction-id))
-      (p/publish {:topics (p/get-topic :disposition-codes-received)
+      (p/publish {:topics (topics/get-topic :disposition-codes-received)
                   :response message}))))
 
 (defn handle-session-start [message]
@@ -174,7 +175,7 @@
         {:keys [direction]} interaction
         channel-type (get interaction :channel-type)]
     (state/transition-interaction! :pending :active interaction-id)
-    (p/publish {:topics (p/get-topic :work-accepted-received)
+    (p/publish {:topics (topics/get-topic :work-accepted-received)
                 :response {:interaction-id interaction-id
                            :active-resources active-resources
                            :customer-on-hold customer-on-hold
@@ -193,7 +194,7 @@
                 (state/store-email-reply-artifact-id artifact-id interaction-id)
                 (when (= direction "inbound")
                   (get-incoming-email-bodies interaction-id)))
-              (p/publish {:topics (p/get-topic :failed-to-create-email-reply-artifact)
+              (p/publish {:topics (topics/get-topic :failed-to-create-email-reply-artifact)
                           :error (e/failed-to-create-email-reply-artifact-err)})))))))
 
 (defn handle-work-ended [message]
@@ -206,44 +207,44 @@
       (let [connection (state/get-twilio-device)]
         (.disconnectAll connection)))
     (state/transition-interaction! :active :past interaction-id)
-    (p/publish {:topics (p/get-topic :work-ended-received)
+    (p/publish {:topics (topics/get-topic :work-ended-received)
                 :response {:interaction-id interaction-id}})))
 
 (defn handle-customer-hold [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :customer-hold)
+    (p/publish {:topics (topics/get-topic :customer-hold)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-customer-resume [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :customer-resume)
+    (p/publish {:topics (topics/get-topic :customer-resume)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-resource-mute [message]
-  (p/publish {:topics (p/get-topic :resource-muted)
+  (p/publish {:topics (topics/get-topic :resource-muted)
               :response message}))
 
 (defn handle-resource-unmute [message]
-  (p/publish {:topics (p/get-topic :resource-unmuted)
+  (p/publish {:topics (topics/get-topic :resource-unmuted)
               :response message}))
 
 (defn handle-recording-start [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :recording-started)
+    (p/publish {:topics (topics/get-topic :recording-started)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-recording-stop [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :recording-ended)
+    (p/publish {:topics (topics/get-topic :recording-ended)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
 (defn handle-transfer-connected [message]
   (let [{:keys [interaction-id resource-id]} message]
-    (p/publish {:topics (p/get-topic :transfer-connected)
+    (p/publish {:topics (topics/get-topic :transfer-connected)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
@@ -253,7 +254,7 @@
       (state/add-script-to-interaction! interaction-id {:sub-id sub-id
                                                         :action-id action-id
                                                         :script script}))
-    (p/publish {:topics (p/get-topic :script-received)
+    (p/publish {:topics (topics/get-topic :script-received)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id
                            :sub-id sub-id
@@ -263,28 +264,28 @@
   nil)
 
 (defn handle-resource-added [message]
-  (p/publish {:topics (p/get-topic :resource-added-received)
+  (p/publish {:topics (topics/get-topic :resource-added-received)
               :response message}))
 
 (defn handle-resource-removed [message]
-  (p/publish {:topics (p/get-topic :resource-removed-received)
+  (p/publish {:topics (topics/get-topic :resource-removed-received)
               :response message}))
 
 (defn handle-resource-hold [message]
-  (p/publish {:topics (p/get-topic :resource-hold-received)
+  (p/publish {:topics (topics/get-topic :resource-hold-received)
               :response message}))
 
 (defn handle-resource-resume [message]
-  (p/publish {:topics (p/get-topic :resource-resume-received)
+  (p/publish {:topics (topics/get-topic :resource-resume-received)
               :response message}))
 
 (defn handle-screen-pop [message]
   (let [{:keys [pop-uri pop-type interaction-id]} message]
     (when (and pop-uri (or (= pop-type "external-url") (= pop-type "url")))
-      (p/publish {:topics (p/get-topic :url-pop-received)
+      (p/publish {:topics (topics/get-topic :url-pop-received)
                   :response {:interaction-id interaction-id
                              :pop-uri pop-uri}}))
-    (p/publish {:topics (p/get-topic :generic-screen-pop-received)
+    (p/publish {:topics (topics/get-topic :generic-screen-pop-received)
                 :response message})))
 
 (defn handle-wrapup [message]
@@ -292,21 +293,21 @@
         {:keys [interaction-id]} message]
     (when (state/find-interaction-location interaction-id)
       (state/add-interaction-wrapup-details! wrapup-details interaction-id))
-    (p/publish {:topics (p/get-topic :wrapup-details-received)
+    (p/publish {:topics (topics/get-topic :wrapup-details-received)
                 :response (assoc wrapup-details :interaction-id interaction-id)})))
 
 (defn handle-wrapup-started
   [message]
   (let [{:keys [interaction-id]} message
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
-    (p/publish {:topics (p/get-topic :wrapup-started)
+    (p/publish {:topics (topics/get-topic :wrapup-started)
                 :response {:interaction-id interaction-id}})))
 
 (defn handle-wrapup-ended
   [message]
   (let [{:keys [interaction-id]} message
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
-    (p/publish {:topics (p/get-topic :wrapup-ended)
+    (p/publish {:topics (topics/get-topic :wrapup-ended)
                 :response {:interaction-id interaction-id}})))
 
 (defn msg-router [message]
@@ -399,7 +400,7 @@
     (if inferred-msg
       (msg-router inferred-msg)
       (do (log :warn "Unable to infer message type from sqs")
-          (p/publish {:topics (p/get-topic :unknown-agent-notification-type-received)
+          (p/publish {:topics (topics/get-topic :unknown-agent-notification-type-received)
                       :error (e/unknown-agent-notification-type-err)})
           nil))))
 

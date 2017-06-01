@@ -1,19 +1,18 @@
 (ns cxengage-javascript-sdk.modules.interaction
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
+                   [cljs-sdk-utils.macros :refer [def-sdk-fn]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.domain.specs :as specs]
-            [cxengage-cljs-utils.core :as cxu]
-            [cxengage-javascript-sdk.domain.errors :as err]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cljs-sdk-utils.specs :as specs]
+            [cljs-sdk-utils.errors :as err]
+            [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.interaction-management :as int]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]))
 
 (s/def ::generic-interaction-fn-params

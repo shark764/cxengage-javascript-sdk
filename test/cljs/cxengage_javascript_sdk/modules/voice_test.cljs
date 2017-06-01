@@ -5,7 +5,9 @@
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.api :as api]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
@@ -20,7 +22,7 @@
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
                  interaction-id (str (id/make-random-uuid))
-                 topic (p/get-topic :cancel-dial-acknowledged)]
+                 topic (topics/get-topic :cancel-dial-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
