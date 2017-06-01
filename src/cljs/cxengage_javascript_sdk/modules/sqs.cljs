@@ -58,14 +58,17 @@
       ;; returning to the queue; consequently,
       ;; the newer session can delete dead messages in this queue as per
       ;; the second use case above.
-      (when (nil? current-session-id)
-        nil)
-      (when (iu/uuid-came-before? session-id current-session-id)
-        (delete-message-fn receipt-handle)
-        nil)
-      (when (= (state/get-session-id) session-id)
-        (delete-message-fn receipt-handle)
-        body))))
+      (if (nil? session-id)
+        (do (log :error "No session ID present on message:" parsed-body " unable to parse.")
+            nil)
+        (do (when (nil? current-session-id)
+              nil)
+            (when (iu/uuid-came-before? session-id current-session-id)
+              (delete-message-fn receipt-handle)
+              nil)
+            (when (= (state/get-session-id) session-id)
+              (delete-message-fn receipt-handle)
+              body))))))
 
 (defn delete-message*
   [sqs {:keys [queue-url]} receipt-handle]

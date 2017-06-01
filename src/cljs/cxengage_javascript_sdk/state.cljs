@@ -77,7 +77,8 @@
     (not= nil (get-in @sdk-state [:interactions :pending interaction-id])) :pending
     (not= nil (get-in @sdk-state [:interactions :active interaction-id])) :active
     (not= nil (get-in @sdk-state [:interactions :past interaction-id])) :past
-    :else (log :error "Unable to find interaction location - we have never received that interaction")))
+    :else (do (log :warn "Unable to find interaction location - we have never received that interaction")
+              false)))
 
 (defn get-all-pending-interactions []
   (get-in @sdk-state [:interactions :pending]))

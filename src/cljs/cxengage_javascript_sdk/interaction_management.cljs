@@ -132,7 +132,8 @@
 
 (defn handle-work-rejected [message]
   (let [{:keys [interaction-id]} message]
-    (state/transition-interaction! :pending :past interaction-id)
+    (when (state/find-interaction-location interaction-id)
+      (state/transition-interaction! :pending :past interaction-id))
     (p/publish {:topics (p/get-topic :work-rejected-received)
                 :response {:interaction-id interaction-id}})))
 
@@ -140,7 +141,8 @@
   (let [{:keys [interaction-id]} message
         custom-field-details {:custom-fields (:custom-fields message)
                               :interaction-id interaction-id}]
-    (state/add-interaction-custom-field-details! custom-field-details interaction-id)
+    (when (state/find-interaction-location interaction-id)
+      (state/add-interaction-custom-field-details! custom-field-details interaction-id))
     (p/publish {:topics (p/get-topic :custom-fields-received)
                 :response custom-field-details})))
 
@@ -155,7 +157,8 @@
     ;; identify whether or not it is that list is if the list of codes comes
     ;; under the key of "items" VS under the key of "dispositions".
     (when (and disposition-code-details dispositions)
-      (state/add-interaction-disposition-code-details! disposition-code-details interaction-id)
+      (when (state/find-interaction-location interaction-id)
+        (state/add-interaction-disposition-code-details! disposition-code-details interaction-id))
       (p/publish {:topics (p/get-topic :disposition-codes-received)
                   :response message}))))
 
@@ -246,9 +249,10 @@
 
 (defn handle-script-received [message]
   (let [{:keys [interaction-id sub-id action-id resource-id script]} message]
-    (state/add-script-to-interaction! interaction-id {:sub-id sub-id
-                                                      :action-id action-id
-                                                      :script script})
+    (when (state/find-interaction-location interaction-id)
+      (state/add-script-to-interaction! interaction-id {:sub-id sub-id
+                                                        :action-id action-id
+                                                        :script script}))
     (p/publish {:topics (p/get-topic :script-received)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id
@@ -286,9 +290,10 @@
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
         {:keys [interaction-id]} message]
-    (do (state/add-interaction-wrapup-details! wrapup-details interaction-id)
-        (p/publish {:topics (p/get-topic :wrapup-details-received)
-                    :response (assoc wrapup-details :interaction-id interaction-id)}))))
+    (when (state/find-interaction-location interaction-id)
+      (state/add-interaction-wrapup-details! wrapup-details interaction-id))
+    (p/publish {:topics (p/get-topic :wrapup-details-received)
+                :response (assoc wrapup-details :interaction-id interaction-id)})))
 
 (defn handle-wrapup-started
   [message]
