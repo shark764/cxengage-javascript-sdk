@@ -194,10 +194,11 @@
   [params]
   (let [{:keys [callback topic extension-value]} params
         {:keys [status api-response]} (a/<! (rest/get-user-request))
+        {:keys [result]} api-response
         extensions (get-in api-response [:result :extensions])]
     (when (= status 200)
       (p/publish {:topics (p/get-topic :extension-list)
-                  :response (select-keys api-response [:active-extension :extensions])})
+                  :response (select-keys result [:active-extension :extensions])})
       (state/set-extensions! extensions)
       (let [new-extension (state/get-extension-by-value extension-value)
             active-extension (state/get-active-extension)]
