@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [5.2.1]
 * Fixed MQTT startup error
 * Don't associate interaction data for interactions that don't exist
 * Don't try and parse agent notifications that don't have a session ID present
