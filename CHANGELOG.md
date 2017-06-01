@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* Publish the latest extension list in a couple more places
 
 ## [5.2.1]
 * Fixed MQTT startup error

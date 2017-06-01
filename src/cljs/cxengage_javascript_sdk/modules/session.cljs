@@ -196,6 +196,8 @@
         {:keys [status api-response]} (a/<! (rest/get-user-request))
         extensions (get-in api-response [:result :extensions])]
     (when (= status 200)
+      (p/publish {:topics (p/get-topic :extension-list)
+                  :response (select-keys api-response [:active-extension :extensions])})
       (state/set-extensions! extensions)
       (let [new-extension (state/get-extension-by-value extension-value)
             active-extension (state/get-active-extension)]
@@ -221,6 +223,8 @@
                               :error (e/failed-to-get-session-config-err)
                               :callback callback})
                   (do (state/set-config! user-config)
+                      (p/publish {:topics (p/get-topic :extension-list)
+                                  :response (select-keys user-config [:active-extension :extensions])})
                       (ih/send-core-message {:type :config-ready})
                       (p/publish {:topics (p/get-topic :config-response)
                                   :response user-config
