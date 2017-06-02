@@ -1,16 +1,17 @@
 (ns cxengage-javascript-sdk.modules.voice
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]])
+                   [cljs-sdk-utils.macros :refer [def-sdk-fn]])
   (:require [cljsjs.paho]
             [cljs.core.async :as a]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.specs :as specs]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.specs :as specs]
+            [cljs-sdk-utils.topics :as topics]
+            [cljs-sdk-utils.protocols :as pr]
+            [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec :as s]))
@@ -47,77 +48,77 @@
          interrupt-params (case type
                             :hold {:validation ::generic-voice-interaction-fn-params
                                    :interrupt-type "customer-hold"
-                                   :topic (p/get-topic :hold-acknowledged)
+                                   :topic (topics/get-topic :hold-acknowledged)
                                    :interrupt-body simple-interrupt-body}
                             :resume {:validation ::generic-voice-interaction-fn-params
                                      :interrupt-type "customer-resume"
-                                     :topic (p/get-topic :resume-acknowledged)
+                                     :topic (topics/get-topic :resume-acknowledged)
                                      :interrupt-body simple-interrupt-body}
                             :mute {:validation ::generic-voice-interaction-fn-params
                                    :interrupt-type "mute-resource"
-                                   :topic (p/get-topic :mute-acknowledged)
+                                   :topic (topics/get-topic :mute-acknowledged)
                                    :interrupt-body target-interrupt-body}
                             :unmute {:validation ::generic-voice-interaction-fn-params
                                      :interrupt-type "unmute-resource"
-                                     :topic (p/get-topic :unmute-acknowledged)
+                                     :topic (topics/get-topic :unmute-acknowledged)
                                      :interrupt-body target-interrupt-body}
                             :resource-hold {:validation ::generic-voice-interaction-fn-params
                                             :interrupt-type "resource-hold"
-                                            :topic (p/get-topic :resource-hold-acknowledged)
+                                            :topic (topics/get-topic :resource-hold-acknowledged)
                                             :interrupt-body target-interrupt-body}
                             :resource-resume {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "resource-resume"
-                                              :topic (p/get-topic :resource-resume-acknowledged)
+                                              :topic (topics/get-topic :resource-resume-acknowledged)
                                               :interrupt-body target-interrupt-body}
                             :resume-all {:validation ::generic-voice-interaction-fn-params
                                          :interrupt-type "resume-all"
-                                         :topic (p/get-topic :resume-all-acknowledged)
+                                         :topic (topics/get-topic :resume-all-acknowledged)
                                          :interrupt-body simple-interrupt-body}
                             :remove-resource {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "remove-resource"
-                                              :topic (p/get-topic :resource-removed-acknowledged)
+                                              :topic (topics/get-topic :resource-removed-acknowledged)
                                               :interrupt-body target-interrupt-body}
                             :start-recording {:validation ::generic-voice-interaction-fn-params
                                               :interrupt-type "recording-start"
-                                              :topic (p/get-topic :recording-start-acknowledged)
+                                              :topic (topics/get-topic :recording-start-acknowledged)
                                               :interrupt-body simple-interrupt-body}
                             :stop-recording {:validation ::generic-voice-interaction-fn-params
                                              :interrupt-type "recording-stop"
-                                             :topic (p/get-topic :recording-stop-acknowledged)
+                                             :topic (topics/get-topic :recording-stop-acknowledged)
                                              :interrupt-body simple-interrupt-body}
                             :transfer-to-resource {:validation ::resource-transfer-params
                                                    :interrupt-type "customer-transfer"
-                                                   :topic (p/get-topic :customer-transfer-acknowledged)
+                                                   :topic (topics/get-topic :customer-transfer-acknowledged)
                                                    :interrupt-body {:transfer-resource-id resource-id
                                                                     :resource-id (state/get-active-user-id)
                                                                     :transfer-type transfer-type}}
                             :transfer-to-queue {:validation ::queue-transfer-params
                                                 :interrupt-type "customer-transfer"
-                                                :topic (p/get-topic :customer-transfer-acknowledged)
+                                                :topic (topics/get-topic :customer-transfer-acknowledged)
                                                 :interrupt-body {:transfer-queue-id queue-id
                                                                  :resource-id (state/get-active-user-id)
                                                                  :transfer-type transfer-type}}
                             :transfer-to-extension {:validation ::extension-transfer-params
                                                     :interrupt-type "customer-transfer"
-                                                    :topic (p/get-topic :customer-transfer-acknowledged)
+                                                    :topic (topics/get-topic :customer-transfer-acknowledged)
                                                     :interrupt-body {:transfer-extension transfer-extension
                                                                      :resource-id (state/get-active-user-id)
                                                                      :transfer-type transfer-type}}
                             :cancel-resource-transfer {:validation ::generic-voice-interaction-fn-params
                                                        :interrupt-type "transfer-cancel"
-                                                       :topic (p/get-topic :cancel-transfer-acknowledged)
+                                                       :topic (topics/get-topic :cancel-transfer-acknowledged)
                                                        :interrupt-body {:transfer-resource-id transfer-resource-id
                                                                         :resource-id (state/get-active-user-id)
                                                                         :transfer-type transfer-type}}
                             :cancel-queue-transfer {:validation ::generic-voice-interaction-fn-params
                                                     :interrupt-type "transfer-cancel"
-                                                    :topic (p/get-topic :cancel-transfer-acknowledged)
+                                                    :topic (topics/get-topic :cancel-transfer-acknowledged)
                                                     :interrupt-body {:transfer-queue-id transfer-queue-id
                                                                      :resource-id (state/get-active-user-id)
                                                                      :transfer-type transfer-type}}
                             :cancel-extension-transfer {:validation ::generic-voice-interaction-fn-params
                                                         :interrupt-type "transfer-cancel"
-                                                        :topic (p/get-topic :cancel-transfer-acknowledged)
+                                                        :topic (topics/get-topic :cancel-transfer-acknowledged)
                                                         :interrupt-body {:transfer-extension transfer-extension
                                                                          :resource-id (state/get-active-user-id)
                                                                          :transfer-type transfer-type}})]
@@ -210,7 +211,7 @@
                          :digit-sent digit}]
     (if-not (and (state/get-integration-by-type "twilio")
                  (= (:provider (state/get-active-extension)) "twilio"))
-      (p/publish {:topics (p/get-topic :no-twilio-integration)
+      (p/publish {:topics (topics/get-topic :no-twilio-integration)
                   :error (e/no-twilio-integration-err)
                   :callback callback})
       (if (and (= :active (state/find-interaction-location interaction-id))
@@ -223,7 +224,7 @@
           (catch js/Object e (p/publish {:topics topic
                                          :error (e/failed-to-send-twilio-digits-err)
                                          :callback callback})))
-        (p/publish {:topics (p/get-topic :failed-to-send-digits-invalid-interaction)
+        (p/publish {:topics (topics/get-topic :failed-to-send-digits-invalid-interaction)
                     :error (e/failed-to-send-digits-invalid-interaction-err)
                     :callback callback})))))
 
@@ -237,7 +238,7 @@
   (go (let [audio-recording (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
             {:keys [api-response status]} audio-recording]
         (when (= status 200)
-          (p/publish {:topics (p/get-topic :recording-response)
+          (p/publish {:topics (topics/get-topic :recording-response)
                       :response (:files api-response)
                       :callback callback})))))
 

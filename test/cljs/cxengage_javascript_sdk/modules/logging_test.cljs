@@ -5,6 +5,7 @@
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
+            [cljs-sdk-utils.api :as api]
             [cljs.core.async :as a]
             [cljs.test :refer-macros [deftest is testing async]]
             [cljs-uuid-utils.core :as id]))
@@ -35,18 +36,18 @@
     (async done
            (state/destroy-state)
            (go (let [the-chan (a/promise-chan)
-                     old rest/api-request
+                     old api/api-request
                      tenant-id (str (id/make-random-uuid))
                      resource-id (str (id/make-random-uuid))]
                  (state/set-active-tenant! {:tenant-id tenant-id})
                  (state/set-user-identity! {:user-id resource-id})
                  (a/>! the-chan {:status 200
                                  :api-response {:message "success"}})
-                 (set! rest/api-request (fn [request-map]
+                 (set! api/api-request (fn [request-map]
                                           (let [{:keys [body]} request-map]
                                             the-chan)))
                  (p/subscribe "cxengage/logging/logs-saved" (fn [error topic response]
                                                               (is (= {:message "success"} (js->clj response :keywordize-keys true)))
-                                                              (set! rest/api-request old)
+                                                              (set! api/api-request old)
                                                               (done)))
                  (log/save-logs))))))

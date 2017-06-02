@@ -5,16 +5,16 @@
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [lumbajack.core :as l]
-            [cxengage-cljs-utils.core :as cxu]
 
             [cxengage-javascript-sdk.interaction-management :as int]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.specs :as specs]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.core :as cxu]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.specs :as specs]
+            [cljs-sdk-utils.errors :as e]
 
             [cxengage-javascript-sdk.modules.authentication :as authentication]
             [cxengage-javascript-sdk.modules.session :as session]
@@ -29,12 +29,12 @@
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.modules.twilio :as twilio]))
 
-(def *SDK-VERSION* "5.2.2-SNAPSHOT")
+(def *SDK-VERSION* "5.3.0-SNAPSHOT")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
   [module]
-  (let [{:keys [api module-name]} module
+  (let [{:keys [api module-name]} (js->clj module :keywordize-keys true)
         old-api (ih/kebabify (ih/get-sdk-global))
         new-api (->> (iu/deep-merge old-api api) (transform-keys camel/->camelCase) (clj->js))]
     (when api
@@ -118,7 +118,7 @@
                                  :subscribe pu/subscribe
                                  :publish pu/publish
                                  :unsubscribe pu/unsubscribe
-                                 :internal {}
+                                 :internal {:set-time-offset state/set-time-offset!}
                                  :dump-state state/get-state-js
                                  :send-core-message #(a/put! module-comm-chan %)
                                  :register-module register-module

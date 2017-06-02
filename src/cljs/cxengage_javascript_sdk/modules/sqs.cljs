@@ -1,14 +1,15 @@
 (ns cxengage-javascript-sdk.modules.sqs
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]])
-  (:require [cxengage-javascript-sdk.domain.protocols :as pr]
+  (:require [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
             [cljs.core.async :as a]
             [cljsjs.aws-sdk-js]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]))
@@ -106,13 +107,13 @@
             (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
                   user-config (:result api-response)]
               (if (not= status 200)
-                (p/publish {:topics (p/get-topic :failed-to-refresh-sqs-integration)
+                (p/publish {:topics (topics/get-topic :failed-to-refresh-sqs-integration)
                             :error (e/failed-to-refresh-sqs-integration-err)})
                 (do
                   (state/set-config! user-config)
                   (let [sqs-integration (state/get-integration-by-type "sqs")]
                     (if-not sqs-integration
-                      (p/publish {:topics (p/get-topic :failed-to-refresh-sqs-integration)
+                      (p/publish {:topics (topics/get-topic :failed-to-refresh-sqs-integration)
                                   :error (e/failed-to-refresh-sqs-integration-err)})
                       (let [{:keys [access-key secret-key session-token ttl]} (:credentials sqs-integration)
                             {:keys [url]} (:queue sqs-integration)

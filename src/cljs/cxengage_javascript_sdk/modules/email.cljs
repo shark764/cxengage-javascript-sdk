@@ -1,20 +1,22 @@
 (ns cxengage-javascript-sdk.modules.email
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+                   [cljs-sdk-utils.macros :refer [def-sdk-fn]]
                    [clojure.string :as str])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cljs-uuid-utils.core :as id]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cljs-sdk-utils.specs :as specs]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [promesa.core :as prom :refer [promise all then]]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.internal-utils :as iu]))
+            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cljs-sdk-utils.interop-helpers :as ih]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.email.getAttachmentUrl({
@@ -262,7 +264,7 @@
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
-      (p/publish {:topics (p/get-topic :failed-to-create-outbound-email-interaction)
+      (p/publish {:topics (topics/get-topic :failed-to-create-outbound-email-interaction)
                   :error (e/failed-to-create-outbound-email-interaction-err)
                   :callback callback}))))
 

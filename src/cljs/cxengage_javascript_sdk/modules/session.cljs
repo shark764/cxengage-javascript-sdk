@@ -1,17 +1,18 @@
 (ns cxengage-javascript-sdk.modules.session
-  (:require-macros [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+  (:require-macros [cljs-sdk-utils.macros :refer [def-sdk-fn]]
                    [lumbajack.macros :refer [log]]
                    [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.spec :as s]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.protocols :as pr]
+            [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.specs :as specs]))
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.specs :as specs]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.goNotReady({
@@ -68,7 +69,7 @@
       (do (log :info "Session is now offline; ceasing future heartbeats.")
           (state/set-session-expired! true)
           nil)
-      (let [topic (p/get-topic :presence-heartbeats-response)
+      (let [topic (topics/get-topic :presence-heartbeats-response)
             {:keys [api-response status]} (a/<! (rest/heartbeat-request))
             {:keys [result]} api-response
             next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
@@ -86,7 +87,7 @@
 
 (defn- start-session* []
   (go (let [{:keys [status api-response]} (a/<! (rest/start-session-request))
-            topic (p/get-topic :session-started)
+            topic (topics/get-topic :session-started)
             session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
         (if (= status 200)
           (do (state/set-session-details! session-details)
@@ -100,7 +101,7 @@
         nil)))
 
 (defn- get-config* []
-  (go (let [topic (p/get-topic :config-response)
+  (go (let [topic (topics/get-topic :config-response)
             config-response (a/<! (rest/get-config-request))
             {:keys [api-response status]} config-response
             user-config (:result api-response)]
@@ -109,7 +110,7 @@
               (ih/send-core-message {:type :config-ready})
               (p/publish {:topics topic
                           :response user-config})
-              (p/publish {:topics (p/get-topic :extension-list)
+              (p/publish {:topics (topics/get-topic :extension-list)
                           :response (select-keys user-config [:active-extension :extensions])})
               (start-session*))
           (p/publish {:topics topic
@@ -224,10 +225,10 @@
                               :error (e/failed-to-get-session-config-err)
                               :callback callback})
                   (do (state/set-config! user-config)
-                      (p/publish {:topics (p/get-topic :extension-list)
+                      (p/publish {:topics (topics/get-topic :extension-list)
                                   :response (select-keys user-config [:active-extension :extensions])})
                       (ih/send-core-message {:type :config-ready})
-                      (p/publish {:topics (p/get-topic :config-response)
+                      (p/publish {:topics (topics/get-topic :config-response)
                                   :response user-config
                                   :callback callback})
                       (go-ready* topic callback)))))
@@ -235,6 +236,60 @@
             ;; Their active extension and the extension they passed in are the
             ;; same, no user update request is necessary, simply go ready.
             (go-ready* topic callback)))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.getActiveUserId();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-active-user-id-spec
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-active-user-id
+  {:validation ::get-active-user-id-spec
+   :topic-key :get-active-user-id-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        active-user-id (state/get-active-user-id)]
+      (p/publish {:topics topic
+                  :response active-user-id
+                  :callback callback})))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.getActiveTenantId();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-active-tenant-id-spec
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-active-tenant-id
+  {:validation ::get-active-tenant-id-spec
+   :topic-key :get-active-tenant-id-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        active-tenant-id (state/get-active-tenant-id)]
+      (p/publish {:topics topic
+                  :response active-tenant-id
+                  :callback callback})))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.getToken();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-token-spec
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-token
+  {:validation ::get-token-spec
+   :topic-key :get-token-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        token (state/get-token)]
+      (p/publish {:topics topic
+                  :response token
+                  :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Presence Session Module
@@ -247,7 +302,10 @@
       (ih/register {:api {module-name {:set-active-tenant set-active-tenant
                                        :go-ready go-ready
                                        :go-not-ready go-not-ready
-                                       :set-direction set-direction}}
+                                       :set-direction set-direction
+                                       :get-active-user-id get-active-user-id
+                                       :get-active-tenant-id get-active-tenant-id
+                                       :get-token get-token}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

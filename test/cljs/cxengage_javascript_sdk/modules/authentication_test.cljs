@@ -2,10 +2,11 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.pubsub :as p]
             [cljs.core.async :as a]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.api :as api]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.modules.authentication :as auth]
             [cljs.test :refer-macros [deftest is testing async use-fixtures]]))
@@ -13,6 +14,8 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; Login Tests
 ;; -------------------------------------------------------------------------- ;;
+
+(set! ih/publish p/publish)
 
 (def successful-login-response
   {:status 200
@@ -58,16 +61,16 @@
   (testing "login function success - login response pubsub"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-login-response [:api-response :result])]
                  (reset! st/sdk-state initial-test-state)
-                 (set! rest/api-request (fn [_]
+                 (set! api/api-request (fn [_]
                                           (go successful-login-response)))
                  (p/subscribe "cxengage/authentication/login-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
                                 (is (= (st/get-state) expected-test-state))
-                                (set! rest/api-request old)
+                                (set! api/api-request old)
                                 (done)))
                  (auth/login {:username "testuser@testemail.com"
                               :password "testpassword"}))))))
@@ -76,14 +79,14 @@
   (testing "login function success - tenant list pubsub"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-login-response [:api-response :result :tenants])]
-                 (set! rest/api-request (fn [_]
+                 (set! api/api-request (fn [_]
                                           (go successful-login-response)))
                  (p/subscribe "cxengage/session/tenant-list"
                               (fn foo [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! rest/api-request old)
+                                (set! api/api-request old)
                                 (done)))
                  (auth/login {:username "testuser@testemail.com"
                               :password "testpassword"}))))))
@@ -119,15 +122,15 @@
   (testing "logout function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-logout-response [:api-response :result])]
                  (reset! st/sdk-state success-state)
-                 (set! rest/api-request (fn [_]
+                 (set! api/api-request (fn [_]
                                           (go successful-logout-response)))
                  (p/subscribe "cxengage/session/state-change-request-acknowledged"
                               (fn bar [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! rest/api-request old)
+                                (set! api/api-request old)
                                 (done)))
                  (auth/logout))))))
 

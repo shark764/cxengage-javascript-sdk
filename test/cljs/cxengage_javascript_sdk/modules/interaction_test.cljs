@@ -5,7 +5,9 @@
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.api :as api]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
@@ -20,7 +22,7 @@
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
                  interaction-id (str (id/make-random-uuid))
-                 topic (p/get-topic :interaction-end-acknowledged)]
+                 topic (topics/get-topic :interaction-end-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
@@ -39,7 +41,7 @@
            (reset! state/sdk-state)
            (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
-                 topic (p/get-topic :interaction-accept-acknowledged)
+                 topic (topics/get-topic :interaction-accept-acknowledged)
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
                  interaction-id (str (id/make-random-uuid))
@@ -101,7 +103,7 @@
                               :resource resource
                               :timeout 30
                               :channel-type "Test"}
-                 topic (p/get-topic :interaction-focus-acknowledged)]
+                 topic (topics/get-topic :interaction-focus-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (state/add-interaction! :active interaction)
@@ -149,7 +151,7 @@
                               :resource resource
                               :timeout 30
                               :channel-type "Test"}
-                 topic (p/get-topic :interaction-unfocus-acknowledged)]
+                 topic (topics/get-topic :interaction-unfocus-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (state/add-interaction! :active interaction)
@@ -198,7 +200,7 @@
                               :resource resource
                               :timeout 30
                               :channel-type "Test"}
-                 topic (p/get-topic :contact-assignment-acknowledged)]
+                 topic (topics/get-topic :contact-assignment-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (state/add-interaction! :active interaction)
@@ -248,7 +250,7 @@
                               :resource resource
                               :timeout 30
                               :channel-type "Test"}
-                 topic (p/get-topic :contact-unassignment-acknowledged)]
+                 topic (topics/get-topic :contact-unassignment-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (state/add-interaction! :active interaction)
@@ -279,7 +281,7 @@
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
                  interaction-id (str (id/make-random-uuid))
-                 topic (p/get-topic :enable-wrapup-acknowledged)]
+                 topic (topics/get-topic :enable-wrapup-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
@@ -301,7 +303,7 @@
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
                  interaction-id (str (id/make-random-uuid))
-                 topic (p/get-topic :disable-wrapup-acknowledged)]
+                 topic (topics/get-topic :disable-wrapup-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
@@ -323,7 +325,7 @@
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
                  interaction-id (str (id/make-random-uuid))
-                 topic (p/get-topic :end-wrapup-acknowledged)]
+                 topic (topics/get-topic :end-wrapup-acknowledged)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
@@ -345,7 +347,7 @@
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
                  interaction-id (str (id/make-random-uuid))
-                 topic (p/get-topic :disposition-code-changed)]
+                 topic (topics/get-topic :disposition-code-changed)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
@@ -369,7 +371,7 @@
                  interaction-id (str (id/make-random-uuid))
                  disposition-id (str (id/make-random-uuid))
                  disposition {:disposition-id disposition-id}
-                 topic (p/get-topic :disposition-code-changed)]
+                 topic (topics/get-topic :disposition-code-changed)]
              (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (state/add-interaction! :active {:interaction-id interaction-id
@@ -391,7 +393,7 @@
     (async done
            (reset! p/sdk-subscriptions {})
            (state/reset-state)
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      interaction-id (str (id/make-random-uuid))
                      flow-id (str (id/make-random-uuid))
                      flow-version (str (id/make-random-uuid))
@@ -399,7 +401,7 @@
                      the-chan (a/promise-chan)
                      cb (fn [error topic response]
                           (is (= {:interactionId interaction-id :flowId flow-id :flowVersion flow-version} (js->clj response :keywordize-keys true)))
-                          (set! rest/api-request old)
+                          (set! api/api-request old)
                           (done))]
                  (state/set-active-tenant! tenant-id)
                  (p/subscribe "cxengage/interactions/send-custom-interrupt-acknowledged" cb)
@@ -407,7 +409,7 @@
                                                 :flow-id flow-id
                                                 :flow-version flow-version}
                                  :status 200})
-                 (set! rest/api-request (fn [request-map]
+                 (set! api/api-request (fn [request-map]
                                           (let [{:keys [url method body]} request-map
                                                 {:keys [interrupt-body interrupt-type interaction-id]} body]
                                             the-chan)))
@@ -426,14 +428,14 @@
   (testing "get single note function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-get-note-response [:api-response])]
-                 (set! rest/api-request (fn [_]
+                 (set! api/api-request (fn [_]
                                           (go successful-get-note-response)))
                  (p/subscribe "cxengage/interactions/get-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! rest/api-request old)
+                                (set! api/api-request old)
                                 (done)))
                  (interaction/get-note {:interaction-id (str (id/make-random-uuid)) :note-id (str (id/make-random-uuid))}))))))
 
@@ -448,14 +450,14 @@
   (testing "get all notes function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-get-notes-response [:api-response])]
-                 (set! rest/api-request (fn [_]
+                 (set! api/api-request (fn [_]
                                           (go successful-get-notes-response)))
                  (p/subscribe "cxengage/interactions/get-notes-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! rest/api-request old)
+                                (set! api/api-request old)
                                 (done)))
                  (interaction/get-all-notes {:interaction-id (str (id/make-random-uuid))}))))))
 
@@ -471,14 +473,14 @@
   (testing "get all notes function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-create-note-response [:api-response])]
-                 (set! rest/api-request (fn [_]
+                 (set! api/api-request (fn [_]
                                           (go successful-create-note-response)))
                  (p/subscribe "cxengage/interactions/create-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! rest/api-request old)
+                                (set! api/api-request old)
                                 (done)))
                  (interaction/create-note {:interaction-id (str (id/make-random-uuid)) :title "Asdf Note" :body "asdasd asdasdasd"}))))))
 
@@ -494,14 +496,14 @@
   (testing "get all notes function success"
     (async done
            (reset! p/sdk-subscriptions {})
-           (go (let [old rest/api-request
+           (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-update-note-response [:api-response])]
-                 (set! rest/api-request (fn [_]
+                 (set! api/api-request (fn [_]
                                           (go successful-update-note-response)))
                  (p/subscribe "cxengage/interactions/update-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (set! rest/api-request old)
+                                (set! api/api-request old)
                                 (done)))
                  (interaction/update-note {:interaction-id (str (id/make-random-uuid))
                                            :note-id (str (id/make-random-uuid))

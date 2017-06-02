@@ -1,13 +1,14 @@
 (ns cxengage-javascript-sdk.modules.twilio
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [cxengage-javascript-sdk.macros :refer [def-sdk-fn]]
+                   [cljs-sdk-utils.macros :refer [def-sdk-fn]]
                    [lumbajack.macros :refer [log]])
   (:require [cljsjs.paho]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.protocols :as pr]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.protocols :as pr]
+            [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec :as s]))
@@ -83,7 +84,7 @@
         (let [twilio-token-ttl (get-in (state/get-integration-by-type "twilio") [:credentials :ttl])
               min-ttl (* twilio-token-ttl 500)]
           (a/<! (a/timeout min-ttl))
-          (let [topic (p/get-topic :config-response)
+          (let [topic (topics/get-topic :config-response)
                 {:keys [status api-response]} (a/<! (rest/get-config-request))
                 {:keys [result]} api-response
                 {:keys [integrations]} result

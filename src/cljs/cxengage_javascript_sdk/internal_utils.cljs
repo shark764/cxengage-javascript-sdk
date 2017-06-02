@@ -5,9 +5,9 @@
             [goog.crypt :as c]
             [ajax.core :as ajax]
             [clojure.string :as str]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.interop-helpers :as ih]
+            [cljs-sdk-utils.interop-helpers :as ih]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]])
   (:import [goog.crypt Sha256 Hmac]))
@@ -60,17 +60,6 @@
 
 (defn uuid-came-before? [before after]
   (< (uuid-to-seconds before) (uuid-to-seconds after)))
-
-(defn update-local-time-offset
-  [response]
-  (when-let [timestamp (get-in response [:api-response :result :timestamp])]
-    (let [local (js/Date.now)
-          server (js/Date.parse timestamp)
-          offset (- local server)]
-      (state/set-time-offset! offset))))
-
-(defn str-long-enough? [len st]
-  (>= (.-length st) len))
 
 ;;;;;;;;;;;;;;;
 ;; sigv4 utils
