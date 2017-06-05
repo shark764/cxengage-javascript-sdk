@@ -17,7 +17,7 @@
                  [funcool/promesa "1.8.1"]
                  [cljsjs/paho "1.0.1-0"]
 
-                 [serenova/cljs-sdk-utils "0.0.3"]
+                 [serenova/cljs-sdk-utils "0.0.4-SNAPSHOT"]
                  [serenova/lumbajack "3.0.0"]
 
                  [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
