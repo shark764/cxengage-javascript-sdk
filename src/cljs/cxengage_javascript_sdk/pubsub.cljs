@@ -26,6 +26,9 @@
                  :extension-list "cxengage/session/extension-list"
                  :tenant-list "cxengage/session/tenant-list"
                  :session-ended "cxengage/session/ended"
+                 :get-token-response "cxengage/session/get-token-response"
+                 :get-active-tenant-id-response "cxengage/session/get-active-tenant-id-response"
+                 :get-active-user-id-response "cxengage/session/get-active-user-id-response"
 
                  ;; Contact topics
                  :get-contact "cxengage/contacts/get-contact-response"

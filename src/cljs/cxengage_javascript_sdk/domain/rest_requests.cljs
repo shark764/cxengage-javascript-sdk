@@ -103,6 +103,7 @@
 
 (defn token-request [token-body]
   (let [token-request {:method :post
+                       :authless-request? true
                        :url (iu/api-url "tokens")
                        :body token-body}]
     (api/api-request token-request)))
