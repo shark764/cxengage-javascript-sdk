@@ -241,55 +241,40 @@
 ;; CxEngage.session.getActiveUserId();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-active-user-id-spec
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn get-active-user-id
-  {:validation ::get-active-user-id-spec
-   :topic-key :get-active-user-id-response}
-  [params]
-  (let [{:keys [callback topic]} params
-        active-user-id (state/get-active-user-id)]
-      (p/publish {:topics topic
-                  :response active-user-id
-                  :callback callback})))
+(defn get-active-user-id [& params]
+  (let [callback (first params)
+        callback (if (fn? callback) callback nil)
+        user-id (state/get-active-user-id)]
+    (p/publish {:topic (p/get-topic :get-active-user-id-response)
+                :response user-id
+                :callback callback})
+    user-id))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.getActiveTenantId();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-active-tenant-id-spec
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn get-active-tenant-id
-  {:validation ::get-active-tenant-id-spec
-   :topic-key :get-active-tenant-id-response}
-  [params]
-  (let [{:keys [callback topic]} params
-        active-tenant-id (state/get-active-tenant-id)]
-      (p/publish {:topics topic
-                  :response active-tenant-id
-                  :callback callback})))
+(defn get-active-tenant-id [& params]
+  (let [callback (first params)
+        callback (if (fn? callback) callback nil)
+        tenant-id (state/get-active-tenant-id)]
+    (p/publish {:topic (p/get-topic :get-active-tenant-id-response)
+                :response tenant-id
+                :callback callback})
+    tenant-id))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.getToken();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-token-spec
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn get-token
-  {:validation ::get-token-spec
-   :topic-key :get-token-response}
-  [params]
-  (let [{:keys [callback topic]} params
+(defn get-token [& params]
+  (let [callback (first params)
+        callback (if (fn? callback) callback nil)
         token (state/get-token)]
-      (p/publish {:topics topic
-                  :response token
-                  :callback callback})))
+    (p/publish {:topic (p/get-topic :get-token-response)
+                :response token
+                :callback callback})
+    token))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Presence Session Module
