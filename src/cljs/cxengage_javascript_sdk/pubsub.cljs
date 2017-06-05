@@ -1,6 +1,7 @@
 (ns cxengage-javascript-sdk.pubsub
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [cljs.spec :as s]
+            [lumbajack.core]
             [clojure.string :as string]
             [cljs-sdk-utils.interop-helpers :as ih]
             [cljs-uuid-utils.core :as id]

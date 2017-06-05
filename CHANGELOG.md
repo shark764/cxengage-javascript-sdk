@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [5.3.0]
 * CLJS SDK Utils split out
 * Publish the latest extension list in a couple more places
 * CXV1-8189 - Auto-reject work offers of channel-type "work-item"
