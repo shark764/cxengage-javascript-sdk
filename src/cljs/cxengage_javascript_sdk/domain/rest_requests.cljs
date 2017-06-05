@@ -150,20 +150,23 @@
                           :third-party-request? true}]
     (api/api-request manifest-request)))
 
-(defn get-capacity-request [resource-id]
-  (let [tenant-id (state/get-active-tenant-id)
-        ;; If resource-id is passed to the function, it will return the Capacity
-        ;; for the specified resource-id. If no arguments are passed to the function
-        ;; it will instead return the capacity for the active user's selected Tenant
-        url-string (if resource-id
-                     "tenants/:tenant-id/users/:resource-id/realtime-statistics/resource-capacity"
-                     "tenants/:tenant-id/realtime-statistics/resource-capacity")
-        url-params (if resource-id
-                     {:tenant-id tenant-id :resource-id resource-id}
-                     {:tenant-id tenant-id})
-        capacity-request {:method :get
-                          :url (iu/api-url url-string url-params)}]
-    (api/api-request capacity-request)))
+(defn get-capacity-request
+  ([]
+   (get-capacity-request nil))
+  ([resource-id]
+   (let [tenant-id (state/get-active-tenant-id)
+         ;; If resource-id is passed to the function, it will return the Capacity
+         ;; for the specified resource-id. If no arguments are passed to the function
+         ;; it will instead return the capacity for the active user's selected Tenant
+         url-string (if resource-id
+                      "tenants/:tenant-id/users/:resource-id/realtime-statistics/resource-capacity"
+                      "tenants/:tenant-id/realtime-statistics/resource-capacity")
+         url-params (if resource-id
+                      {:tenant-id tenant-id :resource-id resource-id}
+                      {:tenant-id tenant-id})
+         capacity-request {:method :get
+                           :url (iu/api-url url-string url-params)}]
+     (api/api-request capacity-request))))
 
 (defn batch-request [batch-body]
   (let [tenant-id (state/get-active-tenant-id)

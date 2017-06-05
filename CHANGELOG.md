@@ -3,6 +3,11 @@
 ## [Unreleased]
 * CLJS SDK Utils split out
 * Publish the latest extension list in a couple more places
+* CXV1-8189 - Auto-reject work offers of channel-type "work-item"
+* Added 3 new API fn's and relevant pub/subs:
+  * `CxEngage.session.getToken();`
+  * `CxEngage.session.getActiveUserId();`
+  * `CxEngage.session.getActiveTenantId();`
 
 ## [5.2.1]
 * Fixed MQTT startup error
