@@ -7,6 +7,7 @@
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.errors :as e]
             [cljs-sdk-utils.specs :as specs]))
 
 (defn get-query-str
@@ -32,11 +33,14 @@
   (let [{:keys [contact-id callback topic]} params
         {:keys [api-response status]} (a/<! (rest/get-contact-request contact-id))
         retrieved-contact (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response retrieved-contact
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-contact-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Cxengage.contacts.getAll();
@@ -53,11 +57,14 @@
   (let [{:keys [callback topic]} params
         {:keys [api-response status]} (a/<! (rest/get-contacts-request))
         retrieved-contacts (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response retrieved-contacts
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-list-all-contacts-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; // Search on a specified attribute
@@ -80,11 +87,14 @@
         query (get-query-str query)
         {:keys [api-response status]} (a/<! (rest/search-contacts-request query))
         found-contacts (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response found-contacts
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-search-contacts-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.create({attributes: {name: "Serenova, LLC."}});
@@ -102,11 +112,14 @@
   (let [{:keys [attributes callback topic]} params
         {:keys [api-response status]} (a/<! (rest/create-contact-request {:attributes attributes}))
         created-contact (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response created-contact
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-contact-err)
+                  :callback callback}))))
 
 ;; ----------------------------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.update({contactId: "{{contact-id}}", attributes: {name: "Serenova, LLC."}});
@@ -125,9 +138,12 @@
   (let [{:keys [attributes contactId callback topic]} params
         {:keys [api-response status]} (a/<! (rest/update-contact-request contactId {:attributes attributes}))
         updated-contact (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response updated-contact
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-contact-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -145,11 +161,14 @@
   (let [{:keys [contact-id callback topic]} params
         {:keys [api-response status]} (a/<! (rest/delete-contact-request contact-id))
         deleted-contact? (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response deleted-contact?
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-delete-contact-err)
+                  :callback callback}))))
 
 ;; ----------------------------------------------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.merge({contactIds: ["{{contact-id}}", "{{contact-id}}"], attributes: {name: "Serenova, LLC."}});
@@ -169,11 +188,14 @@
         {:keys [api-response status]} (a/<! (rest/merge-contact-request {:contactIds contactIds
                                                                          :attributes attributes}))
         merged-contact (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response merged-contact
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-merge-contacts-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.listAttributes();
@@ -190,11 +212,14 @@
   (let [{:keys [callback topic]} params
         {:keys [api-response status]} (a/<! (rest/list-attributes-request))
         retrieved-attributes (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response retrieved-attributes
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-list-contact-attributes-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.getLayout({layoutId: "{{layout-id}}"});
@@ -211,11 +236,14 @@
   (let [{:keys [layout-id callback topic]} params
         {:keys [api-response status]} (a/<! (rest/get-layout-request layout-id))
         retrieved-layout (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response retrieved-layout
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-retrieve-contact-layout-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.contacts.listLayouts();
@@ -232,11 +260,14 @@
   (let [{:keys [callback topic]} params
         {:keys [api-response status]} (a/<! (rest/list-layouts-request))
         retrieved-layouts (:result api-response)]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response retrieved-layouts
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-retrieve-contact-layouts-list-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Contacts Module
