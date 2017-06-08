@@ -18,7 +18,7 @@
                  [cljsjs/paho "1.0.1-0"]
 
                  [serenova/cljs-sdk-utils "0.0.4-SNAPSHOT"]
-                 [serenova/lumbajack "3.0.0"]
+                 [serenova/lumbajack "3.0.1"]
 
                  [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
                  [org.clojure/tools.nrepl "0.2.13" :scope "test"]
