@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.2]
+* CXV1-9836 - Use region specified in twilio integration
+
 ## [5.3.1]
 * CXV1-8933, CXV1-9389 - Fix callback firing for contacts fns, add a bunch of tests
 
