@@ -216,9 +216,12 @@
         interrupt-body {:message message}
         sms-response (a/<! (rest/send-interrupt-request interaction-id "send-sms" interrupt-body))
         {:keys [api-response status]} sms-response]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response {:interaction-id interaction-id}
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-send-outbound-sms-err)
                   :callback callback}))))
 
 ;; ----------------------------------------------------------------;;
@@ -259,9 +262,12 @@
                                 :resource-id resource-id}}
         sms-response (a/<! (rest/create-interaction-request sms-body))
         {:keys [api-response status]} sms-response]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-outbound-sms-interaction-err)
                   :callback callback}))))
 
 ;; ----------------------------------------------------------------;;
@@ -276,10 +282,14 @@
 
 (defn get-transcript [interaction-id tenant-id artifact-id callback]
   (go (let [transcript (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
-            {:keys [api-response status]} transcript]
-        (when (= status 200)
-          (p/publish {:topics (topics/get-topic :transcript-response)
+            {:keys [api-response status]} transcript
+            topic (topics/get-topic :transcript-response)]
+        (if (= status 200)
+          (p/publish {:topics topic
                       :response (:files api-response)
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-get-specific-messaging-transcript-err)
                       :callback callback})))))
 
 (def-sdk-fn get-transcripts
@@ -292,13 +302,16 @@
         {:keys [results]} api-response
         tenant-id (state/get-active-tenant-id)
         transcripts (filterv #(= (:artifact-type %) "messaging-transcript") results)]
-    (when (= status 200)
+    (if (= status 200)
       (if (= (count transcripts) 0)
         (p/publish {:topics topic
                     :response []
                     :callback callback})
         (doseq [t transcripts]
-          (get-transcript interaction-id tenant-id (:artifact-id t) callback))))))
+          (get-transcript interaction-id tenant-id (:artifact-id t) callback)))
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-messaging-transcripts-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Messaging Module

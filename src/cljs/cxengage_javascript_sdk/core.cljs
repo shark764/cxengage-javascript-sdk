@@ -7,10 +7,10 @@
             [lumbajack.core :as l]
 
             [cxengage-javascript-sdk.interaction-management :as int]
-            [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cljs-sdk-utils.protocols :as pr]
             [cljs-sdk-utils.core :as cxu]
             [cljs-sdk-utils.interop-helpers :as ih]
             [cljs-sdk-utils.specs :as specs]

@@ -116,7 +116,7 @@
   (comp (testing*)
         (watch)
         (test-cljs :js-env :phantom
-                   ;;:namespaces ["cxengage-javascript-sdk.modules.reporting-test"]
+                   ;;:namespaces ["cxengage-javascript-sdk.modules.interaction-test"]
                    )))
 
 (deftask dev []

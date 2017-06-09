@@ -69,9 +69,12 @@
                          "remove-resource"
                          "resource-disconnect")
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-end-interaction-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -90,21 +93,24 @@
         interrupt-type "offer-accept"
         {:keys [timeout timeout-end channel-type]} (state/get-interaction interaction-id)
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
+      (do (p/publish {:topics topic
+                      :response (merge {:interaction-id interaction-id} interrupt-body)
+                      :callback callback})
+          (if (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
+            (p/publish {:topics topic
+                        :error (e/work-offer-expired-err)
+                        :callback callback})
+            (do (when (and (= channel-type "voice")
+                           (= (:provider (state/get-active-extension)) "twilio"))
+                  (let [connection (state/get-twilio-connection)]
+                    (.accept connection)))
+                (when (or (= channel-type "sms")
+                          (= channel-type "messaging"))
+                  (int/get-messaging-history interaction-id)))))
       (p/publish {:topics topic
-                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                  :callback callback})
-      (if (<= (js/Date.parse (or timeout timeout-end)) (iu/get-now))
-        (p/publish {:topics topic
-                    :error (e/work-offer-expired-err)
-                    :callback callback})
-        (do (when (and (= channel-type "voice")
-                       (= (:provider (state/get-active-extension)) "twilio"))
-              (let [connection (state/get-twilio-connection)]
-                (.accept connection)))
-            (when (or (= channel-type "sms")
-                      (= channel-type "messaging"))
-              (int/get-messaging-history interaction-id)))))))
+                  :error (e/failed-to-accept-interaction-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.focus({
@@ -120,9 +126,12 @@
         interrupt-body (build-detailed-interrupt-body interaction-id)
         interrupt-type "interaction-focused"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-focus-interaction-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -139,9 +148,12 @@
         interrupt-body (build-detailed-interrupt-body interaction-id)
         interrupt-type "interaction-unfocused"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-unfocus-interaction-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -159,9 +171,12 @@
         interrupt-body (assoc (build-detailed-interrupt-body interaction-id) :contact-id contact-id)
         interrupt-type "interaction-contact-selected"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-assign-contact-to-interaction-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -179,9 +194,12 @@
         interrupt-body (assoc (build-detailed-interrupt-body interaction-id) :contact-id contact-id)
         interrupt-type "interaction-contact-deselected"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-unassign-contact-from-interaction-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -198,9 +216,12 @@
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "wrapup-on"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-enable-wrapup-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -217,9 +238,12 @@
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "wrapup-off"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-disable-wrapup-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -236,9 +260,12 @@
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "wrapup-end"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-end-wrapup-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -255,9 +282,12 @@
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "disposition-select"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-deselect-disposition-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -284,9 +314,12 @@
                             :disposition interrupt-disposition}
             interrupt-type "disposition-select"
             {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-        (when (= status 200)
+        (if (= status 200)
           (p/publish {:topics topic
                       :response (merge {:interaction-id interaction-id} interrupt-body)
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-select-disposition-err)
                       :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -307,9 +340,12 @@
   (let [{:keys [callback topic interaction-id note-id]} params
         tenant-id (state/get-active-tenant-id)
         {:keys [status api-response]} (a/<! (rest/get-note-request interaction-id note-id))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-interaction-note-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -330,9 +366,12 @@
   (let [{:keys [callback topic interaction-id]} params
         tenant-id (state/get-active-tenant-id)
         {:keys [status api-response]} (a/<! (rest/get-notes-request interaction-id))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-list-interaction-notes-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -354,9 +393,12 @@
         tenant-id (state/get-active-tenant-id)
         body (select-keys params [:title :body :contact-id])
         {:keys [status api-response]} (a/<! (rest/update-note-request interaction-id note-id body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-interaction-note-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -379,9 +421,12 @@
         tenant-id (state/get-active-tenant-id)
         body (select-keys params [:title :body :contact-id :tenant-id :resource-id])
         {:keys [status api-response]} (a/<! (rest/create-note-request interaction-id body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-interaction-note-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -452,9 +497,12 @@
         script-response (a/<! (rest/send-flow-action-request interaction-id action-id script-body))
         {:keys [status api-response]} script-response
         {:keys [result]} api-response]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response interaction-id
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-send-interaction-script-response-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -477,9 +525,12 @@
   [params]
   (let [{:keys [callback topic interrupt-body interrupt-type interaction-id]} params
         {:keys [status api-response]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-send-custom-interrupt-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

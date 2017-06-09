@@ -352,8 +352,12 @@
                            :update {:resource-id resource-id}}]
           (go (let [ack-response (a/<! (rest/send-flow-action-request interaction-id action-id action-body))
                     {:keys [api-response status]} ack-response]
-                (when (not= status 200)
-                  (log :error "Failed to acknowledge flow action")))))))
+                (if (not= status 200)
+                  (do (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
+                                  :error (e/failed-to-acknowledge-flow-action-err)})
+                      (log :error "Failed to acknowledge flow action"))
+                  (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
+                              :response {:interaction-id interaction-id}})))))))
     (if handling-fn
       (handling-fn message)
       (log :warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))

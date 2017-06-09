@@ -66,14 +66,14 @@
     (if (not (= status 200))
       (p/publish {:topics topic
                   :callback callback
-                  :error (e/login-failed-err)})
+                  :error (e/login-failed-token-request-err)})
       (do
         (state/set-token! (:token api-response))
         (let [{:keys [status api-response]} (a/<! (rest/login-request))]
           (if (not (= status 200))
             (p/publish {:topics topic
                         :callback callback
-                        :error (e/login-failed-err)})
+                        :error (e/login-failed-login-request-err)})
             (let [user-identity (:result api-response)
                   tenants (:tenants user-identity)]
               (state/set-user-identity! user-identity)

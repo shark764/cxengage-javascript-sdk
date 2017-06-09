@@ -44,9 +44,9 @@
                                         :mobile "+15554442222"
                                         :age 27}
                            :created mock-timestamp
-                           :createdBy mock-user-id
+                           :created-by mock-user-id
                            :updated mock-timestamp
-                           :updatedBy mock-user-id}}
+                           :updated-by mock-user-id}}
    :status 200})
 
 (def get-contact-happy-path-mock-consumer-response
@@ -125,9 +125,9 @@
                                          :mobile "+15554442222"
                                          :age 27}
                             :created mock-timestamp
-                            :createdBy mock-user-id
+                            :created-by mock-user-id
                             :updated mock-timestamp
-                            :updatedBy mock-user-id}]}
+                            :updated-by mock-user-id}]}
    :status 200})
 
 (def get-contacts-happy-path-mock-consumer-response
@@ -200,15 +200,15 @@
 (def search-contacts-happy-path-mock-api-response
   {:api-response {:result {:page 1
                            :count 1
-                           :totalPages 1
+                           :total-pages 1
                            :results [{:id mock-contact-id
                                       :attributes {:name "Ian Bishop"
                                                    :mobile "+15554442222"
                                                    :age 27}
                                       :created mock-timestamp
-                                      :createdBy mock-user-id
+                                      :created-by mock-user-id
                                       :updated mock-timestamp
-                                      :updatedBy mock-user-id}]}}
+                                      :updated-by mock-user-id}]}}
    :status 200})
 
 (def search-contacts-happy-path-mock-consumer-response
@@ -286,9 +286,9 @@
   {:api-response {:result {:id mock-contact-id
                            :attributes {:name "Serenova"}
                            :created mock-timestamp
-                           :createdBy mock-user-id
+                           :created-by mock-user-id
                            :updated mock-timestamp
-                           :updatedBy mock-user-id}}
+                           :updated-by mock-user-id}}
    :status 200})
 
 (def create-contact-happy-path-mock-consumer-response
@@ -529,9 +529,9 @@
   {:api-response {:result {:id mock-contact-id
                            :attributes {:name "Serenova"}
                            :created mock-timestamp
-                           :createdBy mock-user-id
+                           :created-by mock-user-id
                            :updated mock-timestamp
-                           :updatedBy mock-user-id}}
+                           :updated-by mock-user-id}}
    :status 200})
 
 (def merge-contacts-happy-path-mock-consumer-response
@@ -617,7 +617,7 @@
                             :type "text"
                             :created "2017-01-30T16:10:20Z"
                             :active true
-                            :label {:en-US "Name"}
+                            :label {:en-us "Name"}
                             :object-name "name"}
                            {:mandatory true
                             :updated "2017-01-30T16:10:20Z"
@@ -625,7 +625,7 @@
                             :type "text"
                             :created "2017-01-30T16:10:20Z"
                             :active true
-                            :label {:en-US "Phone"}
+                            :label {:en-us "Phone"}
                             :object-name "phone"}]}})
 
 (def list-attributes-happy-path-mock-consumer-response
@@ -699,9 +699,9 @@
 
 (def get-layout-happy-path-mock-api-response
   {:api-response {:result {:description ""
-                           :layout [{:label {:en-US "1"}
+                           :layout [{:label {:en-us "1"}
                                      :attributes [(str (uuid/make-random-squuid))]}
-                                    [{:label {:en-US "2"}
+                                    [{:label {:en-us "2"}
                                       :attributes [(str (uuid/make-random-squuid))]}]]
                            :updated mock-timestamp
                            :name "basic"
@@ -782,9 +782,9 @@
 
 (def list-layouts-happy-path-mock-api-response
   {:api-response {:result {:description ""
-                           :layout [{:label {:en-US "1"}
+                           :layout [{:label {:en-us "1"}
                                      :attributes [(str (uuid/make-random-squuid))]}
-                                    [{:label {:en-US "2"}
+                                    [{:label {:en-us "2"}
                                       :attributes [(str (uuid/make-random-squuid))]}]]
                            :updated mock-timestamp
                            :name "basic"

@@ -81,7 +81,7 @@
 (defn publish
   "Publishes a value (or error) to a specific topic, optionally calling the callback provided and optionally leaving the casing of the response unaltered."
   [publish-details]
-  (let [{:keys [topics response error callback preserve-casing?]} publish-details
+  (let [{:keys [topics response error callback preserve-casing?]} (ih/extract-params publish-details)
         topics (if (string? topics) (conj #{} topics) topics)
         all-topics (all-topics)
         topics (ih/camelify topics)
@@ -96,8 +96,9 @@
                                   (map get-subscribers-by-topic)
                                   (filter (complement nil?))
                                   (flatten))]
-    (doseq [cb relevant-subscribers]
-      (doseq [t topics]
-        (cb error t response)))
+    (when (not-empty relevant-subscribers)
+      (doseq [cb relevant-subscribers]
+        (doseq [t topics]
+          (cb error t response))))
     (when (and (fn? callback) callback) (callback error topics response)))
   nil)

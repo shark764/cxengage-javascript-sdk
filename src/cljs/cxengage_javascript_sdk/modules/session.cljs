@@ -74,7 +74,7 @@
             {:keys [result]} api-response
             next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
         (if (= status 200)
-          (do (log :info "Heartbeat sent!")
+          (do (log :debug "Heartbeat sent!")
               (p/publish {:topics topic
                           :response result})
               (a/<! (a/timeout next-heartbeat-delay))
@@ -163,9 +163,12 @@
         {:keys [status api-response]} (a/<! (rest/set-direction-request direction))
         direction-details {:direction direction
                            :session-id (get-in api-response [:result :session-id])}]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response direction-details
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-set-direction-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -197,45 +200,48 @@
         {:keys [status api-response]} (a/<! (rest/get-user-request))
         {:keys [result]} api-response
         extensions (get-in api-response [:result :extensions])]
-    (when (= status 200)
-      (p/publish {:topics (topics/get-topic :extension-list)
-                  :response (select-keys result [:active-extension :extensions])})
-      (state/set-extensions! extensions)
-      (let [new-extension (state/get-extension-by-value extension-value)
-            active-extension (state/get-active-extension)]
-        (if-not new-extension
-          (p/publish {:topics topic
-                      :error (e/invalid-extension-provided-err)
-                      :callback callback})
-          (if-not (= active-extension new-extension)
-            ;; Active extension was either nil (this user has never had an
-            ;; active extension, E.G. they're a new user), or they *do* have an
-            ;; active extension, but it didn't match the one they passed for the
-            ;; session they're starting. Update their user prior to changing
-            ;; state, so they go ready with the correct extension.
-            (let [{:keys [status api-response]} (a/<! (rest/update-user-request {:activeExtension new-extension}))]
-              (if-not (= status 200)
-                (p/publish {:topics topic
-                            :error (e/failed-to-update-extension-err)
-                            :callback callback}))
-              (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
-                    user-config (:result api-response)]
-                (if (not (= status 200))
-                  (p/publish {:topics topic
-                              :error (e/failed-to-get-session-config-err)
-                              :callback callback})
-                  (do (state/set-config! user-config)
-                      (p/publish {:topics (topics/get-topic :extension-list)
-                                  :response (select-keys user-config [:active-extension :extensions])})
-                      (ih/send-core-message {:type :config-ready})
-                      (p/publish {:topics (topics/get-topic :config-response)
-                                  :response user-config
+    (if-not (= status 200)
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-user-extensions-err)
+                  :callback callback})
+      (do (p/publish {:topics (topics/get-topic :extension-list)
+                      :response (select-keys result [:active-extension :extensions])})
+          (state/set-extensions! extensions)
+          (let [new-extension (state/get-extension-by-value extension-value)
+                active-extension (state/get-active-extension)]
+            (if-not new-extension
+              (p/publish {:topics topic
+                          :error (e/invalid-extension-provided-err)
+                          :callback callback})
+              (if-not (= active-extension new-extension)
+                ;; Active extension was either nil (this user has never had an
+                ;; active extension, E.G. they're a new user), or they *do* have an
+                ;; active extension, but it didn't match the one they passed for the
+                ;; session they're starting. Update their user prior to changing
+                ;; state, so they go ready with the correct extension.
+                (let [{:keys [status api-response]} (a/<! (rest/update-user-request {:activeExtension new-extension}))]
+                  (if-not (= status 200)
+                    (p/publish {:topics topic
+                                :error (e/failed-to-update-extension-err)
+                                :callback callback}))
+                  (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
+                        user-config (:result api-response)]
+                    (if (not (= status 200))
+                      (p/publish {:topics topic
+                                  :error (e/failed-to-get-session-config-err)
                                   :callback callback})
-                      (go-ready* topic callback)))))
+                      (do (state/set-config! user-config)
+                          (p/publish {:topics (topics/get-topic :extension-list)
+                                      :response (select-keys user-config [:active-extension :extensions])})
+                          (ih/send-core-message {:type :config-ready})
+                          (p/publish {:topics (topics/get-topic :config-response)
+                                      :response user-config
+                                      :callback callback})
+                          (go-ready* topic callback)))))
 
-            ;; Their active extension and the extension they passed in are the
-            ;; same, no user update request is necessary, simply go ready.
-            (go-ready* topic callback)))))))
+                ;; Their active extension and the extension they passed in are the
+                ;; same, no user update request is necessary, simply go ready.
+                (go-ready* topic callback))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.getActiveUserId();
