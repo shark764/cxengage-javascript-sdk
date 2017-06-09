@@ -27,7 +27,8 @@
   [config]
   (let [audio-params (ih/camelify {"audio" true})
         script-init (fn [& args]
-                      (let [{:keys [js-api-url credentials]} config
+                      (let [{:keys [js-api-url credentials regions]} config
+                            region (or (first regions) "gll")
                             {:keys [token]} credentials
                             script (js/document.createElement "script")
                             body (.-body js/document)
@@ -43,7 +44,11 @@
                         (go-loop []
                           (if (ih/twilio-ready?)
                             (do
-                              (state/set-twilio-device (js/Twilio.Device.setup token #js {"debug" debug-twilio?}))
+                              (state/set-twilio-device
+                               (js/Twilio.Device.setup token #js {"debug" debug-twilio?
+                                                                  "closeProtection" true
+                                                                  "warnings" true
+                                                                  "region" region}))
                               (js/Twilio.Device.incoming update-twilio-connection)
                               (js/Twilio.Device.ready update-twilio-connection)
                               (js/Twilio.Device.cancel update-twilio-connection)
