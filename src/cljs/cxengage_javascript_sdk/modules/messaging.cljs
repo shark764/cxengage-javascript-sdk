@@ -9,7 +9,6 @@
             [clojure.set :refer [rename-keys]]
             [cljs-time.core :as time]
             [cljs-time.format :as fmt]
-            [cljs-time.instant]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
@@ -123,13 +122,13 @@
   (let [mqtt (Paho.MQTT.Client. endpoint client-id)
         connect-options (js/Object.)]
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
-                                      (if (= (get (js->clj reason-code :keywordize-keys true) :errorCode) 0)
+                                      (if (zero? (get (js->clj reason-code :keywordize-keys true) :errorCode))
                                         (log :info "Previous Mqtt Session Successfully Disconnected")
                                         (log :error "Mqtt Connection Lost" {:reasonCode reason-code
                                                                             :reasonMessage reason-message}))))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (when msg (on-received msg))))
-    (set! (.-onSuccess connect-options) (fn [] (on-connect)))
+    (set! (.-onSuccess connect-options) on-connect)
     (set! (.-onFailure connect-options) (fn [_ _ msg]
                                           (on-failure msg)))
     (.connect mqtt connect-options)

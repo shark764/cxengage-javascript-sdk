@@ -63,7 +63,8 @@
         interaction (state/get-interaction interaction-id)
         {:keys [channel-type]} interaction
         interrupt-body (if (= channel-type "voice")
-                         {:resource-id (state/get-active-user-id) :target-resource (state/get-active-user-id)}
+                         {:resource-id (state/get-active-user-id)
+                          :target-resource (state/get-active-user-id)}
                          {:resource-id (state/get-active-user-id)})
         interrupt-type (if (= channel-type "voice")
                          "remove-resource"

@@ -24,9 +24,7 @@
                        (when-let [token (state/get-token)]
                          {:headers {"Authorization" (str "Token " token)}}))]
     (ajax/ajax-request request)
-    (if callback
-      nil
-      response-channel)))
+    (when-not callback response-channel)))
 
 (defn set-direction-request [direction]
   (let [tenant-id (state/get-active-tenant-id)
