@@ -20,6 +20,10 @@
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
+(s/def ::generic-resource-voice-interaction-fn-params
+  (s/keys :req-un [::specs/interaction-id ::specs/target-resource-id]
+          :opt-un [::specs/callback]))
+
 (s/def ::extension-transfer-params
   (s/keys :req-un [::specs/interaction-id ::specs/transfer-extension ::specs/transfer-type]
           :opt-un [::specs/callback]))
@@ -32,108 +36,405 @@
   (s/keys :req-un [::specs/interaction-id ::specs/resource-id ::specs/transfer-type]
           :opt-un [::specs/callback]))
 
-(defn send-interrupt
-  ([module type] (e/wrong-number-of-sdk-fn-args-err))
-  ([module type client-params & others]
-   (if-not (fn? (js->clj (first others)))
-     (e/wrong-number-of-sdk-fn-args-err)
-     (send-interrupt module type (merge (ih/extract-params client-params) {:callback (first others)}))))
-  ([module type client-params]
-   (let [client-params (ih/extract-params client-params)
-         {:keys [callback interaction-id resource-id target-resource-id queue-id transfer-extension transfer-resource-id transfer-queue-id transfer-type]} client-params
-         transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
-         simple-interrupt-body {:resource-id (state/get-active-user-id)}
-         target-interrupt-body {:resource-id (state/get-active-user-id)
-                                :target-resource target-resource-id}
-         interrupt-params (case type
-                            :hold {:validation ::generic-voice-interaction-fn-params
-                                   :interrupt-type "customer-hold"
-                                   :topic (topics/get-topic :hold-acknowledged)
-                                   :interrupt-body simple-interrupt-body}
-                            :resume {:validation ::generic-voice-interaction-fn-params
-                                     :interrupt-type "customer-resume"
-                                     :topic (topics/get-topic :resume-acknowledged)
-                                     :interrupt-body simple-interrupt-body}
-                            :mute {:validation ::generic-voice-interaction-fn-params
-                                   :interrupt-type "mute-resource"
-                                   :topic (topics/get-topic :mute-acknowledged)
-                                   :interrupt-body target-interrupt-body}
-                            :unmute {:validation ::generic-voice-interaction-fn-params
-                                     :interrupt-type "unmute-resource"
-                                     :topic (topics/get-topic :unmute-acknowledged)
-                                     :interrupt-body target-interrupt-body}
-                            :resource-hold {:validation ::generic-voice-interaction-fn-params
-                                            :interrupt-type "resource-hold"
-                                            :topic (topics/get-topic :resource-hold-acknowledged)
-                                            :interrupt-body target-interrupt-body}
-                            :resource-resume {:validation ::generic-voice-interaction-fn-params
-                                              :interrupt-type "resource-resume"
-                                              :topic (topics/get-topic :resource-resume-acknowledged)
-                                              :interrupt-body target-interrupt-body}
-                            :resume-all {:validation ::generic-voice-interaction-fn-params
-                                         :interrupt-type "resume-all"
-                                         :topic (topics/get-topic :resume-all-acknowledged)
-                                         :interrupt-body simple-interrupt-body}
-                            :remove-resource {:validation ::generic-voice-interaction-fn-params
-                                              :interrupt-type "remove-resource"
-                                              :topic (topics/get-topic :resource-removed-acknowledged)
-                                              :interrupt-body target-interrupt-body}
-                            :start-recording {:validation ::generic-voice-interaction-fn-params
-                                              :interrupt-type "recording-start"
-                                              :topic (topics/get-topic :recording-start-acknowledged)
-                                              :interrupt-body simple-interrupt-body}
-                            :stop-recording {:validation ::generic-voice-interaction-fn-params
-                                             :interrupt-type "recording-stop"
-                                             :topic (topics/get-topic :recording-stop-acknowledged)
-                                             :interrupt-body simple-interrupt-body}
-                            :transfer-to-resource {:validation ::resource-transfer-params
-                                                   :interrupt-type "customer-transfer"
-                                                   :topic (topics/get-topic :customer-transfer-acknowledged)
-                                                   :interrupt-body {:transfer-resource-id resource-id
-                                                                    :resource-id (state/get-active-user-id)
-                                                                    :transfer-type transfer-type}}
-                            :transfer-to-queue {:validation ::queue-transfer-params
-                                                :interrupt-type "customer-transfer"
-                                                :topic (topics/get-topic :customer-transfer-acknowledged)
-                                                :interrupt-body {:transfer-queue-id queue-id
-                                                                 :resource-id (state/get-active-user-id)
-                                                                 :transfer-type transfer-type}}
-                            :transfer-to-extension {:validation ::extension-transfer-params
-                                                    :interrupt-type "customer-transfer"
-                                                    :topic (topics/get-topic :customer-transfer-acknowledged)
-                                                    :interrupt-body {:transfer-extension transfer-extension
-                                                                     :resource-id (state/get-active-user-id)
-                                                                     :transfer-type transfer-type}}
-                            :cancel-resource-transfer {:validation ::generic-voice-interaction-fn-params
-                                                       :interrupt-type "transfer-cancel"
-                                                       :topic (topics/get-topic :cancel-transfer-acknowledged)
-                                                       :interrupt-body {:transfer-resource-id transfer-resource-id
-                                                                        :resource-id (state/get-active-user-id)
-                                                                        :transfer-type transfer-type}}
-                            :cancel-queue-transfer {:validation ::generic-voice-interaction-fn-params
-                                                    :interrupt-type "transfer-cancel"
-                                                    :topic (topics/get-topic :cancel-transfer-acknowledged)
-                                                    :interrupt-body {:transfer-queue-id transfer-queue-id
-                                                                     :resource-id (state/get-active-user-id)
-                                                                     :transfer-type transfer-type}}
-                            :cancel-extension-transfer {:validation ::generic-voice-interaction-fn-params
-                                                        :interrupt-type "transfer-cancel"
-                                                        :topic (topics/get-topic :cancel-transfer-acknowledged)
-                                                        :interrupt-body {:transfer-extension transfer-extension
-                                                                         :resource-id (state/get-active-user-id)
-                                                                         :transfer-type transfer-type}})]
-     (if-not (s/valid? (:validation interrupt-params) client-params)
-       (p/publish {:topics (:topic interrupt-params)
-                   :error (e/args-failed-spec-err)
-                   :callback callback})
-       (do #_(when (and (= transfer-type "warm-transfer")
-                        (or (= type :transfer-to-resource)
-                            (= type :transfer-to-queue)
-                            (= type :transfer-to-extension)))
-               (send-interrupt module :hold {:interaction-id interaction-id}))
-           (rest/send-interrupt* (assoc interrupt-params
-                                        :interaction-id interaction-id
-                                        :callback callback)))))))
+(s/def ::cancel-resource-transfer-params
+  (s/keys :req-un [::specs/interaction-id ::specs/transfer-resource-id ::specs/transfer-type]
+          :opt-un [::specs/callback]))
+
+(s/def ::cancel-queue-transfer-params
+  (s/keys :req-un [::specs/interaction-id ::specs/transfer-queue-id ::specs/transfer-type]
+          :opt-un [::specs/callback]))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.customerHold({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn customer-hold
+  {:validation ::generic-voice-interaction-fn-params
+   :topic-key :hold-acknowledged}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        interrupt-type "customer-hold"
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-place-customer-on-hold-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.customerResume({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn customer-resume
+  {:validation ::generic-voice-interaction-fn-params
+   :topic-key :resume-acknowledged}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        interrupt-type "customer-resume"
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-resume-customer-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.mute({
+;;   interactionId: "{{uuid}}",
+;;   targetResourceId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn mute
+  {:validation ::generic-resource-voice-interaction-fn-params
+   :topic-key :mute-acknowledged}
+  [params]
+  (let [{:keys [interaction-id target-resource-id topic callback]} params
+        interrupt-type "mute-resource"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :target-resource target-resource-id}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-mute-target-resource-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.unmute({
+;;   interactionId: "{{uuid}}",
+;;   targetResourceId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn unmute
+  {:validation ::generic-resource-voice-interaction-fn-params
+   :topic-key :unmute-acknowledged}
+  [params]
+  (let [{:keys [interaction-id target-resource-id topic callback]} params
+        interrupt-type "unmute-resource"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :target-resource target-resource-id}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-unmute-target-resource-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.resourceHold({
+;;   interactionId: "{{uuid}}",
+;;   targetResourceId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn resource-hold
+  {:validation ::generic-resource-voice-interaction-fn-params
+   :topic-key :resource-hold-acknowledged}
+  [params]
+  (let [{:keys [interaction-id target-resource-id topic callback]} params
+        interrupt-type "resource-hold"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :target-resource target-resource-id}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-place-resource-on-hold-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.resourceResume({
+;;   interactionId: "{{uuid}}",
+;;   targetResourceId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn resource-resume
+  {:validation ::generic-resource-voice-interaction-fn-params
+   :topic-key :resource-resume-acknowledged}
+  [params]
+  (let [{:keys [interaction-id target-resource-id topic callback]} params
+        interrupt-type "resource-resume"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :target-resource target-resource-id}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-resume-resource-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.resourceAll({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn resume-all
+  {:validation ::generic-voice-interaction-fn-params
+   :topic-key :resume-all-acknowledged}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        interrupt-type "resume-all"
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-resume-all-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.removeResource({
+;;   interactionId: "{{uuid}}",
+;;   targetResourceId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn remove-resource
+  {:validation ::generic-resource-voice-interaction-fn-params
+   :topic-key :resource-removed-acknowledged}
+  [params]
+  (let [{:keys [interaction-id target-resource-id topic callback]} params
+        interrupt-type "remove-resource"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :target-resource target-resource-id}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-remove-resource-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.startRecording({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn start-recording
+  {:validation ::generic-voice-interaction-fn-params
+   :topic-key :recording-start-acknowledged}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        interrupt-type "recording-start"
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-start-recording-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.stopRecording({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn stop-recording
+  {:validation ::generic-voice-interaction-fn-params
+   :topic-key :recording-stop-acknowledged}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        interrupt-type "recording-stop"
+        interrupt-body {:resource-id (state/get-active-user-id)}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-stop-recording-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.transferToResource({
+;;   interactionId: "{{uuid}}",
+;;   resourceId: "{{uuid}}",
+;;   transferType: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn transfer-to-resource
+  {:validation ::resource-transfer-params
+   :topic-key :customer-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id resource-id transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
+        interrupt-type "customer-transfer"
+        interrupt-body {:transfer-resource-id resource-id
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-transfer-to-resource-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.transferToQueue({
+;;   interactionId: "{{uuid}}",
+;;   queueId: "{{uuid}}",
+;;   transferType: "{{warm or cold}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn transfer-to-queue
+  {:validation ::queue-transfer-params
+   :topic-key :customer-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id queue-id transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
+        interrupt-type "customer-transfer"
+        interrupt-body {:transfer-queue-id queue-id
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-transfer-to-queue-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.transferToExtension({
+;;   interactionId: "{{uuid}}",
+;;   transferExtension: {type: "pstn", value: "+15055555555"},
+;;   transferType: "{{warm or cold}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn transfer-to-extension
+  {:validation ::extension-transfer-params
+   :topic-key :customer-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id transfer-extension transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
+        interrupt-type "customer-transfer"
+        interrupt-body {:transfer-extension transfer-extension
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-transfer-to-extension-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.cancelResourceTransfer({
+;;   interactionId: "{{uuid}}",
+;;   targetResourceId: "{{uuid}}",
+;;   transferType: "{{warm or cold}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn cancel-resource-transfer
+  {:validation ::cancel-resource-transfer-params
+   :topic-key :cancel-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id transfer-resource-id transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
+        interrupt-type "transfer-cancel"
+        interrupt-body {:transfer-resource-id transfer-resource-id
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-cancel-resource-transfer-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.cancelQueueTransfer({
+;;   interactionId: "{{uuid}}",
+;;   transferQueueId: "{{uuid}}",
+;;   transferType: "{{warm or cold}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn cancel-queue-transfer
+  {:validation ::cancel-queue-transfer-params
+   :topic-key :cancel-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id transfer-queue-id transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
+        interrupt-type "transfer-cancel"
+        interrupt-body {:transfer-queue-id transfer-queue-id
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-cancel-queue-transfer-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.cancelExtensionTransfer({
+;;   interactionId: "{{uuid}}",
+;;   transferExtension: {type: "pstn", value: "+15055555555"},
+;;   transferType: "{{warm or cold}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn cancel-extension-transfer
+  {:validation ::extension-transfer-params
+   :topic-key :cancel-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id transfer-extension transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
+        interrupt-type "transfer-cancel"
+        interrupt-body {:transfer-extension transfer-extension
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-cancel-extension-transfer-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.dial({
@@ -271,26 +572,26 @@
   pr/SDKModule
   (start [this]
     (let [module-name :voice]
-      (ih/register {:api {:interactions {:voice {:customer-hold (partial send-interrupt this :hold)
-                                                 :customer-resume (partial send-interrupt this :resume)
-                                                 :mute (partial send-interrupt this :mute)
-                                                 :unmute (partial send-interrupt this :unmute)
-                                                 :start-recording (partial send-interrupt this :start-recording)
-                                                 :stop-recording (partial send-interrupt this :stop-recording)
-                                                 :transfer-to-resource (partial send-interrupt this :transfer-to-resource)
-                                                 :transfer-to-queue (partial send-interrupt this :transfer-to-queue)
-                                                 :transfer-to-extension (partial send-interrupt this :transfer-to-extension)
-                                                 :cancel-resource-transfer (partial send-interrupt this :cancel-resource-transfer)
-                                                 :cancel-queue-transfer (partial send-interrupt this :cancel-queue-transfer)
-                                                 :cancel-extension-transfer (partial send-interrupt this :cancel-extension-transfer)
+      (ih/register {:api {:interactions {:voice {:customer-hold customer-hold
+                                                 :customer-resume customer-resume
+                                                 :mute mute
+                                                 :unmute unmute
+                                                 :start-recording start-recording
+                                                 :stop-recording stop-recording
+                                                 :transfer-to-resource transfer-to-resource
+                                                 :transfer-to-queue transfer-to-queue
+                                                 :transfer-to-extension transfer-to-extension
+                                                 :cancel-resource-transfer cancel-resource-transfer
+                                                 :cancel-queue-transfer cancel-queue-transfer
+                                                 :cancel-extension-transfer cancel-extension-transfer
                                                  :dial dial
                                                  :cancel-dial cancel-dial
                                                  :send-digits send-digits
                                                  :get-recordings get-recordings
-                                                 :resource-remove (partial send-interrupt this :remove-resource)
-                                                 :resource-hold (partial send-interrupt this :resource-hold)
-                                                 :resource-resume (partial send-interrupt this :resource-resume)
-                                                 :resume-all (partial send-interrupt this :resume-all)}}}
+                                                 :resource-remove remove-resource
+                                                 :resource-hold resource-hold
+                                                 :resource-resume resource-resume
+                                                 :resume-all resume-all}}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

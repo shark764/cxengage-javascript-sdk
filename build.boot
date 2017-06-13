@@ -16,6 +16,7 @@
                  [camel-snake-kebab "0.4.0"]
                  [funcool/promesa "1.8.1"]
                  [cljsjs/paho "1.0.1-0"]
+                 [cljs-ajax "0.6.0"]
 
                  [serenova/cljs-sdk-utils "0.0.4-SNAPSHOT"]
                  [serenova/lumbajack "3.0.1"]

@@ -1,5 +1,8 @@
 # Change Log
 
+## [Unreleased]
+* CXV1-9580 Split out voice interrupts using def-sdk-fn macro
+
 ## [5.3.2]
 * CXV1-9836 - Use region specified in twilio integration
 
