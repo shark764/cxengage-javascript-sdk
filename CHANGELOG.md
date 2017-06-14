@@ -1,6 +1,9 @@
 # Change Log
 
-## [Unreleased]
+## [5.3.4]
+* Fixed small regression in the kebabification of API responses (no JIRA)
+
+## [5.3.3]
 * CXV1-9580 Split out voice interrupts using def-sdk-fn macro
 * CXV1-9907 - Create new email reporting event signals & appropriate SDK fns
 * CXV1-9564 Added new error codes & new explicit error paths (rather than the previous generic error handling) to help with front-end error handling

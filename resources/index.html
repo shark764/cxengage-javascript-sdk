@@ -292,7 +292,7 @@
 
     var handleExtensionList = function(error, topic, response) {
       if (error) return console.error('uh oh');
-      state.extensionId = response.activeExtension.value;
+      // state.extensionId = response.activeExtension.value;
       populateExtensionsDropdown(response.extensions);
     };
 
