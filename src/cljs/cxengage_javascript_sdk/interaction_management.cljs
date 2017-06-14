@@ -352,8 +352,12 @@
                            :update {:resource-id resource-id}}]
           (go (let [ack-response (a/<! (rest/send-flow-action-request interaction-id action-id action-body))
                     {:keys [api-response status]} ack-response]
-                (when (not= status 200)
-                  (log :error "Failed to acknowledge flow action")))))))
+                (if (not= status 200)
+                  (do (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
+                                  :error (e/failed-to-acknowledge-flow-action-err)})
+                      (log :error "Failed to acknowledge flow action"))
+                  (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
+                              :response {:interaction-id interaction-id}})))))))
     (if handling-fn
       (handling-fn message)
       (log :warn (str "Ignoring flow message:" (:sdk-msg-type message)) message))
@@ -388,9 +392,11 @@
 
 (defn sqs-msg-router [message]
   (let [cljsd-msg (ih/kebabify message)
+        msg-type (:type cljsd-msg)
+        channel-type (:channel-type cljsd-msg)
         session-id (or (get cljsd-msg :session-id)
                        (get-in cljsd-msg [:resource :session-id]))
-        inferred-msg (case (:type cljsd-msg)
+        inferred-msg (case msg-type
                        "resource-state-change" (merge {:sdk-msg-type :SESSION/CHANGE_STATE_RESPONSE} cljsd-msg)
                        "work-offer" (merge {:sdk-msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
                        "send-script" (merge {:sdk-msg-type :INTERACTIONS/SCRIPT_RECEIVED} cljsd-msg)
@@ -398,12 +404,16 @@
                        nil)]
     (when (state/get-blast-sqs-output)
       (log :debug (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
-    (if inferred-msg
-      (msg-router inferred-msg)
-      (do (log :warn "Unable to infer message type from sqs")
-          (p/publish {:topics (topics/get-topic :unknown-agent-notification-type-received)
-                      :error (e/unknown-agent-notification-type-err)})
-          nil))))
+    (if (and (= channel-type "work-item")
+             (not= msg-type "work-offer"))
+      (do (log :warn "Received a non-work-offer message of channel 'work-item',, ignoring...")
+          nil)
+      (if inferred-msg
+        (msg-router inferred-msg)
+        (do (log :warn "Unable to infer message type from sqs")
+            (p/publish {:topics (topics/get-topic :unknown-agent-notification-type-received)
+                        :error (e/unknown-agent-notification-type-err)})
+            nil)))))
 
 (defn messaging-msg-router [message]
   (handle-new-messaging-message message))

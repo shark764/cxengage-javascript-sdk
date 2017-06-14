@@ -37,13 +37,16 @@
   (let [{:keys [topic interaction-id artifact-file-id artifact-id callback]} params
         attachment-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
         {:keys [api-response status]} attachment-response]
-    (when (= status 200)
+    (if (= status 200)
       (let [attachment (first (filterv
                                #(= (:artifact-file-id %) artifact-file-id)
                                (:files api-response)))]
         (p/publish {:topics topic
                     :response attachment
-                    :callback callback})))))
+                    :callback callback}))
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-attachment-url-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.email.addAttachment({
@@ -88,7 +91,8 @@
     (state/remove-attachment-from-reply {:interaction-id interaction-id
                                          :attachment-id attachment-id})
     (p/publish {:topics topic
-                :response {:interaction-id interaction-id :attachment-id attachment-id}
+                :response {:interaction-id interaction-id
+                           :attachment-id attachment-id}
                 :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -235,9 +239,12 @@
                                         :artifact-id artifact-id}
                         flow-response (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))
                         {:keys [api-response status]} flow-response]
-                    (when (= status 200)
+                    (if (= status 200)
                       (p/publish {:topics topic
                                   :response {:interaction-id interaction-id}
+                                  :callback callback})
+                      (p/publish {:topics topic
+                                  :error (e/failed-to-send-email-reply-err)
                                   :callback callback})))))))))
 
 (s/def ::start-outbound-email-params

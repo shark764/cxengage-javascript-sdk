@@ -24,9 +24,7 @@
                        (when-let [token (state/get-token)]
                          {:headers {"Authorization" (str "Token " token)}}))]
     (ajax/ajax-request request)
-    (if callback
-      nil
-      response-channel)))
+    (when-not callback response-channel)))
 
 (defn set-direction-request [direction]
   (let [tenant-id (state/get-active-tenant-id)
@@ -444,20 +442,6 @@
                                   :interrupt-type interrupt-type
                                   :interrupt interrupt-body}}]
     (api/api-request interrupt-request)))
-
-;; TODO delete me once voice module has been split-out
-(defn send-interrupt*
-  [params]
-  (let [params (ih/extract-params params)
-        {:keys [interaction-id interrupt-type interrupt-body topic on-confirm-fn callback]} params]
-    (go (let [interrupt-response (a/<! (send-interrupt-request interaction-id interrupt-type interrupt-body))
-              {:keys [api-response status]} interrupt-response]
-          (when (= status 200)
-            (ih/js-publish {:topics topic
-                            :response (merge {:interaction-id interaction-id} interrupt-body)
-                            :callback callback})
-            (when on-confirm-fn (on-confirm-fn)))))
-    nil))
 
 (defn get-branding-request []
   (let [tenant-id (state/get-active-tenant-id)

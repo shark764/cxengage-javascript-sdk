@@ -8,6 +8,7 @@
             [cljs-sdk-utils.interop-helpers :as ih]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cljs-sdk-utils.specs :as specs]
+            [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.state :as state]
             [cljs-uuid-utils.core :as uuid]
@@ -61,10 +62,13 @@
                    :app-id (str (uuid/make-random-squuid))
                    :app-name "CxEngage Agent Front-end"}
         {:keys [status api-response]} (a/<! (rest/save-logs-request logs-body))]
-    (when (= status 200)
-      (jack/wipe-logs!)
+    (if (= status 200)
+      (do (jack/wipe-logs!)
+          (p/publish {:topics topic
+                      :response api-response
+                      :callback callback}))
       (p/publish {:topics topic
-                  :response api-response
+                  :error (e/failed-to-save-logs-err)
                   :callback callback}))))
 
 (defn log* [level & args]

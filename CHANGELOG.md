@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 * CXV1-9580 Split out voice interrupts using def-sdk-fn macro
-* CXV1-9907 - Create new email reporting event signals & appropriate SDK fns.
+* CXV1-9907 - Create new email reporting event signals & appropriate SDK fns
+* CXV1-9564 Added new error codes & new explicit error paths (rather than the previous generic error handling) to help with front-end error handling
+* CXV1-9910 Added warnings on missing state properties to ease debugging
 
 ## [5.3.2]
 * CXV1-9836 - Use region specified in twilio integration

@@ -461,9 +461,12 @@
                    :source "twilio"}]
     (let [dial-response (a/<! (rest/create-interaction-request dial-body))
           {:keys [api-response status]} dial-response]
-      (when (= status 200)
+      (if (= status 200)
         (p/publish {:topics topic
                     :response api-response
+                    :callback callback})
+        (p/publish {:topics topic
+                    :error (e/failed-to-perform-outbound-dial-err)
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -485,9 +488,12 @@
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "work-cancel"
         {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-cancel-outbound-dial-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -537,10 +543,14 @@
 
 (defn get-recording [interaction-id tenant-id artifact-id callback]
   (go (let [audio-recording (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
-            {:keys [api-response status]} audio-recording]
-        (when (= status 200)
-          (p/publish {:topics (topics/get-topic :recording-response)
+            {:keys [api-response status]} audio-recording
+            topic (topics/get-topic :recording-response)]
+        (if (= status 200)
+          (p/publish {:topics topic
                       :response (:files api-response)
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-get-specific-recording-err)
                       :callback callback})))))
 
 (s/def ::get-recordings-params

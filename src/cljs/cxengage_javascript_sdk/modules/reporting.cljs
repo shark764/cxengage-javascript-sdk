@@ -67,11 +67,14 @@
           {:keys [api-response status]} (a/<! (rest/batch-request batch-body))
           {:keys [results]} api-response
           batch-topic (topics/get-topic :batch-response)]
-      (when (= status 200)
+      (if (= status 200)
         (p/publish {:topics batch-topic
                     :response results
                     :callback callback
-                    :preserve-casing? true})))))
+                    :preserve-casing? true})
+        (p/publish {:topics batch-topic
+                    :error (e/reporting-batch-request-failed-err)
+                    :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.removeStatSubscription({
@@ -112,9 +115,12 @@
   (let [{:keys [resource-id topic callback]} params
         {:keys [api-response status]} (a/<! (rest/get-capacity-request resource-id))
         {:keys [results]} api-response]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response results
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-capacity-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -140,11 +146,14 @@
         stat-body {stat-id stat-bundle}
         {:keys [api-response status]} (a/<! (rest/batch-request stat-body))
         {:keys [results]} api-response]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response results
                   :callback callback
-                  :preserve-casing? true}))))
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-perform-stat-query-err)
+                  :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.getAvailableStats();
@@ -160,9 +169,12 @@
   [params]
   (let [{:keys [callback topic]} params
         {:keys [status api-response]} (a/<! (rest/get-available-stats-request))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-available-stats-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -181,9 +193,12 @@
   [params]
   (let [{:keys [callback topic contact-id page]} params
         {:keys [status api-response]} (a/<! (rest/get-contact-interaction-history-request contact-id page))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-contact-interaction-history-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -202,9 +217,12 @@
   [params]
   (let [{:keys [callback topic interaction-id]} params
         {:keys [status api-response]} (a/<! (rest/get-interaction-history-request interaction-id))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-interaction-reporting-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

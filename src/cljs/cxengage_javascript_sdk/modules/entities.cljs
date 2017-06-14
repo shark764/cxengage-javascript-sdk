@@ -34,9 +34,12 @@
   [params]
   (let [{:keys [callback topic resource-id]} params
         {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "user" resource-id))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-user-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -53,9 +56,12 @@
   [params]
   (let [{:keys [callback topic]} params
         {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "user"))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-user-list-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -74,9 +80,12 @@
   [params]
   (let [{:keys [callback topic queue-id]} params
         {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "queue" queue-id))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-queue-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -93,9 +102,12 @@
   [params]
   (let [{:keys [callback topic]} params
         {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "queue"))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-queue-list-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -114,9 +126,12 @@
   [params]
   (let [{:keys [callback topic transfer-list-id]} params
         {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "transfer-list" transfer-list-id))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-transfer-list-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -133,9 +148,12 @@
   [params]
   (let [{:keys [callback topic]} params
         {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "transfer-list"))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-transfer-lists-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -152,9 +170,12 @@
   [params]
   (let [{:keys [callback topic]} params
         {:keys [status api-response]} (a/<! (rest/get-branding-request))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response (:result api-response)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-tenant-branding-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -178,9 +199,12 @@
   [params]
   (let [{:keys [callback topic update-body resource-id]} params
         {:keys [status api-response]} (a/<! (rest/crud-entity-request :put "user" resource-id update-body))]
-    (when (= status 200)
+    (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :response (e/failed-to-update-user-err)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

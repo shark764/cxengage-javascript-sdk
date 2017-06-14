@@ -1,6 +1,7 @@
 (ns cxengage-javascript-sdk.state
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [lumbajack.core]
+            [clojure.set :as s :refer [intersection]]
             [cljs-uuid-utils.core :as id]))
 
 (def initial-state {:authentication {}
@@ -22,8 +23,14 @@
 (defn get-state []
   @sdk-state)
 
+(defn get-state-value [path]
+  (let [value (get-in @sdk-state path)]
+    (when (nil? value)
+      (log :debug "[SDK State] Unable to find value in state. Path:" (clj->js path)))
+    value))
+
 (defn reset-state []
-  (when-let [mqtt-client (get-in @sdk-state [:internal :mqtt-client])]
+  (when-let [mqtt-client (get-state-value [:internal :mqtt-client])]
     (.disconnect mqtt-client))
   (reset! sdk-state (merge initial-state (dissoc (get-state) :authentication :user :session :interactions :internal))))
 
@@ -37,10 +44,10 @@
   (swap! sdk-state assoc-in [:config :api-url] url))
 
 (defn get-base-api-url []
-  (get-in @sdk-state [:config :api-url]))
+  (get-state-value [:config :api-url]))
 
 (defn get-env []
-  (get-in @sdk-state [:config :env]))
+  (get-state-value [:config :env]))
 
 (defn set-env! [env]
   (swap! sdk-state assoc-in [:config :env] env))
@@ -49,19 +56,19 @@
   (swap! sdk-state assoc-in [:config :consumer-type] env))
 
 (defn get-consumer-type []
-  (get-in @sdk-state [:config :consumer-type]))
+  (get-state-value [:config :consumer-type]))
 
 (defn set-blast-sqs-output! [blast]
   (swap! sdk-state assoc-in [:config :blast-sqs-output] blast))
 
 (defn get-blast-sqs-output []
-  (get-in @sdk-state [:config :blast-sqs-output]))
+  (get-state-value [:config :blast-sqs-output]))
 
 (defn set-reporting-refresh-rate! [rate]
   (swap! sdk-state assoc-in [:config :reporting-refresh-rate] rate))
 
 (defn get-reporting-refresh-rate []
-  (get-in @sdk-state [:config :reporting-refresh-rate]))
+  (get-state-value [:config :reporting-refresh-rate]))
 
 (defn get-config []
   (get @sdk-state :config))
@@ -74,31 +81,31 @@
   "Determines which bucket an interaction is in that we have encountered during this session."
   [interaction-id]
   (cond
-    (not= nil (get-in @sdk-state [:interactions :pending interaction-id])) :pending
-    (not= nil (get-in @sdk-state [:interactions :active interaction-id])) :active
-    (not= nil (get-in @sdk-state [:interactions :past interaction-id])) :past
+    (not= nil (get-state-value [:interactions :pending interaction-id])) :pending
+    (not= nil (get-state-value [:interactions :active interaction-id])) :active
+    (not= nil (get-state-value [:interactions :past interaction-id])) :past
     :else (do (log :warn "Unable to find interaction location - we have never received that interaction")
               false)))
 
 (defn get-all-pending-interactions []
-  (get-in @sdk-state [:interactions :pending]))
+  (get-state-value [:interactions :pending]))
 
 (defn get-pending-interaction [interaction-id]
-  (get-in @sdk-state [:interactions :pending interaction-id]))
+  (get-state-value [:interactions :pending interaction-id]))
 
 (defn get-active-interaction [interaction-id]
-  (get-in @sdk-state [:interactions :active interaction-id]))
+  (get-state-value [:interactions :active interaction-id]))
 
 (defn active-interactions? []
-  (not (empty? (get-in @sdk-state [:interactions :active]))))
+  (not (empty? (get-state-value [:interactions :active]))))
 
 (defn get-interaction [interaction-id]
   (let [location (find-interaction-location interaction-id)]
-    (get-in @sdk-state [:interactions location interaction-id])))
+    (get-state-value [:interactions location interaction-id])))
 
 (defn get-interaction-disposition-codes [interaction-id]
   (let [location (find-interaction-location interaction-id)]
-    (get-in @sdk-state [:interactions location interaction-id :disposition-code-details :dispositions])))
+    (get-state-value [:interactions location interaction-id :disposition-code-details :dispositions])))
 
 (defn augment-messaging-payload
   "Normalizes the structure of the messaging payload, and updates the :from field depending on if it's a messaging or SMS interaction."
@@ -120,14 +127,14 @@
   "Appends a list of messages to the messaging history for a given interaction."
   [interaction-id messages]
   (let [interaction-location (find-interaction-location interaction-id)
-        old-msg-history (or (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]) [])
+        old-msg-history (or (get-state-value [:interactions interaction-location interaction-id :message-history]) [])
         messages (->> messages
                       (mapv augment-messaging-payload)
                       (mapv #(dissoc % :channel-id :timestamp))
                       (mapv :payload))
         new-msg-history (reduce conj old-msg-history messages)
         new-msg-history (reduce (fn [acc msg]
-                                  (if (= 0 (count (filter #(= (:id msg) (:id %)) old-msg-history)))
+                                  (if (zero? (count (filter #(= (:id msg) (:id %)) old-msg-history)))
                                     (conj acc msg)
                                     acc)) old-msg-history messages)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :message-history] new-msg-history)))
@@ -135,7 +142,7 @@
 (defn get-interaction-messaging-history [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
     (filter #(= (get % :type) "message")
-            (get-in @sdk-state [:interactions interaction-location interaction-id :message-history]))))
+            (get-state-value [:interactions interaction-location interaction-id :message-history]))))
 
 (defn add-interaction! [type interaction]
   (let [{:keys [interaction-id]} interaction]
@@ -147,7 +154,7 @@
 
 (defn get-interaction-wrapup-details [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
-    (get-in @sdk-state [:interactions interaction-location interaction-id :wrapup-details])))
+    (get-state-value [:interactions interaction-location interaction-id :wrapup-details])))
 
 (defn add-interaction-wrapup-details! [wrapup-details interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)
@@ -162,9 +169,9 @@
 (defn transition-interaction!
   "Moves an interaction from one state internally to another. E.G. from pending (we've received a work offer) to active (we've accepted the work offer)."
   [from to interaction-id]
-  (let [interaction (get-in @sdk-state [:interactions from interaction-id])
-        updated-interactions-from (dissoc (get-in @sdk-state [:interactions from]) interaction-id)
-        updated-interactions-to (assoc (get-in @sdk-state [:interactions to]) interaction-id interaction)]
+  (let [interaction (get-state-value [:interactions from interaction-id])
+        updated-interactions-from (dissoc (get-state-value [:interactions from]) interaction-id)
+        updated-interactions-to (assoc (get-state-value [:interactions to]) interaction-id interaction)]
     (swap! sdk-state assoc-in [:interactions from] updated-interactions-from)
     (swap! sdk-state assoc-in [:interactions to] updated-interactions-to)))
 
@@ -175,13 +182,13 @@
 
 (defn add-script-to-interaction! [interaction-id script]
   (let [interaction-location (find-interaction-location interaction-id)
-        existing-scripts (or (get-in @sdk-state [:interactions interaction-location interaction-id :scripts]) [])
+        existing-scripts (or (get-state-value [:interactions interaction-location interaction-id :scripts]) [])
         new-scripts (conj existing-scripts script)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :scripts] new-scripts)))
 
 (defn get-script [interaction-id script-id]
   (let [interaction-location (find-interaction-location interaction-id)
-        scripts (or (get-in @sdk-state [:interactions interaction-location interaction-id :scripts]) [])
+        scripts (or (get-state-value [:interactions interaction-location interaction-id :scripts]) [])
         filtered-script (first (filterv #(= script-id (:id (js->clj (js/JSON.parse (:script %)) :keywordize-keys true))) scripts))]
     filtered-script))
 
@@ -196,11 +203,11 @@
 
 (defn get-reply-artifact-id-by-interaction-id [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
-    (get-in @sdk-state [:interactions interaction-location interaction-id :email-artifact :reply :artifact-id])))
+    (get-state-value [:interactions interaction-location interaction-id :email-artifact :reply :artifact-id])))
 
 (defn get-all-reply-email-attachments [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
-    (get-in @sdk-state [:interactions interaction-location interaction-id :email-artifact :reply :attachments])))
+    (get-state-value [:interactions interaction-location interaction-id :email-artifact :reply :attachments])))
 
 (defn remove-attachment-from-reply [file-info]
   (let [{:keys [interaction-id attachment-id]} file-info
@@ -211,7 +218,7 @@
 
 (defn get-email-reply-to-id [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
-    (get-in @sdk-state [:interactions interaction-location interaction-id :email-artifact :manifest-details :id])))
+    (get-state-value [:interactions interaction-location interaction-id :email-artifact :manifest-details :id])))
 
 (defn add-email-manifest-details [interaction-id manifest]
   (let [interaction-location (find-interaction-location interaction-id)]
@@ -234,7 +241,7 @@
 
 (defn get-token
   []
-  (get-in @sdk-state [:authentication :token]))
+  (get-state-value [:authentication :token]))
 
 ;;;;;;;;;;;;;;;;
 ;; User Identity
@@ -246,7 +253,11 @@
 
 (defn get-active-user-id
   []
-  (get-in @sdk-state [:user :user-id]))
+  (let [user-id (get-state-value [:user :user-id])]
+    (if user-id
+      user-id
+      (do (js/console.warn "[SDK State] Unable to find user id in state; likely to have unintended side-effects.")
+          nil))))
 
 ;;;;;;;;;;;;;;;;;;
 ;; Sessiony Things
@@ -256,10 +267,10 @@
   (swap! sdk-state assoc-in [:session :expired?] expired?))
 
 (defn get-session-expired []
-  (get-in @sdk-state [:session :expired?]))
+  (get-state-value [:session :expired?]))
 
 (defn get-tenant-permissions [tenant-id]
-  (let [tenants (get-in @sdk-state [:user :tenants])
+  (let [tenants (get-state-value [:user :tenants])
         permissions (->> tenants
                          (filter #(= tenant-id (:tenant-id %)))
                          (first)
@@ -282,16 +293,16 @@
   (swap! sdk-state assoc-in [:session :config :extensions] extensions))
 
 (defn get-all-extensions []
-  (get-in @sdk-state [:session :config :extensions]))
+  (get-state-value [:session :config :extensions]))
 
 (defn get-all-integrations []
-  (get-in @sdk-state [:session :config :integrations]))
+  (get-state-value [:session :config :integrations]))
 
 (defn get-active-extension []
-  (get-in @sdk-state [:session :config :active-extension]))
+  (get-state-value [:session :config :active-extension]))
 
 (defn get-all-reason-lists []
-  (get-in @sdk-state [:session :config :reason-lists]))
+  (get-state-value [:session :config :reason-lists]))
 
 (defn get-all-reason-codes-by-list [reason-list-id]
   (let [reason-list (reduce (fn [acc x]
@@ -326,11 +337,19 @@
 
 (defn get-active-tenant-id
   []
-  (get-in @sdk-state [:session :tenant-id]))
+  (let [tenant-id (get-state-value [:session :tenant-id])]
+    (if tenant-id
+      tenant-id
+      (do (js/console.warn "[SDK State] Unable to find tenant id in state; likely to have unintended side-effects.")
+          nil))))
 
 (defn get-session-id
   []
-  (get-in @sdk-state [:session :session-id]))
+  (let [session-id (get-state-value [:session :session-id])]
+    (if session-id
+      session-id
+      (do (js/console.warn "[SDK State] Unable to find session id in state; likely to have unintended side-effects.")
+          nil))))
 
 (defn set-user-session-state!
   [state]
@@ -338,7 +357,7 @@
 
 (defn get-user-session-state
   []
-  (get-in @sdk-state [:session :state]))
+  (get-state-value [:session :state]))
 
 ;;;;;;;;;;;
 ;; twilio
@@ -350,7 +369,7 @@
 
 (defn get-twilio-device
   []
-  (get-in @sdk-state [:internal :twilio-device]))
+  (get-state-value [:internal :twilio-device]))
 
 (defn set-twilio-connection
   [connection]
@@ -358,7 +377,7 @@
 
 (defn get-twilio-connection
   []
-  (get-in @sdk-state [:internal :twilio-connection]))
+  (get-state-value [:internal :twilio-connection]))
 
 ;;;;;;;;;;;;;
 ;; Messaging
@@ -370,7 +389,7 @@
 
 (defn get-mqtt-client
   []
-  (get-in @sdk-state [:internal :mqtt-client]))
+  (get-state-value [:internal :mqtt-client]))
 
 ;;;;;;;;;;;
 ;; Time
@@ -382,14 +401,14 @@
 
 (defn get-time-offset
   []
-  (get-in @sdk-state [:time :offset]))
+  (get-state-value [:time :offset]))
 
 (defn has-permissions?
   "Checks if a user has all of the permissions necessary within a list of required permissions for a given action."
   [resource-perms req-perms]
   (let [req-perms (set req-perms)
         resource-perms (set resource-perms)
-        check (clojure.set/intersection resource-perms req-perms)]
+        check (intersection resource-perms req-perms)]
     (= check req-perms)))
 
 ;;;;;;;;;;;;;;;;;;
@@ -398,7 +417,7 @@
 
 (defn get-enabled-modules
   []
-  (get-in @sdk-state [:internal :enabled-modules]))
+  (get-state-value [:internal :enabled-modules]))
 
 (defn set-module-enabled!
   [module-name]

@@ -7,10 +7,10 @@
             [lumbajack.core :as l]
 
             [cxengage-javascript-sdk.interaction-management :as int]
-            [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
+            [cljs-sdk-utils.protocols :as pr]
             [cljs-sdk-utils.core :as cxu]
             [cljs-sdk-utils.interop-helpers :as ih]
             [cljs-sdk-utils.specs :as specs]
@@ -29,7 +29,7 @@
             [cxengage-javascript-sdk.modules.email :as email]
             [cxengage-javascript-sdk.modules.twilio :as twilio]))
 
-(def *SDK-VERSION* "5.3.3-SNAPSHOT")
+(def *SDK-VERSION* "5.3.3")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."

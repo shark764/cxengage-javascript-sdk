@@ -23,7 +23,6 @@
                  resource-id (str (id/make-random-uuid))
                  interaction-id (str (id/make-random-uuid))
                  topic (topics/get-topic :interaction-end-acknowledged)]
-             (state/set-active-tenant! tenant-id)
              (state/set-user-identity! {:user-id resource-id})
              (set! rest/send-interrupt-request (fn [interaction-id interrupt-type interrupt-body]
                                                  (when (and interaction-id interrupt-type interrupt-body)
@@ -410,9 +409,9 @@
                                                 :flow-version flow-version}
                                  :status 200})
                  (set! api/api-request (fn [request-map]
-                                          (let [{:keys [url method body]} request-map
-                                                {:keys [interrupt-body interrupt-type interaction-id]} body]
-                                            the-chan)))
+                                         (let [{:keys [url method body]} request-map
+                                               {:keys [interrupt-body interrupt-type interaction-id]} body]
+                                           the-chan)))
                  (interaction/custom-interrupt {:interrupt-type "unit-test" :interrupt-body {} :interaction-id interaction-id}))))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -431,7 +430,7 @@
            (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-get-note-response [:api-response])]
                  (set! api/api-request (fn [_]
-                                          (go successful-get-note-response)))
+                                         (go successful-get-note-response)))
                  (p/subscribe "cxengage/interactions/get-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
@@ -453,7 +452,7 @@
            (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-get-notes-response [:api-response])]
                  (set! api/api-request (fn [_]
-                                          (go successful-get-notes-response)))
+                                         (go successful-get-notes-response)))
                  (p/subscribe "cxengage/interactions/get-notes-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
@@ -476,7 +475,7 @@
            (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-create-note-response [:api-response])]
                  (set! api/api-request (fn [_]
-                                          (go successful-create-note-response)))
+                                         (go successful-create-note-response)))
                  (p/subscribe "cxengage/interactions/create-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
@@ -499,7 +498,7 @@
            (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-update-note-response [:api-response])]
                  (set! api/api-request (fn [_]
-                                          (go successful-update-note-response)))
+                                         (go successful-update-note-response)))
                  (p/subscribe "cxengage/interactions/update-note-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
