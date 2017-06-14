@@ -105,6 +105,9 @@
 (defn active-interactions? []
   (not (empty? (get-state-value [:interactions :active]))))
 
+(defn get-all-active-interactions []
+  (get-state-value [:interactions :active]))
+
 (defn get-interaction [interaction-id]
   (let [location (find-interaction-location interaction-id)]
     (get-state-value [:interactions location interaction-id])))

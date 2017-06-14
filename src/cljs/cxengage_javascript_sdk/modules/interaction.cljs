@@ -69,13 +69,14 @@
         interrupt-type (if (= channel-type "voice")
                          "remove-resource"
                          "resource-disconnect")
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        resp (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))
+        {:keys [api-response status]} resp]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-end-interaction-err)
+                  :error (e/failed-to-end-interaction-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -93,7 +94,7 @@
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "offer-accept"
         {:keys [timeout timeout-end channel-type]} (state/get-interaction interaction-id)
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (do (p/publish {:topics topic
                       :response (merge {:interaction-id interaction-id} interrupt-body)
@@ -110,7 +111,7 @@
                           (= channel-type "messaging"))
                   (int/get-messaging-history interaction-id)))))
       (p/publish {:topics topic
-                  :error (e/failed-to-accept-interaction-err)
+                  :error (e/failed-to-accept-interaction-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -126,13 +127,13 @@
   (let [{:keys [callback topic interaction-id]} params
         interrupt-body (build-detailed-interrupt-body interaction-id)
         interrupt-type "interaction-focused"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-focus-interaction-err)
+                  :error (e/failed-to-focus-interaction-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -148,13 +149,13 @@
   (let [{:keys [callback topic interaction-id]} params
         interrupt-body (build-detailed-interrupt-body interaction-id)
         interrupt-type "interaction-unfocused"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-unfocus-interaction-err)
+                  :error (e/failed-to-unfocus-interaction-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -171,13 +172,13 @@
   (let [{:keys [callback topic interaction-id contact-id]} params
         interrupt-body (assoc (build-detailed-interrupt-body interaction-id) :contact-id contact-id)
         interrupt-type "interaction-contact-selected"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-assign-contact-to-interaction-err)
+                  :error (e/failed-to-assign-contact-to-interaction-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -194,13 +195,13 @@
   (let [{:keys [callback topic interaction-id contact-id]} params
         interrupt-body (assoc (build-detailed-interrupt-body interaction-id) :contact-id contact-id)
         interrupt-type "interaction-contact-deselected"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-unassign-contact-from-interaction-err)
+                  :error (e/failed-to-unassign-contact-from-interaction-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -216,13 +217,13 @@
   (let [{:keys [callback topic interaction-id]} params
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "wrapup-on"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-enable-wrapup-err)
+                  :error (e/failed-to-enable-wrapup-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -238,13 +239,13 @@
   (let [{:keys [callback topic interaction-id]} params
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "wrapup-off"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-disable-wrapup-err)
+                  :error (e/failed-to-disable-wrapup-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -260,13 +261,13 @@
   (let [{:keys [callback topic interaction-id]} params
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "wrapup-end"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-end-wrapup-err)
+                  :error (e/failed-to-end-wrapup-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -282,13 +283,13 @@
   (let [{:keys [callback topic interaction-id]} params
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "disposition-select"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-deselect-disposition-err)
+                  :error (e/failed-to-deselect-disposition-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -307,20 +308,20 @@
         dv (filterv #(= (:disposition-id %1) disposition-id) dispositions)]
     (if (empty? dv)
       (p/publish {:topics topic
-                  :error (e/args-failed-spec-err)
+                  :error (e/invalid-disposition-provided-err dispositions interaction-id)
                   :callback callback})
       (let [disposition (first dv)
             interrupt-disposition (assoc disposition :selected true)
             interrupt-body {:resource-id (state/get-active-user-id)
                             :disposition interrupt-disposition}
             interrupt-type "disposition-select"
-            {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+            {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
         (if (= status 200)
           (p/publish {:topics topic
                       :response (merge {:interaction-id interaction-id} interrupt-body)
                       :callback callback})
           (p/publish {:topics topic
-                      :error (e/failed-to-select-disposition-err)
+                      :error (e/failed-to-select-disposition-err interaction-id resp)
                       :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -340,13 +341,13 @@
   [params]
   (let [{:keys [callback topic interaction-id note-id]} params
         tenant-id (state/get-active-tenant-id)
-        {:keys [status api-response]} (a/<! (rest/get-note-request interaction-id note-id))]
+        {:keys [status api-response] :as resp} (a/<! (rest/get-note-request interaction-id note-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-interaction-note-err)
+                  :error (e/failed-to-get-interaction-note-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -366,13 +367,13 @@
   [params]
   (let [{:keys [callback topic interaction-id]} params
         tenant-id (state/get-active-tenant-id)
-        {:keys [status api-response]} (a/<! (rest/get-notes-request interaction-id))]
+        {:keys [status api-response] :as resp} (a/<! (rest/get-notes-request interaction-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-list-interaction-notes-err)
+                  :error (e/failed-to-list-interaction-notes-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -393,13 +394,13 @@
   (let [{:keys [callback topic interaction-id note-id]} params
         tenant-id (state/get-active-tenant-id)
         body (select-keys params [:title :body :contact-id])
-        {:keys [status api-response]} (a/<! (rest/update-note-request interaction-id note-id body))]
+        {:keys [status api-response] :as resp} (a/<! (rest/update-note-request interaction-id note-id body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-update-interaction-note-err)
+                  :error (e/failed-to-update-interaction-note-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -421,13 +422,13 @@
   (let [{:keys [callback topic interaction-id]} params
         tenant-id (state/get-active-tenant-id)
         body (select-keys params [:title :body :contact-id :tenant-id :resource-id])
-        {:keys [status api-response]} (a/<! (rest/create-note-request interaction-id body))]
+        {:keys [status api-response] :as resp} (a/<! (rest/create-note-request interaction-id body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-create-interaction-note-err)
+                  :error (e/failed-to-create-interaction-note-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -503,7 +504,7 @@
                   :response interaction-id
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-send-interaction-script-response-err)
+                  :error (e/failed-to-send-interaction-script-response-err interaction-id script-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -525,13 +526,13 @@
    :topic-key :send-custom-interrupt-acknowledged}
   [params]
   (let [{:keys [callback topic interrupt-body interrupt-type interaction-id]} params
-        {:keys [status api-response]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status api-response] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-send-custom-interrupt-err)
+                  :error (e/failed-to-send-custom-interrupt-err interaction-id resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

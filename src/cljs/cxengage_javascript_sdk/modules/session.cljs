@@ -34,28 +34,27 @@
   [params]
   (let [{:keys [callback topic reason-info]} params
         {:keys [reason reason-id reason-list-id]} reason-info
-        session-id (state/get-session-id)
-        resource-id (state/get-active-user-id)
-        tenant-id (state/get-active-tenant-id)]
+        session-id (state/get-session-id)]
     (if (and
          (or reason reason-id reason-list-id)
          (not (state/valid-reason-codes? reason reason-id reason-list-id)))
       (p/publish {:topics topic
-                  :error (e/invalid-reason-info-err)
+                  :error (e/invalid-reason-info-err (state/get-all-reason-lists))
                   :callback callback})
       (let [change-state-body (cond-> {:session-id session-id
                                        :state "notready"}
                                 reason-info (assoc :reason reason
                                                    :reason-id reason-id
                                                    :reason-list-id reason-list-id))
-            {:keys [status api-response]} (a/<! (rest/change-state-request change-state-body))
+            resp (a/<! (rest/change-state-request change-state-body))
+            {:keys [status api-response]} resp
             new-state-data (:result api-response)]
         (if (= status 200)
           (p/publish {:topics topic
                       :response new-state-data
                       :callback callback})
           (p/publish {:topics topic
-                      :error (e/failed-to-change-state-err)
+                      :error (e/failed-to-change-state-err resp)
                       :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -70,7 +69,8 @@
           (state/set-session-expired! true)
           nil)
       (let [topic (topics/get-topic :presence-heartbeats-response)
-            {:keys [api-response status]} (a/<! (rest/heartbeat-request))
+            resp (a/<! (rest/heartbeat-request))
+            {:keys [api-response status]} resp
             {:keys [result]} api-response
             next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
         (if (= status 200)
@@ -82,11 +82,12 @@
           (do (log :error "Heartbeat failed; ceasing future heartbeats.")
               (state/set-session-expired! true)
               (p/publish {:topics topic
-                          :error (e/session-heartbeats-failed-err)})
+                          :error (e/session-heartbeats-failed-err resp)})
               nil))))))
 
 (defn- start-session* []
-  (go (let [{:keys [status api-response]} (a/<! (rest/start-session-request))
+  (go (let [resp (a/<! (rest/start-session-request))
+            {:keys [status api-response]} resp
             topic (topics/get-topic :session-started)
             session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
         (if (= status 200)
@@ -97,7 +98,7 @@
               (state/set-session-expired! false)
               (start-heartbeats*))
           (p/publish {:topics topic
-                      :error (e/failed-to-start-agent-session-err)}))
+                      :error (e/failed-to-start-agent-session-err resp)}))
         nil)))
 
 (defn- get-config* []
@@ -114,7 +115,7 @@
                           :response (select-keys user-config [:active-extension :extensions])})
               (start-session*))
           (p/publish {:topics topic
-                      :error (e/failed-to-get-session-config-err)}))))
+                      :error (e/failed-to-get-session-config-err config-response)}))))
   nil)
 
 (def required-desktop-permissions
@@ -139,7 +140,7 @@
         tenant-permissions (state/get-tenant-permissions tenant-id)]
     (if-not (state/has-permissions? tenant-permissions required-desktop-permissions)
       (p/publish {:topics topic
-                  :error (e/insufficient-permissions-err)
+                  :error (e/insufficient-permissions-err required-desktop-permissions)
                   :callback callback})
       (do (state/set-active-tenant! tenant-id)
           (p/publish {:topics topic
@@ -160,7 +161,8 @@
    :topic-key :set-direction-response}
   [params]
   (let [{:keys [callback topic direction]} params
-        {:keys [status api-response]} (a/<! (rest/set-direction-request direction))
+        resp (a/<! (rest/set-direction-request direction))
+        {:keys [status api-response]} resp
         direction-details {:direction direction
                            :session-id (get-in api-response [:result :session-id])}]
     (if (= status 200)
@@ -168,7 +170,7 @@
                   :response direction-details
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-set-direction-err)
+                  :error (e/failed-to-set-direction-err resp)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -177,15 +179,16 @@
 
 (defn- go-ready* [topic callback]
   (go (let [session-id (state/get-session-id)
-            {:keys [status api-response]} (a/<! (rest/change-state-request {:session-id session-id
-                                                                            :state "ready"}))
+            resp (a/<! (rest/change-state-request {:session-id session-id
+                                                   :state "ready"}))
+            {:keys [status api-response]} resp
             new-state-data (:result api-response)]
         (if (= status 200)
           (p/publish {:topics topic
                       :response new-state-data
                       :callback callback})
           (p/publish {:topics topic
-                      :error (e/failed-to-change-state-err)
+                      :error (e/failed-to-change-state-err resp)
                       :callback callback})))))
 
 (s/def ::go-ready-spec
@@ -197,19 +200,20 @@
    :topic-key :presence-state-change-request-acknowledged}
   [params]
   (let [{:keys [callback topic extension-value]} params
-        {:keys [status api-response]} (a/<! (rest/get-user-request))
+        resp (a/<! (rest/get-user-request))
+        {:keys [status api-response]} resp
         {:keys [result]} api-response
         extensions (get-in api-response [:result :extensions])]
     (if-not (= status 200)
       (p/publish {:topics topic
-                  :error (e/failed-to-get-user-extensions-err)
+                  :error (e/failed-to-get-user-extensions-err resp)
                   :callback callback})
       (do (state/set-extensions! extensions)
           (let [new-extension (state/get-extension-by-value extension-value)
                 active-extension (state/get-active-extension)]
             (if-not new-extension
               (p/publish {:topics topic
-                          :error (e/invalid-extension-provided-err)
+                          :error (e/invalid-extension-provided-err (state/get-all-extensions))
                           :callback callback})
               (if-not (= active-extension new-extension)
                 ;; Active extension was either nil (this user has never had an
@@ -217,16 +221,18 @@
                 ;; active extension, but it didn't match the one they passed for the
                 ;; session they're starting. Update their user prior to changing
                 ;; state, so they go ready with the correct extension.
-                (let [{:keys [status api-response]} (a/<! (rest/update-user-request {:activeExtension new-extension}))]
+                (let [resp (a/<! (rest/update-user-request {:activeExtension new-extension}))
+                      {:keys [status api-response]} resp]
                   (if-not (= status 200)
                     (p/publish {:topics topic
-                                :error (e/failed-to-update-extension-err)
+                                :error (e/failed-to-update-extension-err resp)
                                 :callback callback}))
-                  (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
+                  (let [resp (a/<! (rest/get-config-request))
+                        {:keys [status api-response]} resp
                         user-config (:result api-response)]
                     (if (not (= status 200))
                       (p/publish {:topics topic
-                                  :error (e/failed-to-get-session-config-err)
+                                  :error (e/failed-to-get-session-config-err resp)
                                   :callback callback})
                       (do (state/set-config! user-config)
                           (p/publish {:topics (topics/get-topic :extension-list)
