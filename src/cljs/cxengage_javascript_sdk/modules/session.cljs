@@ -204,9 +204,7 @@
       (p/publish {:topics topic
                   :error (e/failed-to-get-user-extensions-err)
                   :callback callback})
-      (do (p/publish {:topics (topics/get-topic :extension-list)
-                      :response (select-keys result [:active-extension :extensions])})
-          (state/set-extensions! extensions)
+      (do (state/set-extensions! extensions)
           (let [new-extension (state/get-extension-by-value extension-value)
                 active-extension (state/get-active-extension)]
             (if-not new-extension
