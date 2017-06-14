@@ -198,7 +198,7 @@
         {:keys [result]} api-response
         extensions (get-in api-response [:result :extensions])]
     (when (= status 200)
-      (p/publish {:topics (p/get-topic :extension-list)
+      (p/publish {:topics (topics/get-topic :extension-list)
                   :response (select-keys result [:active-extension :extensions])})
       (state/set-extensions! extensions)
       (let [new-extension (state/get-extension-by-value extension-value)
@@ -245,7 +245,7 @@
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         user-id (state/get-active-user-id)]
-    (p/publish {:topic (p/get-topic :get-active-user-id-response)
+    (p/publish {:topic (topics/get-topic :get-active-user-id-response)
                 :response user-id
                 :callback callback})
     user-id))
@@ -258,7 +258,7 @@
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         tenant-id (state/get-active-tenant-id)]
-    (p/publish {:topic (p/get-topic :get-active-tenant-id-response)
+    (p/publish {:topic (topics/get-topic :get-active-tenant-id-response)
                 :response tenant-id
                 :callback callback})
     tenant-id))
@@ -271,7 +271,7 @@
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         token (state/get-token)]
-    (p/publish {:topic (p/get-topic :get-token-response)
+    (p/publish {:topic (topics/get-topic :get-token-response)
                 :response token
                 :callback callback})
     token))

@@ -269,6 +269,64 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.email.agentReplyStarted({
+;;   interactionId: {{uuid}},
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::agent-reply-started-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn agent-reply-started
+  {:validation ::agent-reply-started-params
+   :topic-key (topics/get-topic :agent-reply-started-acknowledged)}
+  [params]
+  (let [{:keys [interaction-id callback topic]} params
+        interrupt-type "agent-reply-started"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :tenant-id (state/get-active-tenant-id)
+                        :session-id (state/get-session-id)
+                        :channel-type "email"}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-send-agent-reply-started-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.email.agentNoReply({
+;;   interactionId: {{uuid}},
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::agent-no-reply-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn agent-no-reply
+  {:validation ::agent-no-reply-params
+   :topic-key (topics/get-topic :agent-no-reply-acknowledged)}
+  [params]
+  (let [{:keys [interaction-id callback topic]} params
+        interrupt-type "agent-no-reply"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :tenant-id (state/get-active-tenant-id)
+                        :session-id (state/get-session-id)
+                        :channel-type "email"}
+        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-send-agent-no-reply-err)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; SDK Entities Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -280,7 +338,9 @@
                                                  :remove-attachment remove-attachment
                                                  :get-attachment-url get-attachment-url
                                                  :send-reply send-reply
-                                                 :start-outbound-email start-outbound-email}}}
+                                                 :start-outbound-email start-outbound-email
+                                                 :agent-reply-started agent-reply-started
+                                                 :agent-no-reply agent-no-reply}}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

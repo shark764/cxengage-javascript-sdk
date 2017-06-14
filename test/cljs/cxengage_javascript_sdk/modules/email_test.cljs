@@ -5,6 +5,8 @@
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs-sdk-utils.api :as api]
+            [cljs-sdk-utils.topics :as topics]
+            [cljs-sdk-utils.errors :as e]
             [cljs-uuid-utils.core :as id]
             [cljs.test :refer-macros [deftest is testing async]]))
 
@@ -74,3 +76,83 @@
                                                                                                 (set! rest/create-interaction-request old)
                                                                                                 (done)))
              (email/start-outbound-email {:address "unit@test.com"})))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; agent-reply-started unit tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def interaction-id (id/make-random-uuid))
+(def session-id (id/make-random-uuid))
+(def resource-id (id/make-random-uuid))
+(def tenant-id (id/make-random-uuid))
+(def channel-type "email")
+
+(def expected-response {:interactionId interaction-id
+                        :sessionId session-id
+                        :resourceId resource-id
+                        :tenantId tenant-id
+                        :channelType channel-type})
+
+(deftest agent-reply-started-test
+  (testing "the agent-reply-started fn"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (state/reset-state)
+     (state/set-user-identity! {:user-id resource-id})
+     (state/set-session-details! {:session-id session-id
+                                  :tenant-id tenant-id})
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go {:status 200})))
+     (p/subscribe
+      (topics/get-topic :agent-reply-started-acknowledged)
+      (fn [error topic response]
+        (is (= expected-response (js->clj response :keywordize-keys true)))
+        (done)))
+     (email/agent-reply-started {:interaction-id interaction-id}))))
+
+(deftest agent-reply-started-error-test
+  (testing "the agent-reply-started fn error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go {:status 404})))
+     (p/subscribe
+      (topics/get-topic :agent-reply-started-acknowledged)
+      (fn [error topic response]
+        (is (= (e/failed-to-send-agent-reply-started-err) (js->clj error :keywordize-keys true)))
+        (done)))
+     (email/agent-reply-started {:interaction-id interaction-id}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; agent-no-reply unit tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deftest agent-no-reply-test
+  (testing "the agent-no-reply fn"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go {:status 200})))
+     (p/subscribe
+      (topics/get-topic :agent-no-reply-acknowledged)
+      (fn [error topic response]
+        (is (= expected-response (js->clj response :keywordize-keys true)))
+        (done)))
+     (email/agent-no-reply {:interaction-id interaction-id}))))
+
+(deftest agent-no-reply-error-test
+  (testing "the agent-no-reply fn error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go {:status 404})))
+     (p/subscribe
+      (topics/get-topic :agent-no-reply-acknowledged)
+      (fn [error topic response]
+        (is (= (e/failed-to-send-agent-no-reply-err) (js->clj error :keywordize-keys true)))
+        (done)))
+     (email/agent-no-reply {:interaction-id interaction-id}))))
