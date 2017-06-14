@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.5]
+* CXV1-9750 - Voice module unit test coverage expanded significantly.
+
 ## [5.3.4]
 * Fixed small regression in the kebabification of API responses (no JIRA)
 

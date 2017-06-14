@@ -502,8 +502,46 @@
         (done)))
      (voice/cancel-extension-transfer {:interaction-id interaction-id :transfer-extension transfer-extension :transfer-type "cold"}))))
 
+(def flow-id (id/make-random-uuid))
+(def flow-version (id/make-random-uuid))
+(def expected-interaction-response {:interactionId interaction-id
+                                    :flowId flow-id
+                                    :flowVersion flow-version})
+(def phone-number (:value transfer-extension))
+
+(deftest dial-test
+  (testing "the click to dial function"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/create-interaction-request (fn [& _]
+                                             (go {:status 200
+                                                  :api-response {:interaction-id interaction-id
+                                                                 :flow-id flow-id
+                                                                 :flow-version flow-version}})))
+     (p/subscribe
+      (topics/get-topic :dial-send-acknowledged)
+      (fn [error topic response]
+        (is (= expected-interaction-response (js->clj response :keywordize-keys true)))
+        (done)))
+     (voice/dial {:phone-number phone-number}))))
+
+(deftest dial-error-test
+  (testing "the dial error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/create-interaction-request (fn [& _]
+                                             (go {:status 404})))
+     (p/subscribe
+      (topics/get-topic :dial-send-acknowledged)
+      (fn [error topic response]
+        (is (= (e/failed-to-perform-outbound-dial-err) (js->clj error :keywordize-keys true)))
+        (done)))
+     (voice/dial {:phone-number phone-number}))))
+
 (deftest cancel-test
-  (testing "the end interaction function"
+  (testing "the cancel-dial function"
     (async done
            (reset! state/sdk-state)
            (reset! p/sdk-subscriptions)
@@ -523,3 +561,160 @@
                                   (set! rest/send-interrupt-request old)
                                   (done)))
              (voice/cancel-dial {:interaction-id interaction-id})))))
+
+(deftest cancel-error-test
+  (testing "the cancel-dial fn's error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go {:status 404})))
+     (p/subscribe
+      (topics/get-topic :cancel-dial-acknowledged)
+      (fn [error topic response]
+        (is (= (e/failed-to-cancel-outbound-dial-err) (js->clj error :keywordize-keys true)))
+        (done)))
+     (voice/cancel-dial {:interaction-id interaction-id}))))
+
+(def digit "0")
+
+(deftest send-digits-test
+  (testing "the send-digits function"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (state/reset-state)
+     (let [mock-twilio-connection (js/Object.)]
+       (set! (.-sendDigits mock-twilio-connection) (fn [& _] "beep"))
+       (state/set-twilio-connection mock-twilio-connection))
+     (state/set-config! {:integrations [{:type "twilio"}]
+                         :active-extension {:provider "twilio"}})
+     (state/add-interaction! :active {:interaction-id interaction-id
+                                      :channel-type "voice"})
+     (p/subscribe
+      (topics/get-topic :send-digits-acknowledged)
+      (fn [error topic response]
+        (is (= {:interactionId interaction-id
+                :digitSent digit} (js->clj response :keywordize-keys true)))
+        (done)))
+     (voice/send-digits {:interaction-id interaction-id
+                         :digit digit}))))
+
+(deftest send-digits-no-integration-err
+  (testing "the no twilio integration error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (state/reset-state)
+     (state/set-config! {:integrations [{:type "plivo"}]
+                         :active-extension {:provider "plivo"}})
+     (p/subscribe
+      (topics/get-topic :no-twilio-integration)
+      (fn [error topic response]
+        (is (= (e/no-twilio-integration-err) (js->clj error :keywordize-keys true)))
+        (done)))
+     (voice/send-digits {:interaction-id interaction-id
+                         :digit digit}))))
+
+(deftest send-digits-exception-test
+  (testing "the send-digits exception handler"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (state/reset-state)
+     (state/set-config! {:integrations [{:type "twilio"}]
+                         :active-extension {:provider "twilio"}})
+     (state/add-interaction! :active {:interaction-id interaction-id
+                                      :channel-type "voice"})
+     (p/subscribe
+      (topics/get-topic :send-digits-acknowledged)
+      (fn [error topic response]
+        (is (= (e/failed-to-send-twilio-digits-err) (js->clj error :keywordize-keys true)))
+        (done)))
+     (voice/send-digits {:interaction-id interaction-id
+                         :digit digit}))))
+
+(deftest send-digits-error-test
+  (testing "the send-digits error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (state/reset-state)
+     (state/set-config! {:integrations [{:type "twilio"}]
+                         :active-extension {:provider "twilio"}})
+     (state/add-interaction! :active {:interaction-id interaction-id
+                                      :channel-type "messaging"})
+     (p/subscribe
+      (topics/get-topic :failed-to-send-digits-invalid-interaction)
+      (fn [error topic response]
+        (is (= (e/failed-to-send-digits-invalid-interaction-err) (js->clj error :keywordize-keys true)))
+        (done)))
+     (voice/send-digits {:interaction-id interaction-id
+                         :digit digit}))))
+
+(def files ["blahblahblah.png"])
+(def artifact-id (id/make-random-uuid))
+(def tenant-id (id/make-random-uuid))
+
+(deftest get-recording-test
+  (testing "the get-recording fn"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/get-artifact-by-id-request (fn [& _]
+                                             (go {:api-response {:files files}
+                                                  :status 200})))
+     (p/subscribe
+      (topics/get-topic :recording-response)
+      (fn [error topic response]
+        (is (= files (js->clj response :keywordize-keys true)))
+        (done)))
+     (voice/get-recording interaction-id tenant-id artifact-id (fn [& _] nil)))))
+
+(deftest get-recording-error-test
+  (testing "the get-recording error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/get-artifact-by-id-request (fn [& _]
+                                             (go {:statuts 404})))
+     (p/subscribe
+      (topics/get-topic :recording-response)
+      (fn [error topic response]
+        (is (= (e/failed-to-get-specific-recording-err) (js->clj error :keywordize-keys true)))
+        (done)))
+     (voice/get-recording interaction-id tenant-id artifact-id (fn [& _] nil)))))
+
+(deftest get-recordings-test
+  (testing "the get-recordings fn"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (state/set-active-tenant! tenant-id)
+     (set! rest/get-artifact-by-id-request (fn [& _]
+                                             (go {:api-response {:files files}
+                                                  :status 200})))
+     (set! rest/get-interaction-artifacts-request (fn [& _]
+                                                    (go {:api-response {:results [{:artifact-type "audio-recording"}]}
+                                                         :status 200})))
+     (p/subscribe
+      (topics/get-topic :recording-response)
+      (fn [error topic response]
+        (is (= files (js->clj response :keywordize-keys true)))
+        (done)))
+     (voice/get-recordings {:interaction-id interaction-id}))))
+
+(deftest get-recordings-none-test
+  (testing "the get-recordings response for no recordings"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/get-interaction-artifacts-request (fn [& _]
+                                                    (go {:api-response {:results []}
+                                                         :status 200})))
+     (p/subscribe
+      (topics/get-topic :recording-response)
+      (fn [error topic response]
+        (is (= [] (js->clj response :keywordize-keys true)))
+        (done)))
+     (voice/get-recordings {:interaction-id interaction-id}))))
