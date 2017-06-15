@@ -1,5 +1,8 @@
 # Change Log
 
+##[Unreleased]
+* CXV1-8994 - Expose api-url function for external modules
+
 ## [5.3.6]
 * Fixed small regression in batch request functionality.
 
