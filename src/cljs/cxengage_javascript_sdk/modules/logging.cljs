@@ -55,8 +55,9 @@
    :topic-key :logs-saved}
   [params]
   (let [{:keys [topic callback]} params
+        unsaved-logs (jack/get-unsaved-logs)
         logs (reduce (fn [acc x] (let [log (format-request-logs x)]
-                                   (conj acc log))) [] (jack/get-unsaved-logs))
+                                   (conj acc log))) [] unsaved-logs)
         logs-body {:logs logs
                    :device "client"
                    :app-id (str (uuid/make-random-squuid))
@@ -68,7 +69,7 @@
                       :response api-response
                       :callback callback}))
       (p/publish {:topics topic
-                  :error (e/failed-to-save-logs-err)
+                  :error (e/failed-to-save-logs-err unsaved-logs api-response)
                   :callback callback}))))
 
 (defn log* [level & args]

@@ -9,6 +9,7 @@
             [cljs-sdk-utils.api :as api]
             [cljs-sdk-utils.topics :as topics]
             [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.test :refer [camels]]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
@@ -23,6 +24,8 @@
                          :value "+15055555555"})
 (def expected-response {:interactionId interaction-id
                         :resourceId resource-id})
+
+(def not-found {:status 404})
 
 (deftest hold-test
   (testing "the customer hold function"
@@ -45,11 +48,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :hold-acknowledged)
       (fn [error topic response]
-        (is (=  (e/failed-to-place-customer-on-hold-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-place-customer-on-hold-err interaction-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/customer-hold {:interaction-id interaction-id}))))
 
@@ -73,11 +76,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :resume-acknowledged)
       (fn [error topic response]
-        (is (=  (e/failed-to-resume-customer-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-resume-customer-err interaction-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/customer-resume {:interaction-id interaction-id}))))
 
@@ -103,11 +106,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :mute-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-mute-target-resource-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-mute-target-resource-err interaction-id resource-id resource-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/mute {:interaction-id interaction-id :target-resource-id resource-id}))))
 
@@ -133,11 +136,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :unmute-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-unmute-target-resource-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-unmute-target-resource-err interaction-id resource-id resource-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/unmute {:interaction-id interaction-id :target-resource-id resource-id}))))
 
@@ -163,11 +166,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :resource-hold-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-place-resource-on-hold-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-place-resource-on-hold-err interaction-id resource-id resource-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/resource-hold {:interaction-id interaction-id :target-resource-id resource-id}))))
 
@@ -193,11 +196,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :resource-resume-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-resume-resource-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-resume-resource-err interaction-id resource-id resource-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/resource-resume {:interaction-id interaction-id :target-resource-id resource-id}))))
 
@@ -221,11 +224,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :resume-all-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-resume-all-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-resume-all-err interaction-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/resume-all {:interaction-id interaction-id}))))
 
@@ -251,11 +254,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :resource-removed-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-remove-resource-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-remove-resource-err interaction-id resource-id resource-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/remove-resource {:interaction-id interaction-id :target-resource-id resource-id}))))
 
@@ -279,11 +282,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :recording-start-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-start-recording-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-start-recording-err interaction-id resource-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/start-recording {:interaction-id interaction-id}))))
 
@@ -307,11 +310,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :recording-stop-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-stop-recording-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-stop-recording-err interaction-id resource-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/stop-recording {:interaction-id interaction-id}))))
 
@@ -338,11 +341,13 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :customer-transfer-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-transfer-to-resource-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-transfer-to-resource-err {:transfer-resource-id transfer-resource-id
+                                                              :resource-id resource-id
+                                                              :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/transfer-to-resource {:interaction-id interaction-id :resource-id transfer-resource-id :transfer-type "cold"}))))
 
@@ -369,11 +374,13 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :customer-transfer-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-transfer-to-queue-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-transfer-to-queue-err {:transfer-queue-id transfer-queue-id
+                                                           :resource-id resource-id
+                                                           :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/transfer-to-queue {:interaction-id interaction-id :queue-id transfer-queue-id :transfer-type "cold"}))))
 
@@ -400,11 +407,13 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :customer-transfer-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-transfer-to-extension-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-transfer-to-extension-err {:transfer-extension transfer-extension
+                                                               :resource-id resource-id
+                                                               :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/transfer-to-extension {:interaction-id interaction-id :transfer-extension transfer-extension :transfer-type "cold"}))))
 
@@ -432,11 +441,13 @@
      (reset! p/sdk-subscriptions {})
      (state/set-user-identity! {:user-id resource-id})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :cancel-transfer-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-cancel-resource-transfer-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-cancel-resource-transfer-err {:transfer-resource-id transfer-resource-id
+                                                                  :resource-id resource-id
+                                                                  :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/cancel-resource-transfer {:interaction-id interaction-id :transfer-resource-id transfer-resource-id :transfer-type "cold"}))))
 
@@ -463,11 +474,13 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :cancel-transfer-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-cancel-queue-transfer-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-cancel-queue-transfer-err {:transfer-queue-id transfer-queue-id
+                                                               :resource-id resource-id
+                                                               :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/cancel-queue-transfer {:interaction-id interaction-id :transfer-queue-id transfer-queue-id :transfer-type "cold"}))))
 
@@ -494,11 +507,13 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :cancel-transfer-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-cancel-extension-transfer-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-cancel-extension-transfer-err {:transfer-extension transfer-extension
+                                                                   :resource-id resource-id
+                                                                   :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/cancel-extension-transfer {:interaction-id interaction-id :transfer-extension transfer-extension :transfer-type "cold"}))))
 
@@ -532,11 +547,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/create-interaction-request (fn [& _]
-                                             (go {:status 404})))
+                                             (go not-found)))
      (p/subscribe
       (topics/get-topic :dial-send-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-perform-outbound-dial-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-perform-outbound-dial-err phone-number not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/dial {:phone-number phone-number}))))
 
@@ -568,11 +583,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :cancel-dial-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-cancel-outbound-dial-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-cancel-outbound-dial-err interaction-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/cancel-dial {:interaction-id interaction-id}))))
 
@@ -611,7 +626,7 @@
      (p/subscribe
       (topics/get-topic :no-twilio-integration)
       (fn [error topic response]
-        (is (= (e/no-twilio-integration-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/no-twilio-integration-err)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/send-digits {:interaction-id interaction-id
                          :digit digit}))))
@@ -629,7 +644,7 @@
      (p/subscribe
       (topics/get-topic :send-digits-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-send-twilio-digits-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-send-twilio-digits-err digit)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/send-digits {:interaction-id interaction-id
                          :digit digit}))))
@@ -647,7 +662,7 @@
      (p/subscribe
       (topics/get-topic :failed-to-send-digits-invalid-interaction)
       (fn [error topic response]
-        (is (= (e/failed-to-send-digits-invalid-interaction-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-send-digits-invalid-interaction-err interaction-id)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/send-digits {:interaction-id interaction-id
                          :digit digit}))))
@@ -677,11 +692,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/get-artifact-by-id-request (fn [& _]
-                                             (go {:statuts 404})))
+                                             (go not-found)))
      (p/subscribe
       (topics/get-topic :recording-response)
       (fn [error topic response]
-        (is (= (e/failed-to-get-specific-recording-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-get-specific-recording-err interaction-id artifact-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (voice/get-recording interaction-id tenant-id artifact-id (fn [& _] nil)))))
 

@@ -46,12 +46,24 @@
                                                                                (done)))
              (email/start-outbound-email {:address "unit@test.com"})))))
 
+(def mock-sad-interaction-response {:api-response {:bad-request "Missing some stuff, or whatever."}
+                                    :status 400})
+(def resource-id (id/make-random-uuid))
+(def mock-email-address "unit@test.com")
+
+(def mock-interaction-body {:source "email"
+                            :customer mock-email-address
+                            :contact-point "outbound-email"
+                            :channel-type "email"
+                            :direction "outbound"
+                            :interaction {:resource-id resource-id}
+                            :metadata {}})
+
 (deftest click-to-email-test-sad
   (testing "The click to email function called start-outbound-email"
     (async done
            (let [old rest/create-interaction-request
                  tenant-id (str (id/make-random-squuid))
-                 resource-id (str (id/make-random-squuid))
                  interaction-id (str (id/make-random-squuid))
                  flow-id (str (id/make-random-squuid))
                  flow-version (str (id/make-random-squuid))]
@@ -68,15 +80,12 @@
                                                                    id]} body]
                                                        (when (and source customer contact-point channel-type
                                                                   direction interaction metadata id)
-                                                         (go {:api-response {:bad-request "Missing some stuff, or whatever."}
-                                                              :status 400})))))
+                                                         (go mock-sad-interaction-response)))))
              (p/subscribe "cxengage/errors/error/failed-to-create-outbound-email-interaction" (fn [e t r]
-                                                                                                (is (= {:code 10002
-                                                                                                        :level "error"
-                                                                                                        :message "Failed to create outbound email interaction."} (js->clj e :keywordize-keys true)))
+                                                                                                (is (= (camels (dissoc (e/failed-to-create-outbound-email-interaction-err mock-interaction-body mock-sad-interaction-response) :data))  (dissoc (js->clj e :keywordize-keys true) :data)))
                                                                                                 (set! rest/create-interaction-request old)
                                                                                                 (done)))
-             (email/start-outbound-email {:address "unit@test.com"})))))
+             (email/start-outbound-email {:address mock-email-address})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; agent-reply-started unit tests
@@ -84,7 +93,6 @@
 
 (def interaction-id (id/make-random-uuid))
 (def session-id (id/make-random-uuid))
-(def resource-id (id/make-random-uuid))
 (def tenant-id (id/make-random-uuid))
 (def channel-type "email")
 
@@ -93,6 +101,8 @@
                         :resourceId resource-id
                         :tenantId tenant-id
                         :channelType channel-type})
+
+(def not-found {:status 404})
 
 (deftest agent-reply-started-test
   (testing "the agent-reply-started fn"
@@ -118,11 +128,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :agent-reply-started-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-send-agent-reply-started-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-send-agent-reply-started-err interaction-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (email/agent-reply-started {:interaction-id interaction-id}))))
 
@@ -150,11 +160,11 @@
      done
      (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
-                                         (go {:status 404})))
+                                         (go not-found)))
      (p/subscribe
       (topics/get-topic :agent-no-reply-acknowledged)
       (fn [error topic response]
-        (is (= (e/failed-to-send-agent-no-reply-err) (js->clj error :keywordize-keys true)))
+        (is (= (camels (e/failed-to-send-agent-no-reply-err interaction-id not-found)) (js->clj error :keywordize-keys true)))
         (done)))
      (email/agent-no-reply {:interaction-id interaction-id}))))
 

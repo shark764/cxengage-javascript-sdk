@@ -108,7 +108,7 @@
 (defn on-failure [msg]
   (log :error "Mqtt Client failed to connect " msg)
   (p/publish {:topics (topics/get-topic :mqtt-failed-to-connect)
-              :error (e/failed-to-connect-to-mqtt-err)})
+              :error (e/failed-to-connect-to-mqtt-err msg)})
   (ih/send-core-message {:type :module-registration-status
                          :status :failure
                          :module-name :messaging}))
@@ -220,7 +220,7 @@
                   :response {:interaction-id interaction-id}
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-send-outbound-sms-err)
+                  :error (e/failed-to-send-outbound-sms-err interaction-id message sms-response)
                   :callback callback}))))
 
 ;; ----------------------------------------------------------------;;
@@ -266,7 +266,7 @@
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-create-outbound-sms-interaction-err)
+                  :error (e/failed-to-create-outbound-sms-interaction-err phone-number message sms-response)
                   :callback callback}))))
 
 ;; ----------------------------------------------------------------;;
@@ -288,7 +288,7 @@
                       :response (:files api-response)
                       :callback callback})
           (p/publish {:topics topic
-                      :error (e/failed-to-get-specific-messaging-transcript-err)
+                      :error (e/failed-to-get-specific-messaging-transcript-err interaction-id artifact-id transcript)
                       :callback callback})))))
 
 (def-sdk-fn get-transcripts
@@ -309,7 +309,7 @@
         (doseq [t transcripts]
           (get-transcript interaction-id tenant-id (:artifact-id t) callback)))
       (p/publish {:topics topic
-                  :error (e/failed-to-get-messaging-transcripts-err)
+                  :error (e/failed-to-get-messaging-transcripts-err interaction-id interaction-files)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

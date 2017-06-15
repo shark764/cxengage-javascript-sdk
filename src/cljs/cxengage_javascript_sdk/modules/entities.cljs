@@ -33,13 +33,13 @@
    :topic-key :get-user-response}
   [params]
   (let [{:keys [callback topic resource-id]} params
-        {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "user" resource-id))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "user" resource-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-user-err)
+                  :error (e/failed-to-get-user-err resource-id entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -55,13 +55,13 @@
    :topic-key :get-users-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "user"))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "user"))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-user-list-err)
+                  :error (e/failed-to-get-user-list-err entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -79,13 +79,13 @@
    :topic-key :get-queue-response}
   [params]
   (let [{:keys [callback topic queue-id]} params
-        {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "queue" queue-id))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "queue" queue-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-queue-err)
+                  :error (e/failed-to-get-queue-err queue-id entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -101,13 +101,13 @@
    :topic-key :get-queues-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "queue"))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "queue"))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-queue-list-err)
+                  :error (e/failed-to-get-queue-list-err entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -125,13 +125,13 @@
    :topic-key :get-transfer-list-response}
   [params]
   (let [{:keys [callback topic transfer-list-id]} params
-        {:keys [status api-response]} (a/<! (rest/crud-entity-request :get "transfer-list" transfer-list-id))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "transfer-list" transfer-list-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-transfer-list-err)
+                  :error (e/failed-to-get-transfer-list-err entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -147,13 +147,13 @@
    :topic-key :get-transfer-lists-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response]} (a/<! (rest/crud-entities-request :get "transfer-list"))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "transfer-list"))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-transfer-lists-err)
+                  :error (e/failed-to-get-transfer-lists-err entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -169,13 +169,13 @@
    :topic-key :get-branding-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response]} (a/<! (rest/get-branding-request))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-branding-request))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (:result api-response)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-tenant-branding-err)
+                  :error (e/failed-to-get-tenant-branding-err entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -198,13 +198,13 @@
    :topic-key :update-user-response}
   [params]
   (let [{:keys [callback topic update-body resource-id]} params
-        {:keys [status api-response]} (a/<! (rest/crud-entity-request :put "user" resource-id update-body))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :put "user" resource-id update-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :response (e/failed-to-update-user-err)
+                  :response (e/failed-to-update-user-err update-body resource-id entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

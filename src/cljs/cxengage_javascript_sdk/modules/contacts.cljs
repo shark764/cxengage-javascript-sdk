@@ -31,7 +31,7 @@
    :topic-key :get-contact}
   [params]
   (let [{:keys [contact-id callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/get-contact-request contact-id))
+        {:keys [api-response status] :as contacts-response} (a/<! (rest/get-contact-request contact-id))
         retrieved-contact (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -39,7 +39,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-contact-err)
+                  :error (e/failed-to-get-contact-err contact-id contacts-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -55,7 +55,7 @@
    :topic-key :get-contacts}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/get-contacts-request))
+        {:keys [api-response status] :as contacts-response} (a/<! (rest/get-contacts-request))
         retrieved-contacts (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -63,7 +63,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-list-all-contacts-err)
+                  :error (e/failed-to-list-all-contacts-err contacts-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -84,8 +84,8 @@
    :preserve-casing? true}
   [params]
   (let [{:keys [query callback topic]} params
-        query (get-query-str query)
-        {:keys [api-response status]} (a/<! (rest/search-contacts-request query))
+        query-str (get-query-str query)
+        {:keys [api-response status] :as contacts-response} (a/<! (rest/search-contacts-request query-str))
         found-contacts (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -93,7 +93,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-search-contacts-err)
+                  :error (e/failed-to-search-contacts-err query contacts-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -110,7 +110,7 @@
    :preserve-casing? true}
   [params]
   (let [{:keys [attributes callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/create-contact-request {:attributes attributes}))
+        {:keys [api-response status] :as contacts-response} (a/<! (rest/create-contact-request {:attributes attributes}))
         created-contact (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -118,7 +118,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-create-contact-err)
+                  :error (e/failed-to-create-contact-err attributes contacts-response)
                   :callback callback}))))
 
 ;; ----------------------------------------------------------------------------------------------- ;;
@@ -136,14 +136,14 @@
    :preserve-casing? true}
   [params]
   (let [{:keys [attributes contactId callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/update-contact-request contactId {:attributes attributes}))
+        {:keys [api-response status] :as contacts-response} (a/<! (rest/update-contact-request contactId {:attributes attributes}))
         updated-contact (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
                   :response updated-contact
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-update-contact-err)
+                  :error (e/failed-to-update-contact-err contactId attributes contacts-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -159,7 +159,7 @@
    :topic-key :delete-contact}
   [params]
   (let [{:keys [contact-id callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/delete-contact-request contact-id))
+        {:keys [api-response status] :as contacts-response} (a/<! (rest/delete-contact-request contact-id))
         deleted-contact? (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -167,7 +167,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-delete-contact-err)
+                  :error (e/failed-to-delete-contact-err contact-id contacts-response)
                   :callback callback}))))
 
 ;; ----------------------------------------------------------------------------------------------------------------- ;;
@@ -185,8 +185,8 @@
    :preserve-casing? true}
   [params]
   (let [{:keys [contactIds attributes callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/merge-contact-request {:contactIds contactIds
-                                                                         :attributes attributes}))
+        {:keys [api-response status] :as contacts-response} (a/<! (rest/merge-contact-request {:contactIds contactIds
+                                                                                               :attributes attributes}))
         merged-contact (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -194,7 +194,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-merge-contacts-err)
+                  :error (e/failed-to-merge-contacts-err contactIds contacts-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -210,7 +210,7 @@
    :topic-key :list-attributes}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/list-attributes-request))
+        {:keys [api-response status] :as attributes-response} (a/<! (rest/list-attributes-request))
         retrieved-attributes (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -218,7 +218,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-list-contact-attributes-err)
+                  :error (e/failed-to-list-contact-attributes-err attributes-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -234,7 +234,7 @@
    :topic-key :get-layout}
   [params]
   (let [{:keys [layout-id callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/get-layout-request layout-id))
+        {:keys [api-response status] :as layouts-response} (a/<! (rest/get-layout-request layout-id))
         retrieved-layout (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -242,7 +242,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-retrieve-contact-layout-err)
+                  :error (e/failed-to-retrieve-contact-layout-err layout-id layouts-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -258,7 +258,7 @@
    :topic-key :list-layouts}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [api-response status]} (a/<! (rest/list-layouts-request))
+        {:keys [api-response status] :as layouts-response} (a/<! (rest/list-layouts-request))
         retrieved-layouts (:result api-response)]
     (if (= status 200)
       (p/publish {:topics topic
@@ -266,7 +266,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-retrieve-contact-layouts-list-err)
+                  :error (e/failed-to-retrieve-contact-layouts-list-err layouts-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
