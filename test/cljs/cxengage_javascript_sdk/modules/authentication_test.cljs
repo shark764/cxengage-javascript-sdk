@@ -51,7 +51,8 @@
    :internal {:enabled-modules []}
    :interactions {:pending {}
                   :active {}
-                  :past {}}
+                  :past {}
+                  :incoming {}}
    :logs {:unsaved-logs []
           :saved-logs []
           :valid-levels [:debug :info :warn :error :fatal]}

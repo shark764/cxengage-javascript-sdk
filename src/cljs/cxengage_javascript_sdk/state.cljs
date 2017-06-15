@@ -11,7 +11,8 @@
                     :internal {:enabled-modules []}
                     :interactions {:pending {}
                                    :active {}
-                                   :past {}}
+                                   :past {}
+                                   :incoming {}}
                     :logs {:unsaved-logs []
                            :saved-logs []
                            :valid-levels [:debug :info :warn :error :fatal]}
@@ -84,6 +85,7 @@
     (not= nil (get-state-value [:interactions :pending interaction-id])) :pending
     (not= nil (get-state-value [:interactions :active interaction-id])) :active
     (not= nil (get-state-value [:interactions :past interaction-id])) :past
+    (not= nil (get-state-value [:interactions :incoming interaction-id])) :incoming
     :else (do (log :warn "Unable to find interaction location - we have never received that interaction")
               false)))
 
@@ -95,6 +97,9 @@
 
 (defn get-active-interaction [interaction-id]
   (get-state-value [:interactions :active interaction-id]))
+
+(defn get-incoming-interaction [interaction-id]
+  (get-state-value [:interactions :incoming interaction-id]))
 
 (defn active-interactions? []
   (not (empty? (get-state-value [:interactions :active]))))

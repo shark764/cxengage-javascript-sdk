@@ -3,6 +3,7 @@
 ##[Unreleased]
 * CXV1-10028 agent cancelled reply signal for email reporting
 * CXV1-8994 - Expose api-url function for external modules
+* Fixed a bug where scripts received before a work offer were unable to be replied to
 
 ## [5.3.6]
 * Fixed small regression in batch request functionality.
