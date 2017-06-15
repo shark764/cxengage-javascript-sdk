@@ -25,7 +25,7 @@
       (a/<! (a/timeout polling-delay))
       (if (empty? (:statistics @stat-subscriptions))
         (recur)
-        (let [batch-body {:requests (:statistics @stat-subscriptions)}
+        (let [batch-body (:statistics @stat-subscriptions)
               {:keys [api-response status]} (a/<! (rest/batch-request batch-body))
               {:keys [results]} api-response]
           (if (not= status 200)
@@ -63,7 +63,7 @@
                 :response {:statId stat-id}
                 :callback callback
                 :preserve-casing? true})
-    (let [batch-body {:requests (:statistics @stat-subscriptions)}
+    (let [batch-body (:statistics @stat-subscriptions)
           {:keys [api-response status]} (a/<! (rest/batch-request batch-body))
           {:keys [results]} api-response
           batch-topic (topics/get-topic :batch-response)]

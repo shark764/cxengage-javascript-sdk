@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.6]
+* Fixed small regression in batch request functionality.
+
 ## [5.3.5]
 * CXV1-9750 - Voice module unit test coverage expanded significantly.
 

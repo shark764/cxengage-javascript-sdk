@@ -171,7 +171,7 @@
   (let [tenant-id (state/get-active-tenant-id)
         batch-request {:method :post
                        :preserve-casing? true
-                       :body batch-body
+                       :body {:requests batch-body}
                        :url (iu/api-url
                              "tenants/:tenant-id/realtime-statistics/batch"
                              {:tenant-id tenant-id})}]
