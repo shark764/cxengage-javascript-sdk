@@ -89,7 +89,7 @@
 
 (defn handle-work-offer [message]
   (if (= :incoming (state/find-interaction-location (:interaction-id message)))
-    (state/transition-interaction! :incoming :pending interaction-id)
+    (state/transition-interaction! :incoming :pending (:interaction-id message))
     (state/add-interaction! :pending message))
   (let [{:keys [channel-type interaction-id timeout direction]} message
         now (iu/get-now)
@@ -252,7 +252,6 @@
                            :resource-id resource-id}})))
 
 (defn handle-script-received [message]
-  (log :debug "Message:" message)
   (let [{:keys [interaction-id sub-id action-id resource-id script]} message
         interaction-location (state/find-interaction-location interaction-id)]
     (when (= false interaction-location)
