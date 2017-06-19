@@ -287,7 +287,7 @@
 
 (def-sdk-fn agent-reply-started
   {:validation ::agent-reply-started-params
-   :topic-key (topics/get-topic :agent-reply-started-acknowledged)}
+   :topic-key :agent-reply-started-acknowledged}
   [params]
   (let [{:keys [interaction-id callback topic]} params
         interrupt-type "agent-reply-started"
@@ -316,7 +316,7 @@
 
 (def-sdk-fn agent-no-reply
   {:validation ::agent-no-reply-params
-   :topic-key (topics/get-topic :agent-no-reply-acknowledged)}
+   :topic-key :agent-no-reply-acknowledged}
   [params]
   (let [{:keys [interaction-id callback topic]} params
         interrupt-type "agent-no-reply"
@@ -334,6 +334,35 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.email.agentCancelledReply({
+;;   interactionId: {{uuid}},
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::agent-cancel-reply-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn agent-cancel-reply
+  {:validation ::agent-cancel-reply-params
+   :topic-key :agent-cancel-reply-acknowledged}
+  [params]
+  (let [{:keys [interaction-id callback topic]} params
+        interrupt-type "agent-cancel-reply"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :tenant-id (state/get-active-tenant-id)
+                        :session-id (state/get-session-id)
+                        :channel-type "email"}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-send-agent-cancel-reply-err interaction-id interrupt-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; SDK Entities Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -347,7 +376,8 @@
                                                  :send-reply send-reply
                                                  :start-outbound-email start-outbound-email
                                                  :agent-reply-started agent-reply-started
-                                                 :agent-no-reply agent-no-reply}}}
+                                                 :agent-no-reply agent-no-reply
+                                                 :agent-cancelled-reply agent-cancel-reply}}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

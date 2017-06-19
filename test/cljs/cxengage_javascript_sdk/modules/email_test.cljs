@@ -7,6 +7,7 @@
             [cljs-sdk-utils.api :as api]
             [cljs-sdk-utils.topics :as topics]
             [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.test :refer [camels]]
             [cljs-uuid-utils.core :as id]
             [cljs.test :refer-macros [deftest is testing async]]))
 
@@ -156,3 +157,36 @@
         (is (= (e/failed-to-send-agent-no-reply-err) (js->clj error :keywordize-keys true)))
         (done)))
      (email/agent-no-reply {:interaction-id interaction-id}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; agent-cancel-reply unit tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deftest agent-cancel-reply-test
+  (testing "the agent-cancel-reply"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go {:status 200})))
+     (p/subscribe
+      (topics/get-topic :agent-cancel-reply-acknowledged)
+      (fn [error topic response]
+        (is (= expected-response (js->clj response :keywordize-keys true)))
+        (done)))
+     (email/agent-cancel-reply {:interaction-id interaction-id}))))
+
+
+(deftest agent-cancel-reply-error-test
+  (testing "the agent-no-reply fn error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go {:status 404})))
+     (p/subscribe
+      (topics/get-topic :agent-cancel-reply-acknowledged)
+      (fn [error topic response]
+        (is (= (camels (e/failed-to-send-agent-cancel-reply-err interaction-id {:status 404})) (js->clj error :keywordize-keys true)))
+        (done)))
+     (email/agent-cancel-reply {:interaction-id interaction-id}))))
