@@ -57,13 +57,13 @@
   (let [{:keys [interaction-id topic callback]} params
         interrupt-type "customer-hold"
         interrupt-body {:resource-id (state/get-active-user-id)}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-place-customer-on-hold-err)
+                  :error (e/failed-to-place-customer-on-hold-err interaction-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -79,13 +79,13 @@
   (let [{:keys [interaction-id topic callback]} params
         interrupt-type "customer-resume"
         interrupt-body {:resource-id (state/get-active-user-id)}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-resume-customer-err)
+                  :error (e/failed-to-resume-customer-err interaction-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -100,16 +100,17 @@
    :topic-key :mute-acknowledged}
   [params]
   (let [{:keys [interaction-id target-resource-id topic callback]} params
+        resource-id (state/get-active-user-id)
         interrupt-type "mute-resource"
-        interrupt-body {:resource-id (state/get-active-user-id)
+        interrupt-body {:resource-id resource-id
                         :target-resource target-resource-id}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-mute-target-resource-err)
+                  :error (e/failed-to-mute-target-resource-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -124,16 +125,17 @@
    :topic-key :unmute-acknowledged}
   [params]
   (let [{:keys [interaction-id target-resource-id topic callback]} params
+        resource-id (state/get-active-user-id)
         interrupt-type "unmute-resource"
-        interrupt-body {:resource-id (state/get-active-user-id)
+        interrupt-body {:resource-id resource-id
                         :target-resource target-resource-id}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-unmute-target-resource-err)
+                  :error (e/failed-to-unmute-target-resource-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -148,16 +150,17 @@
    :topic-key :resource-hold-acknowledged}
   [params]
   (let [{:keys [interaction-id target-resource-id topic callback]} params
+        resource-id (state/get-active-user-id)
         interrupt-type "resource-hold"
-        interrupt-body {:resource-id (state/get-active-user-id)
+        interrupt-body {:resource-id resource-id
                         :target-resource target-resource-id}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-place-resource-on-hold-err)
+                  :error (e/failed-to-place-resource-on-hold-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -172,16 +175,17 @@
    :topic-key :resource-resume-acknowledged}
   [params]
   (let [{:keys [interaction-id target-resource-id topic callback]} params
+        resource-id (state/get-active-user-id)
         interrupt-type "resource-resume"
-        interrupt-body {:resource-id (state/get-active-user-id)
+        interrupt-body {:resource-id resource-id
                         :target-resource target-resource-id}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-resume-resource-err)
+                  :error (e/failed-to-resume-resource-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -197,13 +201,13 @@
   (let [{:keys [interaction-id topic callback]} params
         interrupt-type "resume-all"
         interrupt-body {:resource-id (state/get-active-user-id)}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-resume-all-err)
+                  :error (e/failed-to-resume-all-err interaction-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -218,16 +222,17 @@
    :topic-key :resource-removed-acknowledged}
   [params]
   (let [{:keys [interaction-id target-resource-id topic callback]} params
+        resource-id (state/get-active-user-id)
         interrupt-type "remove-resource"
-        interrupt-body {:resource-id (state/get-active-user-id)
+        interrupt-body {:resource-id resource-id
                         :target-resource target-resource-id}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-remove-resource-err)
+                  :error (e/failed-to-remove-resource-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -241,15 +246,16 @@
    :topic-key :recording-start-acknowledged}
   [params]
   (let [{:keys [interaction-id topic callback]} params
+        resource-id (state/get-active-user-id)
         interrupt-type "recording-start"
-        interrupt-body {:resource-id (state/get-active-user-id)}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        interrupt-body {:resource-id resource-id}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-start-recording-err)
+                  :error (e/failed-to-start-recording-err interaction-id resource-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -263,15 +269,16 @@
    :topic-key :recording-stop-acknowledged}
   [params]
   (let [{:keys [interaction-id topic callback]} params
+        resource-id (state/get-active-user-id)
         interrupt-type "recording-stop"
-        interrupt-body {:resource-id (state/get-active-user-id)}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        interrupt-body {:resource-id resource-id}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-stop-recording-err)
+                  :error (e/failed-to-stop-recording-err interaction-id resource-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -292,13 +299,13 @@
         interrupt-body {:transfer-resource-id resource-id
                         :resource-id (state/get-active-user-id)
                         :transfer-type transfer-type}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-transfer-to-resource-err)
+                  :error (e/failed-to-transfer-to-resource-err interrupt-body interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -319,13 +326,13 @@
         interrupt-body {:transfer-queue-id queue-id
                         :resource-id (state/get-active-user-id)
                         :transfer-type transfer-type}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-transfer-to-queue-err)
+                  :error (e/failed-to-transfer-to-queue-err interrupt-body interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -346,13 +353,13 @@
         interrupt-body {:transfer-extension transfer-extension
                         :resource-id (state/get-active-user-id)
                         :transfer-type transfer-type}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-transfer-to-extension-err)
+                  :error (e/failed-to-transfer-to-extension-err interrupt-body interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -373,13 +380,13 @@
         interrupt-body {:transfer-resource-id transfer-resource-id
                         :resource-id (state/get-active-user-id)
                         :transfer-type transfer-type}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-cancel-resource-transfer-err)
+                  :error (e/failed-to-cancel-resource-transfer-err interrupt-body interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -400,13 +407,13 @@
         interrupt-body {:transfer-queue-id transfer-queue-id
                         :resource-id (state/get-active-user-id)
                         :transfer-type transfer-type}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-cancel-queue-transfer-err)
+                  :error (e/failed-to-cancel-queue-transfer-err interrupt-body interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -427,13 +434,13 @@
         interrupt-body {:transfer-extension transfer-extension
                         :resource-id (state/get-active-user-id)
                         :transfer-type transfer-type}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-cancel-extension-transfer-err)
+                  :error (e/failed-to-cancel-extension-transfer-err interrupt-body interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -466,7 +473,7 @@
                     :response api-response
                     :callback callback})
         (p/publish {:topics topic
-                    :error (e/failed-to-perform-outbound-dial-err)
+                    :error (e/failed-to-perform-outbound-dial-err phone-number dial-response)
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -487,13 +494,13 @@
         tenant-id (state/get-active-tenant-id)
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "work-cancel"
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-cancel-outbound-dial-err)
+                  :error (e/failed-to-cancel-outbound-dial-err interaction-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -529,10 +536,10 @@
                           :response pubsub-response
                           :callback callback}))
           (catch js/Object e (p/publish {:topics topic
-                                         :error (e/failed-to-send-twilio-digits-err)
+                                         :error (e/failed-to-send-twilio-digits-err digit)
                                          :callback callback})))
         (p/publish {:topics (topics/get-topic :failed-to-send-digits-invalid-interaction)
-                    :error (e/failed-to-send-digits-invalid-interaction-err)
+                    :error (e/failed-to-send-digits-invalid-interaction-err interaction-id)
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -550,7 +557,7 @@
                       :response (:files api-response)
                       :callback callback})
           (p/publish {:topics topic
-                      :error (e/failed-to-get-specific-recording-err)
+                      :error (e/failed-to-get-specific-recording-err interaction-id artifact-id audio-recording)
                       :callback callback})))))
 
 (s/def ::get-recordings-params

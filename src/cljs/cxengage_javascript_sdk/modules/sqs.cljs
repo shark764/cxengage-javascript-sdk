@@ -108,13 +108,13 @@
                   user-config (:result api-response)]
               (if (not= status 200)
                 (p/publish {:topics (topics/get-topic :failed-to-refresh-sqs-integration)
-                            :error (e/failed-to-refresh-sqs-integration-err)})
+                            :error (e/failed-to-refresh-sqs-integration-err api-response)})
                 (do
                   (state/set-config! user-config)
                   (let [sqs-integration (state/get-integration-by-type "sqs")]
                     (if-not sqs-integration
                       (p/publish {:topics (topics/get-topic :failed-to-refresh-sqs-integration)
-                                  :error (e/failed-to-refresh-sqs-integration-err)})
+                                  :error (e/failed-to-refresh-sqs-integration-err api-response)})
                       (let [{:keys [access-key secret-key session-token ttl]} (:credentials sqs-integration)
                             {:keys [url]} (:queue sqs-integration)
                             new-sqs-queue-url url

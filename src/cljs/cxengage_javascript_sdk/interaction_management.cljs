@@ -18,7 +18,7 @@
             {:keys [result]} api-response]
         (if (not= status 200)
           (p/publish {:topics (topics/get-topic :failed-to-retrieve-messaging-history)
-                      :error (e/failed-to-retrieve-messaging-history-err)})
+                      :error (e/failed-to-retrieve-messaging-history-err interaction-id history-response)})
           (do (state/add-messages-to-history! interaction-id result)
               (p/publish {:topics (topics/get-topic :messaging-history-received)
                           :response (state/get-interaction-messaging-history interaction-id)}))))))
@@ -29,7 +29,7 @@
             {:keys [result]} api-response]
         (if (not= status 200)
           (p/publish {:topics (topics/get-topic :failed-to-retrieve-messaging-metadata)
-                      :error (e/failed-to-retrieve-messaging-metadata-err)})
+                      :error (e/failed-to-retrieve-messaging-metadata-err interaction-id metadata-response)})
           (do (state/add-messaging-interaction-metadata! result)
               (get-messaging-history interaction-id))))))
 
@@ -38,7 +38,7 @@
             {:keys [status api-response]} artifact-response]
         (if (not= status 200)
           (p/publish {:topics (topics/get-topic :email-artifact-received)
-                      :error (e/failed-to-retrieve-email-artifact-err)})
+                      :error (e/failed-to-retrieve-email-artifact-err interaction-id artifact-id artifact-response)})
           (do (log :info (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
               (state/add-email-artifact-data interaction-id api-response))))))
 
@@ -191,14 +191,14 @@
         :env (state/get-env)}))
     (when (= channel-type "email")
       (go (let [artifact-body {:artifactType "email"}
-                {:keys [api-response status]} (a/<! (rest/create-artifact-request interaction-id artifact-body))]
+                {:keys [api-response status] :as artifact-response} (a/<! (rest/create-artifact-request interaction-id artifact-body))]
             (if (= status 200)
               (let [{:keys [artifact-id]} api-response]
                 (state/store-email-reply-artifact-id artifact-id interaction-id)
                 (when (= direction "inbound")
                   (get-incoming-email-bodies interaction-id)))
               (p/publish {:topics (topics/get-topic :failed-to-create-email-reply-artifact)
-                          :error (e/failed-to-create-email-reply-artifact-err)})))))))
+                          :error (e/failed-to-create-email-reply-artifact-err interaction-id artifact-body artifact-response)})))))))
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message

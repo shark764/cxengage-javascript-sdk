@@ -45,7 +45,7 @@
                     :response attachment
                     :callback callback}))
       (p/publish {:topics topic
-                  :error (e/failed-to-get-attachment-url-err)
+                  :error (e/failed-to-get-attachment-url-err interaction-id artifact-file-id artifact-id attachment-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -244,7 +244,7 @@
                                   :response {:interaction-id interaction-id}
                                   :callback callback})
                       (p/publish {:topics topic
-                                  :error (e/failed-to-send-email-reply-err)
+                                  :error (e/failed-to-send-email-reply-err interaction-id flow-response)
                                   :callback callback})))))))))
 
 (s/def ::start-outbound-email-params
@@ -266,13 +266,13 @@
                           :interaction {:resource-id resource-id}
                           :metadata {}
                           :id interaction-id}
-        {:keys [api-response status]} (a/<! (rest/create-interaction-request interaction-body))]
+        {:keys [api-response status] :as interaction-response} (a/<! (rest/create-interaction-request interaction-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics (topics/get-topic :failed-to-create-outbound-email-interaction)
-                  :error (e/failed-to-create-outbound-email-interaction-err)
+                  :error (e/failed-to-create-outbound-email-interaction-err interaction-body interaction-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -295,13 +295,13 @@
                         :tenant-id (state/get-active-tenant-id)
                         :session-id (state/get-session-id)
                         :channel-type "email"}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-send-agent-reply-started-err)
+                  :error (e/failed-to-send-agent-reply-started-err interaction-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -324,13 +324,13 @@
                         :tenant-id (state/get-active-tenant-id)
                         :session-id (state/get-session-id)
                         :channel-type "email"}
-        {:keys [status]} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-send-agent-no-reply-err)
+                  :error (e/failed-to-send-agent-no-reply-err interaction-id interrupt-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

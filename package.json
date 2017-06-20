@@ -1,6 +1,6 @@
 {
     "name": "cxengage-javascript-sdk",
-    "version": "5.3.7",
+    "version": "5.3.8",
     "description": "https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif",
     "main": "release/main.js",
     "repository": {

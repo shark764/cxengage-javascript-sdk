@@ -2,6 +2,9 @@
 
 ##[Unreleased]
 
+## [5.3.8]
+* CXV1-9972 - Improved contexualization and details of error functions
+
 ## [5.3.7]
 * CXV1-10028 agent cancelled reply signal for email reporting
 * CXV1-8994 - Expose api-url function for external modules

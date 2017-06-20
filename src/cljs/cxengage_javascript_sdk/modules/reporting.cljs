@@ -31,7 +31,7 @@
           (if (not= status 200)
             (do (log :error "Batch request failed.")
                 (p/publish {:topics topic
-                            :error (e/reporting-batch-request-failed-err)}))
+                            :error (e/reporting-batch-request-failed-err batch-body batch-body)}))
             (do (log :info "Batch request received!")
                 (p/publish {:topics topic
                             :response results
@@ -73,7 +73,7 @@
                     :callback callback
                     :preserve-casing? true})
         (p/publish {:topics batch-topic
-                    :error (e/reporting-batch-request-failed-err)
+                    :error (e/reporting-batch-request-failed-err batch-body batch-body)
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -113,14 +113,14 @@
    :topic-key :get-capacity-response}
   [params]
   (let [{:keys [resource-id topic callback]} params
-        {:keys [api-response status]} (a/<! (rest/get-capacity-request resource-id))
+        {:keys [api-response status] :as capacity-response} (a/<! (rest/get-capacity-request resource-id))
         {:keys [results]} api-response]
     (if (= status 200)
       (p/publish {:topics topic
                   :response results
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-capacity-err)
+                  :error (e/failed-to-get-capacity-err capacity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -144,7 +144,7 @@
         stat-bundle (dissoc params :callback :topic)
         stat-id (str (uuid/make-random-uuid))
         stat-body {stat-id stat-bundle}
-        {:keys [api-response status]} (a/<! (rest/batch-request stat-body))
+        {:keys [api-response status] :as batch-response} (a/<! (rest/batch-request stat-body))
         {:keys [results]} api-response]
     (if (= status 200)
       (p/publish {:topics topic
@@ -152,7 +152,7 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-perform-stat-query-err)
+                  :error (e/failed-to-perform-stat-query-err stat-bundle batch-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -168,13 +168,13 @@
    :topic-key :get-available-stats-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response]} (a/<! (rest/get-available-stats-request))]
+        {:keys [status api-response] :as stats-response} (a/<! (rest/get-available-stats-request))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-available-stats-err)
+                  :error (e/failed-to-get-available-stats-err stats-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -192,13 +192,13 @@
    :topic-key :get-contact-interaction-history-response}
   [params]
   (let [{:keys [callback topic contact-id page]} params
-        {:keys [status api-response]} (a/<! (rest/get-contact-interaction-history-request contact-id page))]
+        {:keys [status api-response] :as contact-response} (a/<! (rest/get-contact-interaction-history-request contact-id page))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-contact-interaction-history-err)
+                  :error (e/failed-to-get-contact-interaction-history-err contact-id contact-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -216,13 +216,13 @@
    :topic-key :get-interaction-response}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-        {:keys [status api-response]} (a/<! (rest/get-interaction-history-request interaction-id))]
+        {:keys [status api-response] :as history-response} (a/<! (rest/get-interaction-history-request interaction-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-interaction-reporting-err)
+                  :error (e/failed-to-get-interaction-reporting-err interaction-id history-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

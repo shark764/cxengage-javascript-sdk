@@ -8,6 +8,7 @@
             [cljs-sdk-utils.api :as api]
             [cljs-sdk-utils.errors :as e]
             [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.test :refer [camels]]
             [cxengage-javascript-sdk.state :as state]
             [cljs.test :refer-macros [deftest is testing run-tests async]]))
 
@@ -93,7 +94,7 @@
      (p/subscribe
       "cxengage/contacts/get-contact-response"
       (fn [error topic response]
-        (is (= (e/failed-to-get-contact-err)
+        (is (= (camels (e/failed-to-get-contact-err mock-contact-id mock-sad-api-response))
                (js->clj error :keywordize-keys true)))
         (is (= response nil))
         (done)))
@@ -110,7 +111,7 @@
      (contacts/get-contact
       {:contact-id mock-contact-id}
       (fn [error topic response]
-        (is (= (e/failed-to-get-contact-err)
+        (is (= (camels (e/failed-to-get-contact-err mock-contact-id mock-sad-api-response))
                (js->clj error :keywordize-keys true)))
         (is (= response nil))
         (done))))))
@@ -175,7 +176,7 @@
       "cxengage/contacts/get-contacts-response"
       (fn [error topic response]
         (is (= nil response))
-        (is (= (js->clj error :keywordize-keys true) (e/failed-to-list-all-contacts-err)))
+        (is (= (js->clj error :keywordize-keys true) (camels (e/failed-to-list-all-contacts-err mock-sad-api-response))))
         (done)))
      (contacts/get-contacts))))
 
@@ -190,7 +191,7 @@
      (contacts/get-contacts
       (fn [error topic response]
         (is (= response nil))
-        (is (= (js->clj error :keywordize-keys true) (e/failed-to-list-all-contacts-err)))
+        (is (= (js->clj error :keywordize-keys true) (camels (e/failed-to-list-all-contacts-err mock-sad-api-response))))
         (done))))))
 
 ;; -----------------------------------------------------------------------------------------------------------
@@ -258,7 +259,7 @@
       (fn [error topic response]
         (is (= nil response))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-search-contacts-err)))
+               (camels (e/failed-to-search-contacts-err {:name "Ian"} mock-sad-api-response))))
         (done)))
      (contacts/search-contacts {:query {:name "Ian"}}))))
 
@@ -275,7 +276,7 @@
       (fn [error topic response]
         (is (= response nil))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-search-contacts-err)))
+               (camels (e/failed-to-search-contacts-err {:name "Ian"} mock-sad-api-response))))
         (done))))))
 
 ;; -----------------------------------------------------------------------------------------------------------
@@ -338,7 +339,7 @@
       (fn [error topic response]
         (is (= nil response))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-create-contact-err)))
+               (camels (e/failed-to-create-contact-err {:name "Serenova"} mock-sad-api-response))))
         (done)))
      (contacts/create-contact {:attributes {:name "Serenova"}}))))
 
@@ -355,7 +356,7 @@
       (fn [error topic response]
         (is (= response nil))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-create-contact-err)))
+               (camels (e/failed-to-create-contact-err {:name "Serenova"} mock-sad-api-response))))
         (done))))))
 
 ;; -----------------------------------------------------------------------------------------------------------
@@ -420,7 +421,7 @@
       (fn [error topic response]
         (is (= nil response))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-update-contact-err)))
+               (camels (e/failed-to-update-contact-err mock-contact-id {:name "Serenova"} mock-sad-api-response))))
         (done)))
      (contacts/update-contact {:contactId mock-contact-id
                                :attributes {:name "Serenova"}}))))
@@ -439,7 +440,7 @@
       (fn [error topic response]
         (is (= response nil))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-update-contact-err)))
+               (camels (e/failed-to-update-contact-err mock-contact-id {:name "Serenova"} mock-sad-api-response))))
         (done))))))
 
 ;; -----------------------------------------------------------------------------------------------------------
@@ -499,7 +500,7 @@
       (fn [error topic response]
         (is (= nil response))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-delete-contact-err)))
+               (camels (e/failed-to-delete-contact-err mock-contact-id mock-sad-api-response))))
         (done)))
      (contacts/delete-contact {:contactId mock-contact-id
                                :attributes {:name "Serenova"}}))))
@@ -518,7 +519,7 @@
       (fn [error topic response]
         (is (= response nil))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-delete-contact-err)))
+               (camels (e/failed-to-delete-contact-err mock-contact-id mock-sad-api-response))))
         (done))))))
 
 ;; -----------------------------------------------------------------------------------------------------------
@@ -570,6 +571,8 @@
                (js->clj response :keywordize-keys true)))
         (done))))))
 
+(def mock-contact-ids [(str (uuid/make-random-squuid)) (str (uuid/make-random-squuid))])
+
 (deftest merge-contacts-test-3
   (testing "Contact module merge-contacts function -- sad path -- pubsub response mechanism"
     (async
@@ -583,10 +586,10 @@
       (fn [error topic response]
         (is (= nil response))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-merge-contacts-err)))
+               (camels (e/failed-to-merge-contacts-err mock-contact-ids mock-sad-api-response))))
         (done)))
      (contacts/merge-contacts {:attributes {:name "Serenova"}
-                               :contactIds [(str (uuid/make-random-squuid)) (str (uuid/make-random-squuid))]}))))
+                               :contactIds mock-contact-ids}))))
 
 (deftest merge-contacts-test-4
   (testing "Contact module merge-contacts function -- sad path -- callback response mechanism"
@@ -598,11 +601,11 @@
              (go mock-sad-api-response)))
      (contacts/merge-contacts
       {:attributes {:name "Serenova"}
-       :contactIds [(str (uuid/make-random-squuid)) (str (uuid/make-random-squuid))]}
+       :contactIds mock-contact-ids}
       (fn [error topic response]
         (is (= response nil))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-merge-contacts-err)))
+               (camels (e/failed-to-merge-contacts-err mock-contact-ids mock-sad-api-response))))
         (done))))))
 
 ;; -----------------------------------------------------------------------------------------------------------
@@ -674,7 +677,7 @@
       (fn [error topic response]
         (is (= nil response))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-list-contact-attributes-err)))
+               (camels (e/failed-to-list-contact-attributes-err mock-sad-api-response))))
         (done)))
      (contacts/list-attributes))))
 
@@ -690,7 +693,7 @@
       (fn [error topic response]
         (is (= response nil))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-list-contact-attributes-err)))
+               (camels (e/failed-to-list-contact-attributes-err mock-sad-api-response))))
         (done))))))
 
 ;; -----------------------------------------------------------------------------------------------------------
@@ -756,7 +759,7 @@
       (fn [error topic response]
         (is (= nil response))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-retrieve-contact-layout-err)))
+               (camels (e/failed-to-retrieve-contact-layout-err mock-contact-id mock-sad-api-response))))
         (done)))
      (contacts/get-layout {:layoutId mock-contact-id}))))
 
@@ -773,7 +776,7 @@
       (fn [error topic response]
         (is (= response nil))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-retrieve-contact-layout-err)))
+               (camels (e/failed-to-retrieve-contact-layout-err mock-contact-id mock-sad-api-response))))
         (done))))))
 
 ;; -----------------------------------------------------------------------------------------------------------
@@ -838,7 +841,7 @@
       (fn [error topic response]
         (is (= nil response))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-retrieve-contact-layouts-list-err)))
+               (camels (e/failed-to-retrieve-contact-layouts-list-err mock-sad-api-response))))
         (done)))
      (contacts/list-layouts))))
 
@@ -854,5 +857,5 @@
       (fn [error topic response]
         (is (= response nil))
         (is (= (js->clj error :keywordize-keys true)
-               (e/failed-to-retrieve-contact-layouts-list-err)))
+               (camels (e/failed-to-retrieve-contact-layouts-list-err mock-sad-api-response))))
         (done))))))
