@@ -1,6 +1,7 @@
 # Change Log
 
 ##[Unreleased]
+* CXV1-10028 agent cancelled reply signal for email reporting
 * CXV1-8994 - Expose api-url function for external modules
 
 ## [5.3.6]
