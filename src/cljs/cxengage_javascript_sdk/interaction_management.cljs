@@ -88,7 +88,9 @@
                                      :body html-body}})))))))
 
 (defn handle-work-offer [message]
-  (state/add-interaction! :pending message)
+  (if (= :incoming (state/find-interaction-location (:interaction-id message)))
+    (state/transition-interaction! :incoming :pending (:interaction-id message))
+    (state/add-interaction! :pending message))
   (let [{:keys [channel-type interaction-id timeout direction]} message
         now (iu/get-now)
         expiry (.getTime (js/Date. timeout))]
@@ -250,11 +252,13 @@
                            :resource-id resource-id}})))
 
 (defn handle-script-received [message]
-  (let [{:keys [interaction-id sub-id action-id resource-id script]} message]
-    (when (state/find-interaction-location interaction-id)
-      (state/add-script-to-interaction! interaction-id {:sub-id sub-id
-                                                        :action-id action-id
-                                                        :script script}))
+  (let [{:keys [interaction-id sub-id action-id resource-id script]} message
+        interaction-location (state/find-interaction-location interaction-id)]
+    (when (= false interaction-location)
+      (state/add-interaction! :incoming message))
+    (state/add-script-to-interaction! interaction-id {:sub-id sub-id
+                                                      :action-id action-id
+                                                      :script script})
     (p/publish {:topics (topics/get-topic :script-received)
                 :response {:interaction-id interaction-id
                            :resource-id resource-id
