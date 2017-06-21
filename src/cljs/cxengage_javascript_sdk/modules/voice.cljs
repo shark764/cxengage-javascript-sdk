@@ -44,6 +44,33 @@
   (s/keys :req-un [::specs/interaction-id ::specs/transfer-queue-id ::specs/transfer-type]
           :opt-un [::specs/callback]))
 
+(s/def ::silent-monitoring-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.voice.silentMonitor({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn silent-monitor
+  {:validation ::silent-monitoring-params
+   :topic-key :silent-monitoring-start-acknowledged}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        interrupt-type "silent-monitoring"
+        interrupt-body {:resource-id (state/get-active-user-id)
+                        :active-extension (state/get-active-extension)}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-start-silent-monitoring interaction-id interrupt-response)
+                  :callback callback}))))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.customerHold({
 ;;   interactionId: "{{uuid}}"

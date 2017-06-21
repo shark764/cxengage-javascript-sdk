@@ -27,6 +27,45 @@
 
 (def not-found {:status 404})
 
+(def mock-active-extension {:type "webrtc"
+                            :value "blah_blah_blah"
+                            :provider "twilio"
+                            :description "Default Twilio extension"
+                            :region "default"
+                            :sdk-version "default"})
+
+(deftest silent-monitor-test
+  (testing "the silent-monitor fn"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (state/set-user-identity! {:user-id resource-id})
+     (swap! state/sdk-state assoc-in [:session :config :active-extension] mock-active-extension)
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go {:status 200})))
+     (p/subscribe
+      (topics/get-topic :silent-monitoring-start-acknowledged)
+      (fn [error topic response]
+        (is (= (camels {:interaction-id interaction-id
+                        :resource-id resource-id
+                        :active-extension (state/get-active-extension)}) (js->clj response :keywordize-keys true)))
+        (done)))
+     (voice/silent-monitor {:interaction-id interaction-id}))))
+
+(deftest silent-monitor-error-test
+  (testing "the error response in silent-monitor function"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/send-interrupt-request (fn [& _]
+                                         (go not-found)))
+     (p/subscribe
+      (topics/get-topic :silent-monitoring-start-acknowledged)
+      (fn [error topic response]
+        (is (= (camels (e/failed-to-start-silent-monitoring interaction-id not-found)) (js->clj error :keywordize-keys true)))
+        (done)))
+     (voice/silent-monitor {:interaction-id interaction-id}))))
+
 (deftest hold-test
   (testing "the customer hold function"
     (async
