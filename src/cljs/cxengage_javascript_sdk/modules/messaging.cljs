@@ -127,6 +127,7 @@
                                         (log :error "Mqtt Connection Lost" {:reasonCode reason-code
                                                                             :reasonMessage reason-message}))))
     (set! (.-onMessageArrived mqtt) (fn [msg]
+                                      (log :debug "Raw msg received from MQTT:" msg)
                                       (when msg (on-received msg))))
     (set! (.-onSuccess connect-options) on-connect)
     (set! (.-onFailure connect-options) (fn [_ _ msg]
