@@ -90,7 +90,7 @@
               min-ttl (* twilio-token-ttl 500)]
           (a/<! (a/timeout min-ttl))
           (let [topic (topics/get-topic :config-response)
-                {:keys [status api-response]} (a/<! (rest/get-config-request))
+                {:keys [status api-response] :as config-response} (a/<! (rest/get-config-request))
                 {:keys [result]} api-response
                 {:keys [integrations]} result
                 twilio-integration (peek (filterv #(= (:type %1) "twilio") integrations))
@@ -98,6 +98,6 @@
             (state/update-integration "twilio" twilio-integration)
             (if (not= status 200)
               (p/publish {:topics topic
-                          :error (e/failed-to-refresh-twilio-integration-err)})
+                          :error (e/failed-to-refresh-twilio-integration-err config-response)})
               (state/set-twilio-device (js/Twilio.Device.setup twilio-token))))
           (recur))))))
