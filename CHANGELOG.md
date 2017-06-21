@@ -1,6 +1,7 @@
 # Change Log
 
-##[Unreleased]
+## [Unreleased]
+* Added additional logging around incoming MQTT messaging messages
 
 ## [5.3.8]
 * CXV1-9972 - Improved contexualization and details of error functions
