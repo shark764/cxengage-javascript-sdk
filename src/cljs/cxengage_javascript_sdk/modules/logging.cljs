@@ -1,6 +1,7 @@
 (ns cxengage-javascript-sdk.modules.logging
   (:require-macros [cljs-sdk-utils.macros :refer [def-sdk-fn]]
-                   [lumbajack.macros :refer [log]])
+                   [lumbajack.macros :refer [log]]
+                   [cljs.core.async.macros :refer [go-loop]])
   (:require [cljs.core.async :as a]
             [cljs.spec :as s]
             [cljs-sdk-utils.protocols :as pr]
@@ -17,10 +18,13 @@
 (defn format-request-logs
   [log]
   (let [{:keys [level data]} log
-        date-time (js/Date.)]
+        date-time (js/Date.)
+        data (-> data
+                 (clj->js)
+                 (js/JSON.stringify))]
     (assoc {}
            :level "info"
-           :message (js/JSON.stringify (ih/camelify {:data (clojure.string/join " " data) :original-client-log-level (name level)}))
+           :message (js/JSON.stringify (clj->js {:data data :original-client-log-level (name level)}))
            :timestamp (.toISOString date-time))))
 
 ;; -------------------------------;;
@@ -59,22 +63,31 @@
         logs (reduce (fn [acc x] (let [log (format-request-logs x)]
                                    (conj acc log))) [] unsaved-logs)
         logs-body {:logs logs
-                   :device "client"
+                   :context {:client-url js/window.location.href}
+                   :device {:user-agent js/window.navigator.userAgent}
                    :app-id (str (uuid/make-random-squuid))
                    :app-name "CxEngage Agent Front-end"}
-        {:keys [status api-response]} (a/<! (rest/save-logs-request logs-body))]
+        {:keys [status api-response] :as log-response} (a/<! (rest/save-logs-request logs-body))]
     (if (= status 200)
       (do (jack/wipe-logs!)
           (p/publish {:topics topic
                       :response api-response
                       :callback callback}))
       (p/publish {:topics topic
-                  :error (e/failed-to-save-logs-err unsaved-logs api-response)
+                  :error (e/failed-to-save-logs-err unsaved-logs log-response)
                   :callback callback}))))
 
 (defn log* [level & args]
   (doseq [arg args]
     (log level arg)))
+
+(defn logs-interval-push
+  []
+  (go-loop [t (a/timeout 30000)]
+    (a/<! t)
+    (when (state/get-active-tenant-id)
+      (save-logs))
+    (recur (a/timeout 30000))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Logging Module
@@ -94,6 +107,7 @@
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
-                             :module-name module-name})))
+                             :module-name module-name})
+      (logs-interval-push)))
   (stop [this])
   (refresh-integration [this]))

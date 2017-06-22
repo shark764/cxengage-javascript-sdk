@@ -18,9 +18,9 @@
 (deftest format-request-logs
   (testing "The format request logs"
     (setup-fake-logging-global)
-    (let [a-log {:level :debug
-                 :data ["blah" "blah" "blah"]}]
-      (is (= {:level "info", :message "{\"data\":\"blah blah blah\",\"originalClientLogLevel\":\"debug\"}"} (dissoc (log/format-request-logs a-log) :timestamp))))))
+    (let [a-log  {:level :debug
+                  :data ["blah" "blah" "blah"]}]
+      (is (= {:level "info", :message "{\"data\":\"[\\\"blah\\\",\\\"blah\\\",\\\"blah\\\"]\",\"original-client-log-level\":\"debug\"}"} (dissoc (log/format-request-logs a-log) :timestamp))))))
 
 (deftest set-level-test
   (testing "the set log level function"
@@ -44,8 +44,8 @@
                  (a/>! the-chan {:status 200
                                  :api-response {:message "success"}})
                  (set! api/api-request (fn [request-map]
-                                          (let [{:keys [body]} request-map]
-                                            the-chan)))
+                                         (let [{:keys [body]} request-map]
+                                           the-chan)))
                  (p/subscribe "cxengage/logging/logs-saved" (fn [error topic response]
                                                               (is (= {:message "success"} (js->clj response :keywordize-keys true)))
                                                               (set! api/api-request old)
