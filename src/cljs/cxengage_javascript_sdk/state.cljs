@@ -26,8 +26,8 @@
 
 (defn get-state-value [path]
   (let [value (get-in @sdk-state path)]
-    (when (nil? value)
-      (log :debug "[SDK State] Unable to find value in state. Path:" (clj->js path)))
+    #_(when (nil? value)
+        (log :debug "[SDK State] Unable to find value in state. Path:" (clj->js path)))
     value))
 
 (defn reset-state []
@@ -345,8 +345,8 @@
   (let [tenant-id (get-state-value [:session :tenant-id])]
     (if tenant-id
       tenant-id
-      (do (js/console.warn "[SDK State] Unable to find tenant id in state; likely to have unintended side-effects.")
-          nil))))
+      #_(do (js/console.warn "[SDK State] Unable to find tenant id in state; likely to have unintended side-effects.")
+            nil))))
 
 (defn get-session-id
   []
