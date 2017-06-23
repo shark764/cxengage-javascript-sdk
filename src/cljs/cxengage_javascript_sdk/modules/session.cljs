@@ -63,7 +63,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (defn- start-heartbeats* []
-  (log :info "Sending heartbeats...")
+  (log :debug "Sending heartbeats...")
   (go-loop []
     (if (= "offline" (state/get-user-session-state))
       (do (log :info "Session is now offline; ceasing future heartbeats.")
@@ -90,7 +90,7 @@
             topic (topics/get-topic :session-started)
             session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
         (if (= status 200)
-          (do (state/set-session-details! session-details)
+          (do (state/set-session-details! (assoc session-details :expired? false))
               (p/publish {:topics topic
                           :response session-details})
               (go-not-ready)

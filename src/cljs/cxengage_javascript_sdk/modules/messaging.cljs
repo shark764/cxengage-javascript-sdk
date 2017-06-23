@@ -103,7 +103,7 @@
                 :callback callback})))
 
 (defn on-connect []
-  (log :info "Mqtt client connected"))
+  (log :debug "Mqtt client connected"))
 
 (defn on-failure [msg]
   (log :error "Mqtt Client failed to connect " msg)
@@ -114,7 +114,7 @@
                          :module-name :messaging}))
 
 (defn disconnect [client]
-  (log :info "Disconnecting mqtt client")
+  (log :debug "Disconnecting mqtt client")
   (.disconnect client))
 
 (defn connect
@@ -146,6 +146,7 @@
 (defn subscribe-to-messaging-interaction [message]
   (let [{:keys [tenant-id interaction-id env]} message
         topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
+    (log :debug "Topic:" topic)
     (subscribe topic)))
 
 (defn gen-payload [message]

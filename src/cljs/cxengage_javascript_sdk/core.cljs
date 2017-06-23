@@ -82,7 +82,7 @@
   (let [{:keys [status module-name]} m]
     (if (= status :failure)
       (log :error (clj->js (e/required-module-failed-to-start-err)))
-      (do (log :info (str "<----- Started " (name module-name) " module! ----->"))
+      (do (log :debug (str "<----- Started " (name module-name) " module! ----->"))
           (state/set-module-enabled! (name module-name))))))
 
 (defn route-module-message [comm< m]

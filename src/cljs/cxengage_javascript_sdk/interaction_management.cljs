@@ -116,7 +116,7 @@
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (log :info "[Messaging] payload prior to filtering:" payload)
+    (log :info "[Messaging] Payload prior to filtering:" payload)
     (when (= (:type payload) "message")
       (p/publish {:topics (topics/get-topic :new-message-received)
                   :response (:payload (state/augment-messaging-payload {:payload payload}))})
@@ -358,7 +358,7 @@
                     {:keys [api-response status]} ack-response]
                 (if (not= status 200)
                   (do (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
-                                  :error (e/failed-to-acknowledge-flow-action-err)})
+                                  :error (e/failed-to-acknowledge-flow-action-err interaction-id ask-response)})
                       (log :error "Failed to acknowledge flow action"))
                   (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
                               :response {:interaction-id interaction-id}})))))))
@@ -407,7 +407,7 @@
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (when (state/get-blast-sqs-output)
-      (log :debug (str "[BLAST SQS OUTPUT] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
+      (log :debug (str "[SQS] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
     (if (and (= channel-type "work-item")
              (not= msg-type "work-offer"))
       (do (log :warn "Received a non-work-offer message of channel 'work-item',, ignoring...")
