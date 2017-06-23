@@ -6,6 +6,9 @@
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs-sdk-utils.api :as api]
+            [cljs-sdk-utils.topics :as topics]
+            [cljs-sdk-utils.test :refer [camels]]
+            [cljs-sdk-utils.errors :as e]
             [cljs.core.async :as a]
             [cljs.test :refer-macros [deftest is testing async]]
             [cljs-uuid-utils.core :as id]))
@@ -51,3 +54,19 @@
                                                               (set! api/api-request old)
                                                               (done)))
                  (log/save-logs))))))
+
+(def not-found {:status 404})
+
+(deftest save-logs-error-test
+  (testing "the save-logs error response"
+    (async
+     done
+     (reset! p/sdk-subscriptions {})
+     (set! rest/save-logs-request (fn [& _]
+                                    (go not-found)))
+     (p/subscribe
+      (topics/get-topic :logs-saved)
+      (fn [error topic response]
+        (is (= (camels (e/failed-to-save-logs-err [] not-found)) (js->clj error :keywordize-keys true)))
+        (done)))
+     (log/save-logs))))
