@@ -117,7 +117,7 @@
 (def success-state {:session {:tenant-id "f5b660ef-9d64-47c9-9905-2f27a74bc14c"
                               :session-id "9718ca30-3b31-11e7-9700-b883f2d63b7b"}
                     :user {:user-id "f1723430-c165-11e6-86e3-e898003f3411"}
-                    :interactions {:active {}}})
+                    :interactions {:active nil}})
 
 (deftest logout-api--happy-test
   (testing "logout function success"
@@ -143,7 +143,7 @@
   (testing "logout function failure - active interaction"
     (async done
            (reset! p/sdk-subscriptions {})
-           (let [pubsub-expected-response (js->clj (ih/camelify (e/active-interactions-err)))]
+           (let [pubsub-expected-response (js->clj (ih/camelify (e/active-interactions-err (get-in fail-state [:interactions :active]))))]
              (reset! st/sdk-state fail-state)
              (p/subscribe "cxengage/session/state-change-request-acknowledged"
                           (fn bar [error topic response]
