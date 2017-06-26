@@ -45,7 +45,7 @@
   "As per RFC 4122, extracts the timestamp from a UUID v1, and converts to milliseconds since unix epoch."
   [uuid]
   (let [uuid (str uuid)
-        _ (log :debug "UUID Passed to (uuid-to-seconds):" uuid)
+        ;;_ (log :debug "UUID Passed to (uuid-to-seconds):" uuid)
         split-id (str/split uuid "-")
         gregorian-offset 122192928000000000
         upper-time-bitsv (vector (subs (nth split-id 2) 1))

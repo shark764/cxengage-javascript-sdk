@@ -4,11 +4,12 @@
             [clojure.set :as s :refer [intersection]]
             [cljs-uuid-utils.core :as id]))
 
-(def initial-state {:authentication {}
+(def initial-state {:authentication {:token false}
                     :user {}
                     :session {}
                     :config {}
-                    :internal {:enabled-modules []}
+                    :internal {:enabled-modules []
+                               :mqtt-client false}
                     :interactions {:pending {}
                                    :active {}
                                    :past {}

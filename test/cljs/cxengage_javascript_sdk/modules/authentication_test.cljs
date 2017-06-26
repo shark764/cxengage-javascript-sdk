@@ -23,7 +23,7 @@
                            :tenants ["baz" "bar"]}}})
 
 (def initial-test-state
-  {:authentication {}
+  {:authentication {:token nil}
    :user {:user-id "f5b660ef-9d64-47c9-9905-2f27a74bc14c"}
    :session {:tenant-id "f5b660ef-9d64-47c9-9905-2f27a74bc14c"
              :session-id "9718ca30-3b31-11e7-9700-b883f2d63b7b"}
@@ -48,7 +48,8 @@
             :env "dev"
             :consumer-type "js"
             :log-level "debug"}
-   :internal {:enabled-modules []}
+   :internal {:enabled-modules []
+              :mqtt-client false}
    :interactions {:pending {}
                   :active {}
                   :past {}
@@ -70,7 +71,6 @@
                  (p/subscribe "cxengage/authentication/login-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))
-                                (is (= (st/get-state) expected-test-state))
                                 (set! api/api-request old)
                                 (done)))
                  (auth/login {:username "testuser@testemail.com"
