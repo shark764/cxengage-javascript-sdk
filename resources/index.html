@@ -5,18 +5,16 @@
   <title>Next</title>
 </head>
 <body>
-  <!-- <script src="../release/cxengage-javascript-sdk.min.js"></script> -->
   <script src="main.js"></script>
-  <!-- <script src="https://sdk.cxengage.net/js/salesforce_classic/0.0.2/main.js"></script> -->
   <script src="js/jquery.js" type="text/javascript"></script>
   <script src="js/lodash.js" type="text/javascript"></script>
   <script src="js/moment.js" type="text/javascript"></script>
 
   <div id="login-screen" style="display: block;">
     <!-- <input type="text" id="username" name="username" value="sstiles@serenova.com"> -->
-    <input type="text" id="username" name="username" value="sstiles@liveopscloud.com">
+    <input type="text" id="username" name="username" value="mjones@liveopscloud.com">
     <br><br>
-    <input type="password" id="password" name="password" value="DevProfile1!">
+    <input type="password" id="password" name="password" value="password1!">
     <br><br>
     <button onclick="login()">Log In </button>
   </div>
@@ -188,7 +186,8 @@
         case 'cxengage/interactions/work-ended-received':
           handleWorkEnded(error, topic, response);
           break;
-        case 'cxengage/interactions/messaging/new-message-received':
+       case 'cxengage/interactions/messaging/new-message-received':
+          console.warn('GOT MESSAGING MESSAGE::::', error, topic, response);
           handleNewMessagingMessage(error, topic, response);
           break;
         case 'cxengage/interactions/messaging/history-received':

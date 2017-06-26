@@ -1,6 +1,9 @@
 # Change Log
 
 ## [Unreleased]
+
+## [5.3.9]
+* CXV1-10121 Fixed a regression introduced in 5.3.7 that causes agent messages to not be received
 * CXV1-9744 Logging module error response unit test
 * CXV1-9841 Every 30 seconds, push logs to logging pipeline
 * CXV1-10071 Silent monitoring signal support w/ unit tests
