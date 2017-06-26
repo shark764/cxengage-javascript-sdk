@@ -4,6 +4,7 @@
 * CXV1-9744 Logging module error response unit test
 * CXV1-9841 Every 30 seconds, push logs to logging pipeline
 * CXV1-10071 Silent monitoring signal support w/ unit tests
+* CXV1-9972 Add error context for codes 1xxx-5xxx, improve logging around failed specs
 * Added additional logging around incoming MQTT messaging messages
 
 ## [5.3.8]

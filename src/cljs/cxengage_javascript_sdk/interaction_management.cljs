@@ -358,7 +358,7 @@
                     {:keys [api-response status]} ack-response]
                 (if (not= status 200)
                   (do (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
-                                  :error (e/failed-to-acknowledge-flow-action-err interaction-id ask-response)})
+                                  :error (e/failed-to-acknowledge-flow-action-err interaction-id ack-response)})
                       (log :error "Failed to acknowledge flow action"))
                   (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
                               :response {:interaction-id interaction-id}})))))))
@@ -416,7 +416,7 @@
         (msg-router inferred-msg)
         (do (log :warn "Unable to infer message type from sqs")
             (p/publish {:topics (topics/get-topic :unknown-agent-notification-type-received)
-                        :error (e/unknown-agent-notification-type-err)})
+                        :error (e/unknown-agent-notification-type-err inferred-msg)})
             nil)))))
 
 (defn messaging-msg-router [message]

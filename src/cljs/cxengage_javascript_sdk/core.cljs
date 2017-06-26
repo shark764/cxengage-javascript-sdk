@@ -1,33 +1,33 @@
 (ns cxengage-javascript-sdk.core
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [cljs.spec :as s]
+            [lumbajack.core :as l]
             [cljs.core.async :as a]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
-            [lumbajack.core :as l]
 
-            [cxengage-javascript-sdk.interaction-management :as int]
+            [cljs-sdk-utils.core :as cxu]
+            [cljs-sdk-utils.errors :as e]
+            [cljs-sdk-utils.specs :as specs]
+            [cljs-sdk-utils.protocols :as pr]
+            [cljs-sdk-utils.interop-helpers :as ih]
+
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.internal-utils :as iu]
-            [cljs-sdk-utils.protocols :as pr]
-            [cljs-sdk-utils.core :as cxu]
-            [cljs-sdk-utils.interop-helpers :as ih]
-            [cljs-sdk-utils.specs :as specs]
-            [cljs-sdk-utils.errors :as e]
-
-            [cxengage-javascript-sdk.modules.authentication :as authentication]
-            [cxengage-javascript-sdk.modules.session :as session]
-            [cxengage-javascript-sdk.modules.reporting :as reporting]
-            [cxengage-javascript-sdk.modules.voice :as voice]
-            [cxengage-javascript-sdk.modules.interaction :as interaction]
-            [cxengage-javascript-sdk.modules.entities :as entities]
-            [cxengage-javascript-sdk.modules.messaging :as messaging]
             [cxengage-javascript-sdk.modules.sqs :as sqs]
-            [cxengage-javascript-sdk.modules.logging :as logging]
-            [cxengage-javascript-sdk.modules.contacts :as contacts]
+            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.modules.voice :as voice]
             [cxengage-javascript-sdk.modules.email :as email]
-            [cxengage-javascript-sdk.modules.twilio :as twilio]))
+            [cxengage-javascript-sdk.modules.twilio :as twilio]
+            [cxengage-javascript-sdk.modules.logging :as logging]
+            [cxengage-javascript-sdk.modules.session :as session]
+            [cxengage-javascript-sdk.modules.entities :as entities]
+            [cxengage-javascript-sdk.modules.contacts :as contacts]
+            [cxengage-javascript-sdk.interaction-management :as int]
+            [cxengage-javascript-sdk.modules.reporting :as reporting]
+            [cxengage-javascript-sdk.modules.messaging :as messaging]
+            [cxengage-javascript-sdk.modules.interaction :as interaction]
+            [cxengage-javascript-sdk.modules.authentication :as authentication]))
 
 (def *SDK-VERSION* "5.3.9-SNAPSHOT")
 

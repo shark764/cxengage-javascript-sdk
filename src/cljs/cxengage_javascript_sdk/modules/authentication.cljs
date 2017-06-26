@@ -27,12 +27,13 @@
   (let [{:keys [callback topic]} params]
     (if (state/active-interactions?)
       (p/publish {:topics topic
-                  :error (e/active-interactions-err)
+                  :error (e/active-interactions-err (state/get-all-active-interactions))
                   :callback callback})
       (let [session-id (state/get-session-id)
             change-state-body {:session-id session-id
                                :state "offline"}
-            {:keys [status api-response]} (a/<! (rest/change-state-request change-state-body))
+            resp (a/<! (rest/change-state-request change-state-body))
+            {:keys [status api-response]} resp
             new-state-data (:result api-response)]
         (if (= status 200)
           (do (state/set-session-expired! true)
@@ -40,8 +41,8 @@
                           :response new-state-data
                           :callback callback}))
           (p/publish {:topic topic
-                      :callback callback
-                      :error (e/logout-failed-err)}))))))
+                      :error (e/logout-failed-err resp)
+                      :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.authentication.login({
@@ -62,18 +63,20 @@
         token-body {:username username
                     :password password}
         _ (state/reset-state)
-        {:keys [status api-response]} (a/<! (rest/token-request token-body))]
+        resp (a/<! (rest/token-request token-body))
+        {:keys [status api-response]} resp]
     (if (not (= status 200))
       (p/publish {:topics topic
                   :callback callback
-                  :error (e/login-failed-token-request-err)})
+                  :error (e/login-failed-token-request-err resp)})
       (do
         (state/set-token! (:token api-response))
-        (let [{:keys [status api-response]} (a/<! (rest/login-request))]
+        (let [resp (a/<! (rest/login-request))
+              {:keys [status api-response]} resp]
           (if (not (= status 200))
             (p/publish {:topics topic
                         :callback callback
-                        :error (e/login-failed-login-request-err)})
+                        :error (e/login-failed-login-request-err resp)})
             (let [user-identity (:result api-response)
                   tenants (:tenants user-identity)]
               (state/set-user-identity! user-identity)
