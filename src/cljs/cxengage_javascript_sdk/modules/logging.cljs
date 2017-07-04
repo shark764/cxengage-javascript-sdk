@@ -85,9 +85,21 @@
   []
   (go-loop [t (a/timeout 30000)]
     (a/<! t)
-    (when (state/get-active-tenant-id)
-      (save-logs))
-    (recur (a/timeout 30000))))
+    (if (state/get-active-tenant-id)
+      (let [unsaved-logs (jack/get-unsaved-logs)
+            logs (reduce (fn [acc x] (let [log (format-request-logs x)]
+                                       (conj acc log))) [] unsaved-logs)
+            logs-body {:logs logs
+                       :context {:client-url js/window.location.href}
+                       :device {:user-agent js/window.navigator.userAgent}
+                       :app-id (str (uuid/make-random-squuid))
+                       :app-name "CxEngage Agent Front-end"}
+            {:keys [status]} (a/<! (rest/save-logs-request logs-body))]
+        (if-not (= status 200)
+          (do (log :warn "Unable to upload logs to CxEngage.")
+              :failed)          ;;Can't put nil on a channel.
+          (recur (a/timeout 30000))))
+      (recur (a/timeout 30000)))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Logging Module

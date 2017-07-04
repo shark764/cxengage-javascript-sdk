@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CXV1-10308 Stop sending logs every thirty seconds after first failure
 
 ## [5.3.9]
 * CXV1-10121 Fixed a regression introduced in 5.3.7 that causes agent messages to not be received
