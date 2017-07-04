@@ -64,7 +64,7 @@
                 :callback callback
                 :preserve-casing? true})
     (let [batch-body (:statistics @stat-subscriptions)
-          {:keys [api-response status]} (a/<! (rest/batch-request batch-body))
+          {:keys [api-response status] :as batch-response} (a/<! (rest/batch-request batch-body))
           {:keys [results]} api-response
           batch-topic (topics/get-topic :batch-response)]
       (if (= status 200)
@@ -73,7 +73,7 @@
                     :callback callback
                     :preserve-casing? true})
         (p/publish {:topics batch-topic
-                    :error (e/reporting-batch-request-failed-err batch-body batch-body)
+                    :error (e/reporting-batch-request-failed-err batch-body batch-response)
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;

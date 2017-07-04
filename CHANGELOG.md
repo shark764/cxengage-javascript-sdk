@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CXV1-9746 Added error response assertions for reporting module unit tests
 * CXV1-10308 Stop sending logs every thirty seconds after first failure
 
 ## [5.3.9]
