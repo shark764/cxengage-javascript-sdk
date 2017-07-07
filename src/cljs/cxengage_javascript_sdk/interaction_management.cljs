@@ -88,9 +88,9 @@
                                      :body html-body}})))))))
 
 (defn handle-work-offer [message]
-  (if (= :incoming (state/find-interaction-location (:interaction-id message)))
-    (state/transition-interaction! :incoming :pending (:interaction-id message))
-    (state/add-interaction! :pending message))
+  (when (= :incoming (state/find-interaction-location (:interaction-id message)))
+    (state/transition-interaction! :incoming :pending (:interaction-id message)))
+  (state/add-interaction! :pending message)
   (let [{:keys [channel-type interaction-id timeout direction]} message
         now (iu/get-now)
         expiry (.getTime (js/Date. timeout))]
