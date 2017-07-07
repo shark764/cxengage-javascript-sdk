@@ -21,7 +21,9 @@
   (state/set-twilio-connection connection))
 
 (defn handle-twilio-error [script config error]
-  (log :error error script config))
+  (p/publish {:topics "cxengage/errors/fatal/twilio-device-error"
+              :error (e/failed-to-init-twilio-err error)}))
+
 
 (defn ^:private twilio-init
   [config]
