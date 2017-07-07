@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CXV1-10121 Fixed regression surrounding messaging interactions when an agent receives a script before the work offer.
 * CXV1-9746 Added error response assertions for reporting module unit tests
 * CXV1-10308 Stop sending logs every thirty seconds after first failure
 
