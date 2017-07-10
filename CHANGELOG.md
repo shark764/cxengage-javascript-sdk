@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.11]
+* Bump cljs-sdk-utils to 0.0.7, fixing wrong `level` on twilio init error code (updated to session-fatal)
+
 ## [5.3.10]
 * CXV1-9846 Update cljs-sdk-utils and throw error when Twilio device encounters an error
 * CXV1-10121 Fixed regression surrounding messaging interactions when an agent receives a script before the work offer.
