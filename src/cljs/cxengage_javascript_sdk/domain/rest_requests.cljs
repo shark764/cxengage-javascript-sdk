@@ -139,7 +139,7 @@
   (let [tenant-id (state/get-active-tenant-id)
         get-available-stats-req {:method :get
                                  :url (iu/api-url
-                                       "tenants/:tenant-id/realtime-statistics/available?client=toolabr"
+                                       "tenants/:tenant-id/realtime-statistics/available?client=toolbar"
                                        {:tenant-id tenant-id})}]
     (api/api-request get-available-stats-req)))
 
