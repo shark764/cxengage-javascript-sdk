@@ -110,8 +110,7 @@
         (if (= status 200)
           (if (empty? extensions)
             (p/publish {:topics topic
-                        :error (e/no-extensions-found-err user-config)
-                        :callback callback})
+                        :error (e/no-extensions-found-err user-config)})
             (do (state/set-config! user-config)
                 (ih/send-core-message {:type :config-ready})
                 (p/publish {:topics topic
