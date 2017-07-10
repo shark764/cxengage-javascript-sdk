@@ -1,5 +1,10 @@
 # Change Log
 
+## [Unreleased]
+
+## [5.3.12]
+* CXV1-10347 - Add error for if an agent attempts to go online while having no extensions configured
+
 ## [5.3.11]
 * Bump cljs-sdk-utils to 0.0.7, fixing wrong `level` on twilio init error code (updated to session-fatal)
 
