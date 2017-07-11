@@ -1,7 +1,11 @@
 # Change Log
 
 ## [Unreleased]
+
+## [5.3.13]
 * CXV1-9846 Fixed twilio error catching
+* CXV1-10345 - Temporarily only broadcast the work offer for emails after the manifest is already pub/sub'd (hacky interim fix)
+  * The proper fix is captured in CXV1-10397
 
 ## [5.3.12]
 * CXV1-10347 - Add error for if an agent attempts to go online while having no extensions configured

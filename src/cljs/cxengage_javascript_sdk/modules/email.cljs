@@ -112,11 +112,11 @@
           :opt-un [::specs/callback]))
 
 (defn html-body-id [files]
-  (log :info "[Email Processing] Files when building html body id" files)
+  (log :debug "[Email Processing] Files when building html body id" files)
   (:artifact-file-id (first (filter #(= (:filename %) "htmlBody") files))))
 
 (defn plain-body-id [files]
-  (log :info "[Email Processing] Files when building plain body id" files)
+  (log :debug "[Email Processing] Files when building plain body id" files)
   (:artifact-file-id (first (filter #(= (:filename %) "plainTextBody") files))))
 
 (defn build-attachments [files]
@@ -127,7 +127,7 @@
       (if (or (= (:filename file) "htmlBody")
               (= (:filename file) "plainTextBody"))
         nil
-        (do (log :info "file in build attachments:" file)
+        (do (log :debug "file in build attachments:" file)
             {:filename (:filename file)
              :headers [{:content-type (:content-type file)}]
              :artifact-file-id (:artifact-file-id file)})))
@@ -173,8 +173,8 @@
                                                         (js/Blob. (clj->js [html-body]) #js {"type" "text/html"})
                                                         "htmlBody"))
 
-                                             :else (do (log :info "[Email Processing] Name property on attachment file passed:" (.-name file))
-                                                       (log :info "[Email Processing] File passed:" file)
+                                             :else (do (log :debug "[Email Processing] Name property on attachment file passed:" (.-name file))
+                                                       (log :debug "[Email Processing] File passed:" file)
                                                        (doto (js/FormData.) (.append (.-name file) file (.-name file)))))
 
                                            filename (cond
@@ -185,19 +185,19 @@
                                                           (= attachment-type :plain-text-body) "text/plain"
                                                           (= attachment-type :html-body) "text/html"
                                                           :else (.-type file))]
-                                       (log :info "[Email Processing] File name:" filename)
-                                       (log :info "[Email Processing] File content-type:" content-type)
-                                       (log :info "[Email Processing] Form data:" form-data)
-                                       (log :info "[Email Processing] Attachment Type:" attachment-type)
-                                       (log :info "[Email Processing] Artifact URL:" artifact-url)
+                                       (log :debug "[Email Processing] File name:" filename)
+                                       (log :debug "[Email Processing] File content-type:" content-type)
+                                       (log :debug "[Email Processing] Form data:" form-data)
+                                       (log :debug "[Email Processing] Attachment Type:" attachment-type)
+                                       (log :debug "[Email Processing] Artifact URL:" artifact-url)
                                        (rest/file-api-request
                                         {:method :post
                                          :url artifact-url
                                          :body form-data
                                          :callback (fn [{:keys [api-response status]} response]
-                                                     (log :info "[Email Processing] API response for file upload:" api-response)
-                                                     (log :info "[Email Processing] Filename from API response" filename)
-                                                     (log :info "[Email Processing] String'd filename:" (name filename))
+                                                     (log :debug "[Email Processing] API response for file upload:" api-response)
+                                                     (log :debug "[Email Processing] Filename from API response" filename)
+                                                     (log :debug "[Email Processing] String'd filename:" (name filename))
                                                      (resolve {:artifact-file-id (first (vals api-response))
                                                                :filename (name filename)
                                                                :content-type content-type}))}))))))
@@ -206,7 +206,7 @@
         all-req-promises (all all-req-promises)]
     (then all-req-promises
           (fn [results]
-            (log :info "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (ih/camelify results) nil 2))
+            (log :debug "[Email Processing] Done ALL file uploads for the email reply artifact. All attachments + html body + plain text body. Upload response:" (js/JSON.stringify (ih/camelify results) nil 2))
             (let [in-reply-to-id (state/get-email-reply-to-id interaction-id)
                   manifest-map {:attachments (build-attachments results)
                                 :cc cc
@@ -218,7 +218,7 @@
                                 :subject subject
                                 :to to}
                   manifest-string (js/JSON.stringify (ih/camelify manifest-map))
-                  _ (log :info "[Email Processing] Manifest we're creating:" manifest-string)
+                  _ (log :debug "[Email Processing] Manifest we're creating:" manifest-string)
                   form-data (doto (js/FormData.)
                               (.append "manifest.json"
                                        (js/Blob. (clj->js [manifest-string]) #js {"type" "application/json"})
@@ -227,13 +227,13 @@
                                            :url artifact-url
                                            :body form-data}]
               (go (let [manifest-response (a/<! (rest/file-api-request create-manifest-request))
-                        _ (log :info "[Email Processing] Manifest creation response:" (ih/camelify manifest-response))
+                        _ (log :debug "[Email Processing] Manifest creation response:" (ih/camelify manifest-response))
                         {:keys [api-response status]} manifest-response
                         manifest-id (get api-response :manifest.json)
                         artifact-update-body {:manifest-id manifest-id
                                               :artifactType "email"}
                         artifact-update-response (a/<! (rest/update-artifact-request artifact-update-body artifact-id interaction-id))
-                        _ (log :info "[Email Processing] Artifact update response:" (ih/camelify artifact-update-response))
+                        _ (log :debug "[Email Processing] Artifact update response:" (ih/camelify artifact-update-response))
                         interrupt-type "send-email"
                         interrupt-body {:resource-id (state/get-active-user-id)
                                         :artifact-id artifact-id}

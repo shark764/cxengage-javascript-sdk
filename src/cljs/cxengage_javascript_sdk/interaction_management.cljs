@@ -33,14 +33,16 @@
           (do (state/add-messaging-interaction-metadata! result)
               (get-messaging-history interaction-id))))))
 
-(defn get-email-artifact-data [interaction-id artifact-id]
+(defn get-email-artifact-data [interaction-id artifact-id work-offer]
   (go (let [artifact-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
             {:keys [status api-response]} artifact-response]
         (if (not= status 200)
           (p/publish {:topics (topics/get-topic :email-artifact-received)
                       :error (e/failed-to-retrieve-email-artifact-err interaction-id artifact-id artifact-response)})
           (do (log :info (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
-              (state/add-email-artifact-data interaction-id api-response))))))
+              (state/add-email-artifact-data interaction-id api-response)
+              (p/publish {:topics (topics/get-topic :work-offer-received)
+                          :response work-offer}))))))
 
 (defn get-incoming-email-bodies [interaction-id]
   (let [interaction (state/get-interaction interaction-id)
@@ -102,11 +104,11 @@
                       (= channel-type "messaging"))
               (let [{:keys [interaction-id]} message]
                 (get-messaging-metadata interaction-id)))
-            (when (and (= channel-type "email") (= direction "inbound"))
+            (if (and (= channel-type "email") (= direction "inbound"))
               (let [{:keys [interaction-id artifact-id]} message]
-                (get-email-artifact-data interaction-id artifact-id)))
-            (p/publish {:topics (topics/get-topic :work-offer-received)
-                        :response message})))))
+                (get-email-artifact-data interaction-id artifact-id message))
+              (p/publish {:topics (topics/get-topic :work-offer-received)
+                          :response message}))))))
   nil)
 
 (defn handle-new-messaging-message [payload]
