@@ -18,14 +18,17 @@
 (defn format-request-logs
   [log]
   (let [{:keys [level data]} log
-        date-time (js/Date.)
-        data (-> data
-                 (clj->js)
-                 (js/JSON.stringify))]
-    (assoc {}
-           :level "info"
-           :message (js/JSON.stringify (clj->js {:data data :original-client-log-level (name level)}))
-           :timestamp (.toISOString date-time))))
+        date-time (js/Date.)]
+    (try
+      (let [data (-> data
+                     (clj->js)
+                     (js/JSON.stringify))]
+        (assoc {}
+               :level "info"
+               :message (js/JSON.stringify (clj->js {:data data :original-client-log-level (name level)}))
+               :timestamp (.toISOString date-time)))
+      (catch js/Object e
+        (js/console.error "Uncaught exception when trying to format request logs; unable to format request logs for publishing" e)))))
 
 ;; -------------------------------;;
 ;; CxEngage.logging.setLevel({ level: "info" });
