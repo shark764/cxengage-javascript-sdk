@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.15]
+* Fix typo in previous logging fix
+
 ## [5.3.14]
 * CXV1-10349 - Catch JSON stringification errors in the event that attempting to stringify the value the client provides us fails
 
