@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.16]
+* Change log statement for when logs fail to format to not be of type error
+
 ## [5.3.15]
 * Fix typo in previous logging fix
 
