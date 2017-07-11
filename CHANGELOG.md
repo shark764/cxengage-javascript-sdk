@@ -1,9 +1,10 @@
 # Change Log
 
-## [Unreleased]
+## [5.3.14]
+* CXV1-10349 - Catch JSON stringification errors in the event that attempting to stringify the value the client provides us fails
 
 ## [5.3.13]
-* CXV1-9846 Fixed twilio error catching
+* CXV1-9846 - Fixed twilio error catching
 * CXV1-10345 - Temporarily only broadcast the work offer for emails after the manifest is already pub/sub'd (hacky interim fix)
   * The proper fix is captured in CXV1-10397
 
