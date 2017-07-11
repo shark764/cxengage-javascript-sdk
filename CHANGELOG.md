@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased]
+* CXV1-9846 Fixed twilio error catching
 
 ## [5.3.12]
 * CXV1-10347 - Add error for if an agent attempts to go online while having no extensions configured

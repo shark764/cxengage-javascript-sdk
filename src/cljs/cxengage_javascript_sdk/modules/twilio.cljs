@@ -20,10 +20,9 @@
 (defn update-twilio-connection [connection]
   (state/set-twilio-connection connection))
 
-(defn handle-twilio-error [script config error]
+(defn handle-twilio-error [error]
   (p/publish {:topics "cxengage/errors/fatal/twilio-device-error"
               :error (e/failed-to-init-twilio-err error)}))
-
 
 (defn ^:private twilio-init
   [config]
@@ -46,11 +45,14 @@
                         (go-loop []
                           (if (ih/twilio-ready?)
                             (do
-                              (state/set-twilio-device
-                               (js/Twilio.Device.setup token #js {"debug" debug-twilio?
-                                                                  "closeProtection" true
-                                                                  "warnings" true
-                                                                  "region" region}))
+                              (try
+                                (state/set-twilio-device
+                                 (js/Twilio.Device.setup token #js {"debug" debug-twilio?
+                                                                    "closeProtection" true
+                                                                    "warnings" true
+                                                                    "region" region}))
+                                (catch js/Object e
+                                  (handle-twilio-error e)))
                               (js/Twilio.Device.incoming update-twilio-connection)
                               (js/Twilio.Device.ready update-twilio-connection)
                               (js/Twilio.Device.cancel update-twilio-connection)
