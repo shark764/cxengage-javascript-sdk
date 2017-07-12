@@ -35,11 +35,14 @@
 
 (defn get-email-artifact-data [interaction-id artifact-id]
   (go (let [artifact-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
-            {:keys [status api-response]} artifact-response]
+            {:keys [status api-response]} artifact-response
+            topic (topics/get-topic :email-artifact-received)]
         (if (not= status 200)
-          (p/publish {:topics (topics/get-topic :email-artifact-received)
+          (p/publish {:topics topic
                       :error (e/failed-to-retrieve-email-artifact-err interaction-id artifact-id artifact-response)})
           (do (log :info (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
+              (p/publish {:topics topic
+                          :response api-response})
               (state/add-email-artifact-data interaction-id api-response))))))
 
 (defn get-incoming-email-bodies [interaction-id]

@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.19]
+* Broadcast artifact receipt pub/sub in the success case, not only the failure case
+
 ## [5.3.18]
 * Remove delay on work offers for email until after manifest is downloaded
 
