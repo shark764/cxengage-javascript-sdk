@@ -108,16 +108,13 @@
             user-config (:result api-response)
             extensions (get user-config :extensions)]
         (if (= status 200)
-          (if (empty? extensions)
-            (p/publish {:topics topic
-                        :error (e/no-extensions-found-err user-config)})
-            (do (state/set-config! user-config)
-                (ih/send-core-message {:type :config-ready})
-                (p/publish {:topics topic
-                            :response user-config})
-                (p/publish {:topics (topics/get-topic :extension-list)
-                            :response (select-keys user-config [:active-extension :extensions])})
-                (start-session*)))
+          (do (state/set-config! user-config)
+              (ih/send-core-message {:type :config-ready})
+              (p/publish {:topics topic
+                          :response user-config})
+              (p/publish {:topics (topics/get-topic :extension-list)
+                          :response (select-keys user-config [:active-extension :extensions])})
+              (start-session*))
           (p/publish {:topics topic
                       :error (e/failed-to-get-session-config-err config-response)}))))
   nil)

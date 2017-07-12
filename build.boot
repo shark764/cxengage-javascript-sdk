@@ -18,7 +18,7 @@
                  [cljsjs/paho "1.0.1-0"]
                  [cljs-ajax "0.6.0"]
 
-                 [serenova/cljs-sdk-utils "0.0.8"]
+                 [serenova/cljs-sdk-utils "0.0.10"]
                  [serenova/lumbajack "3.0.1"]
 
                  [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
