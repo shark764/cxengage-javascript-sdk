@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.17]
+* Remove no-extensions-found error
+
 ## [5.3.16]
 * Change log statement for when logs fail to format to not be of type error
 
