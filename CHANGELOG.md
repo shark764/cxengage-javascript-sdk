@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.18]
+* Remove delay on work offers for email until after manifest is downloaded
+
 ## [5.3.17]
 * Remove no-extensions-found error
 
