@@ -43,52 +43,50 @@
           (do (log :info (str "[Email Processing] Email artifact received: " (js/JSON.stringify (clj->js api-response) nil 2)))
               (p/publish {:topics topic
                           :response api-response})
-              (state/add-email-artifact-data interaction-id api-response))))))
-
-(defn get-incoming-email-bodies [interaction-id]
-  (let [interaction (state/get-interaction interaction-id)
-        tenant-id (state/get-active-tenant-id)
-        manifest-id (get-in interaction [:email-artifact :manifest-id])
-        files (get-in interaction [:email-artifact :files])
-        artifact-id (get-in interaction [:email-artifact :artifact-id])
-        attachments (filterv #(= (:filename %) "attachment") (get-in interaction [:email-artifact :files]))
-        manifest-url (:url (first (filter #(= (:artifact-file-id %) manifest-id) files)))]
-    (log :info (str "[Email Processing] Fetching email manifest: " manifest-url))
-    (go (let [manifest-response (a/<! (rest/get-raw-url-request manifest-url))
-              manifest-body (ih/kebabify (js/JSON.parse (:api-response manifest-response)))
-              plain-body-url (:url (first (filter #(and (= (:filename %) "body")
-                                                        (starts-with? (lower-case (:content-type %)) "text/plain")) files)))
-              html-body-url (:url (first (filter #(and (= (:filename %) "body")
-                                                       (starts-with? (lower-case (:content-type %)) "text/html")) files)))
-              manifest-body (assoc manifest-body :artifact-id artifact-id)]
-          (log :info (str "[Email Processing] Email manifest received: " (js/JSON.stringify (clj->js manifest-body) nil 2)))
-          (p/publish {:topics (topics/get-topic :details-received)
-                      :response {:interaction-id interaction-id
-                                 :body manifest-body}})
-          (state/add-email-manifest-details interaction-id manifest-body)
-          (when plain-body-url
-            (let [plain-body-response (a/<! (rest/get-raw-url-request plain-body-url))
-                  plain-body (:api-response plain-body-response)]
-              (log :info (str "[Email Processing] Email plain body received: " plain-body))
-              (p/publish {:topics (topics/get-topic :plain-body-received)
-                          :response {:interaction-id interaction-id
-                                     :body plain-body}})))
-          (when (not= 0 (count attachments))
-            (let [attachments (mapv #(-> %
-                                         (dissoc :content-length)
-                                         (dissoc :filename)
-                                         (dissoc :url)
-                                         (assoc :artifact-id artifact-id)) attachments)]
-              (log :info (str "[Email Processing] Attachment list received: " (js/JSON.stringify (clj->js attachments) nil 2)))
-              (p/publish {:topics (topics/get-topic :attachment-list)
-                          :response attachments})))
-          (when html-body-url
-            (let [html-body-response (a/<! (rest/get-raw-url-request html-body-url))
-                  html-body (:api-response html-body-response)]
-              (log :info (str "[Email Processing] HTML body received: " html-body))
-              (p/publish {:topics (topics/get-topic :html-body-received)
-                          :response {:interaction-id interaction-id
-                                     :body html-body}})))))))
+              (state/add-email-artifact-data interaction-id api-response)
+              (let [interaction (state/get-interaction interaction-id)
+                    tenant-id (state/get-active-tenant-id)
+                    manifest-id (get-in interaction [:email-artifact :manifest-id])
+                    files (get-in interaction [:email-artifact :files])
+                    artifact-id (get-in interaction [:email-artifact :artifact-id])
+                    attachments (filterv #(= (:filename %) "attachment") (get-in interaction [:email-artifact :files]))
+                    manifest-url (:url (first (filter #(= (:artifact-file-id %) manifest-id) files)))]
+                (log :info (str "[Email Processing] Fetching email manifest: " manifest-url))
+                (let [manifest-response (a/<! (rest/get-raw-url-request manifest-url))
+                      manifest-body (ih/kebabify (js/JSON.parse (:api-response manifest-response)))
+                      plain-body-url (:url (first (filter #(and (= (:filename %) "body")
+                                                                (starts-with? (lower-case (:content-type %)) "text/plain")) files)))
+                      html-body-url (:url (first (filter #(and (= (:filename %) "body")
+                                                               (starts-with? (lower-case (:content-type %)) "text/html")) files)))
+                      manifest-body (assoc manifest-body :artifact-id artifact-id)]
+                  (log :info (str "[Email Processing] Email manifest received: " (js/JSON.stringify (clj->js manifest-body) nil 2)))
+                  (p/publish {:topics (topics/get-topic :details-received)
+                              :response {:interaction-id interaction-id
+                                         :body manifest-body}})
+                  (state/add-email-manifest-details interaction-id manifest-body)
+                  (when plain-body-url
+                    (let [plain-body-response (a/<! (rest/get-raw-url-request plain-body-url))
+                          plain-body (:api-response plain-body-response)]
+                      (log :info (str "[Email Processing] Email plain body received: " plain-body))
+                      (p/publish {:topics (topics/get-topic :plain-body-received)
+                                  :response {:interaction-id interaction-id
+                                             :body plain-body}})))
+                  (when (not= 0 (count attachments))
+                    (let [attachments (mapv #(-> %
+                                                 (dissoc :content-length)
+                                                 (dissoc :filename)
+                                                 (dissoc :url)
+                                                 (assoc :artifact-id artifact-id)) attachments)]
+                      (log :info (str "[Email Processing] Attachment list received: " (js/JSON.stringify (clj->js attachments) nil 2)))
+                      (p/publish {:topics (topics/get-topic :attachment-list)
+                                  :response attachments})))
+                  (when html-body-url
+                    (let [html-body-response (a/<! (rest/get-raw-url-request html-body-url))
+                          html-body (:api-response html-body-response)]
+                      (log :info (str "[Email Processing] HTML body received: " html-body))
+                      (p/publish {:topics (topics/get-topic :html-body-received)
+                                  :response {:interaction-id interaction-id
+                                             :body html-body}}))))))))))
 
 (defn handle-work-offer [message]
   (if (= :incoming (state/find-interaction-location (:interaction-id message)))
@@ -102,7 +100,10 @@
     (if (> now expiry)
       (log :warn "Received an expired work offer; doing nothing")
       (if (= channel-type "work-item")
-        (rest/send-interrupt-request interaction-id "resource-disconnect" {:resource-id (state/get-active-user-id)})
+        (rest/send-interrupt-request
+         interaction-id
+         "resource-disconnect"
+         {:resource-id (state/get-active-user-id)})
         (do (when (or (= channel-type "sms")
                       (= channel-type "messaging"))
               (let [{:keys [interaction-id]} message]
@@ -196,14 +197,17 @@
         :env (state/get-env)}))
     (when (= channel-type "email")
       (go (let [artifact-body {:artifactType "email"}
-                {:keys [api-response status] :as artifact-response} (a/<! (rest/create-artifact-request interaction-id artifact-body))]
+
+                {:keys [api-response status] :as artifact-response}
+                (a/<! (rest/create-artifact-request interaction-id artifact-body))]
             (if (= status 200)
               (let [{:keys [artifact-id]} api-response]
-                (state/store-email-reply-artifact-id artifact-id interaction-id)
-                (when (= direction "inbound")
-                  (get-incoming-email-bodies interaction-id)))
+                (state/store-email-reply-artifact-id artifact-id interaction-id))
               (p/publish {:topics (topics/get-topic :failed-to-create-email-reply-artifact)
-                          :error (e/failed-to-create-email-reply-artifact-err interaction-id artifact-body artifact-response)})))))))
+                          :error (e/failed-to-create-email-reply-artifact-err
+                                  interaction-id
+                                  artifact-body
+                                  artifact-response)})))))))
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message

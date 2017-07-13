@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.3.21]
+* Start fetching email bodies prior to work accepted being received from flow
+
 ## [5.3.20]
 * CXV1-10348 - Fixed cannot send script while being offered a parallel work offer
 
