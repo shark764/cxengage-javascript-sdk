@@ -1,6 +1,6 @@
 # Change Log
 
-## [Unreleased]
+## [5.3.20]
 * CXV1-10348 - Fixed cannot send script while being offered a parallel work offer
 
 ## [5.3.19]
