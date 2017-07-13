@@ -1,5 +1,8 @@
 # Change Log
 
+## [Unreleased]
+* CXV1-10348 - Fixed cannot send script while being offered a parallel work offer
+
 ## [5.3.19]
 * Broadcast artifact receipt pub/sub in the success case, not only the failure case
 
