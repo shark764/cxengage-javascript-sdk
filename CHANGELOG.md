@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [5.3.26]
+* Added error for force killing a twilio interaction
+
 ## [5.3.25]
 * CXV1-10395, CXV1-10396, CXV1-10461
   * Removed extensions checking on login

@@ -13,6 +13,7 @@
             [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs-sdk-utils.interop-helpers :as ih]
+            [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]))
 
 (s/def ::generic-interaction-fn-params
@@ -77,7 +78,10 @@
                   :callback callback})
       (do (when (= status 404)
             (when-let [twilio-device (state/get-twilio-device)]
-              (.disconnectAll twilio-device)))
+              (.disconnectAll twilio-device)
+              (p/publish {:topics (topics/get-topic :force-killed-twilio-connection)
+                          :error (e/force-killed-twilio-connection-err interaction-id)
+                          :callback callback})))
           (p/publish {:topics topic
                       :error (e/failed-to-end-interaction-err interaction-id resp)
                       :callback callback})))))
