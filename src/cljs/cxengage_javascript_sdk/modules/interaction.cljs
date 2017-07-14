@@ -1,5 +1,5 @@
 (ns cxengage-javascript-sdk.modules.interaction
-  (:require-macros [cljs.core.async.macros :refer [go]]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]]
                    [cljs-sdk-utils.macros :refer [def-sdk-fn]])
   (:require [cljs.core.async :as a]
@@ -77,7 +77,7 @@
                   :callback callback})
       (do (when (= status 404)
             (when-let [twilio-device (state/get-twilio-device)]
-                  (.disconnectAll twilio-device)))
+              (.disconnectAll twilio-device)))
           (p/publish {:topics topic
                       :error (e/failed-to-end-interaction-err interaction-id resp)
                       :callback callback})))))
@@ -98,7 +98,10 @@
         interrupt-type "offer-accept"
         {:keys [timeout timeout-end channel-type]} (state/get-interaction interaction-id)
         {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
+    (if (not= status 200)
+      (p/publish {:topics topic
+                  :error (e/failed-to-accept-interaction-err interaction-id resp)
+                  :callback callback})
       (do (p/publish {:topics topic
                       :response (merge {:interaction-id interaction-id} interrupt-body)
                       :callback callback})
@@ -108,17 +111,20 @@
                         :callback callback})
             (do (when (and (= channel-type "voice")
                            (= (:provider (state/get-active-extension)) "twilio"))
-                  (if-let [connection (state/get-twilio-connection)]
-                    (.accept connection)
-                    (p/publish {:topics topic
-                                :error (e/failed-to-find-twilio-connection-object interaction-id)
-                                :callback callback})))
+                  (go-loop [t (a/timeout 3000)
+                            attempts 1]
+                    (if (= attempts 3)
+                      (p/publish {:topics topic
+                                  :error (e/failed-to-find-twilio-connection-object interaction-id)
+                                  :callback callback})
+                      (if-let [connection (state/get-twilio-connection)]
+                        (.accept connection)
+                        (do (a/<! t)
+                            (recur (a/timeout 3000)
+                                   (inc attempts)))))))
                 (when (or (= channel-type "sms")
                           (= channel-type "messaging"))
-                  (int/get-messaging-history interaction-id)))))
-      (p/publish {:topics topic
-                  :error (e/failed-to-accept-interaction-err interaction-id resp)
-                  :callback callback}))))
+                  (int/get-messaging-history interaction-id))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.focus({
