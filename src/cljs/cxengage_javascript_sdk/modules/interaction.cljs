@@ -108,8 +108,11 @@
                         :callback callback})
             (do (when (and (= channel-type "voice")
                            (= (:provider (state/get-active-extension)) "twilio"))
-                  (let [connection (state/get-twilio-connection)]
-                    (.accept connection)))
+                  (if-let [connection (state/get-twilio-connection)]
+                    (.accept connection)
+                    (p/publish {:topics topic
+                                :error (e/failed-to-find-twilio-connection-object interaction-id)
+                                :callback callback})))
                 (when (or (= channel-type "sms")
                           (= channel-type "messaging"))
                   (int/get-messaging-history interaction-id)))))
