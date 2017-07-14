@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [5.3.25]
+* CXV1-10395, CXV1-10396, CXV1-10461
+  * Removed extensions checking on login
+  * Removed permissions checking on login
+  * Removed auto-rejection of interactions where channel-type is work-item
+
 ## [5.3.24]
 * Perform retries on finding the connection prior to assuming fatal error
 
