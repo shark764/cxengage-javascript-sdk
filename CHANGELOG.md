@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [5.3.24]
+* Perform retries on finding the connection prior to assuming fatal error
+
 ## [5.3.23]
 * Added error for not being able to find twilio connection object in state (no jira)
 
