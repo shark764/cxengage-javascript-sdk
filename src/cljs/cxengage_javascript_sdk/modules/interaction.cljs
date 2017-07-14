@@ -77,7 +77,7 @@
                   :callback callback})
       (do (when (= status 404)
             (when-let [twilio-device (state/get-twilio-device)]
-                  (.disconnect twilio-device)))
+                  (.disconnectAll twilio-device)))
           (p/publish {:topics topic
                       :error (e/failed-to-end-interaction-err interaction-id resp)
                       :callback callback})))))
