@@ -119,16 +119,6 @@
                       :error (e/failed-to-get-session-config-err config-response)}))))
   nil)
 
-(def required-desktop-permissions
-  #{"CONTACTS_CREATE"
-    "CONTACTS_UPDATE"
-    "CONTACTS_READ"
-    "CONTACTS_ATTRIBUTES_READ"
-    "CONTACTS_LAYOUTS_READ"
-    "CONTACTS_ASSIGN_INTERACTION"
-    "CONTACTS_INTERACTION_HISTORY_READ"
-    "ARTIFACTS_CREATE_ALL"})
-
 (s/def ::set-active-tenant-spec
   (s/keys :req-un [::specs/tenant-id]
           :opt-un [::specs/callback]))
@@ -139,15 +129,11 @@
   [params]
   (let [{:keys [callback topic tenant-id]} params
         tenant-permissions (state/get-tenant-permissions tenant-id)]
-    (if-not (state/has-permissions? tenant-permissions required-desktop-permissions)
-      (p/publish {:topics topic
-                  :error (e/insufficient-permissions-err required-desktop-permissions)
-                  :callback callback})
-      (do (state/set-active-tenant! tenant-id)
-          (p/publish {:topics topic
-                      :response {:tenant-id tenant-id}
-                      :callback callback})
-          (get-config*)))))
+    (state/set-active-tenant! tenant-id)
+    (p/publish {:topics topic
+                :response {:tenant-id tenant-id}
+                :callback callback})
+    (get-config*)))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.setDirection({ direction: "{{inbound/outbound}}" });

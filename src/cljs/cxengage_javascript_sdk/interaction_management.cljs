@@ -99,20 +99,15 @@
         expiry (.getTime (js/Date. timeout))]
     (if (> now expiry)
       (log :warn "Received an expired work offer; doing nothing")
-      (if (= channel-type "work-item")
-        (rest/send-interrupt-request
-         interaction-id
-         "resource-disconnect"
-         {:resource-id (state/get-active-user-id)})
-        (do (when (or (= channel-type "sms")
-                      (= channel-type "messaging"))
-              (let [{:keys [interaction-id]} message]
-                (get-messaging-metadata interaction-id)))
-            (when (and (= channel-type "email") (= direction "inbound"))
-              (let [{:keys [interaction-id artifact-id]} message]
-                (get-email-artifact-data interaction-id artifact-id)))
-            (p/publish {:topics (topics/get-topic :work-offer-received)
-                        :response message})))))
+      (do (when (or (= channel-type "sms")
+                    (= channel-type "messaging"))
+            (let [{:keys [interaction-id]} message]
+              (get-messaging-metadata interaction-id)))
+          (when (and (= channel-type "email") (= direction "inbound"))
+            (let [{:keys [interaction-id artifact-id]} message]
+              (get-email-artifact-data interaction-id artifact-id)))
+          (p/publish {:topics (topics/get-topic :work-offer-received)
+                      :response message}))))
   nil)
 
 (defn handle-new-messaging-message [payload]
