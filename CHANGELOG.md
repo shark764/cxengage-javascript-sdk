@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [5.3.23]
+* Added error for not being able to find twilio connection object in state (no jira)
+
 ## [5.3.22]
 * CXV1-9785 - Call disconnect on the twilio device when interaction end returns 404
 * CXV1-9785 - Added voice interaction heartbeats
