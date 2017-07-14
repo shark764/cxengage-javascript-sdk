@@ -1,5 +1,5 @@
 (ns cxengage-javascript-sdk.interaction-management
-  (:require-macros [cljs.core.async.macros :refer [go]]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [clojure.string :refer [starts-with? lower-case]]
@@ -189,6 +189,24 @@
                            :active-resources active-resources
                            :customer-on-hold customer-on-hold
                            :recording recording}})
+    (when (= channel-type "voice")
+      (go-loop [t (a/timeout 30000)]
+        (let [interaction-bucket (state/find-interaction-location interaction-id)]
+          (if-not (or (= interaction-bucket :pending)
+                      (= interaction-bucket :active))
+            nil
+            (let [{:keys [status api-response]} (a/<! (rest/send-interrupt-request
+                                                       interaction-id
+                                                       "voice-heartbeat"
+                                                       {:resource-id (state/get-active-user-id)}))]
+              (if (or (= status 200)
+                      (= status 204))
+                (do (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
+                                :response {:interaction-id interaction-id}})
+                    (a/<! t)
+                    (recur (a/timeout 30000)))
+                (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
+                            :error (e/failed-to-send-voice-interaction-heartbeat-err interaction-id api-response)})))))))
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
       (messaging/subscribe-to-messaging-interaction
@@ -197,7 +215,6 @@
         :env (state/get-env)}))
     (when (= channel-type "email")
       (go (let [artifact-body {:artifactType "email"}
-
                 {:keys [api-response status] :as artifact-response}
                 (a/<! (rest/create-artifact-request interaction-id artifact-body))]
             (if (= status 200)

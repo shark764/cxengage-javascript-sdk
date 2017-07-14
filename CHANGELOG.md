@@ -1,7 +1,10 @@
 # Change Log
 
 ## [Unreleased]
+
+## [5.3.22]
 * CXV1-9785 - Call disconnect on the twilio device when interaction end returns 404
+* CXV1-9785 - Added voice interaction heartbeats
 
 ## [5.3.21]
 * Start fetching email bodies prior to work accepted being received from flow
