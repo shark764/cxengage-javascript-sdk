@@ -11,7 +11,7 @@
             [cljs-sdk-utils.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cljs.spec :as s]))
+            [cljs.spec.alpha :as s]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Twilio Initialization Functions

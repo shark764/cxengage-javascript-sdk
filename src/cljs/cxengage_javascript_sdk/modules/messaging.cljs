@@ -20,7 +20,7 @@
             [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cljs.spec :as s])
+            [cljs.spec.alpha :as s])
   (:import goog.crypt))
 
 (def service-name "iotdevicegateway")

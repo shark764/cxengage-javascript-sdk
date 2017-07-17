@@ -3,7 +3,7 @@
                    [lumbajack.macros :refer [log]]
                    [cljs-sdk-utils.macros :refer [def-sdk-fn]])
   (:require [cljs.core.async :as a]
-            [cljs.spec :as s]
+            [cljs.spec.alpha :as s]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
             [cljs-sdk-utils.specs :as specs]

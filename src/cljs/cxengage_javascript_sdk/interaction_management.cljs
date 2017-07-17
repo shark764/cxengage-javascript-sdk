@@ -210,16 +210,23 @@
         :env (state/get-env)}))
     (when (= channel-type "email")
       (go (let [artifact-body {:artifactType "email"}
+
                 {:keys [api-response status] :as artifact-response}
-                (a/<! (rest/create-artifact-request interaction-id artifact-body))]
-            (if (= status 200)
+                (a/<! (rest/create-artifact-request interaction-id artifact-body))
+
+                error-pub-fn
+                #(p/publish {:topics (topics/get-topic :failed-to-create-email-reply-artifact)
+                             :error (e/failed-to-create-email-reply-artifact-err
+                                     interaction-id
+                                     artifact-body
+                                     artifact-response)})]
+            (if (not= status 200)
+              (error-pub-fn)
               (let [{:keys [artifact-id]} api-response]
-                (state/store-email-reply-artifact-id artifact-id interaction-id))
-              (p/publish {:topics (topics/get-topic :failed-to-create-email-reply-artifact)
-                          :error (e/failed-to-create-email-reply-artifact-err
-                                  interaction-id
-                                  artifact-body
-                                  artifact-response)})))))))
+                (if artifact-id
+                  (state/store-email-reply-artifact-id artifact-id interaction-id)
+                  (do (log :error "Failed to get artifact id from create-artifact API response")
+                      (error-pub-fn))))))))))
 
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id]} message
@@ -429,16 +436,12 @@
                        nil)]
     (when (state/get-blast-sqs-output)
       (log :debug (str "[SQS] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
-    (if (and (= channel-type "work-item")
-             (not= msg-type "work-offer"))
-      (do (log :warn "Received a non-work-offer message of channel 'work-item',, ignoring...")
-          nil)
-      (if inferred-msg
-        (msg-router inferred-msg)
-        (do (log :warn "Unable to infer message type from sqs")
-            (p/publish {:topics (topics/get-topic :unknown-agent-notification-type-received)
-                        :error (e/unknown-agent-notification-type-err inferred-msg)})
-            nil)))))
+    (if inferred-msg
+      (msg-router inferred-msg)
+      (do (log :warn "Unable to infer message type from sqs")
+          (p/publish {:topics (topics/get-topic :unknown-agent-notification-type-received)
+                      :error (e/unknown-agent-notification-type-err inferred-msg)})
+          nil))))
 
 (defn messaging-msg-router [message]
   (handle-new-messaging-message message))

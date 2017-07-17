@@ -103,7 +103,7 @@
               sqs-needs-refresh-time original-sqs-needs-refresh-time]
       (if (> (.getTime (js/Date.)) sqs-needs-refresh-time)
         ;; 3/4 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
-        (do (log :info "Refreshing SQS integration")
+        (do (log :debug "Refreshing SQS integration")
             (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
                   user-config (:result api-response)]
               (if (not= status 200)

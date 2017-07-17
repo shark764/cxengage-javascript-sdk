@@ -4,7 +4,7 @@
                    [cljs-sdk-utils.macros :refer [def-sdk-fn]]
                    [clojure.string :as str])
   (:require [cljs.core.async :as a]
-            [cljs.spec :as s]
+            [cljs.spec.alpha :as s]
             [cljs-uuid-utils.core :as id]
             [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
@@ -38,9 +38,10 @@
         attachment-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
         {:keys [api-response status]} attachment-response]
     (if (= status 200)
-      (let [attachment (first (filterv
-                               #(= (:artifact-file-id %) artifact-file-id)
-                               (:files api-response)))]
+      (let [attachment (first
+                        (filterv
+                         #(= (:artifact-file-id %) artifact-file-id)
+                         (:files api-response)))]
         (p/publish {:topics topic
                     :response attachment
                     :callback callback}))
@@ -272,7 +273,7 @@
                   :response api-response
                   :callback callback})
       (p/publish {:topics (topics/get-topic :failed-to-create-outbound-email-interaction)
-                  :error (e/failed-to-create-outbound-email-interaction-err interaction-body interaction-response)
+                  :error (e/failed-to-create-outbound-email-interaction-err interaction-body interaction-id interaction-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;

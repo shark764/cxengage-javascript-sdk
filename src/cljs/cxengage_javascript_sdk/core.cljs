@@ -1,8 +1,9 @@
 (ns cxengage-javascript-sdk.core
   (:require-macros [lumbajack.macros :refer [log]])
-  (:require [cljs.spec :as s]
+  (:require [cljs.spec.alpha :as s]
             [lumbajack.core :as l]
             [cljs.core.async :as a]
+            [expound.alpha :as es]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
 
@@ -106,7 +107,7 @@
                    (assoc :base-url (or (:base-url opts) "https://api.cxengage.net/v1/"))
                    (assoc :reporting-refresh-rate (or (:reporting-refresh-rate opts) 10000))
                    (assoc :consumer-type (keyword (or (:consumer-type opts) :js)))
-                   (assoc :log-level (keyword (or (:log-level opts) :info)))
+                   (assoc :log-level (keyword (or (:log-level opts) :debug)))
                    (assoc :blast-sqs-output (or (:blast-sqs-output opts) false))
                    (assoc :environment (keyword (or (:environment opts) :prod))))]
       (if-not (s/valid? ::initialize-options opts)

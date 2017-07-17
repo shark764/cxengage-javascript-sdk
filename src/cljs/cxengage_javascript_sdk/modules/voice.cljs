@@ -14,7 +14,7 @@
             [cljs-sdk-utils.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cljs.spec :as s]))
+            [cljs.spec.alpha :as s]))
 
 (s/def ::generic-voice-interaction-fn-params
   (s/keys :req-un [::specs/interaction-id]

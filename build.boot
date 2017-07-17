@@ -6,7 +6,8 @@
 
  :dependencies '[[org.clojure/core.async "0.3.442" :exclusions [org.clojure/tools.reader]]
                  [org.clojure/clojure "1.9.0-alpha16"]
-                 [org.clojure/clojurescript "1.9.521"]
+                 [org.clojure/clojurescript "1.9.671"]
+                 [org.clojure/spec.alpha "0.1.123"]
 
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
                  [com.cognitect/transit-cljs "0.8.239"]
@@ -17,9 +18,10 @@
                  [funcool/promesa "1.8.1"]
                  [cljsjs/paho "1.0.1-0"]
                  [cljs-ajax "0.6.0"]
+                 [expound "0.1.0"]
 
-                 [serenova/cljs-sdk-utils "0.0.14"]
-                 [serenova/lumbajack "3.0.1"]
+                 [serenova/cljs-sdk-utils "0.0.15-SNAPSHOT"]
+                 [serenova/lumbajack "3.0.2-SNAPSHOT"]
 
                  [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
                  [org.clojure/tools.nrepl "0.2.13" :scope "test"]
