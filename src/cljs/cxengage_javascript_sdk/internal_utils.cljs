@@ -28,11 +28,17 @@
   ([url]
    (str (state/get-base-api-url) url))
   ([url params]
-   (reduce-kv
-    (fn [s k v]
-      (clojure.string/replace s (re-pattern (str k)) v))
-    (str (state/get-base-api-url) url)
-    params)))
+   (try
+     (reduce-kv
+         (fn [s k v]
+           (clojure.string/replace s (re-pattern (str k)) v))
+         (str (state/get-base-api-url) url)
+         params)
+     (catch js/Object e
+       (log :warn "An exception occurred attempting to form an API URL.")
+       (log :warn "URL provided:" url)
+       (log :warn "Params provided:" params)
+       nil))))
 
 (defn get-now
   []

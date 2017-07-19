@@ -2,7 +2,7 @@
   (:require-macros [cljs-sdk-utils.macros :refer [def-sdk-fn]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
-            [cljs.spec :as s]
+            [cljs.spec.alpha :as s]
             [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]

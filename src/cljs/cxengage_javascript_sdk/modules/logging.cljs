@@ -3,7 +3,7 @@
                    [lumbajack.macros :refer [log]]
                    [cljs.core.async.macros :refer [go-loop]])
   (:require [cljs.core.async :as a]
-            [cljs.spec :as s]
+            [cljs.spec.alpha :as s]
             [cljs-sdk-utils.protocols :as pr]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs-sdk-utils.interop-helpers :as ih]

@@ -1,7 +1,7 @@
 (ns cxengage-javascript-sdk.modules.authentication
   (:require-macros [cljs-sdk-utils.macros :refer [def-sdk-fn]]
                    [lumbajack.macros :refer [log]])
-  (:require [cljs.spec :as s]
+  (:require [cljs.spec.alpha :as s]
             [cljs.core.async :as a]
             [cljs-sdk-utils.specs :as specs]
             [cljs-sdk-utils.errors :as e]

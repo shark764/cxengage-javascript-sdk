@@ -1,6 +1,14 @@
 # Change Log
 
 ## [Unreleased]
+* Upgrade clojure dep
+* Upgrade lumbajack + utils
+* Upgrade clojurescript dep & fix cljs-spec breaking change
+* Added the library 'expound' for better spec output
+* Remove last remnant of ignore-work-items logic
+* Change default log level to debug
+* Throw error on failing to fetch the artifact id of the reply artifact created
+* Add additional logging around failing to build API urls; which url we tried to build, what ID was nil, etc
 
 ## [5.3.26]
 * Added error for force killing a twilio interaction
