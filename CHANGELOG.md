@@ -1,6 +1,7 @@
 # Change Log
 
-## [Unreleased]
+## [5.3.27]
+* Update cljs-sdk-utils to 0.0.15
 * Upgrade clojure dep
 * Upgrade lumbajack + utils
 * Upgrade clojurescript dep & fix cljs-spec breaking change
