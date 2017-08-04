@@ -340,6 +340,30 @@
         new-integrations (conj other-integrations integration)]
     (swap! sdk-state assoc-in [:session :config :integrations] new-integrations)))
 
+(defn set-tenant-data!
+  [tenant-data]
+  (swap! sdk-state assoc-in [:session :tenant] tenant-data))
+
+(defn get-tenant-data
+  []
+  (let [tenant-data (get-state-value [:session :tenant])]
+    (if tenant-data
+      tenant-data
+      (do (js/console.warn "[SDK State] Unable to find tenant data in state; likely to have unintended side-effects.")
+          nil))))
+
+(defn get-region
+  []
+  (let [region (get-state-value [:session :region])]
+    (if region
+      region
+      (do (js/console.warn "[SDK State] Unable to find region in state; likely to have unintended side-effects.")
+          nil))))
+
+(defn set-region!
+  [region]
+  (swap! sdk-state assoc-in [:session :region] region))
+
 (defn set-active-tenant!
   [tenant-id]
   (swap! sdk-state assoc-in [:session :tenant-id] tenant-id))

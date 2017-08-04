@@ -128,12 +128,25 @@
    :topic-key :active-tenant-set}
   [params]
   (let [{:keys [callback topic tenant-id]} params
-        tenant-permissions (state/get-tenant-permissions tenant-id)]
-    (state/set-active-tenant! tenant-id)
-    (p/publish {:topics topic
-                :response {:tenant-id tenant-id}
-                :callback callback})
-    (get-config*)))
+        tenant-permissions (state/get-tenant-permissions tenant-id)
+        {:keys [status api-response] :as resp} (a/<! (rest/get-tenant-request tenant-id))
+        region-id (get-in api-response [:result :region-id])]
+    (if (not= status 200)
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-tenant-err api-response)})
+      (do
+        (state/set-tenant-data! (:result api-response))
+        (state/set-active-tenant! tenant-id)
+        (let [{:keys [status api-response] :as resp} (a/<! (rest/get-region-request region-id))]
+          (if (not= status 200)
+            (p/publish {:topics topic
+                        :error (e/failed-to-get-region-err api-response)})
+            (do
+              (state/set-region! (get-in api-response [:result :name]))
+              (p/publish {:topics topic
+                          :response {:tenant-id tenant-id}
+                          :callback callback})
+              (get-config*))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.setDirection({ direction: "{{inbound/outbound}}" });

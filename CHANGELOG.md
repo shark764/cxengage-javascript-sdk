@@ -1,5 +1,8 @@
 # Change Log
 
+## [Unreleased]
+* CXV1-11103 - Store region in state to use when initializing SQS
+
 ## [5.3.28]
 * CXV1-11151 - Added a twilio extern, added additional steps to the retry logic around accepting twilio connections
 * Store created outbound interactions even before we get the work offer, so we can fetch things like the channel type of the interaction without necessarily having gotten the work offer yet

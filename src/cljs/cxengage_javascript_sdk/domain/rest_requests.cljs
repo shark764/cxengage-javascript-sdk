@@ -450,3 +450,17 @@
                                     "tenants/:tenant-id/branding"
                                     {:tenant-id tenant-id})}]
     (api/api-request get-branding-request)))
+
+(defn get-tenant-request [tenant-id]
+  (let [get-tenant-request {:method :get
+                            :url (iu/api-url
+                                  "tenants/:tenant-id"
+                                  {:tenant-id tenant-id})}]
+    (api/api-request get-tenant-request)))
+
+(defn get-region-request [region-id]
+  (let [get-region-request {:method :get
+                            :url (iu/api-url
+                                  "regions/:region-id"
+                                  {:region-id region-id})}]
+    (api/api-request get-region-request)))
