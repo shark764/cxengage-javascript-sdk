@@ -76,7 +76,7 @@
       (p/publish {:topics topic
                   :response (merge {:interaction-id interaction-id} interrupt-body)
                   :callback callback})
-      (do (when (= status 404)
+      (do (when (and (= channel-type "voice") (= status 404))
             (when-let [twilio-device (state/get-twilio-device)]
               (.disconnectAll twilio-device)
               (p/publish {:topics (topics/get-topic :force-killed-twilio-connection)
@@ -115,17 +115,19 @@
                         :callback callback})
             (do (when (and (= channel-type "voice")
                            (= (:provider (state/get-active-extension)) "twilio"))
-                  (go-loop [t (a/timeout 3000)
-                            attempts 1]
-                    (if (= attempts 3)
-                      (p/publish {:topics topic
-                                  :error (e/failed-to-find-twilio-connection-object interaction-id)
-                                  :callback callback})
-                      (if-let [connection (state/get-twilio-connection)]
-                        (.accept connection)
-                        (do (a/<! t)
-                            (recur (a/timeout 3000)
-                                   (inc attempts)))))))
+                  (let [connection (state/get-twilio-connection)]
+                    (go-loop [t (a/timeout 3000)
+                              attempts 1]
+                      (if (= attempts 3)
+                        (p/publish {:topics topic
+                                    :error (e/failed-to-find-twilio-connection-object interaction-id)
+                                    :callback callback})
+                        (if (and connection
+                                 (.-accept connection))
+                          (.accept connection)
+                          (do (a/<! t)
+                              (recur (a/timeout 3000)
+                                     (inc attempts))))))))
                 (when (or (= channel-type "sms")
                           (= channel-type "messaging"))
                   (int/get-messaging-history interaction-id))))))))
