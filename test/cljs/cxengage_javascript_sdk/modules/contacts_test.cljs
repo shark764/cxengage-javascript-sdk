@@ -5,9 +5,9 @@
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs-uuid-utils.core :as uuid]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cljs-sdk-utils.api :as api]
-            [cljs-sdk-utils.errors :as e]
-            [cljs-sdk-utils.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.api-utils :as api]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cljs-sdk-utils.test :refer [camels]]
             [cxengage-javascript-sdk.state :as state]
             [cljs.test :refer-macros [deftest is testing run-tests async]]))

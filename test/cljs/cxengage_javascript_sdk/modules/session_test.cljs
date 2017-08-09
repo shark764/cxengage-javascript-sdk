@@ -3,12 +3,12 @@
   (:require [cxengage-javascript-sdk.modules.session :as session]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cljs-sdk-utils.errors :as e]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cljs-sdk-utils.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cljs-sdk-utils.test :as t]
             [cxengage-javascript-sdk.state :as st]
-            [cljs-sdk-utils.api :as api]
+            [cxengage-javascript-sdk.domain.api-utils :as api]
             [cljs.core.async :as a]
             [cljs.test :refer-macros [deftest is testing async]]))
 

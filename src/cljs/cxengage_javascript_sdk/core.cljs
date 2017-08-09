@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.core
-  (:require-macros [lumbajack.macros :refer [log]])
+  (:require-macros [lumbajack.macros :refer [log]]
+                   [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.spec.alpha :as s]
             [lumbajack.core :as l]
             [cljs.core.async :as a]
@@ -7,11 +8,10 @@
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
 
-            [cljs-sdk-utils.core :as cxu]
-            [cljs-sdk-utils.errors :as e]
-            [cljs-sdk-utils.specs :as specs]
-            [cljs-sdk-utils.protocols :as pr]
-            [cljs-sdk-utils.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
 
             [cxengage-javascript-sdk.pubsub :as pu]
             [cxengage-javascript-sdk.state :as state]
@@ -30,7 +30,7 @@
             [cxengage-javascript-sdk.modules.interaction :as interaction]
             [cxengage-javascript-sdk.modules.authentication :as authentication]))
 
-(def *SDK-VERSION* "5.3.29-SNAPSHOT")
+(def *SDK-VERSION* "5.4.0")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -92,6 +92,13 @@
     :module-registration-status (handle-module-registration-status m)
     nil))
 
+(defn start-simple-consumer!
+  [ch handler]
+  (go-loop []
+    (when-let [message (a/<! ch)]
+      (handler message)
+      (recur))))
+
 (s/def ::initialize-options
   (s/keys :req-un []
           :opt-un [::specs/consumer-type ::specs/log-level ::specs/environment ::specs/base-url ::specs/blast-sqs-output ::specs/reporting-refresh-rate]))
@@ -134,4 +141,4 @@
           (state/set-env! environment)
           (state/set-blast-sqs-output! blast-sqs-output)
           (start-base-modules module-comm-chan)
-          (cxu/start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan)))))))
+          (start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan)))))))

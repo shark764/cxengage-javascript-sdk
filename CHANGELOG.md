@@ -1,7 +1,8 @@
 # Change Log
 
-## [Unreleased]
-* CXV1-11103 - Store region in state to use when initializing SQS
+## [5.4.0]
+* CXV1-11103 - Merge SDK utils with Core
+* CXV1-9840 - Store region in state to use when initializing SQS
 
 ## [5.3.28]
 * CXV1-11151 - Added a twilio extern, added additional steps to the retry logic around accepting twilio connections

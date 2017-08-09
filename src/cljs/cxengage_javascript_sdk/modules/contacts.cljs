@@ -1,14 +1,14 @@
 (ns cxengage-javascript-sdk.modules.contacts
-  (:require-macros [cljs-sdk-utils.macros :refer [def-sdk-fn]]
+  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [cljs.spec.alpha :as s]
-            [cljs-sdk-utils.protocols :as pr]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cljs-sdk-utils.interop-helpers :as ih]
-            [cljs-sdk-utils.errors :as e]
-            [cljs-sdk-utils.specs :as specs]))
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.specs :as specs]))
 
 (defn get-query-str
   [query]

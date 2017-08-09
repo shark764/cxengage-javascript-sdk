@@ -5,9 +5,9 @@
             [goog.crypt :as c]
             [ajax.core :as ajax]
             [clojure.string :as str]
-            [cljs-sdk-utils.errors :as e]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.state :as state]
-            [cljs-sdk-utils.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]])
   (:import [goog.crypt Sha256 Hmac]))

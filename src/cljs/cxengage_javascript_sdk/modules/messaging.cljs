@@ -1,7 +1,7 @@
 (ns cxengage-javascript-sdk.modules.messaging
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [lumbajack.macros :refer [log]]
-                   [cljs-sdk-utils.macros :refer [def-sdk-fn]])
+                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
   (:require [cljsjs.paho]
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]
@@ -12,12 +12,12 @@
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cljs-sdk-utils.specs :as specs]
-            [cljs-sdk-utils.interop-helpers :as ih]
-            [cljs-sdk-utils.protocols :as pr]
-            [cljs-sdk-utils.topics :as topics]
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
+            [cxengage-javascript-sdk.domain.topics :as topics]
             [cognitect.transit :as t]
-            [cljs-sdk-utils.errors :as e]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec.alpha :as s])
