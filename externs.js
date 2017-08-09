@@ -6,6 +6,16 @@ var Twilio = {};
 /**
  * @interface
  */
+Twilio.Connection = function() {};
+
+/**
+ * @return {Object}
+ */
+Twilio.Connection.accept = function() {};
+
+/**
+ * @interface
+ */
 Twilio.Device = function() {};
 
 /**
