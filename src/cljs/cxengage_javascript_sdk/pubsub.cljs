@@ -4,10 +4,10 @@
             [lumbajack.core]
             [clojure.string :as string]
             [expound.alpha :as e]
-            [cljs-sdk-utils.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cljs-uuid-utils.core :as id]
-            [cljs-sdk-utils.specs :as specs]
-            [cljs-sdk-utils.topics :as topics]))
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.topics :as topics]))
 
 (def sdk-subscriptions (atom {}))
 

@@ -1,17 +1,17 @@
 (ns cxengage-javascript-sdk.modules.authentication
-  (:require-macros [cljs-sdk-utils.macros :refer [def-sdk-fn]]
+  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]]
                    [lumbajack.macros :refer [log]])
   (:require [cljs.spec.alpha :as s]
             [cljs.core.async :as a]
-            [cljs-sdk-utils.specs :as specs]
-            [cljs-sdk-utils.errors :as e]
-            [cljs-sdk-utils.topics :as topics]
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cljs-sdk-utils.protocols :as pr]
+            [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.state :as state]
-            [cljs-sdk-utils.interop-helpers :as ih]))
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.authentication.logout();

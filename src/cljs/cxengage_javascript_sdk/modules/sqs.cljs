@@ -1,15 +1,15 @@
 (ns cxengage-javascript-sdk.modules.sqs
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [lumbajack.macros :refer [log]])
-  (:require [cljs-sdk-utils.protocols :as pr]
+  (:require [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.state :as state]
             [cljs.core.async :as a]
             [cljsjs.aws-sdk-js]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cljs-sdk-utils.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cljs-sdk-utils.errors :as e]
-            [cljs-sdk-utils.topics :as topics]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]))

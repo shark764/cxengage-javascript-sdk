@@ -3,8 +3,8 @@
                    [lumbajack.macros :refer [log]])
   (:require [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cljs-sdk-utils.interop-helpers :as ih]
-            [cljs-sdk-utils.api :as api]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.api-utils :as api]
             [ajax.core :as ajax]
             [cljs.core.async :as a]))
 

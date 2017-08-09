@@ -2,11 +2,11 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cxengage-javascript-sdk.pubsub :as p]
             [cljs.core.async :as a]
-            [cljs-sdk-utils.errors :as e]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cljs-sdk-utils.interop-helpers :as ih]
-            [cljs-sdk-utils.api :as api]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.api-utils :as api]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.modules.authentication :as auth]
             [cljs.test :refer-macros [deftest is testing async use-fixtures]]))

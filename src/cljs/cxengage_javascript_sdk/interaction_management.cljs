@@ -5,10 +5,10 @@
             [clojure.string :refer [starts-with? lower-case]]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
-            [cljs-sdk-utils.interop-helpers :as ih]
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cljs-sdk-utils.errors :as e]
-            [cljs-sdk-utils.topics :as topics]
+            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.modules.messaging :as messaging]))
 
