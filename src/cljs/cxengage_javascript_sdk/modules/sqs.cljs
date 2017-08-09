@@ -83,6 +83,7 @@
   [integration on-received]
   (let [{:keys [queue credentials]} integration
         {:keys [access-key secret-key session-token ttl]} credentials
+        region (state/get-region)
         most-of-ttl (-> ttl
                         (* 1000)
                         (* 0.75))
@@ -90,7 +91,7 @@
         options (clj->js {:accessKeyId access-key
                           :secretAccessKey secret-key
                           :sessionToken session-token
-                          :region "us-east-1" ;;TODO: get from integration
+                          :region region
                           :params {:QueueUrl original-sqs-queue-url}})
         original-sqs-queue (AWS.SQS. options)
         original-sqs-needs-refresh-time (+ (.getTime (js/Date.)) most-of-ttl)]
