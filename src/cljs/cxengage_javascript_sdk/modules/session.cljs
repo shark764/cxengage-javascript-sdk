@@ -72,7 +72,7 @@
             resp (a/<! (rest/heartbeat-request))
             {:keys [api-response status]} resp
             {:keys [result]} api-response
-            next-heartbeat-delay (* 1000 (or (:heartbeatDelay result) 30))]
+            next-heartbeat-delay (* 1000 (or (* (:heartbeat-delay result) 0.75) 22.5))]
         (if (= status 200)
           (do (log :debug "Heartbeat sent!")
               (p/publish {:topics topic
