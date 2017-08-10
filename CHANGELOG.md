@@ -1,5 +1,8 @@
 # Change Log
 
+## [5.4.1]
+* CXV1-8541 - Decrease presence-recommended heartbeat delay by 25% and send heartbeats at that pace instead
+
 ## [5.4.0]
 * CXV1-11103 - Merge SDK utils with Core
 * CXV1-9840 - Store region in state to use when initializing SQS
