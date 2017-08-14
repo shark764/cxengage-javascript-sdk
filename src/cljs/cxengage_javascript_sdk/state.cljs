@@ -87,8 +87,7 @@
     (not= nil (get-state-value [:interactions :active interaction-id])) :active
     (not= nil (get-state-value [:interactions :past interaction-id])) :past
     (not= nil (get-state-value [:interactions :incoming interaction-id])) :incoming
-    :else (do (log :warn "Unable to find interaction location - we have never received that interaction")
-              false)))
+    :else nil))
 
 (defn get-all-pending-interactions []
   (get-state-value [:interactions :pending]))
@@ -371,10 +370,7 @@
 (defn get-active-tenant-id
   []
   (let [tenant-id (get-state-value [:session :tenant-id])]
-    (if tenant-id
-      tenant-id
-      #_(do (js/console.warn "[SDK State] Unable to find tenant id in state; likely to have unintended side-effects.")
-            nil))))
+    tenant-id))
 
 (defn get-session-id
   []
