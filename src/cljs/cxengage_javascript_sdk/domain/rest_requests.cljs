@@ -431,6 +431,19 @@
                      :url get-url}]
     (api/api-request get-request)))
 
+(defn get-users-request [method entity-type exclude-offline]
+  (let [tenant-id (state/get-active-tenant-id)
+        url (str "tenants/:tenant-id/" entity-type "s")
+        url (if exclude-offline
+              (str url "?offline=false")
+              url)
+        get-url (iu/api-url
+                 url
+                 {:tenant-id tenant-id})
+        get-request {:method method
+                     :url get-url}]
+    (api/api-request get-request)))
+
 (defn send-interrupt-request [interaction-id interrupt-type interrupt-body]
   (let [tenant-id (state/get-active-tenant-id)
         interrupt-request {:method :post

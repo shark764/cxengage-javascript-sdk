@@ -35,6 +35,7 @@
 (s/def ::environment #{:dev :qe :staging :prod})
 (s/def ::extension-id string?)
 (s/def ::extension-value (s/or ::uuid string?))
+(s/def ::exclude-offline boolean?)
 (s/def ::height number?)
 (s/def ::html-body string?)
 (s/def ::interaction-id ::uuid)

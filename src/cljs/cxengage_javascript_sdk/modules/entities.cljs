@@ -47,14 +47,14 @@
 
 (s/def ::get-users-params
   (s/keys :req-un []
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/callback ::specs/exclude-offline]))
 
 (def-sdk-fn get-users
   {:validation ::get-users-params
    :topic-key :get-users-response}
   [params]
-  (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "user"))]
+  (let [{:keys [callback topic exclude-offline]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-users-request :get "user" exclude-offline))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
