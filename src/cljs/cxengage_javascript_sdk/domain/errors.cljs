@@ -294,7 +294,7 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "interaction-fatal"
+   :level "error"
    :message "Failed to send script reply."})
 
 (defn failed-to-send-custom-interrupt-err [interaction-id data]
