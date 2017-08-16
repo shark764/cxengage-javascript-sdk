@@ -1,5 +1,10 @@
 # Change Log
 
+## [Unreleased]
+* Removed some needless logging
+* Added the `excludeOffline` flag to the getUsers() fn
+* CXV1-11254 - Change error level of failed script updates from `interaction-fatal` to `error`
+
 ## [5.4.1]
 * CXV1-8541 - Decrease presence-recommended heartbeat delay by 25% and send heartbeats at that pace instead
 

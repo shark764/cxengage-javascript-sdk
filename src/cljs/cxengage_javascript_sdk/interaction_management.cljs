@@ -289,8 +289,7 @@
                                                       :script script})
     (p/publish {:topics (topics/get-topic :script-received)
                 :response {:interaction-id interaction-id
-                           :resource-id resource-id
-                           :sub-id sub-id
+                           :script-id action-id
                            :script script}})))
 
 (defn handle-generic [message]
