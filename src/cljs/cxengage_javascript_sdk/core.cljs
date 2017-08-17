@@ -28,9 +28,12 @@
             [cxengage-javascript-sdk.modules.reporting :as reporting]
             [cxengage-javascript-sdk.modules.messaging :as messaging]
             [cxengage-javascript-sdk.modules.interaction :as interaction]
-            [cxengage-javascript-sdk.modules.authentication :as authentication]))
+            [cxengage-javascript-sdk.modules.authentication :as authentication]
+            [cxengage-javascript-sdk.modules.zendesk :as zendesk]
+            [cxengage-javascript-sdk.modules.salesforce-classic :as sfc]
+            [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]))
 
-(def *SDK-VERSION* "6.0.2")
+(def *SDK-VERSION* "6.1.0")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -63,6 +66,18 @@
         logging (logging/map->LoggingModule.)]
     (doseq [module [authentication session interaction entities contacts logging]]
       (start-internal-module module))))
+
+(defn start-crm-module
+  "Starts the appropriate CRM module if one is specified on initialization."
+  [comm< crm-module]
+  (let [zendesk (zendesk/map->ZendeskModule.)
+        sfc (sfc/map->SFCModule.)
+        sfl (sfl/map->SFLModule.)]
+    (cond
+      (= crm-module :zendesk) (start-internal-module zendesk)
+      (= crm-module :salesforce-classic) (start-internal-module sfc)
+      (= crm-module :salesforce-lightning) (start-internal-module sfl)
+      :else (log :debug "<----- No CRM Module specified ----->"))))
 
 (defn start-session-dependant-modules
   "Starts any core SDK modules which are only able to be turned on once we have the users integrations by way of having started a session."
@@ -101,7 +116,7 @@
 
 (s/def ::initialize-options
   (s/keys :req-un []
-          :opt-un [::specs/consumer-type ::specs/log-level ::specs/environment ::specs/base-url ::specs/blast-sqs-output ::specs/reporting-refresh-rate]))
+          :opt-un [::specs/consumer-type ::specs/log-level ::specs/environment ::specs/base-url ::specs/blast-sqs-output ::specs/reporting-refresh-rate ::specs/crm-module]))
 
 (defn initialize
   "Internal initialization function (called by the CxEngage namespace where an external initalize() function is exposed). Validates the SDK options provided & bootstraps the whole system."
@@ -112,6 +127,7 @@
     (let [opts (first (flatten (ih/kebabify options)))
           opts (-> opts
                    (assoc :base-url (or (:base-url opts) "https://api.cxengage.net/v1/"))
+                   (assoc :crm-module (keyword (or (:crm-module opts) :none)))
                    (assoc :reporting-refresh-rate (or (:reporting-refresh-rate opts) 10000))
                    (assoc :consumer-type (keyword (or (:consumer-type opts) :js)))
                    (assoc :log-level (keyword (or (:log-level opts) :debug)))
@@ -120,7 +136,7 @@
       (if-not (s/valid? ::initialize-options opts)
         (do (log :error (clj->js (e/bad-sdk-init-opts-err)))
             nil)
-        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate]} opts
+        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate crm-module]} opts
               module-comm-chan (a/chan 1024)
               core (ih/camelify {:version *SDK-VERSION*
                                  :subscribe pu/subscribe
@@ -141,4 +157,5 @@
           (state/set-env! environment)
           (state/set-blast-sqs-output! blast-sqs-output)
           (start-base-modules module-comm-chan)
+          (start-crm-module module-comm-chan crm-module)
           (start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan)))))))

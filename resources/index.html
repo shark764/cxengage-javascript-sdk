@@ -16,13 +16,13 @@
     <br><br>
     <input type="password" id="password" name="password" value="password1!">
     <br><br>
-    <button onclick="login()">Log In </button>
+    <button id="loginBtn" onclick="login()">Log In </button>
   </div>
 
   <div id="tenant-select-screen" style="display: none;">
     <select name="tenantSelect" id="tenantSelect"></select>
     <br><br><br><br>
-    <button onclick="selectActiveTenant()">Pick Your Tenant </button>
+    <button id="tenantBtn" onclick="selectActiveTenant()">Pick Your Tenant </button>
   </div>
 
   <div id="agent-screen" style="display: none;">
@@ -78,7 +78,7 @@
     </div>
     <br><br>
     <hr>
-    <div class="messaging-controls" style="display: none;">
+    <div id="messaging-controls" class="messaging-controls" style="display: none;">
       <h2>Messaging Interactions</h2>
     </div>
     <br><br>
@@ -93,9 +93,10 @@
     CxEngage.initialize({
       "environment":"dev",
       "baseUrl":"https://dev-api.cxengagelabs.net/v1/",
-      "logLevel":"info",
+      "logLevel":"debug",
       "blastSqsOutput": true,
-      "reportingRefreshRate":10000
+      "reportingRefreshRate":10000,
+      "crmModule": "salesforce-lightning"
     });
 
     var state = {

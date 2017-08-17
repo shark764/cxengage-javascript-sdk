@@ -1,6 +1,7 @@
 # Change Log
 
-## [Unreleased]
+## [6.1.0]
+* CXV1-11103 - Added CRM modules to core
 
 ## [6.0.2]
 * Change error level of script error 4021 to error (from interaction-fatal)

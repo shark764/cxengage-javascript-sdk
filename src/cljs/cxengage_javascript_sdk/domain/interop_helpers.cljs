@@ -51,6 +51,10 @@
        (aget js/window "Twilio" "Device")
        (aget js/window "Twilio" "Device" "setup")))
 
+(defn core-ready? []
+  (and (aget js/window "CxEngage")
+       (aget js/window "CxEngage" "registerModule")))
+
 (defn camelify [m]
   (->> m
        (transform-keys camel/->camelCase)
