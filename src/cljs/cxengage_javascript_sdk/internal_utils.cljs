@@ -37,7 +37,7 @@
      (catch js/Object e
        (log :warn "An exception occurred attempting to form an API URL.")
        (log :warn "URL provided:" url)
-       (log :warn "Params provided:" params)
+       (log :warn "Params provided:" (clj->js params))
        nil))))
 
 (defn get-now

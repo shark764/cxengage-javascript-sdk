@@ -485,44 +485,48 @@
    :topic-key :send-script}
   [params]
   (let [{:keys [topic answers script-id interaction-id callback]} params
-        original-script (state/get-script interaction-id script-id)
-        {:keys [sub-id script action-id]} original-script
-        ;; The send script payload has a somewhat complicated structure due to
-        ;; two major services needing overlapping data in different locations.
-
-        ;; First - Flow needs the answers for the script located in the top level
-        ;; "update" object, where each field from the script is it's own key and
-        ;; contains the value as well as text value (if applicable).
-
-        ;; Second - Reporting parses the scriptResponse object which is the script
-        ;; broken down by front-end elements. The value for each field also needs
-        ;; to be located within the scriptResponse object under it's corresponding
-        ;; element.
-        parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
-        elements (modify-elements (:elements parsed-script))
-        updated-answers (reduce-kv
-                         (fn [acc input-name input-value]
-                           (assoc acc input-name {:value (or input-value nil) :text (get-in elements [input-name :text])}))
-                         {}
-                         answers)
-        final-elements (add-answers-to-elements elements updated-answers)
-        script-update {:resource-id (state/get-active-user-id)
-                       :script-response {(keyword (:name parsed-script)) {:elements final-elements
-                                                                          :id (:id parsed-script)
-                                                                          :name (:name parsed-script)}}}
-        script-body {:source "client"
-                     :sub-id (:sub-id original-script)
-                     :update (merge script-update updated-answers)}
-        script-response (a/<! (rest/send-flow-action-request interaction-id action-id script-body))
-        {:keys [status api-response]} script-response
-        {:keys [result]} api-response]
-    (if (= status 200)
+        original-script (state/get-script interaction-id script-id)]
+    (if-not original-script
       (p/publish {:topics topic
-                  :response interaction-id
+                  :error (e/unable-to-find-script-err interaction-id script-id)
                   :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-send-interaction-script-response-err interaction-id script-response)
-                  :callback callback}))))
+      (let [{:keys [sub-id script action-id]} original-script
+            ;; The send script payload has a somewhat complicated structure due to
+            ;; two major services needing overlapping data in different locations.
+
+            ;; First - Flow needs the answers for the script located in the top level
+            ;; "update" object, where each field from the script is it's own key and
+            ;; contains the value as well as text value (if applicable).
+
+            ;; Second - Reporting parses the scriptResponse object which is the script
+            ;; broken down by front-end elements. The value for each field also needs
+            ;; to be located within the scriptResponse object under it's corresponding
+            ;; element.
+            parsed-script (js->clj (js/JSON.parse script) :keywordize-keys true)
+            elements (modify-elements (:elements parsed-script))
+            updated-answers (reduce-kv
+                             (fn [acc input-name input-value]
+                               (assoc acc input-name {:value (or input-value nil) :text (get-in elements [input-name :text])}))
+                             {}
+                             answers)
+            final-elements (add-answers-to-elements elements updated-answers)
+            script-update {:resource-id (state/get-active-user-id)
+                           :script-response {(keyword (:name parsed-script)) {:elements final-elements
+                                                                              :id (:id parsed-script)
+                                                                              :name (:name parsed-script)}}}
+            script-body {:source "client"
+                         :sub-id sub-id
+                         :update (merge script-update updated-answers)}
+            script-response (a/<! (rest/send-flow-action-request interaction-id action-id script-body))
+            {:keys [status api-response]} script-response
+            {:keys [result]} api-response]
+        (if (= status 200)
+          (p/publish {:topics topic
+                      :response interaction-id
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-send-interaction-script-response-err interaction-id script-response)
+                      :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.sendCustomInterrupt({
