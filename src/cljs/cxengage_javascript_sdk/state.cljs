@@ -197,7 +197,11 @@
 (defn get-script [interaction-id script-id]
   (let [interaction-location (find-interaction-location interaction-id)
         scripts (or (get-state-value [:interactions interaction-location interaction-id :scripts]) [])
-        filtered-script (first (filterv #(= script-id (:id (js->clj (js/JSON.parse (:script %)) :keywordize-keys true))) scripts))]
+        filtered-script (first
+                         (filter
+                          (fn [i]
+                            (= script-id (:action-id i)))
+                          scripts))]
     filtered-script))
 
 (defn add-email-artifact-data [interaction-id artifact-data]

@@ -313,6 +313,14 @@
           :interaction-id interaction-id}
    :message "Invalid disposition code provided."})
 
+(defn unable-to-find-script-err [interaction-id data]
+  {:code 4021
+   :context :interaction
+   :level "interaction-fatal"
+   :data {:interaction-id interaction-id
+          :script-id-provided data}
+   :message "Unable to find a script that matches that ID."})
+
 (defn failed-to-refresh-sqs-integration-err [data]
   {:code 5000
    :context :sqs
