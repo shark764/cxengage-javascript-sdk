@@ -245,6 +245,7 @@
         phone-number (iu/normalize-phone-number phone-number)
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
+        session-id (state/get-session-id)
         interaction-id (str (id/make-random-uuid))
         metadata {:customer phone-number
                   :customer-name "SMS User"
@@ -260,7 +261,8 @@
                   :direction "outbound"
                   :metadata metadata
                   :interaction {:message message
-                                :resource-id resource-id}}
+                                :resource-id resource-id
+                                :session-id session-id}}
         sms-response (a/<! (rest/create-interaction-request sms-body))
         {:keys [api-response status]} sms-response]
     (if (= status 200)

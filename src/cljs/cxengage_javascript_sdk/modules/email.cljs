@@ -259,12 +259,14 @@
   (let [{:keys [address callback topic]} params
         resource-id (state/get-active-user-id)
         interaction-id (str (id/make-random-squuid))
+        session-id (state/get-session-id)
         interaction-body {:source "email"
                           :customer address
                           :contact-point "outbound-email"
                           :channel-type "email"
                           :direction "outbound"
-                          :interaction {:resource-id resource-id}
+                          :interaction {:resource-id resource-id
+                                        :session-id session-id}
                           :metadata {}
                           :id interaction-id}
         {:keys [api-response status] :as interaction-response} (a/<! (rest/create-interaction-request interaction-body))]
