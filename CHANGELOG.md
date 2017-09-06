@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.0.2]
+* Change error level of script error 4021 to error (from interaction-fatal)
+
 ## [6.0.1]
 * Include session id in outbound interaction creation calls (no jira)
 
