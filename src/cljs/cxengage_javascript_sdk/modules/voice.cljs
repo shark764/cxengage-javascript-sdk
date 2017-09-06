@@ -486,11 +486,13 @@
   [params]
   (let [{:keys [topic phone-number callback]} params
         resource-id (state/get-active-user-id)
+        session-id (state/get-session-id)
         dial-body {:channel-type "voice"
                    :contact-point "click to call"
                    :customer phone-number
                    :direction "outbound"
-                   :interaction {:resource-id resource-id}
+                   :interaction {:resource-id resource-id
+                                 :session-id session-id}
                    :metadata {}
                    :source "twilio"}]
     (let [dial-response (a/<! (rest/create-interaction-request dial-body))

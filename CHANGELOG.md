@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.0.1]
+* Include session id in outbound interaction creation calls (no jira)
+
 ## [6.0.0]
 * Removed some needless logging
 * Added the `excludeOffline` flag to the getUsers() fn
