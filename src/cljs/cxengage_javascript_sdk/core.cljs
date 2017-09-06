@@ -30,7 +30,7 @@
             [cxengage-javascript-sdk.modules.interaction :as interaction]
             [cxengage-javascript-sdk.modules.authentication :as authentication]))
 
-(def *SDK-VERSION* "6.0.1")
+(def *SDK-VERSION* "6.0.2")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."

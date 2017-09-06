@@ -316,7 +316,7 @@
 (defn unable-to-find-script-err [interaction-id data]
   {:code 4021
    :context :interaction
-   :level "interaction-fatal"
+   :level "error"
    :data {:interaction-id interaction-id
           :script-id-provided data}
    :message "Unable to find a script that matches that ID."})
