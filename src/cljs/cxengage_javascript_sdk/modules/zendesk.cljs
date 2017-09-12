@@ -52,17 +52,17 @@
           (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" contact "/display.json")
                                        :type "POST"}))
           (catch js/Object e
-            (ih/publish (clj->js {:topics topic
-                                  :error e
-                                  :callback callback})))))
+            (ih/publish {:topics topic
+                         :error e
+                         :callback callback}))))
       (when relatedTo
         (try
           (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" relatedTo "/display.json")
                                        :type "POST"}))
           (catch js/Object e
-            (ih/publish (clj->js {:topics topic
-                                  :error e
-                                  :callback callback})))))))
+            (ih/publish {:topics topic
+                         :error e
+                         :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.zendesk.setVisibility({
@@ -83,15 +83,15 @@
       (try
         (js/client.invoke "popover" "show")
         (catch js/Object e
-          (ih/publish (clj->js {:topics topic
-                                :error e
-                                :callback callback}))))
+          (ih/publish {:topics topic
+                       :error e
+                       :callback callback}))))
       (try
         (js/client.invoke "popover" "hide")
         (catch js/Object e
-          (ih/publish (clj->js {:topics topic
-                                :error e
-                                :callback callback})))))))
+          (ih/publish {:topics topic
+                       :error e
+                       :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.zendesk.setDimensions({
@@ -112,13 +112,13 @@
       (try
         (js/client.invoke "resize" (clj->js {:width width
                                              :height height}))
-        (ih/publish (clj->js {:topics topic
-                              :response "true"
-                              :callback callback}))
+        (ih/publish {:topics topic
+                     :response "true"
+                     :callback callback})
         (catch js/Object e
-          (ih/publish (clj->js {:topics topic
-                                :error e
-                                :callback callback}))))))
+          (ih/publish {:topics topic
+                       :error e
+                       :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.sfc.assignContact({
@@ -144,12 +144,12 @@
                                 :external-crm-related-to-uri related-to}
                 {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
-      (ih/publish (clj->js {:topics topic
-                            :response (merge {:interaction-id interaction-id} interrupt-body)
-                            :callback callback}))
-      (ih/publish (clj->js {:topics topic
-                            :error (e/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
-                            :callback callback})))))
+      (ih/publish {:topics topic
+                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                   :callback callback})
+      (ih/publish {:topics topic
+                   :error (e/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
+                   :callback callback}))))
 
 (def-sdk-fn assign-contact
   {:validation ::assign-params
@@ -165,12 +165,12 @@
                                 :external-crm-contact-uri contact}
                 {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
-      (ih/publish (clj->js {:topics topic
-                            :response (merge {:interaction-id interaction-id} interrupt-body)
-                            :callback callback}))
-      (ih/publish (clj->js {:topics topic
-                            :error (e/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
-                            :callback callback})))))
+      (ih/publish {:topics topic
+                   :response (merge {:interaction-id interaction-id} interrupt-body)
+                   :callback callback})
+      (ih/publish {:topics topic
+                   :error (e/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
+                   :callback callback}))))
 
 
 ;; -------------------------------------------------------------------------- ;;
@@ -182,15 +182,13 @@
 
 (defn ^:private zendesk-init
   [integration]
-  (doseq [url [integration]]
-    (let [script (js/document.createElement "script")
-          body (.-body js/document)]
-      (.setAttribute script "type" "text/javascript")
-      (.setAttribute script "src" url)
-      (.appendChild body script)))
-  (go-loop []
-    (if (zendesk-ready?)
-      (do
+  (let [script (js/document.createElement "script")
+        body (.-body js/document)]
+    (.setAttribute script "type" "text/javascript")
+    (.setAttribute script "src" integration)
+    (.appendChild body script)
+    (go-loop []
+      (if (zendesk-ready?)
         (try
           (aset js/window "client"
             (js/ZAFClient.init
@@ -199,16 +197,16 @@
                                                           (ih/extract-params context)
                                                           [:currentUser :id]))
                 (js/client.on "assignUser" (fn [user]
-                                            (ih/publish (clj->js {:topics "cxengage/zendesk/assign-request"
-                                                                  :response user}))))
+                                            (ih/publish {:topics "cxengage/zendesk/assign-request"
+                                                         :response user})))
                 (js/client.on "activeTab" (fn [tab-data]
                                             (swap! zendesk-state assoc :active-tab (ih/extract-params tab-data))
-                                            (ih/publish (clj->js {:topics "cxengage/zendesk/active-tab-changed"
-                                                                  :response tab-data}))))
-                (ih/publish (clj->js {:topics "cxengage/zendesk/zendesk-initialize-complete"
-                                      :response true})))))))
-      (do (a/<! (a/timeout 250))
-          (recur)))))
+                                            (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
+                                                         :response tab-data})))
+                (ih/publish {:topics "cxengage/zendesk/zendesk-initialize-complete"
+                             :response true})))))
+        (do (a/<! (a/timeout 250))
+            (recur))))))
 
 (defn dump-state []
   (js/console.log (clj->js @zendesk-state)))
@@ -237,15 +235,15 @@
                                   (js/client.instance))]
               (js/modal-client.on "assignContact"
                                   (fn [contact]
-                                    (ih/publish (clj->js {:topics "cxengage/zendesk/assign-request"
-                                                          :response contact}))))))))
+                                    (ih/publish {:topics "cxengage/zendesk/assign-request"
+                                                 :response contact})))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
 ;; -------------------------------------------------------------------------- ;;
 
 (defn handle-work-offer [error topic interaction-details]
-  (let [interaction (ih/extract-params interaction-details )
+  (let [interaction (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)
         {:keys [contact related-to pop-on-accept interactionId]} interaction]
       (add-interaction! interaction)
@@ -292,20 +290,18 @@
       (if (ih/core-ready?)
         (let [module-name :zendesk
               zendesk-integration "https://assets.zendesk.com/apps/sdk/2.0/zaf_sdk.js"]
-          (if-not zendesk-integration
-            (js/console.log "<----- Zendesk integration not found, not starting module ----->")
-            (do (zendesk-init zendesk-integration)
-                (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
-                (ih/register (clj->js {:api {:zendesk {:focus-interaction focus-interaction
-                                                       :set-dimensions set-dimensions
-                                                       :set-visibility set-visibility
-                                                       :assign-contact assign-contact
-                                                       :assign-related-to assign-related-to}}
-                                       :module-name module-name}))
-                (ih/send-core-message {:type :module-registration-status
-                                       :status :success
-                                       :module-name module-name}))))
+            (zendesk-init zendesk-integration)
+            (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
+            (ih/register (clj->js {:api {:zendesk {:focus-interaction focus-interaction
+                                                   :set-dimensions set-dimensions
+                                                   :set-visibility set-visibility
+                                                   :assign-contact assign-contact
+                                                   :assign-related-to assign-related-to}}
+                                   :module-name module-name}))
+            (ih/send-core-message {:type :module-registration-status
+                                   :status :success
+                                   :module-name module-name}))))
         (do (a/<! (a/timeout 250))
-            (recur)))))
+            (recur)))
   (stop [this])
   (refresh-integration [this]))
