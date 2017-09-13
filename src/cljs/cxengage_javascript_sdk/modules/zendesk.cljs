@@ -8,7 +8,7 @@
             [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cxengage-javascript-sdk.domain.errors :as e]
+            [cxengage-javascript-sdk.domain.errors :as error]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.api-utils :as api]
             [cxengage-javascript-sdk.domain.errors :as errors]
@@ -53,7 +53,7 @@
                                        :type "POST"}))
           (catch js/Object e
             (ih/publish {:topics topic
-                         :error e
+                         :error (error/failed-to-focus-zendesk-interaction-err interaction-id e)
                          :callback callback}))))
       (when relatedTo
         (try
@@ -61,7 +61,7 @@
                                        :type "POST"}))
           (catch js/Object e
             (ih/publish {:topics topic
-                         :error e
+                         :error (error/failed-to-focus-zendesk-interaction-err interaction-id e)
                          :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -84,13 +84,13 @@
         (js/client.invoke "popover" "show")
         (catch js/Object e
           (ih/publish {:topics topic
-                       :error e
+                       :error (error/failed-to-set-zendesk-visibility-err e)
                        :callback callback}))))
       (try
         (js/client.invoke "popover" "hide")
         (catch js/Object e
           (ih/publish {:topics topic
-                       :error e
+                       :error (error/failed-to-set-zendesk-visibility-err e)
                        :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -117,7 +117,7 @@
                      :callback callback})
         (catch js/Object e
           (ih/publish {:topics topic
-                       :error e
+                       :error (error/failed-to-set-zendesk-dimensions-err e)
                        :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -148,7 +148,7 @@
                    :response (merge {:interaction-id interaction-id} interrupt-body)
                    :callback callback})
       (ih/publish {:topics topic
-                   :error (e/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
+                   :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
 
 (def-sdk-fn assign-contact
@@ -169,7 +169,7 @@
                    :response (merge {:interaction-id interaction-id} interrupt-body)
                    :callback callback})
       (ih/publish {:topics topic
-                   :error (e/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
+                   :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
 
 
@@ -203,8 +203,11 @@
                                             (swap! zendesk-state assoc :active-tab (ih/extract-params tab-data))
                                             (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
                                                          :response tab-data})))
-                (ih/publish {:topics "cxengage/zendesk/zendesk-initialize-complete"
-                             :response true})))))
+                (ih/publish {:topics "cxengage/zendesk/zendesk-initialization"
+                             :response true}))))
+          (catch js/Object e
+            (ih/publish {:topics "cxengage/zendesk/zendesk-initialization"
+                         :error (error/failed-to-init-zendesk-client-err e)})))))))
         (do (a/<! (a/timeout 250))
             (recur))))))
 
@@ -275,7 +278,8 @@
                                           (fn [result]
                                             (let [search-results (:results (ih/extract-params result ))]
                                               (cond
-                                                (= (count search-results) 0) (js/console.log "no results")
+                                                (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
+                                                                                          :response []})
                                                 (= (count search-results) 1) (auto-assign-from-search-pop search-results interactionId)
                                                 :else (pop-search-modal search-results)))))))))))
 

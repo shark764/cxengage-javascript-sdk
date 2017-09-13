@@ -916,8 +916,37 @@
    :level "error"
    :message "Failed to assign item. The API returned an error."})
 
-(defn failed-to-send-zendesk-assign-err [interaction-id data]
+(defn failed-to-init-zendesk-client-err [data]
   {:code 17000
+   :context :zendesk
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to initialize Zendesk Client."})
+
+(defn failed-to-focus-zendesk-interaction-err [interaction-id data]
+  {:code 17001
+   :context :zendesk
+   :data {:interaction-id interaction-id
+          :api-response data}
+   :level "error"
+   :message "Failed to focus Zendesk interaction."})
+
+(defn failed-to-set-zendesk-visibility-err [data]
+  {:code 17002
+   :context :zendesk
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to set visibility of Zendesk Toolbar."})
+
+(defn failed-to-set-zendesk-dimensions-err [data]
+  {:code 17003
+   :context :zendesk
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to set dimensions of Zendesk Toolbar."})
+
+(defn failed-to-send-zendesk-assign-err [interaction-id data]
+  {:code 17004
    :context :zendesk
    :data {:interaction-id interaction-id
           :api-response data}
