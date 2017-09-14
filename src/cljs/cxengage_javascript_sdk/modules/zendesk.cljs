@@ -137,7 +137,7 @@
   (let [{:keys [callback topic interaction-id]} params
                 tenant-id (ih/get-active-tenant-id)
                 interrupt-type "assign-related-to"
-                related-to (get @zendesk-state :active-tab)
+                related-to (:ticketId (get @zendesk-state :active-tab))
                 interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                                 :external-crm-name "zendesk"
                                 :external-crm-related-to related-to
@@ -158,7 +158,7 @@
   (let [{:keys [callback topic interaction-id]} params
                 tenant-id (ih/get-active-tenant-id)
                 interrupt-type "assign-contact"
-                contact (get @zendesk-state :active-tab)
+                contact (:userId (get @zendesk-state :active-tab))
                 interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                                 :external-crm-name "zendesk"
                                 :external-crm-contact contact
@@ -193,9 +193,8 @@
           (aset js/window "client"
             (js/ZAFClient.init
               (fn [context]
-                (swap! zendesk-state assoc :zen-user-id (get-in
-                                                          (ih/extract-params context)
-                                                          [:currentUser :id]))
+                (js/console.log "Context:" context)
+                (swap! zendesk-state assoc :zen-user-id (:id (get (ih/extract-params context) :currentUser)))
                 (js/client.on "assignUser" (fn [user]
                                             (ih/publish {:topics "cxengage/zendesk/assign-request"
                                                          :response user})))
