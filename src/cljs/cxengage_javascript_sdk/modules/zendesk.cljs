@@ -207,7 +207,7 @@
                              :response true}))))
           (catch js/Object e
             (ih/publish {:topics "cxengage/zendesk/zendesk-initialization"
-                         :error (error/failed-to-init-zendesk-client-err e)})))))))
+                         :error (error/failed-to-init-zendesk-client-err e)})))
         (do (a/<! (a/timeout 250))
             (recur))))))
 
