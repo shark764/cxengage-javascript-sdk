@@ -304,8 +304,8 @@
                                    :module-name module-name}))
             (ih/send-core-message {:type :module-registration-status
                                    :status :success
-                                   :module-name module-name}))))
+                                   :module-name module-name}))
         (do (a/<! (a/timeout 250))
-            (recur)))
+            (recur)))))
   (stop [this])
   (refresh-integration [this]))
