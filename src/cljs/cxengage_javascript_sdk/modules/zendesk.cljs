@@ -296,7 +296,7 @@
               zendesk-integration "https://assets.zendesk.com/apps/sdk/2.0/zaf_sdk.js"]
             (zendesk-init zendesk-integration)
             (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
-            (ih/subscribe (topics/get-topic :screen-pop) handle-screen-pop)
+            (ih/subscribe (topics/get-topic :screen-pop-received) handle-screen-pop)
             (ih/register (clj->js {:api {:zendesk {:focus-interaction focus-interaction
                                                    :set-dimensions set-dimensions
                                                    :set-visibility set-visibility
