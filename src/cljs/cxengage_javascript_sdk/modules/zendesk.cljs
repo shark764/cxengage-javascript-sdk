@@ -141,7 +141,7 @@
                 interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                                 :external-crm-name "zendesk"
                                 :external-crm-related-to related-to
-                                :external-crm-related-to-uri related-to}
+                                :external-crm-related-to-uri (str "/tickets/" related-to)}
                 {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (ih/publish {:topics topic
@@ -162,7 +162,7 @@
                 interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                                 :external-crm-name "zendesk"
                                 :external-crm-contact contact
-                                :external-crm-contact-uri contact}
+                                :external-crm-contact-uri (str "/users/" contact)}
                 {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (ih/publish {:topics topic
@@ -259,29 +259,29 @@
 (defn handle-screen-pop [error topic interaction-details]
   (let [result (ih/extract-params interaction-details )
         agent-id (get @zendesk-state :zen-user-id)
-        {:keys [popType popUrl newWindow size searchType filter filterType terms interactionId]} result]
+        {:keys [popType popUri newWindow size searchType filter filterType terms interactionId]} result]
     (cond
-      (= popType "internal") (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id popUrl "/display.json")
-                                                          :type "POST"}))
-      (= popType "external") (if (= newWindow "true")
-                              (js/window.open popUrl "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
-                              (js/window.open popUrl))
-      (= popType "search") (do
-                              (when (= searchType "strict")
-                                (let [query (reduce-kv
-                                             (fn [s k v]
-                                               (str s (name k) ":" v " "))
-                                             "/api/v2/search.json?query="
-                                             filter)]
-                                   (.then (js/client.request (clj->js {:url query
-                                                                       :type "POST"}))
-                                          (fn [result]
-                                            (let [search-results (:results (ih/extract-params result ))]
-                                              (cond
-                                                (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
-                                                                                          :response []})
-                                                (= (count search-results) 1) (auto-assign-from-search-pop search-results interactionId)
-                                                :else (pop-search-modal search-results)))))))))))
+      (= popType "url") (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id popUri "display.json")
+                                                     :type "POST"}))
+      (= popType "external-url") (if (= newWindow "true")
+                                  (js/window.open popUri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
+                                  (js/window.open popUri))
+      (= popType "search-pop") (do
+                                (when (= searchType "strict")
+                                  (let [query (reduce-kv
+                                               (fn [s k v]
+                                                 (str s (name k) ":" v " "))
+                                               "/api/v2/search.json?query="
+                                               filter)]
+                                     (.then (js/client.request (clj->js {:url query
+                                                                         :type "POST"}))
+                                            (fn [result]
+                                              (let [search-results (:results (ih/extract-params result ))]
+                                                (cond
+                                                  (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
+                                                                                            :response []})
+                                                  (= (count search-results) 1) (auto-assign-from-search-pop search-results interactionId)
+                                                  :else (pop-search-modal search-results)))))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk Module
@@ -296,6 +296,7 @@
               zendesk-integration "https://assets.zendesk.com/apps/sdk/2.0/zaf_sdk.js"]
             (zendesk-init zendesk-integration)
             (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
+            (ih/subscribe (topics/get-topic :screen-pop) handle-screen-pop)
             (ih/register (clj->js {:api {:zendesk {:focus-interaction focus-interaction
                                                    :set-dimensions set-dimensions
                                                    :set-visibility set-visibility
