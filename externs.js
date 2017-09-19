@@ -60,11 +60,6 @@ var ZAFClient = {};
 var client = {};
 
 /**
-* @interface
-*/
-client = function() {};
-
-/**
 * @return {Object}
 */
 client.postMessage = function() {};
