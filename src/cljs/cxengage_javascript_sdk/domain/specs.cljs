@@ -44,6 +44,7 @@
 (s/def ::interrupt-body map?)
 (s/def ::layout-id ::uuid)
 (s/def ::level #{"debug" "info" "warn" "error" "fatal"})
+(s/def ::locale string?)
 (s/def ::log-level #{:debug :info :warn :error :fatal :off})
 (s/def ::message string?)
 (s/def ::note-id ::uuid)

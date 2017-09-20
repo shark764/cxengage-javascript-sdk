@@ -33,7 +33,7 @@
             [cxengage-javascript-sdk.modules.salesforce-classic :as sfc]
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]))
 
-(def *SDK-VERSION* "6.1.1-SNAPSHOT")
+(def *SDK-VERSION* "6.1.1")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -116,7 +116,7 @@
 
 (s/def ::initialize-options
   (s/keys :req-un []
-          :opt-un [::specs/consumer-type ::specs/log-level ::specs/environment ::specs/base-url ::specs/blast-sqs-output ::specs/reporting-refresh-rate ::specs/crm-module]))
+          :opt-un [::specs/consumer-type ::specs/log-level ::specs/environment ::specs/base-url ::specs/blast-sqs-output ::specs/reporting-refresh-rate ::specs/crm-module ::specs/locale]))
 
 (defn initialize
   "Internal initialization function (called by the CxEngage namespace where an external initalize() function is exposed). Validates the SDK options provided & bootstraps the whole system."
@@ -131,12 +131,13 @@
                    (assoc :reporting-refresh-rate (or (:reporting-refresh-rate opts) 10000))
                    (assoc :consumer-type (keyword (or (:consumer-type opts) :js)))
                    (assoc :log-level (keyword (or (:log-level opts) :debug)))
+                   (assoc :locale (keyword (or (:locale opts) "en-US")))
                    (assoc :blast-sqs-output (or (:blast-sqs-output opts) false))
                    (assoc :environment (keyword (or (:environment opts) :prod))))]
       (if-not (s/valid? ::initialize-options opts)
         (do (log :error (clj->js (e/bad-sdk-init-opts-err)))
             nil)
-        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate crm-module]} opts
+        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate crm-module locale]} opts
               module-comm-chan (a/chan 1024)
               core (ih/camelify {:version *SDK-VERSION*
                                  :subscribe pu/subscribe
@@ -151,6 +152,7 @@
                                  :start-module start-external-module})]
           (ih/set-sdk-global core)
           (ih/set-log-level! log-level)
+          (state/set-locale! locale)
           (state/set-base-api-url! base-url)
           (state/set-consumer-type! consumer-type)
           (state/set-reporting-refresh-rate! reporting-refresh-rate)

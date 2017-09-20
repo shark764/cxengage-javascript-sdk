@@ -54,6 +54,12 @@
 (defn set-env! [env]
   (swap! sdk-state assoc-in [:config :env] env))
 
+(defn set-locale! [locale]
+  (swap! sdk-state assoc-in [:config :locale] locale))
+
+(defn get-locale []
+  (get-state-value [:config :locale]))
+
 (defn set-consumer-type! [env]
   (swap! sdk-state assoc-in [:config :consumer-type] env))
 
