@@ -60,7 +60,7 @@
       ;; the newer session can delete dead messages in this queue as per
       ;; the second use case above.
       (if (or (nil? session-id) (nil? current-session-id))
-        (do (log :error "No session ID present, or our session hasn't started yet. Ignoring message:" parsed-body)
+        (do (log :error "No session ID present, or our session hasn't started yet. Ignoring message:" (clj->js parsed-body))
             nil)
         (do (when (nil? current-session-id)
               nil)

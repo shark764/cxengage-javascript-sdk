@@ -137,9 +137,11 @@
 
 (defn get-available-stats-request []
   (let [tenant-id (state/get-active-tenant-id)
+        locale (state/get-locale)
+        url-string (str "tenants/:tenant-id/realtime-statistics/available?client=toolbar&locale=" locale)
         get-available-stats-req {:method :get
                                  :url (iu/api-url
-                                       "tenants/:tenant-id/realtime-statistics/available?client=toolbar"
+                                       url-string
                                        {:tenant-id tenant-id})}]
     (api/api-request get-available-stats-req)))
 
