@@ -158,8 +158,6 @@
   (let [{:keys [callback topic interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
         interrupt-type "assign-contact"
-        _ (js/console.log "ACTIVE TAB" (:user-id (get @zendesk-state :active-tab)))
-        _ (js/console.log "ACTIVE TAB2" (get @zendesk-state :active-tab))
         contact (:user-id (get @zendesk-state :active-tab))
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
@@ -222,12 +220,19 @@
 ;; Helper Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn auto-assign-from-search-pop [response interaction-id]
-  (let [result (:result (ih/extract-params response))
-        parsed-result (ih/extract-params (js/JSON.parse result))]
-      (if (= 1 (count (vals parsed-result)))
-        (assign-contact (clj->js {:interaction interaction-id}))
-        (log :info "More than one result - skipping auto-assign"))))
+(defn auto-assign-from-search-pop [search-result interaction-id type]
+  (let [agent-id (get @zendesk-state :zen-user-id)]
+    (if (= type "user")
+      (.then
+        (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" (:id search-result) "/display.json")
+                                     :type "POST"}))
+        (fn []
+          (js/setTimeout #(assign-contact (clj->js {:interactionId interaction-id})) 2500)))
+      (.then
+        (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/tickets/" (:id search-result) "/display.json")
+                                     :type "POST"}))
+        (fn []
+          (js/setTimeout #(assign-contact (clj->js {:interactionId interaction-id})) 2500))))))
 
 (defn pop-search-modal [search-results]
   (.then (js/client.invoke
@@ -264,9 +269,7 @@
   (js/console.log "Doin the screen pop")
   (let [result (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)
-        {:keys [pop-type pop-uri new-window size search-type filter filter-type terms interaction-id]} result
-        _ (js/console.log "RESULT" (clj->js result))
-        _ (js/console.log "POP URI" (str "/api/v2/channels/voice/agents/" agent-id pop-uri "/display.json"))]
+        {:keys [pop-type pop-uri new-window size search-type filter filter-type terms interaction-id]} result]
     (cond
       (= pop-type "url") (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id pop-uri "/display.json")
                                                      :type "POST"}))
@@ -274,6 +277,32 @@
                                   (js/window.open pop-uri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
                                   (js/window.open pop-uri))
       (= pop-type "search-pop") (do
+                                  (when (= search-type "fuzzy")
+                                    (let [all-req-promises (reduce
+                                                            (fn [all-promises term]
+                                                              (conj all-promises (promise
+                                                                                  (fn [resolve reject]
+                                                                                    (.then (js/client.request (clj->js {:url (str "/api/v2/search.json?query=" term)}))
+                                                                                           (fn [data]
+                                                                                             (resolve (:results (js->clj data :keywordize-keys true)))))))))
+                                                            []
+                                                            terms)
+                                          all-req-promises (all all-req-promises)]
+                                      (then all-req-promises
+                                        (fn [results]
+                                          (let [combined-results (reduce
+                                                                  (fn [all-results single-result]
+                                                                    (conj all-results single-result))
+                                                                  []
+                                                                  results)
+                                                search-results (vec (flatten combined-results))]
+                                            (cond
+                                              (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
+                                                                                        :response []})
+                                              (= (count search-results) 1) (if (= (:result_type (first search-results)) "user")
+                                                                            (auto-assign-from-search-pop (first search-results) interaction-id "user")
+                                                                            (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
+                                              :else (pop-search-modal search-results)))))))
                                   (when (= search-type "strict")
                                     (let [query (reduce-kv
                                                  (fn [s k v]
@@ -287,7 +316,9 @@
                                                   (cond
                                                     (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
                                                                                               :response []})
-                                                    (= (count search-results) 1) (auto-assign-from-search-pop search-results interaction-id)
+                                                    (= (count search-results) 1) (if (= (:result_type (first search-results)) "user")
+                                                                                  (auto-assign-from-search-pop (first search-results) interaction-id "user")
+                                                                                  (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
                                                     :else (pop-search-modal search-results)))))))))))
 
 ;; -------------------------------------------------------------------------- ;;
