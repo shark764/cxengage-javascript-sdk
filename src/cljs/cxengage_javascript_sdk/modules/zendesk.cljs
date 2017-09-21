@@ -197,6 +197,15 @@
                        (fn [user]
                          (swap! zendesk-state assoc :zen-user-id (get-in (js->clj user :keywordize-keys true) [:currentUser :id]))))
                 (swap! zendesk-state assoc :context context)
+                (js/client.on "triggerClickToDial" (fn [data]
+                                                    (ih/publish {:topics "cxengage/zendesk/click-to-dial-requested"
+                                                                 :response data})))
+                (js/client.on "triggerClickToSms" (fn [data]
+                                                   (ih/publish {:topics "cxengage/zendesk/click-to-sms-requested"
+                                                                :response data})))
+                (js/client.on "triggerClickToEmail" (fn [data]
+                                                     (ih/publish {:topics "cxengage/zendesk/click-to-email-requested"
+                                                                  :response data})))
                 (js/client.on "activeTab" (fn [tab-data]
                                             (swap! zendesk-state assoc :active-tab (ih/extract-params tab-data))
                                             (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
