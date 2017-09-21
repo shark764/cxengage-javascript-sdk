@@ -195,12 +195,8 @@
               (fn [context]
                 (.then (js/client.get "currentUser")
                        (fn [user]
-                         (js/console.log "WOOO" user)
                          (swap! zendesk-state assoc :zen-user-id (get-in (js->clj user :keywordize-keys true) [:currentUser :id]))))
                 (swap! zendesk-state assoc :context context)
-                (js/client.on "assignUser" (fn [user]
-                                            (ih/publish {:topics "cxengage/zendesk/assign-request"
-                                                         :response user})))
                 (js/client.on "activeTab" (fn [tab-data]
                                             (swap! zendesk-state assoc :active-tab (ih/extract-params tab-data))
                                             (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
@@ -240,15 +236,16 @@
           (clj->js {:location "modal"
                     :url "assets/modal.html"}))
          (fn [modal-context]
-           (let [modal-client (-> modal-context
-                                  (aget "instances.create")
-                                  (first)
-                                  (aget "instanceGuid")
-                                  (js/client.instance))]
-              (js/modal-client.on "assignContact"
-                                  (fn [contact]
-                                    (ih/publish {:topics "cxengage/zendesk/assign-request"
-                                                 :response contact})))))))
+           (let [modal-guid (-> modal-context
+                                 (aget "instances.create")
+                                 (first)
+                                 (aget "instanceGuid"))
+                 modalClient (js/client.instance modal-guid)]
+              (js/setTimeout #(.trigger modalClient "displaySearch" (clj->js search-results)) 2000)
+              (js/modalClient.on "assignContact"
+                                 (fn [contact]
+                                   (ih/publish {:topics "cxengage/zendesk/assign-request"
+                                                :response contact})))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
@@ -266,7 +263,6 @@
         :else (log :info "No screen pop details on work offer"))))
 
 (defn handle-screen-pop [error topic interaction-details]
-  (js/console.log "Doin the screen pop")
   (let [result (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)
         {:keys [pop-type pop-uri new-window size search-type filter filter-type terms interaction-id]} result]
