@@ -18,6 +18,12 @@
                            :config {:active-extension {:value "test"}
                                     :extensions [{:type "test" :value "test2"} {:type "test2" :value "test3"}]}}})
 
+(deftest set-locale-test
+  (testing "setting locale fn"
+    (let [sdk-state test-state]
+      (session/set-locale {:locale "en-US"} (fn [] "sup"))
+      (is (= (st/get-locale) "en-US")))))
+
 (deftest go-ready--sad-test--invalid-extension-provided-pubsub
   (testing "go ready sad path - invalid extension provided"
     (async done
