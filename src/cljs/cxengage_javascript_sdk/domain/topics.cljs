@@ -23,6 +23,7 @@
                  :get-active-user-id-response "cxengage/session/get-active-user-id-response"
                  :get-active-tenant-id-response "cxengage/session/get-active-tenant-id-response"
                  :get-token-response "cxengage/session/get-token-response"
+                 :set-locale-response "cxengage/session/set-locale-response"
 
                  ;; Contact topics
                  :get-contact "cxengage/contacts/get-contact-response"

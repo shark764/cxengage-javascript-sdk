@@ -287,6 +287,21 @@
     token))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.getLocale();
+;; -------------------------------------------------------------------------- ;;
+
+(defn set-locale [& params]
+  (let [param-obj (js->clj (first params) :keywordize-keys true)
+        {:keys [locale]} param-obj
+        callback (second params)
+        callback (if (fn? callback) callback nil)]
+    (state/set-locale! locale)
+    (p/publish {:topic (topics/get-topic :set-locale-response)
+                :response locale
+                :callback callback})
+    locale))
+
+;; -------------------------------------------------------------------------- ;;
 ;; SDK Presence Session Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -300,7 +315,8 @@
                                        :set-direction set-direction
                                        :get-active-user-id get-active-user-id
                                        :get-active-tenant-id get-active-tenant-id
-                                       :get-token get-token}}
+                                       :get-token get-token
+                                       :set-locale set-locale}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

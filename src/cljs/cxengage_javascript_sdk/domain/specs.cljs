@@ -10,7 +10,6 @@
 (s/def ::type #{"pstn" "sip"})
 (s/def ::crm-module #{:salesforce-classic :salesforce-lightning :zendesk :none})
 (s/def ::value string?)
-
 (s/def ::answers map?)
 (s/def ::artifact-file-id ::uuid)
 (s/def ::artifact-id ::uuid)

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.2.0]
+* Added CxEngage.session.setLocale() fn for consumers to change their locale after initialization
+
 ## [6.1.1]
 * Various Zendesk Module bug fixes
 * CXV1-11406 - Add locale to /available request, provide consumers ability to specify locale on init
