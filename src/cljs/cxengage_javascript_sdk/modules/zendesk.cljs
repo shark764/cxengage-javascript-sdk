@@ -255,7 +255,7 @@
         (fn []
           (js/setTimeout #(assign-related-to (clj->js {:interactionId interaction-id})) 2500))))))
 
-(defn pop-search-modal [search-results]
+(defn pop-search-modal [search-results interaction-id]
   (.then (js/client.invoke
           "instances.create"
           (clj->js {:location "modal"
@@ -270,7 +270,7 @@
               (js/modalClient.on "assignContact"
                                  (fn [contact]
                                    (ih/publish {:topics "cxengage/zendesk/assign-request"
-                                                :response contact})))))))
+                                                :response (merge (js->clj contact :keywordize-keys true) {:interactionId interaction-id})})))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
@@ -301,8 +301,8 @@
                                                  :response (merge {:interaction-id interaction-id} (js->clj response :keywordize-keys true))
                                                  :callback callback}))))
       (= pop-type "external-url") (if (= new-window "true")
-                                  (js/window.open pop-uri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
-                                  (js/window.open pop-uri))
+                                    (js/window.open pop-uri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
+                                    (js/window.open pop-uri))
       (= pop-type "search-pop") (do
                                   (when (= search-type "fuzzy")
                                     (let [all-req-promises (reduce
@@ -329,7 +329,7 @@
                                               (= (count search-results) 1) (if (= (:result_type (first search-results)) "user")
                                                                             (auto-assign-from-search-pop (first search-results) interaction-id "user")
                                                                             (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
-                                              :else (pop-search-modal search-results)))))))
+                                              :else (pop-search-modal search-results interaction-id)))))))
                                   (when (= search-type "strict")
                                     (let [query (reduce-kv
                                                  (fn [s k v]
@@ -346,7 +346,7 @@
                                                     (= (count search-results) 1) (if (= (:result_type (first search-results)) "user")
                                                                                   (auto-assign-from-search-pop (first search-results) interaction-id "user")
                                                                                   (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
-                                                    :else (pop-search-modal search-results)))))))))))
+                                                    :else (pop-search-modal search-results interaction-id)))))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk Module
