@@ -292,8 +292,14 @@
         agent-id (get @zendesk-state :zen-user-id)
         {:keys [pop-type pop-uri new-window size search-type filter filter-type terms interaction-id]} result]
     (cond
-      (= pop-type "url") (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id pop-uri "/display.json")
-                                                     :type "POST"}))
+      (= pop-type "url") (do
+                            (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id pop-uri "/display.json")
+                                                         :type "POST"}))
+                            (.then (js/client.request (str "/api/v2/" pop-uri ".json"))
+                                   (fn [response]
+                                    (ih/publish {:topics "cxengage/zendesk/internal-pop-received"
+                                                 :response (merge {:interaction-id interaction-id} (js->clj response :keywordize-keys true))
+                                                 :callback callback}))))
       (= pop-type "external-url") (if (= new-window "true")
                                   (js/window.open pop-uri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
                                   (js/window.open pop-uri))
