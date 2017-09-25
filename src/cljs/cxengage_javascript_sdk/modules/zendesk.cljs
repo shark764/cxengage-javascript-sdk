@@ -153,9 +153,11 @@
     (if (= status 200)
       (do
         (update-active-tab! interaction-id active-tab)
-        (ih/publish {:topics topic
-                     :response (merge {:interaction-id interaction-id} interrupt-body)
-                     :callback callback}))
+        (.then (js/client.request (str "/api/v2/tickets/" related-to ".json"))
+               (fn [response]
+                 (ih/publish {:topics topic
+                              :response (merge {:interaction-id interaction-id} interrupt-body (js->clj response :keywordize-keys true))
+                              :callback callback}))))
       (ih/publish {:topics topic
                    :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
@@ -177,9 +179,11 @@
     (if (= status 200)
       (do
         (update-active-tab! interaction-id active-tab)
-        (ih/publish {:topics topic
-                     :response (merge {:interaction-id interaction-id} interrupt-body)
-                     :callback callback}))
+        (.then (js/client.request (str "/api/v2/users/" contact ".json"))
+               (fn [response]
+                 (ih/publish {:topics topic
+                              :response (merge {:interaction-id interaction-id} interrupt-body (js->clj response :keywordize-keys true))
+                              :callback callback}))))
       (ih/publish {:topics topic
                    :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
