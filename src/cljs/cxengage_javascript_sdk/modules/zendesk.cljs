@@ -22,8 +22,14 @@
 (def zendesk-state (atom {}))
 
 (defn add-interaction! [interaction]
-  (let [{:keys [interactionId]} interaction]
-    (swap! zendesk-state assoc-in [:interactions interactionId] interaction)))
+  (let [{:keys [interaction-id]} interaction]
+    (swap! zendesk-state assoc-in [:interactions interaction-id] interaction)))
+
+(defn update-active-tab! [interaction-id active-tab]
+  (swap! zendesk-state assoc-in [:interactions interaction-id :active-tab] active-tab))
+
+(defn get-active-tab [interaction-id]
+  (get-in @zendesk-state [:interactions interaction-id :active-tab]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk SDK Functions
@@ -44,20 +50,20 @@
    :topic-key "cxengage/zendesk/focus-interaction"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-        interaction (get-in @zendesk-state [:interactions interaction-id])
+        active-tab (get-in @zendesk-state [:interactions interaction-id :active-tab])
         agent-id (get @zendesk-state :zen-user-id)
-        {:keys [contact relatedTo]} interaction]
-      (when contact
+        {:keys [ticket-id user-id]} active-tab]
+      (when user-id
         (try
-          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" contact "/display.json")
+          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" user-id "/display.json")
                                        :type "POST"}))
           (catch js/Object e
             (ih/publish {:topics topic
                          :error (error/failed-to-focus-zendesk-interaction-err interaction-id e)
                          :callback callback}))))
-      (when relatedTo
+      (when ticket-id
         (try
-          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" relatedTo "/display.json")
+          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/tickets/" ticket-id "/display.json")
                                        :type "POST"}))
           (catch js/Object e
             (ih/publish {:topics topic
@@ -137,16 +143,19 @@
   (let [{:keys [callback topic interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
         interrupt-type "assign-related-to"
-        related-to (:ticket-id (get @zendesk-state :active-tab))
+        active-tab (get @zendesk-state :active-tab)
+        related-to (:ticket-id active-tab)
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
                         :external-crm-related-to related-to
                         :external-crm-related-to-uri (str "/tickets/" related-to)}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
-      (ih/publish {:topics topic
-                   :response (merge {:interaction-id interaction-id} interrupt-body)
-                   :callback callback})
+      (do
+        (update-active-tab! interaction-id active-tab)
+        (ih/publish {:topics topic
+                     :response (merge {:interaction-id interaction-id} interrupt-body)
+                     :callback callback}))
       (ih/publish {:topics topic
                    :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
@@ -158,16 +167,19 @@
   (let [{:keys [callback topic interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
         interrupt-type "assign-contact"
-        contact (:user-id (get @zendesk-state :active-tab))
+        active-tab (get @zendesk-state :active-tab)
+        contact (:user-id active-tab)
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
                         :external-crm-contact contact
                         :external-crm-contact-uri (str "/users/" contact)}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
-      (ih/publish {:topics topic
-                   :response (merge {:interaction-id interaction-id} interrupt-body)
-                   :callback callback})
+      (do
+        (update-active-tab! interaction-id active-tab)
+        (ih/publish {:topics topic
+                     :response (merge {:interaction-id interaction-id} interrupt-body)
+                     :callback callback}))
       (ih/publish {:topics topic
                    :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
@@ -237,7 +249,7 @@
         (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/tickets/" (:id search-result) "/display.json")
                                      :type "POST"}))
         (fn []
-          (js/setTimeout #(assign-contact (clj->js {:interactionId interaction-id})) 2500))))))
+          (js/setTimeout #(assign-related-to (clj->js {:interactionId interaction-id})) 2500))))))
 
 (defn pop-search-modal [search-results]
   (.then (js/client.invoke
