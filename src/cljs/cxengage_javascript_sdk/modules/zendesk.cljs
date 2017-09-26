@@ -22,8 +22,14 @@
 (def zendesk-state (atom {}))
 
 (defn add-interaction! [interaction]
-  (let [{:keys [interactionId]} interaction]
-    (swap! zendesk-state assoc-in [:interactions interactionId] interaction)))
+  (let [{:keys [interaction-id]} interaction]
+    (swap! zendesk-state assoc-in [:interactions interaction-id] interaction)))
+
+(defn update-active-tab! [interaction-id active-tab]
+  (swap! zendesk-state assoc-in [:interactions interaction-id :active-tab] active-tab))
+
+(defn get-active-tab [interaction-id]
+  (get-in @zendesk-state [:interactions interaction-id :active-tab]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk SDK Functions
@@ -44,20 +50,20 @@
    :topic-key "cxengage/zendesk/focus-interaction"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-        interaction (get-in @zendesk-state [:interactions interaction-id])
+        active-tab (get-in @zendesk-state [:interactions interaction-id :active-tab])
         agent-id (get @zendesk-state :zen-user-id)
-        {:keys [contact relatedTo]} interaction]
-      (when contact
+        {:keys [ticket-id user-id]} active-tab]
+      (when user-id
         (try
-          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" contact "/display.json")
+          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" user-id "/display.json")
                                        :type "POST"}))
           (catch js/Object e
             (ih/publish {:topics topic
                          :error (error/failed-to-focus-zendesk-interaction-err interaction-id e)
                          :callback callback}))))
-      (when relatedTo
+      (when ticket-id
         (try
-          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" relatedTo "/display.json")
+          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/tickets/" ticket-id "/display.json")
                                        :type "POST"}))
           (catch js/Object e
             (ih/publish {:topics topic
@@ -135,18 +141,23 @@
    :topic-key "cxengage/zendesk/related-to-assignment-acknowledged"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-                tenant-id (ih/get-active-tenant-id)
-                interrupt-type "assign-related-to"
-                related-to (:ticketId (get @zendesk-state :active-tab))
-                interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
-                                :external-crm-name "zendesk"
-                                :external-crm-related-to related-to
-                                :external-crm-related-to-uri (str "/tickets/" related-to)}
-                {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        tenant-id (ih/get-active-tenant-id)
+        interrupt-type "assign-related-to"
+        active-tab (get @zendesk-state :active-tab)
+        related-to (:ticket-id active-tab)
+        interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
+                        :external-crm-name "zendesk"
+                        :external-crm-related-to related-to
+                        :external-crm-related-to-uri (str "/tickets/" related-to)}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
-      (ih/publish {:topics topic
-                   :response (merge {:interaction-id interaction-id} interrupt-body)
-                   :callback callback})
+      (do
+        (update-active-tab! interaction-id active-tab)
+        (.then (js/client.request (str "/api/v2/tickets/" related-to ".json"))
+               (fn [response]
+                 (ih/publish {:topics topic
+                              :response (merge {:interaction-id interaction-id} interrupt-body (js->clj response :keywordize-keys true))
+                              :callback callback}))))
       (ih/publish {:topics topic
                    :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
@@ -156,18 +167,23 @@
    :topic-key "cxengage/zendesk/contact-assignment-acknowledged"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-                tenant-id (ih/get-active-tenant-id)
-                interrupt-type "assign-contact"
-                contact (:userId (get @zendesk-state :active-tab))
-                interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
-                                :external-crm-name "zendesk"
-                                :external-crm-contact contact
-                                :external-crm-contact-uri (str "/users/" contact)}
-                {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        tenant-id (ih/get-active-tenant-id)
+        interrupt-type "assign-contact"
+        active-tab (get @zendesk-state :active-tab)
+        contact (:user-id active-tab)
+        interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
+                        :external-crm-name "zendesk"
+                        :external-crm-contact contact
+                        :external-crm-contact-uri (str "/users/" contact)}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
-      (ih/publish {:topics topic
-                   :response (merge {:interaction-id interaction-id} interrupt-body)
-                   :callback callback})
+      (do
+        (update-active-tab! interaction-id active-tab)
+        (.then (js/client.request (str "/api/v2/users/" contact ".json"))
+               (fn [response]
+                 (ih/publish {:topics topic
+                              :response (merge {:interaction-id interaction-id} interrupt-body (js->clj response :keywordize-keys true))
+                              :callback callback}))))
       (ih/publish {:topics topic
                    :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
@@ -193,11 +209,19 @@
           (aset js/window "client"
             (js/ZAFClient.init
               (fn [context]
-                (js/console.log "Context:" context)
-                (swap! zendesk-state assoc :zen-user-id (:id (get (ih/extract-params context) :currentUser)))
-                (js/client.on "assignUser" (fn [user]
-                                            (ih/publish {:topics "cxengage/zendesk/assign-request"
-                                                         :response user})))
+                (.then (js/client.get "currentUser")
+                       (fn [user]
+                         (swap! zendesk-state assoc :zen-user-id (get-in (js->clj user :keywordize-keys true) [:currentUser :id]))))
+                (swap! zendesk-state assoc :context context)
+                (js/client.on "triggerClickToDial" (fn [data]
+                                                    (ih/publish {:topics "cxengage/zendesk/click-to-dial-requested"
+                                                                 :response data})))
+                (js/client.on "triggerClickToSms" (fn [data]
+                                                   (ih/publish {:topics "cxengage/zendesk/click-to-sms-requested"
+                                                                :response data})))
+                (js/client.on "triggerClickToEmail" (fn [data]
+                                                     (ih/publish {:topics "cxengage/zendesk/click-to-email-requested"
+                                                                  :response data})))
                 (js/client.on "activeTab" (fn [tab-data]
                                             (swap! zendesk-state assoc :active-tab (ih/extract-params tab-data))
                                             (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
@@ -217,28 +241,36 @@
 ;; Helper Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn auto-assign-from-search-pop [response interaction-id]
-  (let [result (:result (ih/extract-params response))
-        parsed-result (ih/extract-params (js/JSON.parse result))]
-      (if (= 1 (count (vals parsed-result)))
-        (assign-contact (clj->js {:interaction interaction-id}))
-        (log :info "More than one result - skipping auto-assign"))))
+(defn auto-assign-from-search-pop [search-result interaction-id type]
+  (let [agent-id (get @zendesk-state :zen-user-id)]
+    (if (= type "user")
+      (.then
+        (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" (:id search-result) "/display.json")
+                                     :type "POST"}))
+        (fn []
+          (js/setTimeout #(assign-contact (clj->js {:interactionId interaction-id})) 2500)))
+      (.then
+        (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/tickets/" (:id search-result) "/display.json")
+                                     :type "POST"}))
+        (fn []
+          (js/setTimeout #(assign-related-to (clj->js {:interactionId interaction-id})) 2500))))))
 
-(defn pop-search-modal [search-results]
+(defn pop-search-modal [search-results interaction-id]
   (.then (js/client.invoke
           "instances.create"
           (clj->js {:location "modal"
                     :url "assets/modal.html"}))
          (fn [modal-context]
-           (let [modal-client (-> modal-context
-                                  (aget "instances.create")
-                                  (first)
-                                  (aget "instanceGuid")
-                                  (js/client.instance))]
-              (js/modal-client.on "assignContact"
-                                  (fn [contact]
-                                    (ih/publish {:topics "cxengage/zendesk/assign-request"
-                                                 :response contact})))))))
+           (let [modal-guid (-> modal-context
+                                 (aget "instances.create")
+                                 (first)
+                                 (aget "instanceGuid"))
+                 modalClient (js/client.instance modal-guid)]
+              (js/setTimeout #(.trigger modalClient "displaySearch" (clj->js search-results)) 2000)
+              (js/modalClient.on "assignContact"
+                                 (fn [contact]
+                                   (ih/publish {:topics "cxengage/zendesk/assign-request"
+                                                :response (merge (js->clj contact :keywordize-keys true) {:interactionId interaction-id})})))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
@@ -256,31 +288,65 @@
         :else (log :info "No screen pop details on work offer"))))
 
 (defn handle-screen-pop [error topic interaction-details]
-  (let [result (ih/extract-params interaction-details )
+  (let [result (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)
-        {:keys [popType popUri newWindow size searchType filter filterType terms interactionId]} result]
+        {:keys [pop-type pop-uri new-window size search-type filter filter-type terms interaction-id]} result]
     (cond
-      (= popType "url") (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id popUri "display.json")
-                                                     :type "POST"}))
-      (= popType "external-url") (if (= newWindow "true")
-                                  (js/window.open popUri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
-                                  (js/window.open popUri))
-      (= popType "search-pop") (do
-                                (when (= searchType "strict")
-                                  (let [query (reduce-kv
-                                               (fn [s k v]
-                                                 (str s (name k) ":" v " "))
-                                               "/api/v2/search.json?query="
-                                               filter)]
-                                     (.then (js/client.request (clj->js {:url query
-                                                                         :type "POST"}))
-                                            (fn [result]
-                                              (let [search-results (:results (ih/extract-params result ))]
-                                                (cond
-                                                  (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
-                                                                                            :response []})
-                                                  (= (count search-results) 1) (auto-assign-from-search-pop search-results interactionId)
-                                                  :else (pop-search-modal search-results)))))))))))
+      (= pop-type "url") (do
+                            (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id pop-uri "/display.json")
+                                                         :type "POST"}))
+                            (.then (js/client.request (str "/api/v2/" pop-uri ".json"))
+                                   (fn [response]
+                                    (ih/publish {:topics "cxengage/zendesk/internal-pop-received"
+                                                 :response (merge {:interaction-id interaction-id} (js->clj response :keywordize-keys true))
+                                                 :callback callback}))))
+      (= pop-type "external-url") (if (= new-window "true")
+                                    (js/window.open pop-uri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
+                                    (js/window.open pop-uri))
+      (= pop-type "search-pop") (do
+                                  (when (= search-type "fuzzy")
+                                    (let [all-req-promises (reduce
+                                                            (fn [all-promises term]
+                                                              (conj all-promises (promise
+                                                                                  (fn [resolve reject]
+                                                                                    (.then (js/client.request (clj->js {:url (str "/api/v2/search.json?query=" term)}))
+                                                                                           (fn [data]
+                                                                                             (resolve (:results (js->clj data :keywordize-keys true)))))))))
+                                                            []
+                                                            terms)
+                                          all-req-promises (all all-req-promises)]
+                                      (then all-req-promises
+                                        (fn [results]
+                                          (let [combined-results (reduce
+                                                                  (fn [all-results single-result]
+                                                                    (conj all-results single-result))
+                                                                  []
+                                                                  results)
+                                                search-results (vec (flatten combined-results))]
+                                            (cond
+                                              (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
+                                                                                        :response []})
+                                              (= (count search-results) 1) (if (= (:result_type (first search-results)) "user")
+                                                                            (auto-assign-from-search-pop (first search-results) interaction-id "user")
+                                                                            (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
+                                              :else (pop-search-modal search-results interaction-id)))))))
+                                  (when (= search-type "strict")
+                                    (let [query (reduce-kv
+                                                 (fn [s k v]
+                                                   (str s (name k) ":" v " "))
+                                                 "/api/v2/search.json?query="
+                                                 filter)]
+                                       (.then (js/client.request (clj->js {:url query
+                                                                           :type "POST"}))
+                                              (fn [result]
+                                                (let [search-results (:results (ih/extract-params result ))]
+                                                  (cond
+                                                    (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
+                                                                                              :response []})
+                                                    (= (count search-results) 1) (if (= (:result_type (first search-results)) "user")
+                                                                                  (auto-assign-from-search-pop (first search-results) interaction-id "user")
+                                                                                  (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
+                                                    :else (pop-search-modal search-results interaction-id)))))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk Module
@@ -295,12 +361,13 @@
               zendesk-integration "https://assets.zendesk.com/apps/sdk/2.0/zaf_sdk.js"]
             (zendesk-init zendesk-integration)
             (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
-            (ih/subscribe (topics/get-topic :screen-pop-received) handle-screen-pop)
+            (ih/subscribe (topics/get-topic :generic-screen-pop-received) handle-screen-pop)
             (ih/register (clj->js {:api {:zendesk {:focus-interaction focus-interaction
                                                    :set-dimensions set-dimensions
                                                    :set-visibility set-visibility
                                                    :assign-contact assign-contact
-                                                   :assign-related-to assign-related-to}}
+                                                   :assign-related-to assign-related-to
+                                                   :dump-state dump-state}}
                                    :module-name module-name}))
             (ih/send-core-message {:type :module-registration-status
                                    :status :success

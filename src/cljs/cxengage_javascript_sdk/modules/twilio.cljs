@@ -21,7 +21,7 @@
   (state/set-twilio-connection connection))
 
 (defn handle-twilio-error [error]
-  (p/publish {:topics "cxengage/errors/fatal/twilio-device-error"
+  (p/publish {:topics "cxengage/errors/error/twilio-device-error"
               :error (e/failed-to-init-twilio-err error)}))
 
 (defn ^:private twilio-init

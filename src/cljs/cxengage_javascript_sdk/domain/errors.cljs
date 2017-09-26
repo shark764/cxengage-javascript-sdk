@@ -577,7 +577,7 @@
   {:code 7023
    :context :voice
    :data {:error error}
-   :level "session-fatal"
+   :level "interaction-fatal"
    :message "Twilio Device encountered an error."})
 
 (defn failed-to-send-voice-interaction-heartbeat-err [interaction-id data]

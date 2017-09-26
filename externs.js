@@ -58,11 +58,7 @@ Twilio.Device.sendDigits = function() {};
  */
 var ZAFClient = {};
 var client = {};
-
-/**
-* @interface
-*/
-client = function() {};
+var modalClient = {}
 
 /**
 * @return {Object}
@@ -98,6 +94,16 @@ client.instance = function() {};
  * @return {Object}
  */
 ZAFClient.init = function() {};
+
+/**
+* @return {Object}
+*/
+modalClient.trigger = function() {};
+
+/**
+* @return {Object}
+*/
+modalClient.on = function() {};
 
 /**
  * @const

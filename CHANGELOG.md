@@ -1,6 +1,12 @@
 # Change Log
 
 ## [Unreleased]
+* [Zendesk] Fixed Auto Assign
+* [Zendesk] Added Fuzzy Search
+* [Zendesk] Fixed multiple result contact modal
+* [Zendesk] Fixed Focus interaction
+* [Zendesk] Added contextual information to assignment callbacks
+* [Zendesk] Added internal-pop pubsub with contextual information
 
 ## [6.2.0]
 * Added CxEngage.session.setLocale() fn for consumers to change their locale after initialization
