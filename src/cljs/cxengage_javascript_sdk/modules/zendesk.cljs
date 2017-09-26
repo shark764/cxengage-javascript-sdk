@@ -134,17 +134,18 @@
 
 (s/def ::assign-params
   (s/keys :req-un [::specs/interaction-id]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/callback ::specs/active-tab]))
 
 (def-sdk-fn assign-related-to
   {:validation ::assign-params
    :topic-key "cxengage/zendesk/related-to-assignment-acknowledged"}
   [params]
-  (let [{:keys [callback topic interaction-id]} params
+  (let [{:keys [callback topic active-tab interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
         interrupt-type "assign-related-to"
-        active-tab (get @zendesk-state :active-tab)
-        related-to (:ticket-id active-tab)
+        related-to (if active-tab
+                     (:id active-tab)
+                     (:id (get @zendesk-state :active-tab)))
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
                         :external-crm-related-to related-to
@@ -166,11 +167,12 @@
   {:validation ::assign-params
    :topic-key "cxengage/zendesk/contact-assignment-acknowledged"}
   [params]
-  (let [{:keys [callback topic interaction-id]} params
+  (let [{:keys [callback topic active-tab interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
         interrupt-type "assign-contact"
-        active-tab (get @zendesk-state :active-tab)
-        contact (:user-id active-tab)
+        contact (if active-tab
+                  (:id active-tab)
+                  (:id (get @zendesk-state :active-tab)))
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
                         :external-crm-contact contact
@@ -267,10 +269,14 @@
                                  (aget "instanceGuid"))
                  modalClient (js/client.instance modal-guid)]
               (js/setTimeout #(.trigger modalClient "displaySearch" (clj->js search-results)) 2000)
-              (js/modalClient.on "assignContact"
+              (js/modalClient.on "assign"
                                  (fn [contact]
-                                   (ih/publish {:topics "cxengage/zendesk/assign-request"
-                                                :response (merge (js->clj contact :keywordize-keys true) {:interactionId interaction-id})})))))))
+                                   (let [contact (ih/extract-params contact)
+                                         type (:result-type contact)]
+                                      (if (= type "user")
+                                        (assign-contact {:interaction-id interaction-id :active-tab contact}))
+                                      (if (= type "ticket")
+                                        (assign-related-to {:interaction-id interaction-id :active-tab contact})))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
