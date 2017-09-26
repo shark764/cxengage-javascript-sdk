@@ -5,6 +5,7 @@
 (s/def ::uuid id/valid-uuid?)
 (s/def ::name string?)
 (s/def ::address string?)
+(s/def ::active-tab map?)
 (s/def ::recipient
   (s/keys :req-un [::address ::name]))
 (s/def ::type #{"pstn" "sip"})
