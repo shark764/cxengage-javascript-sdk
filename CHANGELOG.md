@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [6.3.0]
 * [Zendesk] Fixed Auto Assign
 * [Zendesk] Added Fuzzy Search
 * [Zendesk] Fixed multiple result contact modal
