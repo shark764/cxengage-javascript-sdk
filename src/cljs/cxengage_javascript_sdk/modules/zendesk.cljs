@@ -145,7 +145,7 @@
         interrupt-type "assign-related-to"
         related-to (if active-tab
                      (:id active-tab)
-                     (:id (get @zendesk-state :active-tab)))
+                     (:ticket-id (get @zendesk-state :active-tab)))
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
                         :external-crm-related-to related-to
@@ -172,7 +172,7 @@
         interrupt-type "assign-contact"
         contact (if active-tab
                   (:id active-tab)
-                  (:id (get @zendesk-state :active-tab)))
+                  (:user-id (get @zendesk-state :active-tab)))
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
                         :external-crm-contact contact
@@ -325,8 +325,8 @@
                                       (then all-req-promises
                                         (fn [results]
                                           (let [combined-results (reduce
-                                                                  (fn [all-results single-result]
-                                                                    (conj all-results single-result))
+                                                                  (fn [all-results results]
+                                                                    (conj all-results (filterv #(not= (:result_type %) "ticket") results)))
                                                                   []
                                                                   results)
                                                 search-results (vec (flatten combined-results))]
