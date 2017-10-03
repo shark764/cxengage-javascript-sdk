@@ -52,23 +52,22 @@
   (let [{:keys [callback topic interaction-id]} params
         active-tab (get-in @zendesk-state [:interactions interaction-id :active-tab])
         agent-id (get @zendesk-state :zen-user-id)
-        {:keys [ticket-id user-id]} active-tab]
-      (when user-id
-        (try
-          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" user-id "/display.json")
-                                       :type "POST"}))
-          (catch js/Object e
-            (ih/publish {:topics topic
-                         :error (error/failed-to-focus-zendesk-interaction-err interaction-id e)
-                         :callback callback}))))
-      (when ticket-id
-        (try
-          (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/tickets/" ticket-id "/display.json")
-                                       :type "POST"}))
-          (catch js/Object e
-            (ih/publish {:topics topic
-                         :error (error/failed-to-focus-zendesk-interaction-err interaction-id e)
-                         :callback callback}))))))
+        {:keys [result-type ticket-id user-id id]} active-tab]
+      (cond
+        (or (= result-type "user") user-id) (try
+                                              (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" (or id user-id) "/display.json")
+                                                                           :type "POST"}))
+                                              (catch js/Object e
+                                                (ih/publish {:topics topic
+                                                             :error (error/failed-to-focus-zendesk-interaction-err interaction-id e)
+                                                             :callback callback})))
+        (or (= result-type "ticket") ticket-id) (try
+                                                  (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/tickets/" (or id ticket-id) "/display.json")
+                                                                               :type "POST"}))
+                                                  (catch js/Object e
+                                                    (ih/publish {:topics topic
+                                                                 :error (error/failed-to-focus-zendesk-interaction-err interaction-id e)
+                                                                 :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.zendesk.setVisibility({
@@ -143,9 +142,7 @@
   (let [{:keys [callback topic active-tab interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
         interrupt-type "assign-related-to"
-        related-to (if active-tab
-                     (:id active-tab)
-                     (:ticket-id (get @zendesk-state :active-tab)))
+        related-to (or (:id active-tab) (:ticket-id (get @zendesk-state :active-tab)))
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
                         :external-crm-related-to related-to
@@ -153,7 +150,7 @@
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (do
-        (update-active-tab! interaction-id active-tab)
+        (update-active-tab! interaction-id (or active-tab {:ticket-id related-to}))
         (.then (js/client.request (str "/api/v2/tickets/" related-to ".json"))
                (fn [response]
                  (ih/publish {:topics topic
@@ -170,9 +167,7 @@
   (let [{:keys [callback topic active-tab interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
         interrupt-type "assign-contact"
-        contact (if active-tab
-                  (:id active-tab)
-                  (:user-id (get @zendesk-state :active-tab)))
+        contact (or (:id active-tab) (:user-id (get @zendesk-state :active-tab)))
         interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
                         :external-crm-name "zendesk"
                         :external-crm-contact contact
@@ -180,7 +175,7 @@
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (do
-        (update-active-tab! interaction-id active-tab)
+        (update-active-tab! interaction-id (or active-tab {:user-id contact}))
         (.then (js/client.request (str "/api/v2/users/" contact ".json"))
                (fn [response]
                  (ih/publish {:topics topic
