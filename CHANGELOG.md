@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.3.1]
+* CXV1-10523 - Focus Interaction bug fixes
+
 ## [6.3.0]
 * [Zendesk] Fixed Auto Assign
 * [Zendesk] Added Fuzzy Search
