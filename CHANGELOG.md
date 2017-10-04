@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.3.2]
+* [Zendesk] Support external modal url
+
 ## [6.3.1]
 * CXV1-10523 - Focus Interaction bug fixes
 
