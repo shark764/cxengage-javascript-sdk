@@ -10,6 +10,7 @@
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.domain.errors :as error]
             [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.api-utils :as api]
             [cxengage-javascript-sdk.domain.errors :as errors]
             [promesa.core :as prom :refer [promise all then]]
@@ -253,25 +254,27 @@
           (js/setTimeout #(assign-related-to (clj->js {:interactionId interaction-id})) 2500))))))
 
 (defn pop-search-modal [search-results interaction-id]
-  (.then (js/client.invoke
-          "instances.create"
-          (clj->js {:location "modal"
-                    :url "assets/modal.html"}))
-         (fn [modal-context]
-           (let [modal-guid (-> modal-context
-                                 (aget "instances.create")
-                                 (first)
-                                 (aget "instanceGuid"))
-                 modalClient (js/client.instance modal-guid)]
-              (js/setTimeout #(.trigger modalClient "displaySearch" (clj->js search-results)) 2000)
-              (js/modalClient.on "assign"
-                                 (fn [contact]
-                                   (let [contact (ih/extract-params contact)
-                                         type (:result-type contact)]
-                                      (when (= type "user")
-                                        (assign-contact {:interaction-id interaction-id :active-tab contact}))
-                                      (when (= type "ticket")
-                                        (assign-related-to {:interaction-id interaction-id :active-tab contact})))))))))
+  (let [region (state/get-region)
+        env (name (state/get-env))]
+    (.then (js/client.invoke
+            "instances.create"
+            (clj->js {:location "modal"
+                      :url (str "https://sdk.cxengage.net/zendesk/" region "-" env "/modal.html")}))
+           (fn [modal-context]
+             (let [modal-guid (-> modal-context
+                                   (aget "instances.create")
+                                   (first)
+                                   (aget "instanceGuid"))
+                   modalClient (js/client.instance modal-guid)]
+                (js/setTimeout #(.trigger modalClient "displaySearch" (clj->js search-results)) 2000)
+                (js/modalClient.on "assign"
+                                   (fn [contact]
+                                     (let [contact (ih/extract-params contact)
+                                           type (:result-type contact)]
+                                        (when (= type "user")
+                                          (assign-contact {:interaction-id interaction-id :active-tab contact}))
+                                        (when (= type "ticket")
+                                          (assign-related-to {:interaction-id interaction-id :active-tab contact}))))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
