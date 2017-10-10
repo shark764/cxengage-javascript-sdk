@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.4.0]
+* CXV1-10798 - Implement Single Sign On via AWS Cognito
+
 ## [6.3.2]
 * [Zendesk] Support external modal url
 

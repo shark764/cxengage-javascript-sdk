@@ -55,7 +55,11 @@
                            (when-let [token (ih/get-token)]
                              (if (or third-party-request? authless-request?)
                                {}
-                               {:headers {"Authorization" (str "Token " token)}})))]
+                               {:headers {"Authorization" (str "Token " token)}}))
+                           (when-let [token (ih/get-sso-token)]
+                             (if (or third-party-request? authless-request?)
+                               {}
+                               {:headers {"Authorization" (str "SSO " token)}})))]
         (ajax/ajax-request request)
         (let [response (a/<! response-channel)
               {:keys [status]} response]

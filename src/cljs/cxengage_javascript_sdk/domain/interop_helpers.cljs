@@ -30,6 +30,10 @@
   (let [token-fn (aget js/window "CxEngage" "session" "getToken")]
     (token-fn)))
 
+(defn get-sso-token []
+  (let [token-fn (aget js/window "CxEngage" "session" "getSsoToken")]
+    (token-fn)))
+
 (defn get-active-tenant-id []
   (let [tenant-fn (aget js/window "CxEngage" "session" "getActiveTenantId")]
     (tenant-fn)))
@@ -54,6 +58,13 @@
 (defn core-ready? []
   (and (aget js/window "CxEngage")
        (aget js/window "CxEngage" "registerModule")))
+
+(defn cognito-ready? []
+  (and (aget js/window "AWSCognito")
+       (aget js/window "AWSCognito" "CognitoIdentityServiceProvider")))
+
+(defn cognito-auth-ready? []
+  (aget js/window "AWSCognito" "CognitoIdentityServiceProvider" "CognitoAuth"))
 
 (defn camelify [m]
   (->> m

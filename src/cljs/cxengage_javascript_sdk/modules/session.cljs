@@ -287,6 +287,19 @@
     token))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.getSSOToken();
+;; -------------------------------------------------------------------------- ;;
+
+(defn get-sso-token [& params]
+  (let [callback (first params)
+        callback (if (fn? callback) callback nil)
+        token (state/get-sso-token)]
+    (p/publish {:topic (topics/get-topic :get-sso-token-response)
+                :response token
+                :callback callback})
+    token))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.getLocale();
 ;; -------------------------------------------------------------------------- ;;
 
@@ -316,6 +329,7 @@
                                        :get-active-user-id get-active-user-id
                                        :get-active-tenant-id get-active-tenant-id
                                        :get-token get-token
+                                       :get-sso-token get-sso-token
                                        :set-locale set-locale}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status

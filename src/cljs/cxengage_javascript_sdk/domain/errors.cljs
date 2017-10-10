@@ -147,6 +147,13 @@
    :level "error"
    :message "Login attempt failed. Login request failed."})
 
+(defn failed-to-init-cognito-sdk-err [data]
+  {:code 3003
+   :context :authentication
+   :data data
+   :level "error"
+   :message "Failed to initalize the AWS Cognito SDK."})
+
 (defn active-interactions-err [data]
   {:code 4000
    :context :interaction

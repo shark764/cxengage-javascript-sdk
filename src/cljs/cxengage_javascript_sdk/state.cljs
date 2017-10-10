@@ -261,6 +261,14 @@
   []
   (get-state-value [:authentication :token]))
 
+(defn set-sso-token!
+  [token]
+  (swap! sdk-state assoc-in [:authentication :sso-token] token))
+
+(defn get-sso-token
+  []
+  (get-state-value [:authentication :sso-token]))
+
 ;;;;;;;;;;;;;;;;
 ;; User Identity
 ;;;;;;;;;;;;;;;;
