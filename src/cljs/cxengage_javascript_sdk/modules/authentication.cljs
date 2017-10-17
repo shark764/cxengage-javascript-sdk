@@ -97,7 +97,7 @@
   (let [{:keys [client domain]} client-details
         region (state/get-region)
         auth-data (clj->js {:ClientId client
-                            :AppWebDomain (str domain ".auth." region ".amazoncognito.com")
+                            :AppWebDomain (str domain ".auth.us-east-1.amazoncognito.com")
                             :TokenScopesArray ["email"]
                             :RedirectUriSignIn (str js/window.location.origin "/")
                             :RedirectUriSignOut (str js/window.location.origin "/")})
