@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.4.1]
+* SSO region missing fix
+
 ## [6.4.0]
 * CXV1-10798 - Implement Single Sign On via AWS Cognito
 
