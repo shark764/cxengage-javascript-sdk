@@ -13,8 +13,10 @@
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cljs.test :refer-macros [deftest is testing async]]))
+            [cljs.test :refer-macros [deftest is testing async use-fixtures]]))
 
+(use-fixtures :each {:before (fn []
+                               (p/destroy-subscriptions))})
 
 (def resource-id (id/make-random-uuid))
 (def interaction-id (id/make-random-uuid))
@@ -38,7 +40,6 @@
   (testing "the silent-monitor fn"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (state/set-user-identity! {:user-id resource-id})
      (swap! state/sdk-state assoc-in [:session :config :active-extension] mock-active-extension)
      (set! rest/send-interrupt-request (fn [& _]
@@ -56,7 +57,6 @@
   (testing "the error response in silent-monitor function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -70,7 +70,6 @@
   (testing "the customer hold function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (state/set-user-identity! {:user-id resource-id})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
@@ -85,7 +84,6 @@
   (testing "the customer hold function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -99,7 +97,6 @@
   (testing "the customer resume function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -113,7 +110,6 @@
   (testing "the customer resume function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -127,7 +123,6 @@
   (testing "the customer mute function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -143,7 +138,6 @@
   (testing "the customer mute function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -157,7 +151,6 @@
   (testing "the customer unmute function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -173,7 +166,6 @@
   (testing "the customer unmute function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -187,7 +179,6 @@
   (testing "the resource-hold function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -203,7 +194,6 @@
   (testing "the resource-hold function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -217,7 +207,6 @@
   (testing "the resource-resume function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -233,7 +222,6 @@
   (testing "the resource-resume function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -247,7 +235,6 @@
   (testing "the resume-all function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -261,7 +248,6 @@
   (testing "the resume-all function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -275,7 +261,6 @@
   (testing "the remove-resource function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -291,7 +276,6 @@
   (testing "the remove-resource function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -305,7 +289,6 @@
   (testing "the start-recording function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -319,7 +302,6 @@
   (testing "the start-recording function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -333,7 +315,6 @@
   (testing "the stop-recording function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -347,7 +328,6 @@
   (testing "the stop-recording function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -361,7 +341,6 @@
   (testing "the transfer-to-resource function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -378,7 +357,6 @@
   (testing "the transfer-to-resource function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -394,7 +372,6 @@
   (testing "the transfer-to-queue function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -411,7 +388,6 @@
   (testing "the transfer-to-queue function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -427,7 +403,6 @@
   (testing "the transfer-to-extension function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -444,7 +419,6 @@
   (testing "the transfer-to-extension function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -460,7 +434,6 @@
   (testing "the cancel-resource-transfer function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -477,7 +450,6 @@
   (testing "the cancel-resource-transfer function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (state/set-user-identity! {:user-id resource-id})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
@@ -494,7 +466,6 @@
   (testing "the cancel-queue-transfer function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -511,7 +482,6 @@
   (testing "the cancel-queue-transfer function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -527,7 +497,6 @@
   (testing "the cancel-extension-transfer function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go {:status 200})))
      (p/subscribe
@@ -544,7 +513,6 @@
   (testing "the cancel-extension-transfer function error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -567,7 +535,6 @@
   (testing "the click to dial function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/create-interaction-request (fn [& _]
                                              (go {:status 200
                                                   :api-response {:interaction-id interaction-id
@@ -584,7 +551,6 @@
   (testing "the dial error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/create-interaction-request (fn [& _]
                                              (go not-found)))
      (p/subscribe
@@ -597,8 +563,7 @@
 (deftest cancel-test
   (testing "the cancel-dial function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
+           (state/destroy-state)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -620,7 +585,6 @@
   (testing "the cancel-dial fn's error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/send-interrupt-request (fn [& _]
                                          (go not-found)))
      (p/subscribe
@@ -636,7 +600,6 @@
   (testing "the send-digits function"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (state/reset-state)
      (let [mock-twilio-connection (js/Object.)]
        (set! (.-sendDigits mock-twilio-connection) (fn [& _] "beep"))
@@ -658,7 +621,6 @@
   (testing "the no twilio integration error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (state/reset-state)
      (state/set-config! {:integrations [{:type "plivo"}]
                          :active-extension {:provider "plivo"}})
@@ -674,7 +636,6 @@
   (testing "the send-digits exception handler"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (state/reset-state)
      (state/set-config! {:integrations [{:type "twilio"}]
                          :active-extension {:provider "twilio"}})
@@ -692,7 +653,6 @@
   (testing "the send-digits error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (state/reset-state)
      (state/set-config! {:integrations [{:type "twilio"}]
                          :active-extension {:provider "twilio"}})
@@ -714,7 +674,6 @@
   (testing "the get-recording fn"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/get-artifact-by-id-request (fn [& _]
                                              (go {:api-response {:files files}
                                                   :status 200})))
@@ -729,7 +688,6 @@
   (testing "the get-recording error response"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/get-artifact-by-id-request (fn [& _]
                                              (go not-found)))
      (p/subscribe
@@ -743,7 +701,6 @@
   (testing "the get-recordings fn"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (state/set-active-tenant! tenant-id)
      (set! rest/get-artifact-by-id-request (fn [& _]
                                              (go {:api-response {:files files}
@@ -762,7 +719,6 @@
   (testing "the get-recordings response for no recordings"
     (async
      done
-     (reset! p/sdk-subscriptions {})
      (set! rest/get-interaction-artifacts-request (fn [& _]
                                                     (go {:api-response {:results []}
                                                          :status 200})))

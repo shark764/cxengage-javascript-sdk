@@ -479,3 +479,8 @@
                                   "regions/:region-id"
                                   {:region-id region-id})}]
     (api/api-request get-region-request)))
+
+(defn get-sso-details-request [username]
+  (let [get-sso-details-request {:method :get
+                                 :url (iu/api-url (str "auth-info/" username))}]
+    (api/api-request get-sso-details-request)))

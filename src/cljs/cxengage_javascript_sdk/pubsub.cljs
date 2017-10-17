@@ -11,6 +11,9 @@
 
 (def sdk-subscriptions (atom {}))
 
+(defn destroy-subscriptions []
+  (reset! sdk-subscriptions {}))
+
 (defn get-topic-permutations
   "Given an SDK consumer topic string, returns a list of all possible permutatations of that topic string. I.E. 'cxengage/authentication' returns 'cxengage' & 'cxengage/authentication'."
   [topic]

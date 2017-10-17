@@ -11,13 +11,15 @@
             [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cljs.test :refer-macros [deftest is testing async]]))
+            [cljs.test :refer-macros [deftest is testing async use-fixtures]]))
+
+(use-fixtures :each {:before (fn []
+                               (state/destroy-state)
+                               (p/destroy-subscriptions))})
 
 (deftest end-test
   (testing "the end interaction function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -37,8 +39,6 @@
 (deftest accept-test
   (testing "the accept interaction function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  topic (topics/get-topic :interaction-accept-acknowledged)
                  tenant-id (str (id/make-random-uuid))
@@ -78,8 +78,6 @@
 (deftest focus-test
   (testing "the focus interaction function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -126,8 +124,6 @@
 (deftest unfocus-test
   (testing "the unfocus interaction function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -174,8 +170,6 @@
 (deftest assign-test
   (testing "the assign contact to interaction function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -224,8 +218,6 @@
 (deftest unassign-test
   (testing "the assign contact to interaction function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -274,8 +266,6 @@
 (deftest enable-wrapup-test
   (testing "the enable-wrapup function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -296,8 +286,6 @@
 (deftest disable-wrapup-test
   (testing "the enable-wrapup function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -318,8 +306,6 @@
 (deftest end-wrapup-test
   (testing "the end-wrapup function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -340,8 +326,6 @@
 (deftest deselect-disposition-test
   (testing "the deselect disposition function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -362,8 +346,6 @@
 (deftest select-disposition-test
   (testing "the select disposition function"
     (async done
-           (reset! state/sdk-state)
-           (reset! p/sdk-subscriptions)
            (let [old rest/send-interrupt-request
                  tenant-id (str (id/make-random-uuid))
                  resource-id (str (id/make-random-uuid))
@@ -390,7 +372,6 @@
 (deftest custom-interrupt-test
   (testing "the custom-interrupt fn"
     (async done
-           (reset! p/sdk-subscriptions {})
            (state/reset-state)
            (go (let [old api/api-request
                      interaction-id (str (id/make-random-uuid))
@@ -426,7 +407,6 @@
 (deftest get-note--happy-test
   (testing "get single note function success"
     (async done
-           (reset! p/sdk-subscriptions {})
            (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-get-note-response [:api-response])]
                  (set! api/api-request (fn [_]
@@ -448,7 +428,6 @@
 (deftest get-notes--happy-test
   (testing "get all notes function success"
     (async done
-           (reset! p/sdk-subscriptions {})
            (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-get-notes-response [:api-response])]
                  (set! api/api-request (fn [_]
@@ -471,7 +450,6 @@
 (deftest create-note--happy-test
   (testing "get all notes function success"
     (async done
-           (reset! p/sdk-subscriptions {})
            (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-create-note-response [:api-response])]
                  (set! api/api-request (fn [_]
@@ -494,7 +472,6 @@
 (deftest update-note--happy-test
   (testing "get all notes function success"
     (async done
-           (reset! p/sdk-subscriptions {})
            (go (let [old api/api-request
                      pubsub-expected-response (get-in successful-update-note-response [:api-response])]
                  (set! api/api-request (fn [_]

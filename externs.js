@@ -239,3 +239,43 @@ sforce.opencti.searchAndScreenPop = function() {};
 * @return {Object}
 */
 sforce.opencti.onClickToDial = function() {};
+
+/**
+ * @const
+ */
+var AWSCognito = {};
+
+/**
+* @return {Object}
+*/
+AWSCognito.CognitoIdentityServiceProvider = function() {};
+
+/**
+* @return {Object}
+*/
+AWSCognito.CognitoIdentityServiceProvider.CognitoAuth = function() {};
+
+/**
+ * @const
+ */
+var CognitoAuth = {};
+
+/**
+* @return {Object}
+*/
+CognitoAuth.prototype.parseCognitoWebResponse = function() {};
+
+/**
+* @return {Object}
+*/
+CognitoAuth.prototype.getSession = function() {};
+
+/**
+ * @const
+ */
+var CognitoAuthSession = {};
+
+/**
+* @return {Object}
+*/
+CognitoAuthSession.prototype.getAccessToken = function getAccessToken() {};
