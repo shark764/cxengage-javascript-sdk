@@ -164,21 +164,34 @@
   {:validation ::sso-login-spec
    :topic-key :login-response}
   [params]
-  (let [{:keys [callback topic token]} params
-        resp (a/<! (rest/login-request))
+  (let [{:keys [callback topic]} params
+        token (state/get-sso-token)
+        token-body {:type "sso"
+                    :token token}
+        resp (a/<! (rest/token-request token-body))
         {:keys [status api-response]} resp]
     (if (not (= status 200))
-      (p/publish {:topics topic
-                  :callback callback
-                  :error (e/login-failed-token-request-err resp)})
-      (let [user-identity (:result api-response)
-            tenants (:tenants user-identity)]
-        (state/set-user-identity! user-identity)
-        (p/publish {:topics (topics/get-topic :tenant-list)
-                    :response tenants})
+      (do
+        (js/localStorage.removeItem "ssoClient")
         (p/publish {:topics topic
-                    :response user-identity
-                    :callback callback})))))
+                    :callback callback
+                    :error (e/login-failed-token-request-err resp)}))
+      (do
+        (state/set-token! (:token api-response))
+        (let [resp (a/<! (rest/login-request))
+              {:keys [status api-response]} resp]
+          (if (not (= status 200))
+            (p/publish {:topics topic
+                        :callback callback
+                        :error (e/login-failed-login-request-err resp)})
+            (let [user-identity (:result api-response)
+                  tenants (:tenants user-identity)]
+              (state/set-user-identity! user-identity)
+              (p/publish {:topics (topics/get-topic :tenant-list)
+                          :response tenants})
+              (p/publish {:topics topic
+                          :response user-identity
+                          :callback callback}))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Authentication Module
