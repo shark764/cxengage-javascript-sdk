@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.4.2]
+* Update SSO token passthrough
+
 ## [6.4.1]
 * SSO region missing fix
 

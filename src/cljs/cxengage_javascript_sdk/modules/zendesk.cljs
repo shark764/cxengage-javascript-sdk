@@ -91,13 +91,13 @@
         (catch js/Object e
           (ih/publish {:topics topic
                        :error (error/failed-to-set-zendesk-visibility-err e)
-                       :callback callback}))))
+                       :callback callback})))
       (try
         (js/client.invoke "popover" "hide")
         (catch js/Object e
           (ih/publish {:topics topic
                        :error (error/failed-to-set-zendesk-visibility-err e)
-                       :callback callback})))))
+                       :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.zendesk.setDimensions({
