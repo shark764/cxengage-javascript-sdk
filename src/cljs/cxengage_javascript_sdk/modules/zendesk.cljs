@@ -246,12 +246,12 @@
         (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/users/" (:id search-result) "/display.json")
                                      :type "POST"}))
         (fn []
-          (js/setTimeout #(assign-contact (clj->js {:interactionId interaction-id})) 2500)))
+          (assign-contact (clj->js {:interactionId interaction-id :active-tab search-result}))))
       (.then
         (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id "/tickets/" (:id search-result) "/display.json")
                                      :type "POST"}))
         (fn []
-          (js/setTimeout #(assign-related-to (clj->js {:interactionId interaction-id})) 2500))))))
+          (assign-related-to (clj->js {:interactionId interaction-id :active-tab search-result})))))))
 
 (defn pop-search-modal [search-results interaction-id]
   (let [region (state/get-region)
