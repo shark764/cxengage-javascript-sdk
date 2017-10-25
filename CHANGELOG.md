@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.4.3]
+* CXV1-11804 - Fixed auto-assign race condition
+
 ## [6.4.2]
 * Update SSO token passthrough
 
