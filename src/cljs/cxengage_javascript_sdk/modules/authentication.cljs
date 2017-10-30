@@ -50,29 +50,28 @@
 ;;   username: "{{string}}",
 ;;   password: "{{string}}"
 ;; });
+;;
+;; OR
+;;
+;; CxEngage.authentication.login({
+;;   token: "{{string}}"
+;; });
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::login-spec
-  (s/keys :req-un [::specs/username ::specs/password]
-          :opt-un [::specs/callback]))
+  (s/or
+    :credentials (s/keys :req-un [::specs/username ::specs/password]
+                         :opt-un [::specs/callback])
+    :token (s/keys :req-un [::specs/token]
+                   :opt-un [::specs/callback])))
 
 (def-sdk-fn login
   {:validation ::login-spec
    :topic-key :login-response}
   [params]
-  (let [{:keys [callback topic username password]} params
-        token-body {:username username
-                    :password password}
-        _ (state/reset-state)
-        resp (a/<! (rest/token-request token-body))
-        {:keys [status api-response]} resp]
-    (if (not (= status 200))
-      (p/publish {:topics topic
-                  :callback callback
-                  :error (e/login-failed-token-request-err resp)})
-      (do
-        (state/set-token! (:token api-response))
-        (let [resp (a/<! (rest/login-request))
+  (let [{:keys [callback topic username password token]} params]
+    (if token
+      (let [resp (a/<! (rest/login-request))
               {:keys [status api-response]} resp]
           (if (not (= status 200))
             (p/publish {:topics topic
@@ -85,41 +84,32 @@
                           :response tenants})
               (p/publish {:topics topic
                           :response user-identity
-                          :callback callback}))))))))
-
-
-;; -------------------------------------------------------------------------- ;;
-;; Cognito Initialization Function
-;; -------------------------------------------------------------------------- ;;
-
-(defn cognito-auth-sdk-init
-  [client-details]
-  (let [{:keys [client domain]} client-details
-        region (state/get-region)
-        auth-data (clj->js {:ClientId client
-                            :AppWebDomain (str domain ".auth.us-east-1.amazoncognito.com")
-                            :TokenScopesArray ["email"]
-                            :RedirectUriSignIn (str js/window.location.origin "/")
-                            :RedirectUriSignOut (str js/window.location.origin "/")})
-        auth (new js/AWSCognito.CognitoIdentityServiceProvider.CognitoAuth
-                  auth-data)
-        _ (aset auth "userhandler" (clj->js {:onSuccess (fn [result]
-                                                          (let [token (aget (.getAccessToken result) "jwtToken")]
-                                                            (state/set-sso-token! token)
-                                                            (p/publish {:topics (topics/get-topic :cognito-initialized-response)
-                                                                        :response token})))
-                                             :onFailure (fn [error]
-                                                          (p/publish {:topics (topics/get-topic :cognito-initialized-response)
-                                                                      :error (e/failed-to-init-cognito-sdk-err auth-data)}))}))]
-     auth))
-
-(defn attach-script
-  [integration]
-  (let [script (js/document.createElement "script")
-        body (.-body js/document)]
-    (.setAttribute script "type" "text/javascript")
-    (.setAttribute script "src" integration)
-    (.appendChild body script)))
+                          :callback callback}))))
+      (let [token-body {:username username
+                        :password password}
+            _ (state/reset-state)
+            resp (a/<! (rest/token-request token-body))
+            {:keys [status api-response]} resp]
+        (if (not (= status 200))
+          (p/publish {:topics topic
+                      :callback callback
+                      :error (e/login-failed-token-request-err resp)})
+          (do
+            (state/set-token! (:token api-response))
+            (let [resp (a/<! (rest/login-request))
+                  {:keys [status api-response]} resp]
+              (if (not (= status 200))
+                (p/publish {:topics topic
+                            :callback callback
+                            :error (e/login-failed-login-request-err resp)})
+                (let [user-identity (:result api-response)
+                      tenants (:tenants user-identity)]
+                  (state/set-user-identity! user-identity)
+                  (p/publish {:topics (topics/get-topic :tenant-list)
+                              :response tenants})
+                  (p/publish {:topics topic
+                              :response user-identity
+                              :callback callback}))))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.authentication.getAuthInfo({
@@ -128,70 +118,72 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::auth-info-spec
-  (s/keys :req-un [::specs/username]
-          :opt-un [::specs/callback]))
+  (s/or
+    :tenant (s/keys :req-un [::specs/tenant-id]
+                    :opt-un [::specs/idp-id ::specs/callback])
+    :email (s/keys :req-un [::specs/username]
+                   :opt-un [::specs/callback])))
 
 (def-sdk-fn get-auth-info
   {:validation ::auth-info-spec
    :topic-key :auth-info-response}
   [params]
-  (let [{:keys [callback topic username]} params
+  (let [{:keys [callback topic username tenant-id idp-id]} params
         _ (state/reset-state)
-        resp (a/<! (rest/get-sso-details-request username))
-        {:keys [status api-response]} resp]
+        tenant-details (if idp-id
+                         {:idp-id idp-id
+                          :tenant-id tenant-id}
+                         {:tenant-id tenant-id})
+        resp (a/<! (rest/get-sso-details-request (or username tenant-details)))
+        {:keys [status api-response]} resp
+        _ (state/set-sso-client-details! api-response)]
     (if (not (= status 200))
       (p/publish {:topics topic
                   :callback callback
-                  :error (e/login-failed-token-request-err resp)})
-      (let [{:keys [domain client]} api-response
-            _ (js/localStorage.setItem "ssoClient" (js/JSON.stringify
-                                                      (clj->js {:client client
-                                                                :domain domain})))
-            auth (cognito-auth-sdk-init api-response)]
-        (.getSession auth)))))
+                  :error (e/failed-to-get-auth-info-err resp)})
+      (p/publish {:topics topic
+                  :callback callback
+                  :response api-response}))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.authentication.SSOLogin({
-;;   token: "{{string}}"
-;; });
+;; CxEngage.authentication.popIdentityPage();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::sso-login-spec
+
+(defn post-message-handler [window event]
+  (let [token (aget event "data" "token")
+        error (aget event "data" "error")]
+    (if error
+      (p/publish {:topics (topics/get-topic :cognito-auth-response)
+                  :error (e/failed-cognito-auth-err error)})
+      (do
+        (state/set-token! token)
+        (p/publish {:topics (topics/get-topic :cognito-auth-response)
+                    :response token})))))
+
+(s/def ::identity-window-spec
   (s/keys :req-un []
           :opt-un [::specs/callback]))
 
-(def-sdk-fn sso-login
-  {:validation ::sso-login-spec
-   :topic-key :login-response}
+(def-sdk-fn pop-identity-page
+  {:validation ::identity-window-spec
+   :topic-key :identity-window-response}
   [params]
-  (let [{:keys [callback topic]} params
-        token (state/get-sso-token)
-        token-body {:type "sso"
-                    :token token}
-        resp (a/<! (rest/token-request token-body))
-        {:keys [status api-response]} resp]
-    (if (not (= status 200))
-      (do
-        (js/localStorage.removeItem "ssoClient")
-        (p/publish {:topics topic
-                    :callback callback
-                    :error (e/login-failed-token-request-err resp)}))
-      (do
-        (state/set-token! (:token api-response))
-        (let [resp (a/<! (rest/login-request))
-              {:keys [status api-response]} resp]
-          (if (not (= status 200))
-            (p/publish {:topics topic
-                        :callback callback
-                        :error (e/login-failed-login-request-err resp)})
-            (let [user-identity (:result api-response)
-                  tenants (:tenants user-identity)]
-              (state/set-user-identity! user-identity)
-              (p/publish {:topics (topics/get-topic :tenant-list)
-                          :response tenants})
-              (p/publish {:topics topic
-                          :response user-identity
-                          :callback callback}))))))))
+  (let [client-details (state/get-sso-client-details)
+        env (name (state/get-env))
+        {:keys [client domain]} (state/get-sso-client-details)
+        url (if (= env "prod")
+              "https://identity.cxengage.net"
+              "https://identity.cxengagelabs.net")
+        window (js/window.open (str url "?env=" env "&domain=" domain "&clientid=" client) "targetWindow" "width=500,height=500")
+        _ (js/window.addEventListener "message" (partial post-message-handler window))]
+    (go-loop []
+      (if-not (state/get-token)
+        (do
+          (.postMessage window "Polling for Token" "*")
+          (do (a/<! (a/timeout 1000))
+              (recur)))
+        nil))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Authentication Module
@@ -200,25 +192,11 @@
 (defrecord AuthenticationModule []
   pr/SDKModule
   (start [this]
-    (let [module-name :authentication
-          client-details (js->clj (js/JSON.parse (js/localStorage.getItem "ssoClient")) :keywordize-keys true)]
-      (attach-script "https://sdk.cxengage.net/js/aws/aws-cognito-sdk.min.js")
-      (go-loop []
-        (if (ih/cognito-ready?)
-          (attach-script "https://sdk.cxengage.net/js/aws/amazon-cognito-auth.min.js")
-          (do (a/<! (a/timeout 250))
-              (recur))))
-      (go-loop []
-        (if (and (ih/cognito-ready?) (ih/cognito-auth-ready?))
-          (when client-details
-            (let [auth (cognito-auth-sdk-init client-details)
-                  _ (.parseCognitoWebResponse auth js/window.location.href)]))
-          (do (a/<! (a/timeout 250))
-              (recur))))
+    (let [module-name :authentication]
       (ih/register {:api {module-name {:login login
                                        :logout logout
-                                       :sso-login sso-login
-                                       :get-auth-info get-auth-info}}
+                                       :get-auth-info get-auth-info
+                                       :pop-identity-page pop-identity-page}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

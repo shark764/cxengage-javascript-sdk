@@ -91,7 +91,7 @@
                                           :output-wrapper true
                                           :compiler-stats true
                                           :anon-fn-naming-policy :mapped
-                                          :pretty-print true
+                                          :pretty-print false
                                           :source-map true
                                           :parallel-build true
                                           :static-fns true

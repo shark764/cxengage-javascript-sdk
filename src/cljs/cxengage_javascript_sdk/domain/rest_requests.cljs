@@ -480,7 +480,12 @@
                                   {:region-id region-id})}]
     (api/api-request get-region-request)))
 
-(defn get-sso-details-request [username]
-  (let [get-sso-details-request {:method :get
-                                 :url (iu/api-url (str "auth-info/" username))}]
+(defn get-sso-details-request [details]
+  (let [{:keys [tenant-id idp-id]} details
+        url (cond
+              (and (map? details) idp-id) (str tenant-id "/" idp-id)
+              (and (map? details) (not idp-id)) tenant-id
+              (string? details) details)
+        get-sso-details-request {:method :get
+                                 :url (iu/api-url (str "auth-info/" url))}]
     (api/api-request get-sso-details-request)))
