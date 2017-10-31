@@ -154,6 +154,20 @@
    :level "error"
    :message "Failed to initalize the AWS Cognito SDK."})
 
+(defn failed-cognito-auth-err [data]
+  {:code 3004
+   :context :authentication
+   :data data
+   :level "error"
+   :message "Failed to authenticate with AWS Cognito."})
+
+(defn failed-to-get-auth-info-err [data]
+  {:code 3005
+   :context :authentication
+   :data data
+   :level "error"
+   :message "Failed to retrieve SSO authentication information."})
+
 (defn active-interactions-err [data]
   {:code 4000
    :context :interaction

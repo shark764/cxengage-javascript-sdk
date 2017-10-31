@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.5.0]
+* SSO Identity window changes
+
 ## [6.4.3]
 * CXV1-11804 - Fixed auto-assign race condition
 
