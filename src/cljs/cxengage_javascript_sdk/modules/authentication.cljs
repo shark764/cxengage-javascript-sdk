@@ -178,12 +178,13 @@
         window (js/window.open (str url "?env=" env "&domain=" domain "&clientid=" client) "targetWindow" "width=500,height=500")
         _ (js/window.addEventListener "message" (partial post-message-handler window))]
     (go-loop []
-      (if-not (state/get-token)
+      (if (= (.-closed window) false)
         (do
           (.postMessage window "Polling for Token" "*")
           (do (a/<! (a/timeout 1000))
               (recur)))
-        nil))))
+        (p/publish {:topics (topics/get-topic :identity-window-response)
+                    :response true})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Authentication Module
