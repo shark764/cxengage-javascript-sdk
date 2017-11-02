@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.5.1]
+* Final fixes for SSO Identity Page
+
 ## [6.5.0]
 * SSO Identity window changes
 
