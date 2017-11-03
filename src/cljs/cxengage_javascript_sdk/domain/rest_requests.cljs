@@ -489,3 +489,15 @@
         get-sso-details-request {:method :get
                                  :url (iu/api-url (str "auth-info/" url))}]
     (api/api-request get-sso-details-request)))
+
+(defn get-crm-interactions-request [id crm sub-type page]
+  (let [tenant-id (state/get-active-tenant-id)
+        base-url (str "tenants/:tenant-id/interactions?hookId=" id "&hookType=" crm "&hookSubType=" sub-type)
+        url (if page
+              (str base-url "&page=" page)
+              base-url)
+        get-crm-interactions-request {:method :get
+                                      :url (iu/api-url
+                                            url
+                                            {:tenant-id tenant-id})}]
+    (api/api-request get-crm-interactions-request)))
