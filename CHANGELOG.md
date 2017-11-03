@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.6.1]
+* Fixed MQTT error logging
+* Added missing topic for get-crm-interactions
+
 ## [6.6.0]
 * Added `CxEngage.reporting.getCrmInteractions()` function to the Reporting module
 * Updated Zendesk assign functions to the `interaction-hook-add` flow signal
