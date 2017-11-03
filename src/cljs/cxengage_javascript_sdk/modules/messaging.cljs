@@ -124,8 +124,10 @@
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
                                       (if (zero? (get (js->clj reason-code :keywordize-keys true) :errorCode))
                                         (log :info "Previous Mqtt Session Successfully Disconnected")
-                                        (log :error "Mqtt Connection Lost" {:reasonCode reason-code
-                                                                            :reasonMessage reason-message}))))
+                                        (do
+                                          (log :error "Mqtt Connection Lost")
+                                          (log :error (clj->js {:reasonCode reason-code
+                                                                :reasonMessage reason-message}))))))
     (set! (.-onMessageArrived mqtt) (fn [msg]
                                       (log :debug "Raw msg received from MQTT:" msg)
                                       (when msg (on-received msg))))

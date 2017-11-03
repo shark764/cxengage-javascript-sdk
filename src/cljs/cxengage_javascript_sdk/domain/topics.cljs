@@ -62,6 +62,7 @@
                  :remove-stat "cxengage/reporting/stat-subscription-removed"
                  :polling-started "cxengage/reporting/polling-started"
                  :polling-stopped "cxengage/reporting/polling-stopped"
+                 :get-crm-interactions-response "cxengage/reporting/get-crm-interactions-response"
 
                  ;; Logging
                  :logs-dumped "cxengage/logging/logs-dumped"
