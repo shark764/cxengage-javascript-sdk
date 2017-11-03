@@ -127,7 +127,7 @@
                        :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.sfc.assignContact({
+;; CxEngage.zendesk.assignRelatedTo({
 ;;   interactionId: "{{uuid}}"
 ;; });
 ;; -------------------------------------------------------------------------- ;;
@@ -142,24 +142,71 @@
   [params]
   (let [{:keys [callback topic active-tab interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
-        interrupt-type "assign-related-to"
-        related-to (or (:id active-tab) (:ticket-id (get @zendesk-state :active-tab)))
-        interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
-                        :external-crm-name "zendesk"
-                        :external-crm-related-to related-to
-                        :external-crm-related-to-uri (str "/tickets/" related-to)}
+        interrupt-type "interaction-hook-add"
+        {:keys [subject id ticket-id] :as ticket} (or active-tab (get @zendesk-state :active-tab))
+        related-to (or id ticket-id)
+        resource-id (state/get-active-user-id)
+        interrupt-body {:hook-by (get @zendesk-state :zen-user-id)
+                        :hook-type "zendesk"
+                        :hook-sub-type "ticket"
+                        :hook-id related-to
+                        :hook-name subject
+                        :hook-pop (str "/tickets/" related-to)
+                        :resource-id resource-id}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (do
         (update-active-tab! interaction-id (or active-tab {:ticket-id related-to}))
-        (.then (js/client.request (str "/api/v2/tickets/" related-to ".json"))
-               (fn [response]
-                 (ih/publish {:topics topic
-                              :response (merge {:interaction-id interaction-id} interrupt-body (js->clj response :keywordize-keys true))
-                              :callback callback}))))
+        (ih/publish {:topics topic
+                     :response (merge {:interaction-id interaction-id} interrupt-body (js->clj ticket :keywordize-keys true))
+                     :callback callback}))
       (ih/publish {:topics topic
                    :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.zendesk.unassignRelatedTo({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::assign-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback ::specs/active-tab]))
+
+(def-sdk-fn unassign-related-to
+  {:validation ::assign-params
+   :topic-key "cxengage/zendesk/related-to-assignment-acknowledged"}
+  [params]
+  (let [{:keys [callback topic active-tab interaction-id]} params
+        tenant-id (ih/get-active-tenant-id)
+        interrupt-type "interaction-hook-drop"
+        {:keys [subject id ticket-id] :as ticket} (or active-tab (get @zendesk-state :active-tab))
+        related-to (or id ticket-id)
+        resource-id (state/get-active-user-id)
+        interrupt-body {:hook-by (get @zendesk-state :zen-user-id)
+                        :hook-type "zendesk"
+                        :hook-sub-type "ticket"
+                        :hook-id related-to
+                        :hook-name subject
+                        :hook-pop (str "/tickets/" related-to)
+                        :resource-id resource-id}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (do
+        (update-active-tab! interaction-id (or active-tab {:ticket-id related-to}))
+        (ih/publish {:topics topic
+                     :response (merge {:interaction-id interaction-id} interrupt-body (js->clj ticket :keywordize-keys true))
+                     :callback callback}))
+      (ih/publish {:topics topic
+                   :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
+                   :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.zendesk.assignContact({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn assign-contact
   {:validation ::assign-params
@@ -167,26 +214,61 @@
   [params]
   (let [{:keys [callback topic active-tab interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
-        interrupt-type "assign-contact"
-        contact (or (:id active-tab) (:user-id (get @zendesk-state :active-tab)))
-        interrupt-body {:external-crm-user (get @zendesk-state :zen-user-id)
-                        :external-crm-name "zendesk"
-                        :external-crm-contact contact
-                        :external-crm-contact-uri (str "/users/" contact)}
+        interrupt-type "interaction-hook-add"
+        {:keys [name id user-id] :as user} (or active-tab (get @zendesk-state :active-tab))
+        contact (or id user-id)
+        resource-id (state/get-active-user-id)
+        interrupt-body {:hook-by (get @zendesk-state :zen-user-id)
+                        :hook-type "zendesk"
+                        :hook-sub-type "user"
+                        :hook-id contact
+                        :hook-name name
+                        :hook-pop (str "/users/" contact)
+                        :resource-id resource-id}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (do
         (update-active-tab! interaction-id (or active-tab {:user-id contact}))
-        (.then (js/client.request (str "/api/v2/users/" contact ".json"))
-               (fn [response]
-                 (ih/publish {:topics topic
-                              :response (merge {:interaction-id interaction-id} interrupt-body (js->clj response :keywordize-keys true))
-                              :callback callback}))))
+        (ih/publish {:topics topic
+                     :response (merge {:interaction-id interaction-id} interrupt-body (js->clj user :keywordize-keys true))
+                     :callback callback}))
       (ih/publish {:topics topic
                    :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
                    :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.zendesk.unassignContact({
+;;   interactionId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
 
+(def-sdk-fn unassign-contact
+  {:validation ::assign-params
+   :topic-key "cxengage/zendesk/contact-assignment-acknowledged"}
+  [params]
+  (let [{:keys [callback topic active-tab interaction-id]} params
+        tenant-id (ih/get-active-tenant-id)
+        interrupt-type "interaction-hook-drop"
+        {:keys [name id user-id] :as user} (or active-tab (get @zendesk-state :active-tab))
+        contact (or id user-id)
+        resource-id (state/get-active-user-id)
+        interrupt-body {:hook-by (get @zendesk-state :zen-user-id)
+                        :hook-type "zendesk"
+                        :hook-sub-type "user"
+                        :hook-id contact
+                        :hook-name name
+                        :hook-pop (str "/users/" contact)
+                        :resource-id resource-id}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (do
+        (update-active-tab! interaction-id (or active-tab {:user-id contact}))
+        (ih/publish {:topics topic
+                     :response (merge {:interaction-id interaction-id} interrupt-body (js->clj user :keywordize-keys true))
+                     :callback callback}))
+      (ih/publish {:topics topic
+                   :error (error/failed-to-send-zendesk-assign-err interaction-id interrupt-response)
+                   :callback callback}))))
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk Initialization Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -221,9 +303,22 @@
                                                      (ih/publish {:topics "cxengage/zendesk/click-to-email-requested"
                                                                   :response data})))
                 (js/client.on "activeTab" (fn [tab-data]
-                                            (swap! zendesk-state assoc :active-tab (ih/extract-params tab-data))
-                                            (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
-                                                         :response tab-data})))
+                                            (let [tab-data (ih/extract-params tab-data)]
+                                              (if (:user-id tab-data)
+                                                (.then (js/client.request (str "/api/v2/users/" (:user-id tab-data) ".json"))
+                                                       (fn [response]
+                                                         (aset response "user" "userId" (aget response "user" "id"))
+                                                         (aset response "user" "type" "user")
+                                                         (swap! zendesk-state assoc :active-tab (:user (js->clj response :keywordize-keys true)))
+                                                         (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
+                                                                      :response (js->clj response :keywordize-keys true)})))
+                                                (.then (js/client.request (str "/api/v2/tickets/" (:ticket-id tab-data) ".json"))
+                                                       (fn [response]
+                                                         (aset response "ticket" "ticketId" (aget response "ticket" "id"))
+                                                         (aset response "ticket" "type" "ticket")
+                                                         (swap! zendesk-state assoc :active-tab (:ticket (js->clj response :keywordize-keys true)))
+                                                         (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
+                                                                      :response (js->clj response :keywordize-keys true)})))))))
                 (ih/publish {:topics "cxengage/zendesk/zendesk-initialization"
                              :response true}))))
           (catch js/Object e
@@ -303,8 +398,7 @@
                             (.then (js/client.request (str "/api/v2/" pop-uri ".json"))
                                    (fn [response]
                                     (ih/publish {:topics "cxengage/zendesk/internal-pop-received"
-                                                 :response (merge {:interaction-id interaction-id} (js->clj response :keywordize-keys true))
-                                                 :callback callback}))))
+                                                 :response (merge {:interaction-id interaction-id} (js->clj response :keywordize-keys true))}))))
       (= pop-type "external-url") (if (= new-window "true")
                                     (js/window.open pop-uri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
                                     (js/window.open pop-uri))
@@ -382,6 +476,8 @@
                                                    :set-visibility set-visibility
                                                    :assign-contact assign-contact
                                                    :assign-related-to assign-related-to
+                                                   :unassign-contact unassign-contact
+                                                   :unassign-related-to unassign-related-to
                                                    :dump-state dump-state}}
                                    :module-name module-name}))
             (ih/send-core-message {:type :module-registration-status

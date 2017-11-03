@@ -226,6 +226,32 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.getCrmInteraction({
+;;   id: {{number}},
+;;   crm: {{string}},
+;;   subType: {{string}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-crm-interactions-params
+  (s/keys :req-un [::specs/id ::specs/crm ::specs/sub-type]
+          :opt-un [::specs/callback ::specs/page]))
+
+(def-sdk-fn get-crm-interactions
+  {:validation ::get-crm-interactions-params
+   :topic-key :get-crm-interactions-response}
+  [params]
+  (let [{:keys [callback topic id crm sub-type page]} params
+        {:keys [status api-response] :as history-response} (a/<! (rest/get-crm-interactions-request id crm sub-type page))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-crm-interactions-err id crm sub-type history-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; SDK Reporting Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -239,7 +265,8 @@
                                        :stat-query stat-query
                                        :get-available-stats get-available-stats
                                        :get-contact-interaction-history get-contact-interaction-history
-                                       :get-interaction get-interaction}}
+                                       :get-interaction get-interaction
+                                       :get-crm-interactions get-crm-interactions}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

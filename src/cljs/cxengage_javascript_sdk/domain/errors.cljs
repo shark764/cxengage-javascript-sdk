@@ -821,6 +821,16 @@
    :level "error"
    :message "Failed to get capacity."})
 
+(defn failed-to-get-crm-interactions-err [id crm sub-type data]
+  {:code 12006
+   :context :reporting
+   :data {:api-response data
+          :crm crm
+          :id id
+          :sub-type sub-type}
+   :level "error"
+   :message "Failed to retrieve CRM Interaction information."})
+
 (defn failed-to-retrieve-contact-layouts-list-err [data]
   {:code 13000
    :context :contacts

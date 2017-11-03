@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.6.0]
+* Added `CxEngage.reporting.getCrmInteractions()` function to the Reporting module
+* Updated Zendesk assign functions to the `interaction-hook-add` flow signal
+
 ## [6.5.1]
 * Final fixes for SSO Identity Page
 
