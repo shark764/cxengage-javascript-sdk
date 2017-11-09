@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.6.2]
+* Give zendesk unassign unique topics
+
 ## [6.6.1]
 * Fixed MQTT error logging
 * Added missing topic for get-crm-interactions
