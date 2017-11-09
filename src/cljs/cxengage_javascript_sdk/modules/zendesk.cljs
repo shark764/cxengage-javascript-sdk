@@ -176,7 +176,7 @@
 
 (def-sdk-fn unassign-related-to
   {:validation ::assign-params
-   :topic-key "cxengage/zendesk/related-to-assignment-acknowledged"}
+   :topic-key "cxengage/zendesk/related-to-unassignment-acknowledged"}
   [params]
   (let [{:keys [callback topic active-tab interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
@@ -244,7 +244,7 @@
 
 (def-sdk-fn unassign-contact
   {:validation ::assign-params
-   :topic-key "cxengage/zendesk/contact-assignment-acknowledged"}
+   :topic-key "cxengage/zendesk/contact-unassignment-acknowledged"}
   [params]
   (let [{:keys [callback topic active-tab interaction-id]} params
         tenant-id (ih/get-active-tenant-id)
