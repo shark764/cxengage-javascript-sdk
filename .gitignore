@@ -3,3 +3,5 @@
 /out
 .nrepl-*
 .cljs_rhino_repl/
+
+release
