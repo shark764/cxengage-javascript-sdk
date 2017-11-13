@@ -170,12 +170,13 @@
    :topic-key :identity-window-response}
   [params]
   (let [client-details (state/get-sso-client-details)
+        api (state/get-base-api-url)
         env (name (state/get-env))
         {:keys [client domain]} (state/get-sso-client-details)
         url (if (= env "prod")
               "https://identity.cxengage.net"
               "https://identity.cxengagelabs.net")
-        window (js/window.open (str url "?env=" env "&domain=" domain "&clientid=" client) "targetWindow" "width=500,height=500")
+        window (js/window.open (str url "?env=" api "&domain=" domain "&clientid=" client) "targetWindow" "width=500,height=500")
         _ (js/window.addEventListener "message" (partial post-message-handler window))]
     (go-loop []
       (if (= (.-closed window) false)
