@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.6.4]
+* minor SF classic fixes
+
 ## [6.6.3]
 * Updated SSO identity page information to pass full api url
 

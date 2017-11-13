@@ -226,7 +226,7 @@
 (defn handle-click-to-dial [dial-details]
   (let [result (:result (js->clj dial-details :keywordize-keys true))
         parsed-result (js/JSON.parse result)]
-    (ih/publish {:topics (topics/get-topic :on-click-to-interaction)
+    (ih/publish {:topics "cxengage/salesforce-classic/on-click-to-interaction"
                  :response parsed-result})))
 
 (defn handle-work-offer [error topic interaction-details]
@@ -284,15 +284,15 @@
         pop-callback (fn [response]
                         (auto-assign-from-search-pop response interactionId))]
     (cond
-      (= popType "internal") (try
+      (= popType "url") (try
                               (js/sforce.interaction.screenPop popUrl true)
                               (catch js/Object e
                                 (ih/publish (clj->js {:topics topic
                                                       :error e}))))
-      (= popType "external") (if (= newWindow "true")
+      (= popType "external-url") (if (= newWindow "true")
                               (js/window.open popUrl "targetWindow" ()(:width size) (:height size))
                               (js/window.open popUrl (:width size) (:height size)))
-      (= popType "search") (do
+      (= popType "search-pop") (do
                               (when (= searchType "fuzzy")
                                 (try
                                   (js/sforce.interaction.searchAndScreenPop
@@ -320,7 +320,7 @@
 (defn sfc-ready? []
   (and (aget js/window "sforce")
        (aget js/window "sforce" "console")
-       (aget js/window "sforce" "integration")))
+       (aget js/window "sforce" "interaction")))
 
 (defn ^:private sfc-init
   [integration interaction]
