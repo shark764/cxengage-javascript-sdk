@@ -302,6 +302,12 @@
                 (js/client.on "triggerClickToEmail" (fn [data]
                                                      (ih/publish {:topics "cxengage/zendesk/click-to-email-requested"
                                                                   :response data})))
+                (js/client.on "updateUser" (fn [data]
+                                            (ih/publish {:topics "cxengage/zendesk/user-update"
+                                                         :response data})))
+                (js/client.on "updateTicket" (fn [data]
+                                              (ih/publish {:topics "cxengage/zendesk/ticket-update"
+                                                           :response data})))
                 (js/client.on "activeTab" (fn [tab-data]
                                             (let [tab-data (ih/extract-params tab-data)]
                                               (if (:user-id tab-data)
