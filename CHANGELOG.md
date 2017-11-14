@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.7.0]
+* Added `updateUser` and `updateTicket` functions and pubsubs for zendesk to communicate with toolbar on user/ticket changes
+
 ## [6.6.4]
 * minor SF classic fixes
 
