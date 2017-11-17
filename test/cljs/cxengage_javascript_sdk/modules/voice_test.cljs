@@ -442,9 +442,9 @@
         (is (= {:interactionId interaction-id
                 :resourceId resource-id
                 :transferResourceId transfer-resource-id
-                :transferType "cold-transfer"} (js->clj response :keywordize-keys true)))
+                :transferType "warm-transfer"} (js->clj response :keywordize-keys true)))
         (done)))
-     (voice/cancel-resource-transfer {:interaction-id interaction-id :transfer-resource-id transfer-resource-id :transfer-type "cold"}))))
+     (voice/cancel-resource-transfer {:interaction-id interaction-id :transfer-resource-id transfer-resource-id}))))
 
 (deftest cancel-resource-transfer-error-test
   (testing "the cancel-resource-transfer function error response"
@@ -458,9 +458,9 @@
       (fn [error topic response]
         (is (= (camels (e/failed-to-cancel-resource-transfer-err {:transfer-resource-id transfer-resource-id
                                                                   :resource-id resource-id
-                                                                  :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
+                                                                  :transfer-type "warm-transfer"} not-found (js->clj error :keywordize-keys true)))))
         (done)))
-     (voice/cancel-resource-transfer {:interaction-id interaction-id :transfer-resource-id transfer-resource-id :transfer-type "cold"}))))
+     (voice/cancel-resource-transfer {:interaction-id interaction-id :transfer-resource-id transfer-resource-id}))))
 
 (deftest cancel-queue-transfer-test
   (testing "the cancel-queue-transfer function"
@@ -474,9 +474,10 @@
         (is (= {:interactionId interaction-id
                 :resourceId resource-id
                 :transferQueueId transfer-queue-id
-                :transferType "cold-transfer"} (js->clj response :keywordize-keys true)))
+                :transferType "warm-transfer"}
+               (js->clj response :keywordize-keys true)))
         (done)))
-     (voice/cancel-queue-transfer {:interaction-id interaction-id :transfer-queue-id transfer-queue-id :transfer-type "cold"}))))
+     (voice/cancel-queue-transfer {:interaction-id interaction-id :transfer-queue-id transfer-queue-id}))))
 
 (deftest cancel-queue-transfer-error-test
   (testing "the cancel-queue-transfer function error response"
@@ -489,9 +490,9 @@
       (fn [error topic response]
         (is (= (camels (e/failed-to-cancel-queue-transfer-err {:transfer-queue-id transfer-queue-id
                                                                :resource-id resource-id
-                                                               :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
+                                                               :transfer-type "warm-transfer"} not-found)) (js->clj error :keywordize-keys true)))
         (done)))
-     (voice/cancel-queue-transfer {:interaction-id interaction-id :transfer-queue-id transfer-queue-id :transfer-type "cold"}))))
+     (voice/cancel-queue-transfer {:interaction-id interaction-id :transfer-queue-id transfer-queue-id}))))
 
 (deftest cancel-extension-transfer-test
   (testing "the cancel-extension-transfer function"
@@ -505,9 +506,9 @@
         (is (= {:interactionId interaction-id
                 :resourceId resource-id
                 :transferExtension transfer-extension
-                :transferType "cold-transfer"} (js->clj response :keywordize-keys true)))
+                :transferType "warm-transfer"} (js->clj response :keywordize-keys true)))
         (done)))
-     (voice/cancel-extension-transfer {:interaction-id interaction-id :transfer-extension transfer-extension :transfer-type "cold"}))))
+     (voice/cancel-extension-transfer {:interaction-id interaction-id :transfer-extension transfer-extension}))))
 
 (deftest cancel-extension-transfer-error-test
   (testing "the cancel-extension-transfer function error response"
@@ -520,9 +521,9 @@
       (fn [error topic response]
         (is (= (camels (e/failed-to-cancel-extension-transfer-err {:transfer-extension transfer-extension
                                                                    :resource-id resource-id
-                                                                   :transfer-type "cold-transfer"} not-found)) (js->clj error :keywordize-keys true)))
+                                                                   :transfer-type "warm-transfer"} not-found)) (js->clj error :keywordize-keys true)))
         (done)))
-     (voice/cancel-extension-transfer {:interaction-id interaction-id :transfer-extension transfer-extension :transfer-type "cold"}))))
+     (voice/cancel-extension-transfer {:interaction-id interaction-id :transfer-extension transfer-extension}))))
 
 (def flow-id (id/make-random-uuid))
 (def flow-version (id/make-random-uuid))

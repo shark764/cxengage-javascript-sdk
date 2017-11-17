@@ -13,6 +13,7 @@
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
+            [cxengage-javascript-sdk.modules.interaction :as int]
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec.alpha :as s]))
 
@@ -22,26 +23,6 @@
 
 (s/def ::generic-resource-voice-interaction-fn-params
   (s/keys :req-un [::specs/interaction-id ::specs/target-resource-id]
-          :opt-un [::specs/callback]))
-
-(s/def ::extension-transfer-params
-  (s/keys :req-un [::specs/interaction-id ::specs/transfer-extension ::specs/transfer-type]
-          :opt-un [::specs/callback]))
-
-(s/def ::queue-transfer-params
-  (s/keys :req-un [::specs/interaction-id ::specs/queue-id ::specs/transfer-type]
-          :opt-un [::specs/callback]))
-
-(s/def ::resource-transfer-params
-  (s/keys :req-un [::specs/interaction-id ::specs/resource-id ::specs/transfer-type]
-          :opt-un [::specs/callback]))
-
-(s/def ::cancel-resource-transfer-params
-  (s/keys :req-un [::specs/interaction-id ::specs/transfer-resource-id ::specs/transfer-type]
-          :opt-un [::specs/callback]))
-
-(s/def ::cancel-queue-transfer-params
-  (s/keys :req-un [::specs/interaction-id ::specs/transfer-queue-id ::specs/transfer-type]
           :opt-un [::specs/callback]))
 
 (s/def ::silent-monitoring-params
@@ -312,28 +293,14 @@
 ;; CxEngage.interactions.voice.transferToResource({
 ;;   interactionId: "{{uuid}}",
 ;;   resourceId: "{{uuid}}",
-;;   transferType: "{{uuid}}"
+;;   transferType: "{{warm or cold}}"
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-(def-sdk-fn transfer-to-resource
-  {:validation ::resource-transfer-params
-   :topic-key :customer-transfer-acknowledged}
-  [params]
-  (let [{:keys [interaction-id resource-id transfer-type topic callback]} params
-        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
-        interrupt-type "customer-transfer"
-        interrupt-body {:transfer-resource-id resource-id
-                        :resource-id (state/get-active-user-id)
-                        :transfer-type transfer-type}
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-transfer-to-resource-err interrupt-body interrupt-response)
-                  :callback callback}))))
+(defn transfer-to-resource [params]
+  (log :warn "Function 'CxEngage.interactions.voice.transferToResource' will be deprecated.
+              Use 'CxEngage.interactions.transferToResource' instead.")
+  (int/transfer-to-resource params))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.transferToQueue({
@@ -343,24 +310,10 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-(def-sdk-fn transfer-to-queue
-  {:validation ::queue-transfer-params
-   :topic-key :customer-transfer-acknowledged}
-  [params]
-  (let [{:keys [interaction-id queue-id transfer-type topic callback]} params
-        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
-        interrupt-type "customer-transfer"
-        interrupt-body {:transfer-queue-id queue-id
-                        :resource-id (state/get-active-user-id)
-                        :transfer-type transfer-type}
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-transfer-to-queue-err interrupt-body interrupt-response)
-                  :callback callback}))))
+(defn transfer-to-queue [params]
+  (log :warn "Function 'CxEngage.interactions.voice.transferToQueue' will be deprecated.
+              Use 'CxEngage.interactions.transferToQueue' instead.")
+  (int/transfer-to-queue params))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.transferToExtension({
@@ -370,24 +323,10 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-(def-sdk-fn transfer-to-extension
-  {:validation ::extension-transfer-params
-   :topic-key :customer-transfer-acknowledged}
-  [params]
-  (let [{:keys [interaction-id transfer-extension transfer-type topic callback]} params
-        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
-        interrupt-type "customer-transfer"
-        interrupt-body {:transfer-extension transfer-extension
-                        :resource-id (state/get-active-user-id)
-                        :transfer-type transfer-type}
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-transfer-to-extension-err interrupt-body interrupt-response)
-                  :callback callback}))))
+(defn transfer-to-extension [params]
+  (log :warn "Function 'CxEngage.interactions.voice.transferToExtension' will be deprecated.
+              Use 'CxEngage.interactions.transferToExtension' instead.")
+  (int/transfer-to-extension params))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.cancelResourceTransfer({
@@ -397,24 +336,10 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-(def-sdk-fn cancel-resource-transfer
-  {:validation ::cancel-resource-transfer-params
-   :topic-key :cancel-transfer-acknowledged}
-  [params]
-  (let [{:keys [interaction-id transfer-resource-id transfer-type topic callback]} params
-        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
-        interrupt-type "transfer-cancel"
-        interrupt-body {:transfer-resource-id transfer-resource-id
-                        :resource-id (state/get-active-user-id)
-                        :transfer-type transfer-type}
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-cancel-resource-transfer-err interrupt-body interrupt-response)
-                  :callback callback}))))
+(defn cancel-resource-transfer [params]
+  (log :warn "Function 'CxEngage.interactions.voice.cancelResourceTransfer' will be deprecated.
+              Use 'CxEngage.interactions.cancelResourceTransfer' instead.")
+  (int/cancel-resource-transfer params))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.cancelQueueTransfer({
@@ -424,24 +349,10 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-(def-sdk-fn cancel-queue-transfer
-  {:validation ::cancel-queue-transfer-params
-   :topic-key :cancel-transfer-acknowledged}
-  [params]
-  (let [{:keys [interaction-id transfer-queue-id transfer-type topic callback]} params
-        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
-        interrupt-type "transfer-cancel"
-        interrupt-body {:transfer-queue-id transfer-queue-id
-                        :resource-id (state/get-active-user-id)
-                        :transfer-type transfer-type}
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-cancel-queue-transfer-err interrupt-body interrupt-response)
-                  :callback callback}))))
+(defn cancel-queue-transfer [params]
+  (log :warn "Function 'CxEngage.interactions.voice.cancelQueueTransfer' will be deprecated.
+              Use 'CxEngage.interactions.cancelQueueTransfer' instead.")
+  (int/cancel-queue-transfer params))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.cancelExtensionTransfer({
@@ -451,24 +362,10 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-(def-sdk-fn cancel-extension-transfer
-  {:validation ::extension-transfer-params
-   :topic-key :cancel-transfer-acknowledged}
-  [params]
-  (let [{:keys [interaction-id transfer-extension transfer-type topic callback]} params
-        transfer-type (if (= transfer-type "cold") "cold-transfer" "warm-transfer")
-        interrupt-type "transfer-cancel"
-        interrupt-body {:transfer-extension transfer-extension
-                        :resource-id (state/get-active-user-id)
-                        :transfer-type transfer-type}
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-cancel-extension-transfer-err interrupt-body interrupt-response)
-                  :callback callback}))))
+(defn cancel-extension-transfer [params]
+  (log :warn "Function 'CxEngage.interactions.voice.cancelExtensionTransfer' will be deprecated.
+              Use 'CxEngage.interactions.cancelExtensionTransfer' instead.")
+  (int/cancel-extension-transfer params))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.dial({
