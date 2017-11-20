@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.1]
+* CXV1-11949 - Added dynamic detection of outbound integration type
+
 ## [6.8.0]
 * CXV1-11731 - Added SDK support for non-voice transfers  
 

@@ -332,6 +332,9 @@
 (defn get-all-integrations []
   (get-state-value [:session :config :integrations]))
 
+(defn get-outbound-integration-type []
+  (get-state-value [:session :config :outbound-integration :type]))
+
 (defn get-active-extension []
   (get-state-value [:session :config :active-extension]))
 
