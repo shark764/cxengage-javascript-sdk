@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.0]
+* CXV1-11731 - Added SDK support for non-voice transfers  
+
 ## [6.7.0]
 * Added `updateUser` and `updateTicket` functions and pubsubs for zendesk to communicate with toolbar on user/ticket changes
 

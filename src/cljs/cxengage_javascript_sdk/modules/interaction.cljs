@@ -449,6 +449,188 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.transferToResource({
+;;   interactionId: "{{uuid}}",
+;;   resourceId: "{{uuid}}",
+;;   transferType: "{{warm or cold}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+(s/def ::resource-transfer-params
+  (s/keys :req-un [::specs/interaction-id ::specs/resource-id]
+          :opt-un [::specs/transfer-type ::specs/callback]))
+
+(def-sdk-fn transfer-to-resource
+  {:validation ::resource-transfer-params
+   :topic-key :customer-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id resource-id transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "warm") "warm-transfer" "cold-transfer")
+        interrupt-type "customer-transfer"
+        interrupt-body {:transfer-resource-id resource-id
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-transfer-to-resource-err interrupt-body interrupt-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.transferToQueue({
+;;   interactionId: "{{uuid}}",
+;;   queueId: "{{uuid}}",
+;;   transferType: "{{warm or cold}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+(s/def ::queue-transfer-params
+  (s/keys :req-un [::specs/interaction-id ::specs/queue-id]
+          :opt-un [::specs/transfer-type ::specs/callback]))
+
+(def-sdk-fn transfer-to-queue
+  {:validation ::queue-transfer-params
+   :topic-key :customer-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id queue-id transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "warm") "warm-transfer" "cold-transfer")
+        interrupt-type "customer-transfer"
+        interrupt-body {:transfer-queue-id queue-id
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-transfer-to-queue-err interrupt-body interrupt-response)
+                  :callback callback}))))
+
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.transferToExtension({
+;;   interactionId: "{{uuid}}",
+;;   transferExtension: {type: "pstn", value: "+15055555555"},
+;;   transferType: "{{warm or cold}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+(s/def ::extension-transfer-params
+  (s/keys :req-un [::specs/interaction-id ::specs/transfer-extension]
+          :opt-un [::specs/transfer-type ::specs/callback]))
+
+(def-sdk-fn transfer-to-extension
+  {:validation ::extension-transfer-params
+   :topic-key :customer-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id transfer-extension transfer-type topic callback]} params
+        transfer-type (if (= transfer-type "warm") "warm-transfer" "cold-transfer")
+        interrupt-type "customer-transfer"
+        interrupt-body {:transfer-extension transfer-extension
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-transfer-to-extension-err interrupt-body interrupt-response)
+                  :callback callback}))))
+
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.cancelResourceTransfer({
+;;   interactionId: "{{uuid}}",
+;;   transferResourceId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+(s/def ::cancel-resource-transfer-params
+  (s/keys :req-un [::specs/interaction-id ::specs/transfer-resource-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn cancel-resource-transfer
+  {:validation ::cancel-resource-transfer-params
+   :topic-key :cancel-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id transfer-resource-id topic callback]} params
+        transfer-type "warm-transfer" ; only warm transfers can be cancelled
+        interrupt-type "transfer-cancel"
+        interrupt-body {:transfer-resource-id transfer-resource-id
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-cancel-resource-transfer-err interrupt-body interrupt-response)
+                  :callback callback}))))
+
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.cancelQueueTransfer({
+;;   interactionId: "{{uuid}}",
+;;   transferQueueId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+(s/def ::cancel-queue-transfer-params
+  (s/keys :req-un [::specs/interaction-id ::specs/transfer-queue-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn cancel-queue-transfer
+  {:validation ::cancel-queue-transfer-params
+   :topic-key :cancel-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id transfer-queue-id topic callback]} params
+        transfer-type "warm-transfer" ; only warm transfers can be cancelled
+        interrupt-type "transfer-cancel"
+        interrupt-body {:transfer-queue-id transfer-queue-id
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-cancel-queue-transfer-err interrupt-body interrupt-response)
+                  :callback callback}))))
+
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.interactions.cancelExtensionTransfer({
+;;   interactionId: "{{uuid}}",
+;;   transferExtension: {type: "pstn", value: "+15055555555"}
+;; });
+;; -------------------------------------------------------------------------- ;;
+(s/def ::cancel-extension-transfer-params
+  (s/keys :req-un [::specs/interaction-id ::specs/transfer-extension]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn cancel-extension-transfer
+  {:validation ::cancel-extension-transfer-params
+   :topic-key :cancel-transfer-acknowledged}
+  [params]
+  (let [{:keys [interaction-id transfer-extension topic callback]} params
+        transfer-type "warm-transfer" ; only warm transfers can be cancelled
+        interrupt-type "transfer-cancel"
+        interrupt-body {:transfer-extension transfer-extension
+                        :resource-id (state/get-active-user-id)
+                        :transfer-type transfer-type}
+        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (merge {:interaction-id interaction-id} interrupt-body)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-cancel-extension-transfer-err interrupt-body interrupt-response)
+                  :callback callback}))))
+
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.sendScript({
 ;;   interactionId: "{{uuid}}",
 ;;   scriptId: "{{uuid}}",
@@ -578,6 +760,12 @@
                                        :update-note update-note
                                        :get-note get-note
                                        :get-all-notes get-all-notes
+                                       :transfer-to-resource transfer-to-resource
+                                       :transfer-to-queue transfer-to-queue
+                                       :transfer-to-extension transfer-to-extension
+                                       :cancel-resource-transfer cancel-resource-transfer
+                                       :cancel-queue-transfer cancel-queue-transfer
+                                       :cancel-extension-transfer cancel-extension-transfer
                                        :select-disposition-code select-disposition
                                        :deselect-disposition-code deselect-disposition
                                        :send-script send-script
