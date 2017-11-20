@@ -384,6 +384,7 @@
   (let [{:keys [topic phone-number callback]} params
         resource-id (state/get-active-user-id)
         session-id (state/get-session-id)
+        outbound-integration-type (state/get-outbound-integration-type)
         dial-body {:channel-type "voice"
                    :contact-point "click to call"
                    :customer phone-number
@@ -391,7 +392,7 @@
                    :interaction {:resource-id resource-id
                                  :session-id session-id}
                    :metadata {}
-                   :source "twilio"}]
+                   :source outbound-integration-type}]
     (let [dial-response (a/<! (rest/create-interaction-request dial-body))
           {:keys [api-response status]} dial-response]
       (if (= status 200)
