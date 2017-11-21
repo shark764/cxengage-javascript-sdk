@@ -293,6 +293,7 @@
                        (fn [user]
                          (swap! zendesk-state assoc :zen-user-id (get-in (js->clj user :keywordize-keys true) [:currentUser :id]))))
                 (swap! zendesk-state assoc :context context)
+                (js/client.trigger "initialised") ;; event for user/ticket widgets to set active tab
                 (js/client.on "triggerClickToDial" (fn [data]
                                                     (ih/publish {:topics "cxengage/zendesk/click-to-dial-requested"
                                                                  :response data})))

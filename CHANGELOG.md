@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.2]
+* CXV1-12166 - Add initialised event for user/ticket to set active tab on
+
 ## [6.8.1]
 * CXV1-11949 - Added dynamic detection of outbound integration type
 
