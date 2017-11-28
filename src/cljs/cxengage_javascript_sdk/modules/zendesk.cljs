@@ -11,6 +11,7 @@
             [cxengage-javascript-sdk.domain.errors :as error]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.pubsub :as p]
             [cxengage-javascript-sdk.domain.api-utils :as api]
             [cxengage-javascript-sdk.domain.errors :as errors]
             [promesa.core :as prom :refer [promise all then]]
@@ -438,9 +439,11 @@
                                               :else (if (= (:auto-answer interaction) true)
                                                       (pop-search-modal search-results interaction-id)
                                                       (ih/subscribe (topics/get-topic :work-accepted-received)
-                                                                    (fn [e,t,r]
+                                                                    (fn [e,t,r,subscription-id]
                                                                       (if (= interaction-id (:interaction-id (ih/extract-params r)))
-                                                                        (pop-search-modal search-results interaction-id)))))))))))
+                                                                        (do
+                                                                          (pop-search-modal search-results interaction-id)
+                                                                          (p/unsubscribe subscription-id))))))))))))
                                   (when (= search-type "strict")
                                     (let [query (reduce-kv
                                                  (fn [s k v]
@@ -450,7 +453,7 @@
                                        (.then (js/client.request (clj->js {:url query
                                                                            :type "POST"}))
                                               (fn [result]
-                                                (let [search-results (:results (ih/extract-params result ))]
+                                                (let [search-results (:results (ih/extract-params result))]
                                                   (cond
                                                     (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
                                                                                               :response []})
@@ -460,9 +463,11 @@
                                                     :else (if (= (:auto-answer interaction) true)
                                                             (pop-search-modal search-results interaction-id)
                                                             (ih/subscribe (topics/get-topic :work-accepted-received)
-                                                                          (fn [e,t,r]
+                                                                          (fn [e,t,r,subscription-id]
                                                                             (if (= interaction-id (:interaction-id (ih/extract-params r)))
-                                                                              (pop-search-modal search-results interaction-id)))))))))))))))
+                                                                              (do
+                                                                                (pop-search-modal search-results interaction-id)
+                                                                                (p/unsubscribe subscription-id))))))))))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk Module
