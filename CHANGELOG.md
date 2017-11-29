@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.3]
+* CXV1-12247 - Fix "from" for non-customer messaging messages (keep agent's from id the same)
+
 ## [6.8.2]
 * CXV1-12166 - Add initialised event for user/ticket to set active tab on
 
