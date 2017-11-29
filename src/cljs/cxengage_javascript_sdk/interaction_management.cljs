@@ -117,7 +117,7 @@
         interaction-id (:to payload)
         channel-id (:id payload)
         from (:from payload)]
-    (log :info "[Messaging] Payload prior to filtering:" payload)
+    (log :info "[Messaging] Payload prior to filtering:" (clj->js payload))
     (when (= (:type payload) "message")
       (p/publish {:topics (topics/get-topic :new-message-received)
                   :response (:payload (state/augment-messaging-payload {:payload payload}))})
