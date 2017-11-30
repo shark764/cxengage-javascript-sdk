@@ -78,9 +78,7 @@
   [topic]
   (let [all-topics (keys @sdk-subscriptions)]
     (when-let [matched-topic (first (filter #(= topic %) all-topics))]
-      (-> @sdk-subscriptions
-          (get matched-topic)
-          (vals)))))
+      (get @sdk-subscriptions matched-topic))))
 
 (defn publish
   "Publishes a value (or error) to a specific topic, optionally calling the callback provided and optionally leaving the casing of the response unaltered."
@@ -91,18 +89,33 @@
         topics (ih/camelify topics)
         error (ih/camelify error)
         response (if preserve-casing?
-                   (clj->js response)
-                   (ih/camelify response))
-        relevant-subscribers (->> topics
-                                  (map get-topic-permutations)
-                                  (flatten)
-                                  (distinct)
-                                  (map get-subscribers-by-topic)
-                                  (filter (complement nil?))
-                                  (flatten))]
+                      (clj->js response)
+                      (ih/camelify response))
+        topic-permutations (distinct (flatten (map get-topic-permutations topics)))
+
+        ; relevant-subscribers is a list of maps: 1 map per topic (keys=subscription ids, values=callbacks)
+        relevant-subscribers (filter (complement nil?) (map get-subscribers-by-topic topic-permutations))]
+
     (when (not-empty relevant-subscribers)
-      (doseq [cb relevant-subscribers]
-        (doseq [t topics]
-          (cb error t response))))
+      ; Iterate through each map (representing each topic-permutation)
+      (doseq [topic-permutation relevant-subscribers]
+        ; Iterate through each key (representing each subscriber to this topic)
+        (doseq [subscription-id (keys topic-permutation)]
+          (doseq [t topics]
+            (let [cb (get topic-permutation subscription-id)]
+              (if-not (nil? cb)
+                ; we are passing subscription id as the fourth parameter as a
+                ; temporary fix for a specific bug -- we do not recommend using this
+                ; as we hope to remove it later and add subscription ID into the response
+                ; instead.
+                ;
+                ; Tech Debt - response should become standardized so that it is:
+                ;       - Always a map
+                ;       - Reliably contains system-generated information such as
+                ;            status and subscription ID
+                ;       - Custom formatted data should be stored in some standardized
+                ;            key in this map (e.g. :data))
+
+                (cb error t response subscription-id)))))))
     (when (and (fn? callback) callback) (callback error topics response)))
   nil)
