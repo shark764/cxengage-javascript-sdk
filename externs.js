@@ -186,6 +186,11 @@ sforce.interaction.searchAndScreenPop = function() {};
 sforce.interaction.cti.onClickToDial = function() {};
 
 /**
+* @return {Object}
+*/
+sforce.interaction.onFocus = function() {};
+
+/**
 * @interface
 */
 sforce.opencti = function() {};

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.5]
+* CXV1-12004 - Update Salesforce Classic module
+
 ## [6.8.4]
 * CXV1-11791 - Fixed reappearance of modal in zendesk when interaction is transferred back to the initial agent that answered the call.
 

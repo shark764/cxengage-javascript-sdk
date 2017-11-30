@@ -11,6 +11,7 @@
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.api-utils :as api]
+            [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.errors :as errors]
             [cljs.spec.alpha :as s]))
 
@@ -24,6 +25,20 @@
   (let [{:keys [interactionId]} interaction]
     (swap! sfc-state assoc-in [:interactions interactionId] interaction)))
 
+(defn get-active-tab []
+  (:active-tab @sfc-state))
+
+(defn set-active-tab! [tab-details]
+  (swap! sfc-state assoc-in [:active-tab] tab-details))
+
+(defn get-hook [interaction-id]
+  (or (get-in @sfc-state [:interactions interaction-id :hook]) {}))
+
+(defn add-hook! [interaction-id hook-details]
+  (swap! sfc-state assoc-in [:interactions interaction-id :hook] hook-details))
+
+(defn remove-hook! [interaction-id object-id]
+  (swap! sfc-state assoc-in [:interactions interaction-id :hook] {}))
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceClassic.setDimensions({
 ;;   height: "{{number}}",
@@ -37,7 +52,7 @@
 
 (def-sdk-fn set-dimensions
   {:validation ::set-dimensions-params
-   :topic-key "cxengage/sfc/set-dimensions-response"}
+   :topic-key "cxengage/salesforce-classic/set-dimensions-response"}
   [params]
   (let [{:keys [topic height width callback]} params]
       (try
@@ -66,7 +81,7 @@
 
 (def-sdk-fn is-visible?
   {:validation ::is-visible-params
-   :topic-key "cxengage/sfc/is-visible-response"}
+   :topic-key "cxengage/salesforce-classic/is-visible-response"}
   [params]
   (let [{:keys [topic callback]} params]
     (try (js/sforce.interaction.isVisible
@@ -91,7 +106,7 @@
 
 (def-sdk-fn set-visibility
   {:validation ::set-visibility-params
-   :topic-key "cxengage/sfc/set-visibility-response"}
+   :topic-key "cxengage/salesforce-classic/set-visibility-response"}
   [params]
   (let [{:keys [topic visibility callback]} params]
     (try (js/sforce.interaction.setVisible visibility
@@ -105,7 +120,7 @@
                                  :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.salesforceClassic.assignContact({
+;; CxEngage.salesforceClassic.assign({
 ;;   interactionId: "{{uuid}}"
 ;; });
 ;; -------------------------------------------------------------------------- ;;
@@ -114,40 +129,68 @@
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
-(defn send-assign-interrupt [page-info interaction-id callback topic]
-  (let [parsed-result (ih/extract-params page-info)
-        {:keys [object objectId]} parsed-result
-        interrupt-type "assign-contact"
-        interrupt-body (if (or (= object "Contact") (= object "Lead"))
-                        {:external-crm-user (get @sfc-state :resource-id)
-                         :external-crm-name "salesforce-classic"
-                         :external-crm-contact objectId
-                         :external-crm-contact-uri objectId}
-                        {:external-crm-user (get @sfc-state :resource-id)
-                         :external-crm-name "salesforce-classic"
-                         :external-crm-related-to objectId
-                         :external-crm-related-to-uri objectId})
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
-      (ih/publish (clj->js {:topics topic
-                            :response (merge {:interaction-id interaction-id} interrupt-body)
-                            :callback callback}))
-      (ih/publish (clj->js {:topics topic
-                            :error (e/failed-to-send-salesforce-classic-assign-err interaction-id interrupt-response)
-                            :callback callback})))))
+(defn send-assign-interrupt [tab-details interaction-id callback topic]
+  (go
+    (let [{:keys [object objectId objectName]} tab-details
+          resource-id (state/get-active-user-id)
+          interrupt-type "interaction-hook-add"
+          interrupt-body {:hook-by resource-id
+                          :hook-type "salesforce-classic"
+                          :hook-sub-type object
+                          :hook-id objectId
+                          :hook-name objectName
+                          :hook-pop (str "/" objectId)
+                          :resource-id resource-id}
+          _ (add-hook! interaction-id interrupt-body)
+          {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+      (if (= status 200)
+        (ih/publish (clj->js {:topics topic
+                              :response (merge {:interaction-id interaction-id} interrupt-body)
+                              :callback callback}))
+        (ih/publish (clj->js {:topics topic
+                              :error (e/failed-to-send-salesforce-classic-assign-err interaction-id interrupt-response)
+                              :callback callback}))))))
 
-(def-sdk-fn assign-contact
+(def-sdk-fn assign
   {:validation ::assign-contact-params
-   :topic-key "cxengage/sfc/contact-assignment-acknowledged"}
+   :topic-key "cxengage/salesforce-classic/contact-assignment-acknowledged"}
   [params]
-  (let [{:keys [callback topic interaction-id]} params]
-    (try (js/sforce.interaction.getPageInfo
-          (fn [response]
-           (send-assign-interrupt response interaction-id callback topic)))
-         (catch js/Object e
-           (ih/publish (clj->js {:topics topic
-                                 :error e
-                                 :callback callback}))))))
+  (let [{:keys [callback topic interaction-id]} params
+        tab (get-active-tab)]
+    (send-assign-interrupt tab interaction-id callback topic)))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.salesforceClassic.unassign({
+;;   interactionId: "{{uuid}}",
+;;   objectId: "{{string}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::unassign-contact-params
+  (s/keys :req-un [::specs/interaction-id ::specs/object-id]
+          :opt-un [::specs/callback]))
+
+(defn send-unassign-interrupt [hook interaction-id callback topic]
+  (go
+    (let [interrupt-type "interaction-hook-drop"
+          {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type hook))]
+      (if (= status 200)
+        (do
+          (remove-hook! interaction-id (:objectId hook))
+          (ih/publish (clj->js {:topics topic
+                                :response (merge {:interaction-id interaction-id} hook)
+                                :callback callback})))
+        (ih/publish (clj->js {:topics topic
+                              :error (e/failed-to-send-salesforce-classic-unassign-err interaction-id interrupt-response)
+                              :callback callback}))))))
+
+(def-sdk-fn unassign
+  {:validation ::unassign-contact-params
+   :topic-key "cxengage/salesforce-classic/contact-unassignment-acknowledged"}
+  [params]
+  (let [{:keys [callback topic interaction-id object-id]} params
+        hook (get-hook interaction-id)]
+    (send-unassign-interrupt hook interaction-id callback topic)))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceClassic.focusInteraction({
@@ -161,18 +204,20 @@
 
 (def-sdk-fn focus-interaction
   {:validation ::focus-interaction-params
-   :topic-key "cxengage/sfc/focus-interaction"}
+   :topic-key "cxengage/salesforce-classic/focus-interaction"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-        interaction (get-in @sfc-state [:interactions interaction-id])
-        {:keys [tab-id]} interaction]
-      (when tab-id
+        hook-id (:hook-id (get-in @sfc-state [:interactions interaction-id :hook]))]
+      (if hook-id
         (try
-          (js/sforce.console.focusPrimaryTabById tab-id)
+          (js/sforce.interaction.screenPop hook-id)
           (catch js/Object e
             (ih/publish (clj->js {:topics topic
-                                  :error e
-                                  :callback callback})))))))
+                                  :error (e/failed-to-focus-salesforce-classic-interaction-err interaction-id)
+                                  :callback callback}))))
+        (ih/publish (clj->js {:topics topic
+                              :error (e/failed-to-focus-salesforce-classic-interaction-err interaction-id)
+                              :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Helper Functions
@@ -195,11 +240,11 @@
   (let [result (:result (ih/extract-params response))
         parsed-result (ih/extract-params result)]
       (if (= 1 (count (vals parsed-result)))
-        (assign-contact (clj->js {:interaction interaction-id}))
+        (assign (clj->js {:interaction interaction-id}))
         (log :info "More than one result - skipping auto-assign"))))
 
 (defn dump-state []
-  (js/console.log @sfc-state))
+  (js/console.log (clj->js @sfc-state)))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
@@ -222,6 +267,13 @@
           (catch js/Object e
             (ih/publish (clj->js {:topics topic
                                   :error e}))))))))
+
+(defn handle-focus-change [response]
+  (let [result (-> response
+                   (aget "result")
+                   (js/JSON.parse)
+                   (js->clj :keywordize-keys true))]
+    (set-active-tab! result)))
 
 (defn handle-click-to-dial [dial-details]
   (let [result (:result (js->clj dial-details :keywordize-keys true))
@@ -246,8 +298,8 @@
                  (js/sforce.interaction.screenPop contact true pop-callback)
                  (catch js/Object e
                    (ih/publish (clj->js {:topics topic
-                                         :error e})))))))
-        :else (log :info "No screen pop details on work offer")
+                                         :error e}))))
+        :else (log :info "No screen pop details on work offer"))))
 
 (defn handle-work-accepted [error topic interaction-details]
   (let [result (js->clj interaction-details :keywordize-keys true)
@@ -285,33 +337,33 @@
                         (auto-assign-from-search-pop response interactionId))]
     (cond
       (= popType "url") (try
-                              (js/sforce.interaction.screenPop popUrl true)
-                              (catch js/Object e
-                                (ih/publish (clj->js {:topics topic
-                                                      :error e}))))
+                          (js/sforce.interaction.screenPop popUrl true)
+                          (catch js/Object e
+                            (ih/publish (clj->js {:topics topic
+                                                  :error e}))))
       (= popType "external-url") (if (= newWindow "true")
-                              (js/window.open popUrl "targetWindow" ()(:width size) (:height size))
-                              (js/window.open popUrl (:width size) (:height size)))
+                                   (js/window.open popUrl "targetWindow" ()(:width size) (:height size))
+                                   (js/window.open popUrl (:width size) (:height size)))
       (= popType "search-pop") (do
-                              (when (= searchType "fuzzy")
-                                (try
-                                  (js/sforce.interaction.searchAndScreenPop
-                                    (string/join " or " terms)
-                                    ""
-                                    "inbound"
-                                    pop-callback)
-                                  (catch js/Object e
-                                    (ih/publish (clj->js {:topics topic
-                                                          :error e})))))
-                              (when (= searchType "strict")
-                                (try (js/sforce.interaction.searchAndScreenPop
-                                       (string/join (str " " filterType " ") (vals filter))
+                                 (when (= searchType "fuzzy")
+                                   (try
+                                     (js/sforce.interaction.searchAndScreenPop
+                                       (string/join " or " terms)
                                        ""
                                        "inbound"
                                        pop-callback)
                                      (catch js/Object e
-                                      (ih/publish (clj->js {:topics topic
-                                                            :error e})))))))))
+                                       (ih/publish (clj->js {:topics topic
+                                                             :error e})))))
+                                 (when (= searchType "strict")
+                                   (try (js/sforce.interaction.searchAndScreenPop
+                                          (string/join (str " " filterType " ") (vals filter))
+                                          ""
+                                          "inbound"
+                                          pop-callback)
+                                        (catch js/Object e
+                                         (ih/publish (clj->js {:topics topic
+                                                               :error e})))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Salesforce Initialization Functions
@@ -334,6 +386,7 @@
     (if (sfc-ready?)
       (do
         (swap! sfc-state assoc :resource-id (ih/get-active-user-id))
+        (js/sforce.interaction.onFocus handle-focus-change)
         (try
           (js/sforce.interaction.cti.onClickToDial handle-click-to-dial)
           (ih/publish (clj->js {:topics "cxengage/salesforce-classic/initialize-complete"
@@ -363,7 +416,9 @@
                                                          :is-visible is-visible?
                                                          :set-visibility set-visibility
                                                          :focus-interaction focus-interaction
-                                                         :assign-contact assign-contact}}
+                                                         :assign assign
+                                                         :unassign unassign
+                                                         :dump-state dump-state}}
                               :module-name module-name})
                 (ih/subscribe (topics/get-topic :presence-state-change-request-acknowledged) handle-state-change)
                 (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)

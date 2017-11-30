@@ -930,7 +930,22 @@
    :context :salesforce-classic
    :data {:interaction-id interaction-id}
    :level "error"
-   :message "Failed to assign item. The API returned an error."})
+   :message "Failed to update interaction tab id."})
+
+(defn failed-to-send-salesforce-classic-unassign-err [interaction-id data]
+  {:code 15002
+   :context :salesforce-classic
+   :data {:interaction-id interaction-id
+          :api-response data}
+   :level "error"
+   :message "Failed to unassign item. The API returned an error."})
+
+(defn failed-to-focus-salesforce-classic-interaction-err [interaction-id]
+  {:code 15003
+   :context :salesforce-classic
+   :data {:interaction-id interaction-id}
+   :level "warn"
+   :message "Failed to focus salesforce classic interaction."})
 
 (defn failed-to-send-salesforce-lightning-assign-err [interaction-id data]
   {:code 16000
