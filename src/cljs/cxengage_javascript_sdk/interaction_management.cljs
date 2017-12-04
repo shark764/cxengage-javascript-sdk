@@ -229,14 +229,21 @@
                       (error-pub-fn))))))))))
 
 (defn handle-work-ended [message]
-  (let [{:keys [interaction-id]} message
+  (let [{:keys [interaction-id tenant-id]} message
         interaction (state/get-interaction interaction-id)
         channel-type (get interaction :channel-type)]
-    (when (and (= channel-type "voice")
-               (state/get-integration-by-type "twilio")
-               (= (:provider (state/get-active-extension)) "twilio"))
+    (cond
+      (and (= channel-type "voice")
+        (state/get-integration-by-type "twilio")
+        (= (:provider (state/get-active-extension)) "twilio"))
       (let [connection (state/get-twilio-device)]
-        (.disconnectAll connection)))
+        (.disconnectAll connection))
+      (or (= channel-type "sms")
+          (= channel-type "messaging"))
+      (messaging/unsubscribe-to-messaging-interaction
+       {:tenant-id tenant-id
+        :interaction-id interaction-id
+        :env (state/get-env)}))
     (state/transition-interaction! :active :past interaction-id)
     (p/publish {:topics (topics/get-topic :work-ended-received)
                 :response {:interaction-id interaction-id}})))

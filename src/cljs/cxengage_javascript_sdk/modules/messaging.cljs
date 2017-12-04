@@ -148,8 +148,14 @@
 (defn subscribe-to-messaging-interaction [message]
   (let [{:keys [tenant-id interaction-id env]} message
         topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
-    (log :debug "Topic:" topic)
+    (log :debug "Subscribing to topic:" topic)
     (subscribe topic)))
+
+(defn unsubscribe-to-messaging-interaction [message]
+  (let [{:keys [tenant-id interaction-id env]} message
+        topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
+    (log :debug "Unsubscribing from topic:" topic)
+    (unsubscribe topic)))
 
 (defn gen-payload [message]
   (let [{:keys [message resource-id tenant-id interaction-id]} message
