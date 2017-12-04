@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.6]
+* CXV1-12283 - Unsubscribe from MQTT on work-ended
+
 ## [6.8.5]
 * CXV1-12004 - Update Salesforce Classic module
 
