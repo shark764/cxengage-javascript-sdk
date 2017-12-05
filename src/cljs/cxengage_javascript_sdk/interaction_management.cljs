@@ -335,15 +335,21 @@
     (p/publish {:topics (topics/get-topic :wrapup-details-received)
                 :response (assoc wrapup-details :interaction-id interaction-id)})))
 
-(defn handle-wrapup-started
-  [message]
-  (let [{:keys [interaction-id]} message
+(defn handle-wrapup-started [message]
+  (let [{:keys [interaction-id tenant-id]} message
+        interaction (state/get-interaction interaction-id)
+        channel-type (get interaction :channel-type)
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
+    (when (or (= channel-type "sms")
+              (= channel-type "messaging"))
+          (messaging/unsubscribe-to-messaging-interaction
+           {:tenant-id tenant-id
+            :interaction-id interaction-id
+            :env (state/get-env)}))
     (p/publish {:topics (topics/get-topic :wrapup-started)
                 :response {:interaction-id interaction-id}})))
 
-(defn handle-wrapup-ended
-  [message]
+(defn handle-wrapup-ended [message]
   (let [{:keys [interaction-id]} message
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
     (p/publish {:topics (topics/get-topic :wrapup-ended)

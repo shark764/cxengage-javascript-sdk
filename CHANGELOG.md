@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.7]
+* CXV1-12283 - Unsubscribe from MQTT on wrapup-started
+
 ## [6.8.6]
 * CXV1-12283 - Unsubscribe from MQTT on work-ended
 
