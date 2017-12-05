@@ -126,6 +126,7 @@
   [msg]
   (let [{:keys [payload]} msg
         {:keys [from to]} payload
+        msg-metadata (get-in payload [:metadata])
         msg-type (get-in payload [:metadata :type])
         interaction (get-interaction to)
         {:keys [channel-type messaging-metadata]} interaction
@@ -135,7 +136,8 @@
                   (and (= channel-type "sms")
                        (nil? (id/valid-uuid? from))) (assoc-in msg [:payload :from] (str "+" from))
                   (and (= channel-type "messaging")
-                       (= msg-type "customer")) (assoc-in msg [:payload :from] customer-name)
+                       (or (= msg-metadata nil) ;; msg metadata is null for facebook interactions
+                           (= msg-type "customer"))) (assoc-in msg [:payload :from] customer-name)
                   :else msg)]
     payload))
 
