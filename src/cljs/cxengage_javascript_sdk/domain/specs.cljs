@@ -40,7 +40,7 @@
 (s/def ::exclude-offline boolean?)
 (s/def ::height number?)
 (s/def ::html-body string?)
-(s/def ::id number?)
+(s/def ::id (s/or :id number? :id string?))
 (s/def ::idp-id ::uuid)
 (s/def ::interaction-id ::uuid)
 (s/def ::interrupt-type string?)

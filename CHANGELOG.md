@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.10]
+* CXV1-12328 - Fix id spec for assigning in salesforce
+
 ## [6.8.9]
 * CXV1-12250 - Fix receiving scripts before work offers and getting interactions with unsubmitted scripts back (transferred)
 
