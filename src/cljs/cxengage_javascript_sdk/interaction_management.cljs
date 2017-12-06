@@ -289,7 +289,7 @@
 (defn handle-script-received [message]
   (let [{:keys [interaction-id sub-id action-id resource-id script]} message
         interaction-location (state/find-interaction-location interaction-id)]
-    (when (= false interaction-location)
+    (when (not interaction-location)
       (state/add-interaction! :incoming message))
     (state/add-script-to-interaction! interaction-id {:sub-id sub-id
                                                       :action-id action-id
