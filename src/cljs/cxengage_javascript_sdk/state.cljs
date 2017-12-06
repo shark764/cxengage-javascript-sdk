@@ -107,6 +107,9 @@
 (defn get-incoming-interaction [interaction-id]
   (get-state-value [:interactions :incoming interaction-id]))
 
+(defn get-past-interaction [interaction-id]
+  (get-state-value [:interactions :past interaction-id]))
+
 (defn active-interactions? []
   (not (empty? (get-state-value [:interactions :active]))))
 
@@ -163,8 +166,13 @@
             (get-state-value [:interactions interaction-location interaction-id :message-history]))))
 
 (defn add-interaction! [type interaction]
-  (let [{:keys [interaction-id]} interaction]
-    (swap! sdk-state assoc-in [:interactions type interaction-id] interaction)))
+  (let [{:keys [interaction-id]} interaction
+        ;; add past interaction's scripts to new interaction in case scripts have not yet been submitted
+        existing-past-interaction (get-past-interaction interaction-id)
+        interaction-with-past-scripts (if existing-past-interaction
+                                          (assoc interaction :scripts (get existing-past-interaction :scripts))
+                                          interaction)]
+    (swap! sdk-state assoc-in [:interactions type interaction-id] interaction-with-past-scripts)))
 
 (defn add-interaction-custom-field-details! [custom-field-details interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]

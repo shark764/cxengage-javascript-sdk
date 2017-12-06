@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.9]
+* CXV1-12250 - Fix receiving scripts before work offers and getting interactions with unsubmitted scripts back (transferred)
+
 ## [6.8.8]
 * CXV1-12247 - Fix "from" for Facebook messaging messages
 
