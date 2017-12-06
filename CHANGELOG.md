@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.8]
+* CXV1-12247 - Fix "from" for Facebook messaging messages
+
 ## [6.8.7]
 * CXV1-12283 - Unsubscribe from MQTT on wrapup-started
 
