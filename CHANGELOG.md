@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.11]
+* CXV1-11875 - Automatically pop multiple results modal for outbound email and sms interactions
+
 ## [6.8.10]
 * CXV1-12328 - Fix id spec for assigning in salesforce
 
