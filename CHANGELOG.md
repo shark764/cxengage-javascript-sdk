@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.8.12]
+* CXV1-12327 - Create active tab changed pub sub for salesforce classic. Fix auto-assign when there is only one search result.
+
 ## [6.8.11]
 * CXV1-11875 - Automatically pop multiple results modal for outbound email and sms interactions
 
