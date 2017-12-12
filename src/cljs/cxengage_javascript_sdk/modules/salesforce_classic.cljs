@@ -151,6 +151,13 @@
                               :error (e/failed-to-send-salesforce-classic-assign-err interaction-id interrupt-response)
                               :callback callback}))))))
 
+;; Internal function to assign contacts. Assigned contact may not be in the active tab (depending on salesforce settings).
+(defn assign-contact [object object-id interaction-id]
+  (let [tab-details {:object (get object :object)
+                     :objectId object-id
+                     :objectName (get object :Name)}]
+       (send-assign-interrupt tab-details interaction-id nil "cxengage/salesforce-classic/contact-assignment-acknowledged")))
+
 (def-sdk-fn assign
   {:validation ::assign-contact-params
    :topic-key "cxengage/salesforce-classic/contact-assignment-acknowledged"}
@@ -238,9 +245,9 @@
 
 (defn auto-assign-from-search-pop [response interaction-id]
   (let [result (:result (ih/extract-params response))
-        parsed-result (ih/extract-params result)]
+        parsed-result (ih/extract-params (js/JSON.parse result))]
       (if (= 1 (count (vals parsed-result)))
-        (assign (clj->js {:interaction interaction-id}))
+        (assign-contact (nth (vals parsed-result) 0) (nth (keys parsed-result) 0) interaction-id)
         (log :info "More than one result - skipping auto-assign"))))
 
 (defn dump-state []
@@ -273,7 +280,10 @@
                    (aget "result")
                    (js/JSON.parse)
                    (js->clj :keywordize-keys true))]
-    (set-active-tab! result)))
+    (do
+      (set-active-tab! result)
+      (ih/publish {:topics "cxengage/salesforce-classic/active-tab-changed"
+                   :response (js->clj result :keywordize-keys true)}))))
 
 (defn handle-click-to-dial [dial-details]
   (let [result (:result (js->clj dial-details :keywordize-keys true))
