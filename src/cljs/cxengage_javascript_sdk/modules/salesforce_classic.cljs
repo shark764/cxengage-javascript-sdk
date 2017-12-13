@@ -155,8 +155,9 @@
 (defn assign-contact [object object-id interaction-id]
   (let [tab-details {:object (get object :object)
                      :objectId object-id
-                     :objectName (get object :Name)}]
-       (send-assign-interrupt tab-details interaction-id nil "cxengage/salesforce-classic/contact-assignment-acknowledged")))
+                     :objectName (get object :name)}]
+    (log :debug "Object to assign:" (clj->js {:object-id object-id}) (clj->js object))
+    (send-assign-interrupt tab-details interaction-id nil "cxengage/salesforce-classic/contact-assignment-acknowledged")))
 
 (def-sdk-fn assign
   {:validation ::assign-contact-params
@@ -397,10 +398,12 @@
       (do
         (swap! sfc-state assoc :resource-id (ih/get-active-user-id))
         (js/sforce.interaction.onFocus handle-focus-change)
+        (js/sforce.interaction.cti.disableClickToDial)
         (try
           (js/sforce.interaction.cti.onClickToDial handle-click-to-dial)
           (ih/publish (clj->js {:topics "cxengage/salesforce-classic/initialize-complete"
                                 :response true}))
+          (js/sforce.interaction.getPageInfo handle-focus-change)
           (catch js/Object e
             (ih/publish (clj->js {:topics "cxengage/salesforce-classic/error/failed-to-create-click-to-dial-handler"
                                   :error e})))))
@@ -417,7 +420,7 @@
     (go-loop []
       (if (ih/core-ready?)
         (let [module-name :salesforce-classic
-              sfc-integration "https://login.salesforce.com/support/console/39.0/integration.js"
+              sfc-integration "https://login.salesforce.com/support/console/41.0/integration.js"
               sfc-interaction "https://login.salesforce.com/support/api/28.0/interaction.js"]
           (if-not sfc-integration
             (js/console.log "<----- SFC integration not found, not starting module ----->")
