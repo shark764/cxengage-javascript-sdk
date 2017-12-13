@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [6.8.13]
+* CXV1-12238 - Default click to dial as disabled until logged in
+* CXV1-12422 - Set active tab on initialisation
+* CXV1-12327 - Fix auto-assigned contact name
+
 ## [6.8.12]
 * CXV1-12327 - Create active tab changed pub sub for salesforce classic. Fix auto-assign when there is only one search result.
 
