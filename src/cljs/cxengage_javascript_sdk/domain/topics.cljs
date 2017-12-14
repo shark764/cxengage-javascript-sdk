@@ -72,7 +72,6 @@
 
                  ;; Generic Interaction Topics
                  :work-offer-received "cxengage/interactions/work-offer-received"
-                 :screen-pop-received "cxengage/interactions/url-pop-received"
                  :generic-screen-pop-received "cxengage/interactions/screen-pop-received"
                  :work-initiated-received "cxengage/interactions/work-initiated-received"
                  :disposition-codes-received "cxengage/interactions/disposition-codes-received"
@@ -178,4 +177,4 @@
   [k]
   (if-let [topic (get sdk-topics k)]
     topic
-    (log :error "Topic not found in topic list" k)))
+    (log :error "Topic not found in topic list" (clj->js k))))
