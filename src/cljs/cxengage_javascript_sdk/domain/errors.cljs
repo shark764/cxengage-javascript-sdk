@@ -954,6 +954,20 @@
    :level "warn"
    :message "Failed to focus salesforce classic interaction."})
 
+(defn failed-to-assign-salesforce-classic-item-to-interaction-err [interaction-id]
+  {:code 15004
+   :context :salesforce-classic
+   :data {:interaction-id interaction-id}
+   :level "warn"
+   :message "Failed to assign item. Interaction already has been assigned to an item."})
+
+(defn failed-to-unassign-salesforce-classic-item-from-interaction-err [interaction-id]
+  {:code 15005
+   :context :salesforce-classic
+   :data {:interaction-id interaction-id}
+   :level "warn"
+   :message "Failed to unassign item. No item has been assigned."})
+
 (defn failed-to-send-salesforce-lightning-assign-err [interaction-id data]
   {:code 16000
    :context :salesforce-lightning
