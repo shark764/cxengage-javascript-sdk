@@ -315,6 +315,30 @@
     locale))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.getTenantDetails();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-tenant-details-spec
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-tenant-details
+  {:validation ::get-tenant-details-spec
+   :topic-key :get-tenant-details}
+  [params]
+  (let [{:keys [callback topic]} params
+        resp (a/<! (rest/get-tenant-details-request))
+        {:keys [status api-response]} resp
+        tenant-details {:details (:result api-response)}]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response tenant-details
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-tenant-details-err resp)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; SDK Presence Session Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -330,7 +354,8 @@
                                        :get-active-tenant-id get-active-tenant-id
                                        :get-token get-token
                                        :get-sso-token get-sso-token
-                                       :set-locale set-locale}}
+                                       :set-locale set-locale
+                                       :get-tenant-details get-tenant-details}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

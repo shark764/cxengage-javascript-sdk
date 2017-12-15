@@ -28,6 +28,7 @@
                  :get-token-response "cxengage/session/get-token-response"
                  :get-sso-token-response "cxengage/session/get-sso-token-response"
                  :set-locale-response "cxengage/session/set-locale-response"
+                 :get-tenant-details "cxengage/session/get-tenant-details"
 
                  ;; Contact topics
                  :get-contact "cxengage/contacts/get-contact-response"

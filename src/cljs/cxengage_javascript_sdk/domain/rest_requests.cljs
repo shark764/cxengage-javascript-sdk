@@ -501,3 +501,8 @@
                                             url
                                             {:tenant-id tenant-id})}]
     (api/api-request get-crm-interactions-request)))
+
+(defn get-tenant-details-request []
+  (let [get-tenant-details-request {:method :get
+                                    :url (iu/api-url "me")}]
+    (api/api-request get-tenant-details-request)))

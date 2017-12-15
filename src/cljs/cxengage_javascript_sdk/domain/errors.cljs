@@ -126,6 +126,13 @@
    :level "error"
    :message "Failed to select tenant; unable to retrieve region data. The API returned an error."})
 
+(defn failed-to-get-tenant-details-err [data]
+  {:code 2012
+   :context :session
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to retrieve user's tenant details. The API returned an error."})
+
 (defn login-failed-token-request-err [data]
   {:code 3000
    :context :authentication

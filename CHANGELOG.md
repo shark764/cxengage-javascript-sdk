@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.9.0]
+* CXV1-12379 - Added Get Tenant Details to Session module (me route)
+
 ## [6.8.13]
 * CXV1-12238 - Default click to dial as disabled until logged in
 * CXV1-12422 - Set active tab on initialisation
