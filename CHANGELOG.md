@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.9.1]
+* CXV1-12427 - Fixed screen pop/auto-assign for transferred interactions
+* CXV1-12327 - Fixed formatting of auto-assigned object id
+
 ## [6.9.0]
 * CXV1-12379 - Added Get Tenant Details to Session module (me route)
 

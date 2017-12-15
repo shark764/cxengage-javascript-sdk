@@ -139,25 +139,17 @@
                           :hook-sub-type object
                           :hook-id objectId
                           :hook-name objectName
-                          :hook-pop (str "/" objectId)
+                          :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js tab-details)))
                           :resource-id resource-id}
           _ (add-hook! interaction-id interrupt-body)
           {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
       (if (= status 200)
         (ih/publish (clj->js {:topics topic
-                              :response (merge {:interaction-id interaction-id} interrupt-body)
+                              :response (merge {:interaction-id interaction-id} (dissoc interrupt-body :hook-by :hook-pop :resource-id))
                               :callback callback}))
         (ih/publish (clj->js {:topics topic
                               :error (e/failed-to-send-salesforce-classic-assign-err interaction-id interrupt-response)
                               :callback callback}))))))
-
-;; Internal function to assign contacts. Assigned contact may not be in the active tab (depending on salesforce settings).
-(defn assign-contact [object object-id interaction-id]
-  (let [tab-details {:object (get object :object)
-                     :objectId object-id
-                     :objectName (get object :name)}]
-    (log :debug "Object to assign:" (clj->js {:object-id object-id}) (clj->js object))
-    (send-assign-interrupt tab-details interaction-id nil "cxengage/salesforce-classic/contact-assignment-acknowledged")))
 
 (def-sdk-fn assign
   {:validation ::assign-contact-params
@@ -246,9 +238,17 @@
 
 (defn auto-assign-from-search-pop [response interaction-id]
   (let [result (:result (ih/extract-params response))
-        parsed-result (ih/extract-params (js/JSON.parse result))]
+        parsed-result (ih/extract-params (js/JSON.parse result) true)]
       (if (= 1 (count (vals parsed-result)))
-        (assign-contact (nth (vals parsed-result) 0) (nth (keys parsed-result) 0) interaction-id)
+        (let [_ (log :info "Only one search result. Assigning:" (clj->js parsed-result))
+              object-id (name (first (keys parsed-result)))
+              object-map (first (vals parsed-result))
+              object (get object-map :object)
+              object-name (get object-map :Name)
+              tab-details {:object object
+                           :objectId object-id
+                           :objectName object-name}]
+          (send-assign-interrupt tab-details interaction-id nil "cxengage/salesforce-classic/contact-assignment-acknowledged"))
         (log :info "More than one result - skipping auto-assign"))))
 
 (defn dump-state []
@@ -342,39 +342,52 @@
                               :error e}))))))
 
 (defn handle-screen-pop [error topic interaction-details]
-  (let [result (js->clj interaction-details :keywordize-keys true)
-        {:keys [popType popUrl newWindow size searchType filter filterType terms interactionId]} result
+  (let [_ (log :debug "Handling screen pop:" interaction-details)
+        result (js->clj interaction-details :keywordize-keys true)
+        {:keys [version popType popUrl popUri newWindow size searchType filter filterType terms interactionId]} result
         pop-callback (fn [response]
                         (auto-assign-from-search-pop response interactionId))]
-    (cond
-      (= popType "url") (try
-                          (js/sforce.interaction.screenPop popUrl true)
-                          (catch js/Object e
-                            (ih/publish (clj->js {:topics topic
-                                                  :error e}))))
-      (= popType "external-url") (if (= newWindow "true")
-                                   (js/window.open popUrl "targetWindow" ()(:width size) (:height size))
-                                   (js/window.open popUrl (:width size) (:height size)))
-      (= popType "search-pop") (do
-                                 (when (= searchType "fuzzy")
-                                   (try
-                                     (js/sforce.interaction.searchAndScreenPop
-                                       (string/join " or " terms)
-                                       ""
-                                       "inbound"
-                                       pop-callback)
-                                     (catch js/Object e
-                                       (ih/publish (clj->js {:topics topic
-                                                             :error e})))))
-                                 (when (= searchType "strict")
-                                   (try (js/sforce.interaction.searchAndScreenPop
-                                          (string/join (str " " filterType " ") (vals filter))
-                                          ""
-                                          "inbound"
-                                          pop-callback)
-                                        (catch js/Object e
-                                         (ih/publish (clj->js {:topics topic
-                                                               :error e})))))))))
+    (if (= "v2" version)
+        (cond
+          (= popType "url") (try
+                              (let [tab-details (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)
+                                    object-id (get tab-details :objectId)]
+                                (log :info "Popping URI:" (clj->js tab-details))
+                                (js/sforce.interaction.screenPop (str "/" object-id) true)
+                                (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
+                                                      :response {:interaction-id interactionId
+                                                                 :hook-id object-id
+                                                                 :hook-sub-type (get tab-details :object)
+                                                                 :hook-name (get tab-details :objectName)
+                                                                 :hook-type "salesforce-classic"}})))
+                              (catch js/Object e
+                                (ih/publish (clj->js {:topics topic
+                                                      :error e}))))
+          (= popType "external-url") (if (= newWindow "true")
+                                       (js/window.open popUrl "targetWindow" ()(:width size) (:height size))
+                                       (js/window.open popUrl (:width size) (:height size)))
+          (= popType "search-pop") (do
+                                     (when (= searchType "fuzzy")
+                                       (try
+                                         (js/sforce.interaction.searchAndScreenPop
+                                           (string/join " or " terms)
+                                           ""
+                                           "inbound"
+                                           pop-callback)
+                                         (catch js/Object e
+                                           (ih/publish (clj->js {:topics topic
+                                                                 :error e})))))
+                                     (when (= searchType "strict")
+                                       (try (js/sforce.interaction.searchAndScreenPop
+                                              (string/join (str " " filterType " ") (vals filter))
+                                              ""
+                                              "inbound"
+                                              pop-callback)
+                                            (catch js/Object e
+                                             (ih/publish (clj->js {:topics topic
+                                                                   :error e}))))))
+           :else (log :error "Invalid pop type" popType))
+        (log :debug "Ignoring non-v2 screen pop"))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Salesforce Initialization Functions

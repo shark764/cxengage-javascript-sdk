@@ -24,8 +24,8 @@
             callback# (if (fn? (first args#)) (first args#) (second args#))]
         (if (> (count args#) 2)
           (cxengage-javascript-sdk.domain.interop-helpers/publish {:topics topic#
-                                                   :error (cxengage-javascript-sdk.domain.errors/wrong-number-of-sdk-fn-args-err)
-                                                   :callback callback#})
+                                                                   :error (cxengage-javascript-sdk.domain.errors/wrong-number-of-sdk-fn-args-err)
+                                                                   :callback callback#})
           (let [params# (if (fn? (first args#))
                           {:callback (first args#)}
                           (if (map? (first args#))
