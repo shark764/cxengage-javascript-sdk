@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.9.2]
+* CXV1-12438 - Added validation to salesforce assign and unassign function calls
+
 ## [6.9.1]
 * CXV1-12427 - Fixed screen pop/auto-assign for transferred interactions
 * CXV1-12327 - Fixed formatting of auto-assigned object id

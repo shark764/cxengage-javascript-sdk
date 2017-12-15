@@ -39,6 +39,7 @@
 
 (defn remove-hook! [interaction-id object-id]
   (swap! sfc-state assoc-in [:interactions interaction-id :hook] {}))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceClassic.setDimensions({
 ;;   height: "{{number}}",
@@ -141,12 +142,13 @@
                           :hook-name objectName
                           :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js tab-details)))
                           :resource-id resource-id}
-          _ (add-hook! interaction-id interrupt-body)
           {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
       (if (= status 200)
-        (ih/publish (clj->js {:topics topic
-                              :response (merge {:interaction-id interaction-id} (dissoc interrupt-body :hook-by :hook-pop :resource-id))
-                              :callback callback}))
+        (let [hook (merge {:interaction-id interaction-id} (dissoc interrupt-body :hook-by :hook-pop :resource-id))]
+          (add-hook! interaction-id hook)
+          (ih/publish (clj->js {:topics topic
+                                :response hook
+                                :callback callback})))
         (ih/publish (clj->js {:topics topic
                               :error (e/failed-to-send-salesforce-classic-assign-err interaction-id interrupt-response)
                               :callback callback}))))))
@@ -156,8 +158,13 @@
    :topic-key "cxengage/salesforce-classic/contact-assignment-acknowledged"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
+        hook (get-hook interaction-id)
         tab (get-active-tab)]
-    (send-assign-interrupt tab interaction-id callback topic)))
+    (if (empty? hook)
+      (send-assign-interrupt tab interaction-id callback topic)
+      (ih/publish (clj->js {:topics topic
+                            :error (e/failed-to-assign-salesforce-classic-item-to-interaction-err interaction-id)
+                            :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceClassic.unassign({
@@ -167,7 +174,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::unassign-contact-params
-  (s/keys :req-un [::specs/interaction-id ::specs/object-id]
+  (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
 (defn send-unassign-interrupt [hook interaction-id callback topic]
@@ -188,9 +195,13 @@
   {:validation ::unassign-contact-params
    :topic-key "cxengage/salesforce-classic/contact-unassignment-acknowledged"}
   [params]
-  (let [{:keys [callback topic interaction-id object-id]} params
+  (let [{:keys [callback topic interaction-id]} params
         hook (get-hook interaction-id)]
-    (send-unassign-interrupt hook interaction-id callback topic)))
+    (if (not (empty? hook))
+      (send-unassign-interrupt hook interaction-id callback topic)
+      (ih/publish (clj->js {:topics topic
+                            :error (e/failed-to-unassign-salesforce-classic-item-from-interaction-err interaction-id)
+                            :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceClassic.focusInteraction({
@@ -222,19 +233,6 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; Helper Functions
 ;; -------------------------------------------------------------------------- ;;
-
-(defn update-interaction-tab-id [response interaction]
-  (try (js/sforce.console.getFocusedPrimaryTabId
-        (fn [result]
-          (let [result (js->clj result :keywordize-keys true)
-                interaction-id (:interactionId interaction)]
-            (if (= (:success result) true)
-              (swap! sfc-state assoc-in [:interactions interaction-id :tab-id] (:id result))
-              (ih/publish (clj->js {:topics "cxengage/salesforce-classic/errors/error/failed-to-update-interaction-tab-id"
-                                    :error (e/failed-to-update-salesforce-classic-interaction-tab-id-err interaction-id)}))))))
-       (catch js/Object e
-         (ih/publish (clj->js {:topics "cxengage/salesforce-classic/errors/error/failed-to-update-interaction-tab-id"
-                               :error e})))))
 
 (defn auto-assign-from-search-pop [response interaction-id]
   (let [result (:result (ih/extract-params response))
@@ -292,55 +290,6 @@
     (ih/publish {:topics "cxengage/salesforce-classic/on-click-to-interaction"
                  :response parsed-result})))
 
-(defn handle-work-offer [error topic interaction-details]
-  (let [interaction (js->clj interaction-details :keywordize-keys true)
-        {:keys [contact related-to pop-on-accept interactionId]} interaction
-        pop-callback (fn [response]
-                       (update-interaction-tab-id response interaction))]
-      (add-interaction! interaction)
-      (cond
-        pop-on-accept (log :info "Pop On Accept - waiting for work-accepted-received")
-        related-to (try
-                    (js/sforce.interaction.screenPop related-to true pop-callback)
-                    (catch js/Object e
-                      (ih/publish (clj->js {:topics topic
-                                            :error e}))))
-        contact (try
-                 (js/sforce.interaction.screenPop contact true pop-callback)
-                 (catch js/Object e
-                   (ih/publish (clj->js {:topics topic
-                                         :error e}))))
-        :else (log :info "No screen pop details on work offer"))))
-
-(defn handle-work-accepted [error topic interaction-details]
-  (let [result (js->clj interaction-details :keywordize-keys true)
-        interaction (get-in @sfc-state [:interactions (:interactionId result)])
-        {:keys [related-to contact pop-on-accept]} interaction
-        pop-callback (fn [response]
-                       (update-interaction-tab-id response interaction))]
-    (when pop-on-accept
-      (cond
-        related-to (try
-                    (js/sforce.interaction.screenPop related-to true pop-callback)
-                    (catch js/Object e
-                      (ih/publish (clj->js {:topics topic
-                                            :error e}))))
-        contact (try
-                  (js/sforce.interaction.screenPop contact true pop-callback)
-                  (catch js/Object e
-                    (ih/publish (clj->js {:topics topic
-                                          :error e}))))
-        :else (log :info "No screen pop details on work accepted")))))
-
-(defn handle-work-ended [error topic interaction-details]
-  (let [interaction-id (:interactionId (js->clj interaction-details :keywordize-keys true))
-        tab-id (get-in @sfc-state [:interactions interaction-id :tab-id])]
-    (try
-      (js/sforce.console.closeTab tab-id)
-      (catch js/Object e
-        (ih/publish (clj->js {:topics topic
-                              :error e}))))))
-
 (defn handle-screen-pop [error topic interaction-details]
   (let [_ (log :debug "Handling screen pop:" interaction-details)
         result (js->clj interaction-details :keywordize-keys true)
@@ -354,6 +303,7 @@
                                     object-id (get tab-details :objectId)]
                                 (log :info "Popping URI:" (clj->js tab-details))
                                 (js/sforce.interaction.screenPop (str "/" object-id) true)
+                                (add-hook! interactionId tab-details)
                                 (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
                                                       :response {:interaction-id interactionId
                                                                  :hook-id object-id
