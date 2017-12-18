@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.9.4]
+* CXV1-12427 - Fix hook for transferred interactions so focusInteraction will work
+
 ## [6.9.3]
 * CXV1-12438 - Improved validation to salesforce assign and unassign function calls (include checks for interaction existing and blank active tab)
 * CXV1-12292 - Fix salesforce lightning initialization and click to dial
