@@ -329,16 +329,17 @@
         (cond
           (= popType "url") (try
                               (let [tab-details (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)
-                                    object-id (get tab-details :objectId)]
+                                    object-id (get tab-details :objectId)
+                                    hook {:interaction-id interactionId
+                                          :hook-id object-id
+                                          :hook-sub-type (get tab-details :object)
+                                          :hook-name (get tab-details :objectName)
+                                          :hook-type "salesforce-classic"}]
                                 (log :info "Popping URI:" (clj->js tab-details))
                                 (js/sforce.interaction.screenPop (str "/" object-id) true)
-                                (add-hook! interactionId tab-details)
+                                (add-hook! interactionId hook)
                                 (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
-                                                      :response {:interaction-id interactionId
-                                                                 :hook-id object-id
-                                                                 :hook-sub-type (get tab-details :object)
-                                                                 :hook-name (get tab-details :objectName)
-                                                                 :hook-type "salesforce-classic"}})))
+                                                      :response hook})))
                               (catch js/Object e
                                 (ih/publish (clj->js {:topics topic
                                                       :error e}))))
