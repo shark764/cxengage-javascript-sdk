@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.9.3]
+* CXV1-12438 - Improved validation to salesforce assign and unassign function calls (include checks for interaction existing and blank active tab)
+* CXV1-12292 - Fix salesforce lightning initialization and click to dial
+
 ## [6.9.2]
 * CXV1-12438 - Added validation to salesforce assign and unassign function calls
 

@@ -4,6 +4,7 @@
                    [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
   (:require [cljs.core.async :as a]
             [clojure.string :as string]
+            [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.protocols :as pr]
@@ -21,9 +22,15 @@
 
 (def sfc-state (atom {}))
 
+(defn get-interaction [interaction-id]
+  (or (get-in @sfc-state [:interactions interaction-id]) {}))
+
 (defn add-interaction! [interaction]
   (let [{:keys [interactionId]} interaction]
     (swap! sfc-state assoc-in [:interactions interactionId] interaction)))
+
+(defn remove-interaction! [interaction-id]
+  (swap! sfc-state iu/dissoc-in [:interactions interaction-id]))
 
 (defn get-active-tab []
   (:active-tab @sfc-state))
@@ -158,12 +165,21 @@
    :topic-key "cxengage/salesforce-classic/contact-assignment-acknowledged"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
+        interaction (get-interaction interaction-id)
         hook (get-hook interaction-id)
         tab (get-active-tab)]
-    (if (empty? hook)
-      (send-assign-interrupt tab interaction-id callback topic)
+    (if-not (empty? interaction)
+      (if (empty? hook)
+        (if (and (not (empty? (:object tab))) (not (empty? (:objectId tab))))
+          (send-assign-interrupt tab interaction-id callback topic)
+          (ih/publish (clj->js {:topics topic
+                                :error (e/failed-to-assign-blank-salesforce-classic-item-err interaction-id)
+                                :callback callback})))
+        (ih/publish (clj->js {:topics topic
+                              :error (e/failed-to-assign-salesforce-classic-item-to-interaction-err interaction-id)
+                              :callback callback})))
       (ih/publish (clj->js {:topics topic
-                            :error (e/failed-to-assign-salesforce-classic-item-to-interaction-err interaction-id)
+                            :error (e/failed-to-assign-salesforce-classic-item-no-interaction-err interaction-id)
                             :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -196,11 +212,16 @@
    :topic-key "cxengage/salesforce-classic/contact-unassignment-acknowledged"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
+        interaction (get-interaction interaction-id)
         hook (get-hook interaction-id)]
-    (if (not (empty? hook))
-      (send-unassign-interrupt hook interaction-id callback topic)
+    (if-not (empty? interaction)
+      (if-not (empty? hook)
+        (send-unassign-interrupt hook interaction-id callback topic)
+        (ih/publish (clj->js {:topics topic
+                              :error (e/failed-to-unassign-salesforce-classic-item-from-interaction-err interaction-id)
+                              :callback callback})))
       (ih/publish (clj->js {:topics topic
-                            :error (e/failed-to-unassign-salesforce-classic-item-from-interaction-err interaction-id)
+                            :error (e/failed-to-assign-salesforce-classic-item-no-interaction-err interaction-id)
                             :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -289,6 +310,14 @@
         parsed-result (js/JSON.parse result)]
     (ih/publish {:topics "cxengage/salesforce-classic/on-click-to-interaction"
                  :response parsed-result})))
+
+(defn handle-work-offer [error topic interaction-details]
+  (let [interaction (js->clj interaction-details :keywordize-keys true)]
+    (add-interaction! interaction)))
+
+(defn handle-work-ended [error topic interaction-details]
+  (let [interaction-id (:interactionId (js->clj interaction-details :keywordize-keys true))]
+    (remove-interaction! interaction-id)))
 
 (defn handle-screen-pop [error topic interaction-details]
   (let [_ (log :debug "Handling screen pop:" interaction-details)
