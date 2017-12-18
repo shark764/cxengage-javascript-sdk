@@ -198,7 +198,7 @@
         (log :info "More than one result - skipping auto-assign"))))
 
 (defn dump-state []
-  (js/console.log @sfl-state))
+  (js/console.log (clj->js @sfl-state)))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
@@ -223,10 +223,8 @@
                                   :error e}))))))))
 
 (defn handle-click-to-dial [dial-details]
-  (let [result (:result (ih/extract-params dial-details))
-        parsed-result (js/JSON.parse result)]
-    (ih/publish {:topics (topics/get-topic :on-click-to-interaction)
-                 :response parsed-result})))
+  (ih/publish {:topics "cxengage/salesforce-lightning/on-click-to-interaction"
+               :response dial-details}))
 
 (defn handle-work-offer [error topic interaction-details]
   (let [interaction (ih/extract-params interaction-details)
@@ -317,8 +315,7 @@
 
 (defn sfl-ready? []
   (and (aget js/window "sforce")
-       (aget js/window "sforce" "console")
-       (aget js/window "sforce" "integration")))
+       (aget js/window "sforce" "opencti")))
 
 (defn ^:private sfl-init
   [interaction]
@@ -333,7 +330,7 @@
       (do
         (swap! sfl-state assoc :resource-id (ih/get-active-user-id))
         (try
-          (js/sforce.opencti.onClickToDial handle-click-to-dial)
+          (js/sforce.opencti.onClickToDial (clj->js {:listener handle-click-to-dial}))
           (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/initialize-complete"
                                 :response true}))
           (catch js/Object e
@@ -352,24 +349,23 @@
     (go-loop []
       (if (ih/core-ready?)
         (let [module-name :salesforce-lightning
-              sfl-interaction "https://login.salesforce.com/support/api/40.0/lightning/opencti_min.js"]
-          (if-not sfl-interaction
-            (js/console.log "<----- SFL integration not found, not starting module ----->")
-            (do (sfl-init sfl-interaction)
-                (ih/register (clj->js {:api {:salesforce-lightning {:set-dimensions set-dimensions
-                                                                    :is-visible is-visible?
-                                                                    :set-visibility set-visibility
-                                                                    :focus-interaction focus-interaction
-                                                                    :assign-contact assign-contact}}
-                                       :module-name module-name}))
-                (ih/subscribe (topics/get-topic :presence-state-change-request-acknowledged) handle-state-change)
-                (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
-                (ih/subscribe (topics/get-topic :work-accepted-received) handle-work-accepted)
-                (ih/subscribe (topics/get-topic :work-ended-received) handle-work-ended)
-                (ih/subscribe (topics/get-topic :generic-screen-pop-received) handle-screen-pop)
-                (ih/send-core-message {:type :module-registration-status
-                                       :status :success
-                                       :module-name module-name}))))
+              sfl-interaction "https://login.salesforce.com/support/api/41.0/lightning/opencti_min.js"]
+          (sfl-init sfl-interaction)
+          (ih/register (clj->js {:api {:salesforce-lightning {:set-dimensions set-dimensions
+                                                              :is-visible is-visible?
+                                                              :set-visibility set-visibility
+                                                              :focus-interaction focus-interaction
+                                                              :assign-contact assign-contact
+                                                              :dump-state dump-state}}
+                                 :module-name module-name}))
+          (ih/subscribe (topics/get-topic :presence-state-change-request-acknowledged) handle-state-change)
+          (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
+          (ih/subscribe (topics/get-topic :work-accepted-received) handle-work-accepted)
+          (ih/subscribe (topics/get-topic :work-ended-received) handle-work-ended)
+          (ih/subscribe (topics/get-topic :generic-screen-pop-received) handle-screen-pop)
+          (ih/send-core-message {:type :module-registration-status
+                                 :status :success
+                                 :module-name module-name}))
         (do (a/<! (a/timeout 250))
             (recur)))))
   (stop [this])
