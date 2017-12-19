@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.10.0]
+* CXV1-12292 - Add/update salesforce-lightning active tab, assign, unassign, and focus functions
+
 ## [6.9.4]
 * CXV1-12427 - Fix hook for transferred interactions so focusInteraction will work
 
