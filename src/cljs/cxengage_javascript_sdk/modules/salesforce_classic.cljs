@@ -27,7 +27,7 @@
 
 (defn add-interaction! [interaction]
   (let [{:keys [interactionId]} interaction]
-    (swap! sfc-state assoc-in [:interactions interactionId] interaction)))
+    (swap! sfc-state assoc-in [:interactions interactionId] {:hook {}})))
 
 (defn remove-interaction! [interaction-id]
   (swap! sfc-state iu/dissoc-in [:interactions interaction-id]))
@@ -44,7 +44,7 @@
 (defn add-hook! [interaction-id hook-details]
   (swap! sfc-state assoc-in [:interactions interaction-id :hook] hook-details))
 
-(defn remove-hook! [interaction-id object-id]
+(defn remove-hook! [interaction-id]
   (swap! sfc-state assoc-in [:interactions interaction-id :hook] {}))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -185,7 +185,6 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceClassic.unassign({
 ;;   interactionId: "{{uuid}}",
-;;   objectId: "{{string}}"
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
@@ -199,7 +198,7 @@
           {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type hook))]
       (if (= status 200)
         (do
-          (remove-hook! interaction-id (:objectId hook))
+          (remove-hook! interaction-id)
           (ih/publish (clj->js {:topics topic
                                 :response (merge {:interaction-id interaction-id} hook)
                                 :callback callback})))
@@ -239,7 +238,7 @@
    :topic-key "cxengage/salesforce-classic/focus-interaction"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-        hook-id (:hook-id (get-in @sfc-state [:interactions interaction-id :hook]))]
+        hook-id (:hook-id (get-hook interaction-id))]
       (if hook-id
         (try
           (js/sforce.interaction.screenPop hook-id)
@@ -389,7 +388,6 @@
   (go-loop []
     (if (sfc-ready?)
       (do
-        (swap! sfc-state assoc :resource-id (ih/get-active-user-id))
         (js/sforce.interaction.onFocus handle-focus-change)
         (js/sforce.interaction.cti.disableClickToDial)
         (try
@@ -415,25 +413,22 @@
         (let [module-name :salesforce-classic
               sfc-integration "https://login.salesforce.com/support/console/41.0/integration.js"
               sfc-interaction "https://login.salesforce.com/support/api/28.0/interaction.js"]
-          (if-not sfc-integration
-            (js/console.log "<----- SFC integration not found, not starting module ----->")
-            (do (sfc-init sfc-integration sfc-interaction)
-                (ih/register {:api {:salesforce-classic {:set-dimensions set-dimensions
-                                                         :is-visible is-visible?
-                                                         :set-visibility set-visibility
-                                                         :focus-interaction focus-interaction
-                                                         :assign assign
-                                                         :unassign unassign
-                                                         :dump-state dump-state}}
-                              :module-name module-name})
-                (ih/subscribe (topics/get-topic :presence-state-change-request-acknowledged) handle-state-change)
-                (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
-                (ih/subscribe (topics/get-topic :work-accepted-received) handle-work-accepted)
-                (ih/subscribe (topics/get-topic :work-ended-received) handle-work-ended)
-                (ih/subscribe (topics/get-topic :generic-screen-pop-received) handle-screen-pop)
-                (ih/send-core-message {:type :module-registration-status
-                                       :status :success
-                                       :module-name module-name}))))
+          (sfc-init sfc-integration sfc-interaction)
+          (ih/register {:api {:salesforce-classic {:set-dimensions set-dimensions
+                                                   :is-visible is-visible?
+                                                   :set-visibility set-visibility
+                                                   :focus-interaction focus-interaction
+                                                   :assign assign
+                                                   :unassign unassign
+                                                   :dump-state dump-state}}
+                        :module-name module-name})
+          (ih/subscribe (topics/get-topic :presence-state-change-request-acknowledged) handle-state-change)
+          (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
+          (ih/subscribe (topics/get-topic :work-ended-received) handle-work-ended)
+          (ih/subscribe (topics/get-topic :generic-screen-pop-received) handle-screen-pop)
+          (ih/send-core-message {:type :module-registration-status
+                                 :status :success
+                                 :module-name module-name}))
         (do (a/<! (a/timeout 250))
             (recur)))))
   (stop [this])

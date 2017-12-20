@@ -4,14 +4,16 @@
                    [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
   (:require [cljs.core.async :as a]
             [clojure.string :as string]
+            [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.domain.specs :as specs]
-            [cxengage-javascript-sdk.domain.errors :as errors]
             [cxengage-javascript-sdk.domain.api-utils :as api]
+            [cxengage-javascript-sdk.state :as state]
+            [cxengage-javascript-sdk.domain.errors :as errors]
             [cljs.spec.alpha :as s]))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -20,9 +22,30 @@
 
 (def sfl-state (atom {}))
 
+(defn get-interaction [interaction-id]
+  (or (get-in @sfl-state [:interactions interaction-id]) {}))
+
 (defn add-interaction! [interaction]
   (let [{:keys [interactionId]} interaction]
-    (swap! sfl-state assoc-in [:interactions interactionId] interaction)))
+    (swap! sfl-state assoc-in [:interactions interactionId] {:hook {}})))
+
+(defn remove-interaction! [interaction-id]
+  (swap! sfl-state iu/dissoc-in [:interactions interaction-id]))
+
+(defn get-active-tab []
+  (:active-tab @sfl-state))
+
+(defn set-active-tab! [tab-details]
+  (swap! sfl-state assoc-in [:active-tab] tab-details))
+
+(defn get-hook [interaction-id]
+  (or (get-in @sfl-state [:interactions interaction-id :hook]) {}))
+
+(defn add-hook! [interaction-id hook-details]
+  (swap! sfl-state assoc-in [:interactions interaction-id :hook] hook-details))
+
+(defn remove-hook! [interaction-id]
+  (swap! sfl-state assoc-in [:interactions interaction-id :hook] {}))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceLightning.setDimensions({
@@ -101,7 +124,7 @@
                                  :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.salesforceLightning.assignContact({
+;; CxEngage.salesforceLightning.assign({
 ;;   interactionId: "{{uuid}}"
 ;; });
 ;; -------------------------------------------------------------------------- ;;
@@ -110,42 +133,87 @@
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
-(defn send-assign-interrupt [page-info interaction-id callback topic]
-  (let [parsed-result (ih/extract-params page-info)
-        {:keys [objectType recordId]} (:returnValue parsed-result)
-        tenant-id (ih/get-active-tenant-id)
-        interrupt-type "assign-contact"
-        interrupt-body (if (or (= objectType "Contact") (= objectType "Lead"))
-                        {:external-crm-user (get @sfl-state :resource-id)
-                         :external-crm-name "salesforce-lightning"
-                         :external-crm-contact recordId
-                         :external-crm-contact-uri recordId}
-                        {:external-crm-user (get @sfl-state :resource-id)
-                         :external-crm-name "salesforce-lightning"
-                         :external-crm-related-to recordId
-                         :external-crm-related-to-uri recordId})
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-     (if (= status 200)
-       (ih/publish (clj->js {:topics topic
-                             :response (merge {:interaction-id interaction-id} interrupt-body)
-                             :callback callback}))
-       (ih/publish (clj->js {:topics topic
-                             :error (e/failed-to-send-salesforce-lightning-assign-err interaction-id interrupt-response)
-                             :callback callback})))))
+(defn send-assign-interrupt [new-hook interaction-id callback topic]
+  (go
+    (let [resource-id (state/get-active-user-id)
+          interrupt-type "interaction-hook-add"
+          interrupt-body (merge new-hook {:hook-by resource-id
+                                          :hook-type "salesforce-lightning"
+                                          :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js page-info)))
+                                          :resource-id resource-id})
+          {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+       (if (= status 200)
+         (do
+           (add-hook! interaction-id new-hook)
+           (ih/publish (clj->js {:topics topic
+                                 :response (merge {:interaction-id interaction-id} new-hook)
+                                 :callback callback})))
+         (ih/publish (clj->js {:topics topic
+                               :error (e/failed-to-send-salesforce-lightning-assign-err interaction-id interrupt-response)
+                               :callback callback}))))))
 
-(def-sdk-fn assign-contact
+(def-sdk-fn assign
   {:validation ::assign-contact-params
    :topic-key "cxengage/salesforce-lightning/contact-assignment-acknowledged"}
   [params]
-  (let [{:keys [callback topic interaction-id]} params]
-    (try
-      (js/sforce.opencti.getAppViewInfo
-        (clj->js {:callback (fn [response]
-                              (send-assign-interrupt response interaction-id callback topic))}))
-      (catch js/Object e
+  (let [{:keys [callback topic interaction-id]} params
+        interaction (get-interaction interaction-id)
+        hook (get-hook interaction-id)
+        tab (get-active-tab)]
+    (if-not (empty? interaction)
+      (if (empty? hook)
+        (if (and (not (empty? (:hook-sub-type tab))) (not (empty? (:hook-id tab))))
+          (send-assign-interrupt tab interaction-id callback topic)
+          (ih/publish (clj->js {:topics topic
+                                :error (e/failed-to-assign-blank-salesforce-lightning-item-err interaction-id)
+                                :callback callback})))
         (ih/publish (clj->js {:topics topic
-                              :error e
+                              :error (e/failed-to-assign-salesforce-lightning-item-to-interaction-err interaction-id)
+                              :callback callback})))
+      (ih/publish (clj->js {:topics topic
+                            :error (e/failed-to-assign-salesforce-lightning-item-no-interaction-err interaction-id)
+                            :callback callback})))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.salesforceLightning.unassign({
+;;   interactionId: "{{uuid}}",
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::unassign-contact-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(defn send-unassign-interrupt [hook interaction-id callback topic]
+  (go
+    (let [interrupt-type "interaction-hook-drop"
+          {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type hook))]
+      (if (= status 200)
+        (do
+          (remove-hook! interaction-id)
+          (ih/publish (clj->js {:topics topic
+                                :response (merge {:interaction-id interaction-id} hook)
+                                :callback callback})))
+        (ih/publish (clj->js {:topics topic
+                              :error (e/failed-to-send-salesforce-lightning-unassign-err interaction-id interrupt-response)
                               :callback callback}))))))
+
+(def-sdk-fn unassign
+  {:validation ::unassign-contact-params
+   :topic-key "cxengage/salesforce-lightning/contact-unassignment-acknowledged"}
+  [params]
+  (let [{:keys [callback topic interaction-id]} params
+        interaction (get-interaction interaction-id)
+        hook (get-hook interaction-id)]
+    (if-not (empty? interaction)
+      (if-not (empty? hook)
+        (send-unassign-interrupt hook interaction-id callback topic)
+        (ih/publish (clj->js {:topics topic
+                              :error (e/failed-to-unassign-salesforce-lightning-item-from-interaction-err interaction-id)
+                              :callback callback})))
+      (ih/publish (clj->js {:topics topic
+                            :error (e/failed-to-assign-salesforce-lightning-item-no-interaction-err interaction-id)
+                            :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceLightning.focusInteraction({
@@ -159,36 +227,24 @@
 
 (def-sdk-fn focus-interaction
   {:validation ::focus-interaction-params
-   :topic-key "cxengage/salesforce-lightning/focus-interaction-response"}
+   :topic-key "cxengage/salesforce-lightning/focus-interaction"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-        interaction (get-in @sfl-state [:interactions interaction-id])
-        {:keys [tab-id contactId relatedTo recordId]} interaction]
+        hook-id (:hook-id (get-hook interaction-id))]
+    (if hook-id
       (try
-        (js/sforce.opencti.screenPop
-          (clj->js {:type "sobject" :params {:recordId (or tab-id recordId relatedTo contactId)}}))
+        (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId hook-id}}))
         (catch js/Object e
           (ih/publish (clj->js {:topics topic
                                 :error e
-                                :callback callback}))))))
+                                :callback callback}))))
+      (ih/publish (clj->js {:topics topic
+                            :error (e/failed-to-focus-salesforce-lightning-interaction-err interaction-id)
+                            :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Helper Functions
 ;; -------------------------------------------------------------------------- ;;
-
-(defn update-interaction-tab-id [response interaction]
-  (try
-    (js/sforce.opencti.getAppViewInfo
-      (clj->js {:callback (fn [result]
-                            (let [result (ih/extract-params result)
-                                  interaction-id (:interactionId interaction)]
-                              (if (= (:success result) true)
-                                (swap! sfl-state assoc-in [:interactions interaction-id :tab-id] (:recordId result))
-                                (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/errors/error/failed-to-update-interaction-tab-id"
-                                                      :error (e/failed-to-update-salesforce-lightning-interaction-tab-id-err interaction-id)})))))}))
-    (catch js/Object e
-      (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/errors/error/failed-to-update-interaction-tab-id"
-                            :error e})))))
 
 (defn auto-assign-from-search-pop [response interaction-id]
   (let [result (:result (ih/extract-params response))
@@ -222,58 +278,36 @@
             (ih/publish (clj->js {:topics topic
                                   :error e}))))))))
 
+(defn handle-get-app-view-info [response]
+  (let [result (js->clj response :keywordize-keys true)
+        focus-response (clj->js (:returnValue result))]
+    (handle-focus-change focus-response)))
+
+(defn handle-focus-change [response]
+  (let [active-tab (get-active-tab)
+        result (js->clj response :keywordize-keys true)
+        hook {:hook-id (:recordId result)
+              :hook-sub-type (:objectType result)
+              :hook-name (:recordName result)}]
+    (if-not (and (= (:hook-id active-tab) (:hook-id hook))
+                 (= (:hook-sub-type active-tab) (:hook-sub-type hook)))
+      (do
+        (set-active-tab! hook)
+        (ih/publish {:topics "cxengage/salesforce-lightning/active-tab-changed"
+                     :response hook}))
+      (log :debug "Active tab is the same. Not publishing change."))))
+
 (defn handle-click-to-dial [dial-details]
   (ih/publish {:topics "cxengage/salesforce-lightning/on-click-to-interaction"
                :response dial-details}))
 
 (defn handle-work-offer [error topic interaction-details]
-  (let [interaction (ih/extract-params interaction-details)
-        {:keys [contact related-to pop-on-accept interactionId]} interaction
-        pop-callback (fn [response]
-                       (update-interaction-tab-id response interaction))]
-      (add-interaction! interaction)
-      (cond
-        pop-on-accept (log :debug "Pop On Accept - waiting for work-accepted-received")
-        related-to (try
-                     (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId related-to}, :callback pop-callback}))
-                     (catch js/Object e
-                       (ih/publish (clj->js {:topics topic
-                                             :error e}))))
-        contact (try
-                  (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId contact}, :callback pop-callback}))
-                  (catch js/Object e
-                    (ih/publish (clj->js {:topics topic
-                                          :error e}))))
-        :else (log :debug "No screen pop details on work offer"))))
-
-(defn handle-work-accepted [error topic interaction-details]
-  (let [result (ih/extract-params interaction-details)
-        interaction (get-in @sfl-state [:interactions (:interactionId result)])
-        {:keys [related-to contact pop-on-accept]} interaction
-        pop-callback (fn [response]
-                       (update-interaction-tab-id response interaction))]
-    (when pop-on-accept
-      (cond
-        related-to (try
-                     (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId related-to}, :callback pop-callback}))
-                     (catch js/Object e
-                       (ih/publish (clj->js {:topics topic
-                                             :error e}))))
-        contact (try
-                  (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId contact}, :callback pop-callback}))
-                  (catch js/Object e
-                    (ih/publish (clj->js {:topics topic
-                                          :error e}))))
-        :else (log :info "No screen pop details on work accepted")))))
+  (let [interaction (js->clj interaction-details :keywordize-keys true)]
+    (add-interaction! interaction)))
 
 (defn handle-work-ended [error topic interaction-details]
-  (let [interaction-id (:interactionId (ih/extract-params interaction-details))
-        tab-id (get-in @sfl-state [:interactions interaction-id :tab-id])]
-    (try
-      (js/sforce.console.closeTab tab-id)
-      (catch js/Object e
-        (ih/publish (clj->js {:topics topic
-                              :error e}))))))
+  (let [interaction-id (:interactionId (js->clj interaction-details :keywordize-keys true))]
+    (remove-interaction! interaction-id)))
 
 (defn handle-screen-pop [error topic interaction-details]
   (let [result (ih/extract-params interaction-details)
@@ -328,11 +362,12 @@
   (go-loop []
     (if (sfl-ready?)
       (do
-        (swap! sfl-state assoc :resource-id (ih/get-active-user-id))
+        (js/sforce.opencti.onNavigationChange (clj->js {:listener handle-focus-change}))
         (try
           (js/sforce.opencti.onClickToDial (clj->js {:listener handle-click-to-dial}))
           (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/initialize-complete"
                                 :response true}))
+          (js/sforce.opencti.getAppViewInfo (clj->js {:callback handle-get-app-view-info}))
           (catch js/Object e
             (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/error/failed-to-create-click-to-dial-handler"
                                   :error e})))))
@@ -355,12 +390,12 @@
                                                               :is-visible is-visible?
                                                               :set-visibility set-visibility
                                                               :focus-interaction focus-interaction
-                                                              :assign-contact assign-contact
+                                                              :assign assign
+                                                              :unassign unassign
                                                               :dump-state dump-state}}
                                  :module-name module-name}))
           (ih/subscribe (topics/get-topic :presence-state-change-request-acknowledged) handle-state-change)
           (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
-          (ih/subscribe (topics/get-topic :work-accepted-received) handle-work-accepted)
           (ih/subscribe (topics/get-topic :work-ended-received) handle-work-ended)
           (ih/subscribe (topics/get-topic :generic-screen-pop-received) handle-screen-pop)
           (ih/send-core-message {:type :module-registration-status

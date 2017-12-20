@@ -997,6 +997,49 @@
    :level "error"
    :message "Failed to assign item. The API returned an error."})
 
+(defn failed-to-send-salesforce-lightning-unassign-err [interaction-id data]
+  {:code 16002
+   :context :salesforce-lightning
+   :data {:interaction-id interaction-id
+          :api-response data}
+   :level "error"
+   :message "Failed to unassign item. The API returned an error."})
+
+(defn failed-to-focus-salesforce-lightning-interaction-err [interaction-id]
+  {:code 16003
+   :context :salesforce-lightning
+   :data {:interaction-id interaction-id}
+   :level "warn"
+   :message "Failed to focus salesforce lightning interaction."})
+
+(defn failed-to-assign-salesforce-lightning-item-to-interaction-err [interaction-id]
+  {:code 16004
+   :context :salesforce-lightning
+   :data {:interaction-id interaction-id}
+   :level "warn"
+   :message "Failed to assign item. Interaction already has been assigned to an item."})
+
+(defn failed-to-unassign-salesforce-lightning-item-from-interaction-err [interaction-id]
+  {:code 16005
+   :context :salesforce-lightning
+   :data {:interaction-id interaction-id}
+   :level "warn"
+   :message "Failed to unassign item. No item has been assigned."})
+
+(defn failed-to-assign-salesforce-lightning-item-no-interaction-err [interaction-id]
+  {:code 16006
+   :context :salesforce-lightning
+   :data {:interaction-id interaction-id}
+   :level "warn"
+   :message "Failed to assign/unassign item. Interaction id does not correspond to active interaction."})
+
+(defn failed-to-assign-blank-salesforce-lightning-item-err [interaction-id]
+  {:code 16007
+   :context :salesforce-lightning
+   :data {:interaction-id interaction-id}
+   :level "warn"
+   :message "Failed to assign item. Cannot assign blank active tab."})
+
 (defn failed-to-init-zendesk-client-err [data]
   {:code 17000
    :context :zendesk

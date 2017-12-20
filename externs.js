@@ -246,6 +246,11 @@ sforce.opencti.searchAndScreenPop = function() {};
 sforce.opencti.onClickToDial = function() {};
 
 /**
+* @return {Object}
+*/
+sforce.opencti.onNavigationChange = function() {};
+
+/**
  * @const
  */
 var AWSCognito = {};
