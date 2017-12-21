@@ -139,7 +139,7 @@
           interrupt-type "interaction-hook-add"
           interrupt-body (merge new-hook {:hook-by resource-id
                                           :hook-type "salesforce-lightning"
-                                          :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js page-info)))
+                                          :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js new-hook)))
                                           :resource-id resource-id})
           {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
        (if (= status 200)
@@ -247,11 +247,15 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (defn auto-assign-from-search-pop [response interaction-id]
-  (let [result (:result (ih/extract-params response))
-        parsed-result (ih/extract-params (js/JSON.parse result))]
-      (if (= 1 (count (vals parsed-result)))
-        (assign-contact (clj->js {:interaction interaction-id}))
-        (log :info "More than one result - skipping auto-assign"))))
+  (let [result (:returnValue (ih/extract-params response true))]
+    (if (= 1 (count (vals result)))
+      (let [_ (log :info "Only one search result. Assigning:" (clj->js parsed-result))
+            record (first (vals result))
+            hook {:hook-id (:Id record)
+                  :hook-sub-type (:RecordType record)
+                  :hook-name (:Name record)}]
+        (send-assign-interrupt hook interaction-id nil "cxengage/salesforce-lightning/contact-assignment-acknowledged"))
+      (log :info "More than one result - skipping auto-assign"))))
 
 (defn dump-state []
   (js/console.log (clj->js @sfl-state)))
@@ -310,38 +314,42 @@
     (remove-interaction! interaction-id)))
 
 (defn handle-screen-pop [error topic interaction-details]
-  (let [result (ih/extract-params interaction-details)
-        {:keys [popType popUrl newWindow size searchType filter filterType terms interactionId]} result
+  (let [_ (log :debug "Handling screen pop:" interaction-details)
+        result (js->clj interaction-details :keywordize-keys true)
+        {:keys [version popType popUrl popUri newWindow size searchType filter filterType terms interactionId]} result
         pop-callback (fn [response]
                         (auto-assign-from-search-pop response interactionId))]
-    (cond
-      (= popType "internal") (try
-                               (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId popUrl}, :callback pop-callback}))
-                               (catch js/Object e
-                                 (ih/publish (clj->js {:topics topic
-                                                       :error e}))))
-      (= popType "external") (if (= newWindow "true")
-                              (js/window.open popUrl "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
-                              (js/window.open popUrl))
-      (= popType "search") (do
-                              (when (= searchType "fuzzy")
-                                (try
-                                  (js/sforce.opencti.searchAndScreenPop (clj->js {:searchParams (string/join " or " terms)
-                                                                                  :queryParams ""
-                                                                                  :callType "inbound"
-                                                                                  :callback pop-callback}))
-                                  (catch js/Object e
-                                    (ih/publish (clj->js {:topics topic
-                                                          :error e})))))
-                              (when (= searchType "strict")
-                                (try
-                                  (js/sforce.opencti.searchAndScreenPop (clj->js {:searchParams (string/join (str " " filterType " ") (vals filter))
-                                                                                  :queryParams ""
-                                                                                  :callType "inbound"
-                                                                                  :callback pop-callback}))
-                                  (catch js/Object e
-                                    (ih/publish (clj->js {:topics topic
-                                                          :error e})))))))))
+    (if (= "v2" version)
+      (cond
+        (= popType "url") (try
+                            (let [hook (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)]
+                              (log :info "Popping URI:" (clj->js hook))
+                              (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId (:hook-id hook)}}))
+                              (add-hook! interactionId hook)
+                              (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/contact-assignment-acknowledged"
+                                                    :response (merge {:interaction-id interactionId} hook)})))
+                            (catch js/Object e
+                              (ih/publish (clj->js {:topics topic
+                                                    :error e}))))
+        (= popType "external") (if (= newWindow "true")
+                                 (js/window.open popUrl "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
+                                 (js/window.open popUrl))
+        (= popType "search-pop") (if (or (= searchType "fuzzy")
+                                         (= searchType "strict"))
+                                   (let [search-params (if (= searchType "fuzzy")
+                                                        (string/join " or " terms)
+                                                        (string/join (str " " filterType " ") (vals filter)))]
+                                     (try
+                                       (js/sforce.opencti.searchAndScreenPop (clj->js {:searchParams search-params
+                                                                                       :queryParams ""
+                                                                                       :callType "inbound"
+                                                                                       :callback pop-callback}))
+                                       (catch js/Object e
+                                         (ih/publish (clj->js {:topics topic
+                                                               :error e})))))
+                                  (log :error "Invalid search type" searchType))
+        :else (log :error "Invalid pop type" popType))
+      (log :debug "Ignoring non-v2 screen pop"))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Salesforce Initialization Functions

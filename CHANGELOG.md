@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.10.1]
+* CXV1-9857 - Updated salesforce-lightning screen pops
+
 ## [6.10.0]
 * CXV1-12292 - Add/update salesforce-lightning active tab, assign, unassign, and focus functions
 

@@ -345,26 +345,28 @@
           (= popType "external-url") (if (= newWindow "true")
                                        (js/window.open popUrl "targetWindow" ()(:width size) (:height size))
                                        (js/window.open popUrl (:width size) (:height size)))
-          (= popType "search-pop") (do
-                                     (when (= searchType "fuzzy")
-                                       (try
-                                         (js/sforce.interaction.searchAndScreenPop
-                                           (string/join " or " terms)
-                                           ""
-                                           "inbound"
-                                           pop-callback)
-                                         (catch js/Object e
-                                           (ih/publish (clj->js {:topics topic
-                                                                 :error e})))))
-                                     (when (= searchType "strict")
-                                       (try (js/sforce.interaction.searchAndScreenPop
-                                              (string/join (str " " filterType " ") (vals filter))
-                                              ""
-                                              "inbound"
-                                              pop-callback)
-                                            (catch js/Object e
-                                             (ih/publish (clj->js {:topics topic
-                                                                   :error e}))))))
+          (= popType "search-pop") (cond
+                                     (= searchType "fuzzy")
+                                     (try
+                                       (js/sforce.interaction.searchAndScreenPop
+                                         (string/join " or " terms)
+                                         ""
+                                         "inbound"
+                                         pop-callback)
+                                       (catch js/Object e
+                                         (ih/publish (clj->js {:topics topic})
+                                           :error e)))
+                                     (= searchType "strict")
+                                     (try
+                                       (js/sforce.interaction.searchAndScreenPop
+                                         (string/join (str " " filterType " ") (vals filter))
+                                         ""
+                                         "inbound"
+                                         pop-callback)
+                                       (catch js/Object e
+                                        (ih/publish (clj->js {:topics topic
+                                                                 :error e}))))
+                                     :else (log :error "Invalid search type" searchType))
            :else (log :error "Invalid pop type" popType))
         (log :debug "Ignoring non-v2 screen pop"))))
 
