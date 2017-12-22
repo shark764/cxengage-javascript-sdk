@@ -165,6 +165,8 @@
   (s/keys :req-un []
           :opt-un [::specs/callback]))
 
+;; cxengageSsoWindow opened here will be blocked by popup blockers by default.
+;; The window must be previously opened by a on-click handler to not be blocked.
 (def-sdk-fn pop-identity-page
   {:validation ::identity-window-spec
    :topic-key :identity-window-response}
@@ -176,7 +178,7 @@
         url (if (= env "prod")
               "https://identity.cxengage.net"
               "https://identity.cxengagelabs.net")
-        window (js/window.open (str url "?env=" api "&domain=" domain "&clientid=" client) "targetWindow" "width=500,height=500")
+        window (js/window.open (str url "?env=" api "&domain=" domain "&clientid=" client) "cxengageSsoWindow" "width=500,height=500")
         _ (js/window.addEventListener "message" (partial post-message-handler window))]
     (go-loop []
       (if (= (.-closed window) false)
