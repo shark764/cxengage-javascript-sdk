@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.10.2]
+* CXV1-12330 - Give SSO popup window more unique, descriptive name
+
 ## [6.10.1]
 * CXV1-9857 - Updated salesforce-lightning screen pops
 
