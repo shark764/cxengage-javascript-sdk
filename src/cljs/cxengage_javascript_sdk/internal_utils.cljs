@@ -39,6 +39,12 @@
       m)
     (dissoc m k)))
 
+;; From https://stackoverflow.com/a/3249777
+(defn in?
+  "Returns true if coll contains elm"
+  [coll elm]
+  (some #(= elm %) coll))
+
 (defn api-url
   ([url]
    (str (state/get-base-api-url) url))

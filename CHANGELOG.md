@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.10.3]
+* CXV1-11841 - Send blank active tab set signals in zendesk when user and tickets are unfocused
+
 ## [6.10.2]
 * CXV1-12330 - Give SSO popup window more unique, descriptive name
 
