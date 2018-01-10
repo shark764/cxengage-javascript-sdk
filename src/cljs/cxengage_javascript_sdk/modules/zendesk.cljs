@@ -4,6 +4,8 @@
                    [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
   (:require [cljs.core.async :as a]
             [clojure.string :as string]
+            [clojure.set :refer [intersection]]
+            [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.protocols :as pr]
@@ -21,7 +23,10 @@
 ;; State Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(def zendesk-state (atom {}))
+(def zendesk-state (atom {:active-tabs #{}}))
+
+(defn add-active-tab! [tab-guid]
+  (swap! zendesk-state update-in [:active-tabs] conj tab-guid))
 
 (defn add-interaction! [interaction]
   (let [{:keys [interaction-id]} interaction]
@@ -29,9 +34,6 @@
 
 (defn update-active-tab! [interaction-id active-tab]
   (swap! zendesk-state assoc-in [:interactions interaction-id :active-tab] active-tab))
-
-(defn get-active-tab [interaction-id]
-  (get-in @zendesk-state [:interactions interaction-id :active-tab]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk SDK Functions
@@ -326,7 +328,20 @@
                                                          (aset response "ticket" "type" "ticket")
                                                          (swap! zendesk-state assoc :active-tab (:ticket (js->clj response :keywordize-keys true)))
                                                          (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
-                                                                      :response (js->clj response :keywordize-keys true)})))))))
+                                                                      :response (js->clj response :keywordize-keys true)}))))
+                                              (.then (js/client.get "instances")
+                                                (fn [response]
+                                                  (let [app-guid (:app-guid tab-data)
+                                                        active-instances (set (map name (keys (:instances (js->clj response :keywordize-keys true)))))]
+                                                    ;; Add listener for tab being deactivated (closed or unfocused) if we haven't yet added it.
+                                                    (when (not (iu/in? (get @zendesk-state :active-tabs) app-guid))
+                                                      (let [guidInstance (js/client.instance app-guid)]
+                                                        (.on guidInstance "app.deactivated" (fn []
+                                                                                              (ih/publish {:topics "cxengage/zendesk/active-tab-changed"
+                                                                                                           :response {}})))
+                                                        (add-active-tab! app-guid)))
+                                                    ;; Remove any tabs that have been closed from our list
+                                                    (swap! zendesk-state assoc :active-tabs (intersection (get @zendesk-state :active-tabs) active-instances))))))))
                 (ih/publish {:topics "cxengage/zendesk/zendesk-initialization"
                              :response true}))))
           (catch js/Object e
