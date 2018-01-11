@@ -17,10 +17,33 @@
 ;; Twilio Initialization Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn update-twilio-connection [connection]
-  (state/set-twilio-connection connection))
+(defn on-twilio-incoming [connection]
+  (log :debug "Twilio incoming. Connection:" connection)
+  (state/set-twilio-connection connection)
+  (state/set-twilio-state "incoming"))
+
+(defn on-twilio-ready [device]
+  (log :debug "Twilio ready. Device:" device)
+  (state/set-twilio-device device)
+  (state/set-twilio-state "ready"))
+
+(defn on-twilio-cancel [connection]
+  (log :debug "Twilio cancel. Connection:" connection)
+  (state/set-twilio-connection connection)
+  (state/set-twilio-state "cancel"))
+
+(defn on-twilio-offline [device]
+  (log :debug "Twilio offline. Device:" device)
+  (state/set-twilio-device device)
+  (state/set-twilio-state "offline"))
+
+(defn on-twilio-disconnect [connection]
+  (log :debug "Twilio disconnect. Connection:" connection)
+  (state/set-twilio-connection connection)
+  (state/set-twilio-state "disconnect"))
 
 (defn handle-twilio-error [error]
+  (log :error "Twilio error" error)
   (p/publish {:topics "cxengage/errors/error/twilio-device-error"
               :error (e/failed-to-init-twilio-err error)}))
 
@@ -53,11 +76,11 @@
                                                                     "region" region}))
                                 (catch js/Object e
                                   (handle-twilio-error e)))
-                              (js/Twilio.Device.incoming update-twilio-connection)
-                              (js/Twilio.Device.ready update-twilio-connection)
-                              (js/Twilio.Device.cancel update-twilio-connection)
-                              (js/Twilio.Device.offline update-twilio-connection)
-                              (js/Twilio.Device.disconnect update-twilio-connection)
+                              (js/Twilio.Device.incoming on-twilio-incoming)
+                              (js/Twilio.Device.ready on-twilio-ready)
+                              (js/Twilio.Device.cancel on-twilio-cancel)
+                              (js/Twilio.Device.offline on-twilio-offline)
+                              (js/Twilio.Device.disconnect on-twilio-disconnect)
                               (js/Twilio.Device.error handle-twilio-error))
                             (do (a/<! (a/timeout 250))
                                 (recur))))))]
@@ -100,6 +123,7 @@
                 twilio-integration (peek (filterv #(= (:type %1) "twilio") integrations))
                 twilio-token (get-in twilio-integration [:credentials :token])]
             (state/update-integration "twilio" twilio-integration)
+            (log :info "Refreshing Twilio token")
             (if (not= status 200)
               (p/publish {:topics topic
                           :error (e/failed-to-refresh-twilio-integration-err config-response)})
