@@ -185,21 +185,31 @@
                            :customer-on-hold customer-on-hold
                            :recording recording}})
     (when (= channel-type "voice")
-      (go-loop [t (a/timeout 30000)]
+      (go-loop [t (a/timeout 30000)
+                response-5xx-count 0]
         (let [interaction-bucket (state/find-interaction-location interaction-id)]
-          (if-not (or (= interaction-bucket :pending)
-                      (= interaction-bucket :active))
-            nil
+          (when (or (= interaction-bucket :pending)
+                    (= interaction-bucket :active))
             (let [{:keys [status api-response]} (a/<! (rest/send-interrupt-request
                                                        interaction-id
                                                        "voice-heartbeat"
                                                        {:resource-id (state/get-active-user-id)}))]
-              (if (or (= status 200)
-                      (= status 204))
+              (cond
+                (or (= status 200)
+                    (= status 204))
                 (do (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
                                 :response {:interaction-id interaction-id}})
                     (a/<! t)
-                    (recur (a/timeout 30000)))
+                    (recur (a/timeout 30000) 0))
+                (and (>= status 500)
+                     (< status 600)
+                     (<= response-5xx-count 3))
+                (do (log :error (str "Interaction heartbeat received 5xx server error: " status ". retrying in " (* 3 response-5xx-count) " seconds."))
+                    (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
+                                :error (e/failed-to-send-voice-interaction-heartbeat-5xx-err interaction-id api-response)})
+                    (a/<! (a/timeout (* 3000 (inc response-5xx-count))))
+                    (recur (a/timeout 30000) (inc response-5xx-count)))
+                :else
                 (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
                             :error (e/failed-to-send-voice-interaction-heartbeat-err interaction-id api-response)})))))))
     (when (or (= channel-type "sms")

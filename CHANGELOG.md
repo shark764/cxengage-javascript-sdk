@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.10.5]
+* CXV1-11510 - Added retry logic for 5xx errors on interaction heartbeats
+
 ## [6.10.4]
 * CXV1-12010 - Fixed calls being accepted before they were "incoming" on the Twilio device
 

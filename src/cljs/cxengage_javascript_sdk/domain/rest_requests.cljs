@@ -1,6 +1,5 @@
 (ns cxengage-javascript-sdk.domain.rest-requests
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]])
+  (:require-macros [lumbajack.macros :refer [log]])
   (:require [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
