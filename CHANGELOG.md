@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.10.4]
+* CXV1-12010 - Fixed calls being accepted before they were "incoming" on the Twilio device
+
 ## [6.10.3]
 * CXV1-11841 - Send blank active tab set signals in zendesk when user and tickets are unfocused
 

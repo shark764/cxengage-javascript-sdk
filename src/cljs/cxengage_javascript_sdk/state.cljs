@@ -449,6 +449,14 @@
   []
   (get-state-value [:internal :twilio-connection]))
 
+(defn set-twilio-state
+  [state]
+  (swap! sdk-state assoc-in [:internal :twilio-state] state))
+
+(defn get-twilio-state
+  []
+  (get-state-value [:internal :twilio-state]))
+
 ;;;;;;;;;;;;;
 ;; Messaging
 ;;;;;;;;;;;;;

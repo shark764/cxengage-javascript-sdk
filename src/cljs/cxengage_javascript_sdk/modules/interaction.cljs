@@ -114,19 +114,25 @@
                         :callback callback})
             (do (when (and (= channel-type "voice")
                            (= (:provider (state/get-active-extension)) "twilio"))
-                  (let [connection (state/get-twilio-connection)]
-                    (go-loop [t (a/timeout 3000)
-                              attempts 1]
-                      (if (= attempts 3)
-                        (p/publish {:topics topic
-                                    :error (e/failed-to-find-twilio-connection-object interaction-id)
-                                    :callback callback})
+                  (go-loop [t (a/timeout 1000)
+                            attempts 1]
+                    (if (= attempts 5)
+                      (p/publish {:topics topic
+                                  :error (e/failed-to-find-twilio-connection-object interaction-id)
+                                  :callback callback})
+                      (let [connection (state/get-twilio-connection)
+                            twilio-state (state/get-twilio-state)]
                         (if (and connection
-                                 (.-accept connection))
-                          (.accept connection)
-                          (do (a/<! t)
-                              (recur (a/timeout 3000)
-                                     (inc attempts))))))))
+                              (.-accept connection)
+                              (= "incoming" twilio-state))
+                          (do
+                            (log :debug "Accepting Twilio connection.")
+                            (.accept connection))
+                          (do
+                            (log :debug "Twilio not in an incoming state to accept. Waiting 1 second to try again." (str "State: " twilio-state) "Connection: " connection)
+                            (a/<! t)
+                            (recur (a/timeout 1000)
+                                   (inc attempts))))))))
                 (when (or (= channel-type "sms")
                           (= channel-type "messaging"))
                   (int/get-messaging-history interaction-id))))))))
