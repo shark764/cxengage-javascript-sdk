@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.11.0]
+* CXV1-12186 - New pub subs for Eckoh (update-call-controls and show-banner)
+
 ## [6.10.6]
 * CXV1-10482 - Prevent emails from being sent until the artifact for them has been created. Publish topic so client knows when they can send.
 

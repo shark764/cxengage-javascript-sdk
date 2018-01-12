@@ -70,6 +70,9 @@
                  :log-level-set "cxengage/logging/log-level-set"
                  :logs-saved "cxengage/logging/logs-saved"
 
+                 ;; Notifications
+                 :show-banner "cxengage/notifications/show-banner"
+
                  ;; Generic Interaction Topics
                  :work-offer-received "cxengage/interactions/work-offer-received"
                  :generic-screen-pop-received "cxengage/interactions/screen-pop-received"
@@ -150,6 +153,7 @@
                  :silent-monitoring-start-acknowledged "cxengage/interactions/voice/silent-monitoring-start-acknowledged"
                  :voice-interaction-heartbeat "cxengage/interactions/voice/heartbeat"
                  :force-killed-twilio-connection "cxengage/interactions/voice/force-killed-twilio-connection"
+                 :update-call-controls "cxengage/interactions/voice/update-call-controls"
 
                  ;; Messaging Interaction Topics
                  :transcript-response "cxengage/interactions/messaging/transcript-received"

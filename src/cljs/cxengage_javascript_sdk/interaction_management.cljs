@@ -362,6 +362,14 @@
     (p/publish {:topics (topics/get-topic :wrapup-ended)
                 :response {:interaction-id interaction-id}})))
 
+(defn handle-update-call-controls [message]
+  (p/publish {:topics (topics/get-topic :update-call-controls)
+              :response message}))
+
+(defn handle-show-banner [message]
+  (p/publish {:topics (topics/get-topic :show-banner)
+              :response message}))
+
 (defn msg-router [message]
   (let [handling-fn (case (:sdk-msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
@@ -390,6 +398,8 @@
                       :INTERACTIONS/RESOURCE_REMOVED handle-resource-removed
                       :INTERACTIONS/RESOURCE_HOLD handle-resource-hold
                       :INTERACTIONS/RESOURCE_RESUME handle-resource-resume
+                      :INTERACTIONS/UPDATE_CALL_CONTROLS handle-update-call-controls
+                      :INTERACTIONS/SHOW_BANNER handle-show-banner
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
@@ -438,6 +448,8 @@
                                        "resource-hold" :INTERACTIONS/RESOURCE_HOLD
                                        "resource-resume" :INTERACTIONS/RESOURCE_RESUME
                                        "transfer-connected" :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED
+                                       "update-call-controls" :INTERACTIONS/UPDATE_CALL_CONTROLS
+                                       "show-banner" :INTERACTIONS/SHOW_BANNER
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:sdk-msg-type inferred-notification-type} message))))
 
