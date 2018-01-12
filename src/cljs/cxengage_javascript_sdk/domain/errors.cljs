@@ -616,6 +616,14 @@
    :level "interaction-fatal"
    :message "Voice interaction heartbeat failed. The interaction on longer exists in CxEngage."})
 
+(defn failed-to-send-voice-interaction-heartbeat-5xx-err [interaction-id data]
+  {:code 7025
+   :context :voice
+   :data {:api-response data
+          :interaction-id interaction-id}
+   :level "warn"
+   :message "Voice interaction heartbeat failed with 5xx error. Retrying."})
+
 (defn no-microphone-access-err [error]
   {:code 8000
    :context :twilio
