@@ -234,7 +234,9 @@
               (error-pub-fn)
               (let [{:keys [artifact-id]} api-response]
                 (if artifact-id
-                  (state/store-email-reply-artifact-id artifact-id interaction-id)
+                  (do (state/store-email-reply-artifact-id artifact-id interaction-id)
+                      (p/publish {:topics (topics/get-topic :email-reply-artifact-created)
+                                  :response {:interaction-id interaction-id}}))
                   (do (log :error "Failed to get artifact id from create-artifact API response")
                       (error-pub-fn))))))))))
 
