@@ -730,6 +730,14 @@
    :level "warn"
    :message "Failed to send agent cancelled reply signal. Reporting around this email may be affected."})
 
+(defn failed-to-send-email-reply-no-artifact-err [interaction-id artifact-id]
+  {:code 10008
+   :context :email
+   :data {:interaction-id interaction-id
+          :artifact-id artifact-id}
+   :level "error"
+   :message "Failed to send email reply. There is no artifact for the interaction."})
+
 (defn failed-to-get-user-err [resource-id data]
   {:code 11000
    :context :entities

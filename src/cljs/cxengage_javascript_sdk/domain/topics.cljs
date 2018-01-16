@@ -112,6 +112,7 @@
                  :plain-body-received "cxengage/interactions/email/plain-body-received"
                  :html-body-received "cxengage/interactions/email/html-body-received"
                  :details-received "cxengage/interactions/email/details-received"
+                 :email-reply-artifact-created "cxengage/interactions/email/email-reply-artifact-created"
                  :add-attachment "cxengage/interactions/email/attachment-added"
                  :remove-attachment "cxengage/interactions/email/attachment-removed"
                  :send-reply "cxengage/interactions/email/send-reply"

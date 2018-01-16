@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.10.6]
+* CXV1-10482 - Prevent emails from being sent until the artifact for them has been created. Publish topic so client knows when they can send.
+
 ## [6.10.5]
 * CXV1-11510 - Added retry logic for 5xx errors on interaction heartbeats
 
