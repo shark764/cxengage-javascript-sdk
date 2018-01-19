@@ -18,13 +18,10 @@
                          response)]
       {:api-response api-response :status status})))
 
-(defn service-unavailable?
+(defn server-error?
   [status]
-  (= status 503))
-
-(defn internal-server-error?
-  [status]
-  (= status 500))
+  (and (>= status 500)
+       (< status 600)))
 
 (defn update-local-time-offset
   [response]
@@ -59,7 +56,7 @@
         (ajax/ajax-request request)
         (let [response (a/<! response-channel)
               {:keys [status]} response]
-          (if (and (or (internal-server-error? status) (service-unavailable? status)) (< failed-attempts 3))
+          (if (and (server-error? status) (< failed-attempts 3))
             (do
               (log :error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
               (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))

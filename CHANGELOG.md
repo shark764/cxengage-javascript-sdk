@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.11.1]
+* CXV1-11510 - Undo duplicate retry 5xx logic
+
 ## [6.11.0]
 * CXV1-12186 - New pub subs for Eckoh (update-call-controls and show-banner)
 

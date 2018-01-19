@@ -185,8 +185,7 @@
                            :customer-on-hold customer-on-hold
                            :recording recording}})
     (when (= channel-type "voice")
-      (go-loop [t (a/timeout 30000)
-                response-5xx-count 0]
+      (go-loop [t (a/timeout 30000)]
         (let [interaction-bucket (state/find-interaction-location interaction-id)]
           (when (or (= interaction-bucket :pending)
                     (= interaction-bucket :active))
@@ -194,22 +193,12 @@
                                                        interaction-id
                                                        "voice-heartbeat"
                                                        {:resource-id (state/get-active-user-id)}))]
-              (cond
-                (or (= status 200)
-                    (= status 204))
+              (if (or (= status 200)
+                      (= status 204))
                 (do (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
                                 :response {:interaction-id interaction-id}})
                     (a/<! t)
-                    (recur (a/timeout 30000) 0))
-                (and (>= status 500)
-                     (< status 600)
-                     (<= response-5xx-count 3))
-                (do (log :error (str "Interaction heartbeat received 5xx server error: " status ". retrying in " (* 3 response-5xx-count) " seconds."))
-                    (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
-                                :error (e/failed-to-send-voice-interaction-heartbeat-5xx-err interaction-id api-response)})
-                    (a/<! (a/timeout (* 3000 (inc response-5xx-count))))
-                    (recur (a/timeout 30000) (inc response-5xx-count)))
-                :else
+                    (recur (a/timeout 30000)))
                 (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
                             :error (e/failed-to-send-voice-interaction-heartbeat-err interaction-id api-response)})))))))
     (when (or (= channel-type "sms")
