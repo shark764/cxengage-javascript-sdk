@@ -80,6 +80,7 @@
 (s/def ::transfer-extension (s/keys :req-un [::type ::value]))
 (s/def ::transfer-type #{"cold" "warm"})
 (s/def ::transfer-list-id ::uuid)
+(s/def ::ttl number?)
 (s/def ::username string?)
 (s/def ::msg-type #{:js :cljs})
 (s/def ::update-body map?)

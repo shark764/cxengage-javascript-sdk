@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.11.2]
+* CXV1-10834 - Allowed for optional "ttl" property on CxEngage.authentication.login() method to allow for specifying token expiration via the front end
+
 ## [6.11.1]
 * CXV1-11510 - Undo duplicate retry 5xx logic
 
