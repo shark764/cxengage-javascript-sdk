@@ -49,6 +49,7 @@
 ;; CxEngage.authentication.login({
 ;;   username: "{{string}}",
 ;;   password: "{{string}}"
+;;   ttl: "{{number}}"
 ;; });
 ;;
 ;; OR
@@ -61,7 +62,7 @@
 (s/def ::login-spec
   (s/or
     :credentials (s/keys :req-un [::specs/username ::specs/password]
-                         :opt-un [::specs/callback])
+                         :opt-un [::specs/ttl ::specs/callback])
     :token (s/keys :req-un [::specs/token]
                    :opt-un [::specs/callback])))
 
@@ -69,7 +70,7 @@
   {:validation ::login-spec
    :topic-key :login-response}
   [params]
-  (let [{:keys [callback topic username password token]} params]
+  (let [{:keys [callback topic username password ttl token]} params]
     (if token
       (let [resp (a/<! (rest/login-request))
               {:keys [status api-response]} resp]
@@ -86,7 +87,8 @@
                           :response user-identity
                           :callback callback}))))
       (let [token-body {:username username
-                        :password password}
+                        :password password
+                        :ttl ttl}
             _ (state/reset-state)
             resp (a/<! (rest/token-request token-body))
             {:keys [status api-response]} resp]
