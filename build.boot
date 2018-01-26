@@ -16,7 +16,7 @@
                  [binaryage/devtools "0.9.4"]
                  [camel-snake-kebab "0.4.0"]
                  [funcool/promesa "1.8.1"]
-                 [cljsjs/paho "1.0.1-0"]
+                 [cljsjs/paho "1.0.3-0"]
                  [cljs-ajax "0.6.0"]
                  [expound "0.1.0"]
 

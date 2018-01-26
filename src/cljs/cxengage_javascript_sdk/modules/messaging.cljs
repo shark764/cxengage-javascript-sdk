@@ -121,6 +121,7 @@
   [endpoint client-id on-received]
   (let [mqtt (Paho.MQTT.Client. endpoint client-id)
         connect-options (js/Object.)]
+    (set! (.-reconnect connect-options) true)
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
                                       (if (zero? (get (js->clj reason-code :keywordize-keys true) :errorCode))
                                         (log :info "Previous Mqtt Session Successfully Disconnected")
