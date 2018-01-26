@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.11.3]
+* CXV1-12715 - MQTT Reconnect logic
+* Updated Paho to 1.0.3
+
 ## [6.11.2]
 * CXV1-10834 - Allowed for optional "ttl" property on CxEngage.authentication.login() method to allow for specifying token expiration via the front end
 
