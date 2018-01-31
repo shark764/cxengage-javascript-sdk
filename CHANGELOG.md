@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.11.4]
+* CXV1-12750 - Work items screen pop and assign
+
 ## [6.11.3]
 * CXV1-12715 - MQTT Reconnect logic
 * Updated Paho to 1.0.3

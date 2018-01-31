@@ -327,18 +327,37 @@
     (if (= "v2" version)
         (cond
           (= popType "url") (try
-                              (let [tab-details (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)
-                                    object-id (get tab-details :objectId)
-                                    hook {:interaction-id interactionId
-                                          :hook-id object-id
-                                          :hook-sub-type (get tab-details :object)
-                                          :hook-name (get tab-details :objectName)
-                                          :hook-type "salesforce-classic"}]
-                                (log :info "Popping URI:" (clj->js tab-details))
-                                (js/sforce.interaction.screenPop (str "/" object-id) true)
-                                (add-hook! interactionId hook)
-                                (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
-                                                      :response hook})))
+                              ;; Check if the popUri is JSON. If it is, that is one we assigned and are getting transferred.
+                              ;; If not, it is a work item from flow. It will be formatted like: "<case-number>/<object-id>"
+                              (if (try (js/JSON.parse (js/decodeURIComponent popUri))
+                                    true
+                                    (catch js/Object e
+                                      false))
+                                (let [tab-details (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)
+                                      object-id (get tab-details :objectId)
+                                      hook {:interaction-id interactionId
+                                            :hook-id object-id
+                                            :hook-sub-type (get tab-details :object)
+                                            :hook-name (get tab-details :objectName)
+                                            :hook-type "salesforce-classic"}]
+                                  (log :info "Popping transferred URI:" (clj->js tab-details))
+                                  (js/sforce.interaction.screenPop (str "/" object-id) true)
+                                  (add-hook! interactionId hook)
+                                  (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
+                                                        :response hook})))
+                                (let [uri-params (string/split popUri #"/")
+                                      object-name (first uri-params)
+                                      object-id (second uri-params)
+                                      hook {:interaction-id interactionId
+                                            :hook-id object-id
+                                            :hook-sub-type "case"
+                                            :hook-name object-name
+                                            :hook-type "salesforce-classic"}]
+                                  (log :info "Popping work item URI:" object-id object-name)
+                                  (js/sforce.interaction.screenPop (str "/" object-id) true)
+                                  (add-hook! interactionId hook)
+                                  (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
+                                                        :response hook}))))
                               (catch js/Object e
                                 (ih/publish (clj->js {:topics topic
                                                       :error e}))))
