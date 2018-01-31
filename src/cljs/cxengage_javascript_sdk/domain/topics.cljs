@@ -26,6 +26,8 @@
                  :get-active-user-id-response "cxengage/session/get-active-user-id-response"
                  :get-active-tenant-id-response "cxengage/session/get-active-tenant-id-response"
                  :get-token-response "cxengage/session/get-token-response"
+                 :set-token-response "cxengage/session/set-token-response"
+                 :set-user-identity-response "cxengage/session/set-user-identity-response"
                  :get-sso-token-response "cxengage/session/get-sso-token-response"
                  :set-locale-response "cxengage/session/set-locale-response"
                  :get-tenant-details "cxengage/session/get-tenant-details"
@@ -49,6 +51,7 @@
                  :get-transfer-lists-response "cxengage/entities/get-transfer-lists-response"
                  :get-user-response "cxengage/entities/get-user-response"
                  :get-users-response "cxengage/entities/get-users-response"
+                 :get-dashboards-response "cxengage/entities/get-dashboards-response"
                  :update-user-response "cxengage/entities/update-user-response"
                  :get-branding-response "cxengage/entities/get-branding-response"
 

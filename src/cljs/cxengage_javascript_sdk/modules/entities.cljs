@@ -176,6 +176,29 @@
       (p/publish {:topics topic
                   :error (e/failed-to-get-tenant-branding-err entity-response)
                   :callback callback}))))
+;
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getDashboards();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-dashboards-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback ::specs/exclude-inactive]))
+
+(def-sdk-fn get-dashboards
+  {:validation ::get-dashboards-params
+   :topic-key :get-dashboards-response}
+  [params]
+  (let [{:keys [callback topic exclude-inactive]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-dashboards-request :get "dashboard" exclude-inactive))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-dashboards-list-err entity-response)
+                  :callback callback}))))
+
 
 ;; -------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
@@ -220,6 +243,7 @@
                                        :get-queue get-queue
                                        :get-transfer-lists get-transfer-lists
                                        :get-transfer-list get-transfer-list
+                                       :get-dashboards get-dashboards
                                        :update-user update-user
                                        :get-branding get-branding}}
                     :module-name module-name})

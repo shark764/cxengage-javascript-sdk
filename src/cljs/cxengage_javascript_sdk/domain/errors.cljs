@@ -790,6 +790,13 @@
    :level "error"
    :message "Failed to update user."})
 
+(defn failed-to-get-dashboards-list-err [data]
+  {:Code 11008
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get dashboards list."})
+
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000
    :context :reporting
