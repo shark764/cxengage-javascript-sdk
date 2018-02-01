@@ -997,6 +997,13 @@
    :level "warn"
    :message "Failed to assign item. Cannot assign blank active tab."})
 
+(defn failed-to-assign-blank-salesforce-classic-item-err [error]
+  {:code 15008
+   :context :salesforce-classic
+   :data {:error error}
+   :level "error"
+   :message "Failed to get current salesforce classic user ID. Managed package may not have been installed or not be the correct version."})
+
 (defn failed-to-send-salesforce-lightning-assign-err [interaction-id data]
   {:code 16000
    :context :salesforce-lightning

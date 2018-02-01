@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.12.1]
+* CXV1-12778 - Use salesforce-classic user id for contact assignment's hook-by id
+
 ## [6.12.0]
 * Added support functions for CXV1-12639
 

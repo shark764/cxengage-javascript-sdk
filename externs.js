@@ -191,6 +191,11 @@ sforce.interaction.cti.onClickToDial = function() {};
 sforce.interaction.onFocus = function() {};
 
 /**
+* @return {Object}
+*/
+sforce.interaction.runApex = function() {};
+
+/**
 * @interface
 */
 sforce.opencti = function() {};
