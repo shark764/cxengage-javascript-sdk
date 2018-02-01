@@ -22,6 +22,12 @@
 
 (def sfc-state (atom {}))
 
+(defn set-current-salesforce-user-id! [user-id]
+  (swap! sfc-state assoc-in [:user-id] user-id))
+
+(defn get-current-salesforce-user-id []
+  (or (:user-id @sfc-state) ""))
+
 (defn get-interaction [interaction-id]
   (or (get-in @sfc-state [:interactions interaction-id]) {}))
 
@@ -142,7 +148,7 @@
     (let [{:keys [object objectId objectName]} tab-details
           resource-id (state/get-active-user-id)
           interrupt-type "interaction-hook-add"
-          interrupt-body {:hook-by resource-id
+          interrupt-body {:hook-by (get-current-salesforce-user-id)
                           :hook-type "salesforce-classic"
                           :hook-sub-type object
                           :hook-id objectId
@@ -304,6 +310,15 @@
       (ih/publish {:topics "cxengage/salesforce-classic/active-tab-changed"
                    :response (js->clj result :keywordize-keys true)}))))
 
+(defn handle-get-current-user-id [js-response]
+  (let [response (js->clj js-response :keywordize-keys true)
+        result (:result response)
+        error (:error response)]
+    (if-not error
+      (set-current-salesforce-user-id! result)
+      (ih/publish (clj->js {:topics "cxengage/salesforce-classic/failed-to-get-current-user-id"
+                            :error (e/failed-to-get-current-salesforce-classic-user-id-err error)})))))
+
 (defn handle-click-to-dial [dial-details]
   (let [result (:result (js->clj dial-details :keywordize-keys true))
         parsed-result (js/JSON.parse result)]
@@ -411,6 +426,7 @@
       (do
         (js/sforce.interaction.onFocus handle-focus-change)
         (js/sforce.interaction.cti.disableClickToDial)
+        (js/sforce.interaction.runApex "net_cxengage.CxLookup" "getCurrentUserId" "" handle-get-current-user-id)
         (try
           (js/sforce.interaction.cti.onClickToDial handle-click-to-dial)
           (ih/publish (clj->js {:topics "cxengage/salesforce-classic/initialize-complete"
