@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.12.0]
+* Added support functions for CXV1-12639
+
 ## [6.11.4]
 * CXV1-12750 - Work items screen pop and assign
 

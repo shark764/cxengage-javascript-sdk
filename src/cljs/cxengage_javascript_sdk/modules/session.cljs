@@ -101,7 +101,7 @@
                       :error (e/failed-to-start-agent-session-err resp)}))
         nil)))
 
-(defn- get-config* []
+(defn- get-config* [no-session]
   (go (let [topic (topics/get-topic :config-response)
             config-response (a/<! (rest/get-config-request))
             {:keys [api-response status]} config-response
@@ -109,25 +109,26 @@
             extensions (get user-config :extensions)]
         (if (= status 200)
           (do (state/set-config! user-config)
-              (ih/send-core-message {:type :config-ready})
               (p/publish {:topics topic
                           :response user-config})
               (p/publish {:topics (topics/get-topic :extension-list)
                           :response (select-keys user-config [:active-extension :extensions])})
-              (start-session*))
+              (when-not no-session
+                (start-session*)
+                (ih/send-core-message {:type :config-ready})))
           (p/publish {:topics topic
                       :error (e/failed-to-get-session-config-err config-response)}))))
   nil)
 
 (s/def ::set-active-tenant-spec
   (s/keys :req-un [::specs/tenant-id]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/callback ::specs/no-session]))
 
 (def-sdk-fn set-active-tenant
   {:validation ::set-active-tenant-spec
    :topic-key :active-tenant-set}
   [params]
-  (let [{:keys [callback topic tenant-id]} params
+  (let [{:keys [callback topic tenant-id no-session]} params
         tenant-permissions (state/get-tenant-permissions tenant-id)
         {:keys [status api-response] :as resp} (a/<! (rest/get-tenant-request tenant-id))
         region-id (get-in api-response [:result :region-id])]
@@ -146,7 +147,7 @@
               (p/publish {:topics topic
                           :response {:tenant-id tenant-id}
                           :callback callback})
-              (get-config*))))))))
+              (get-config* no-session))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.setDirection({ direction: "{{inbound/outbound}}" });
@@ -287,6 +288,34 @@
     token))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.setToken();
+;; -------------------------------------------------------------------------- ;;
+
+(defn set-token [& params]
+  (let [token (first params)
+        callback (second params)
+        callback (if (fn? callback) callback nil)
+        _ (state/set-token! token)]
+    (p/publish {:topic (topics/get-topic :set-token-response)
+                :response token
+                :callback callback})
+    token))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.setUserIdentity();
+;; -------------------------------------------------------------------------- ;;
+
+(defn set-user-identity [& params]
+  (let [user (first params)
+        callback (second params)
+        callback (if (fn? callback) callback nil)
+        _ (state/set-user-identity! {:user-id user})]
+    (p/publish {:topic (topics/get-topic :set-user-identity-response)
+                :response user
+                :callback callback})
+    user))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.getSSOToken();
 ;; -------------------------------------------------------------------------- ;;
 
@@ -355,6 +384,8 @@
                                        :get-token get-token
                                        :get-sso-token get-sso-token
                                        :set-locale set-locale
+                                       :set-token set-token
+                                       :set-user-identity set-user-identity
                                        :get-tenant-details get-tenant-details}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status

@@ -505,3 +505,16 @@
   (let [get-tenant-details-request {:method :get
                                     :url (iu/api-url "me")}]
     (api/api-request get-tenant-details-request)))
+
+(defn get-dashboards-request [method entity-type exclude-inactive]
+  (let [tenant-id (state/get-active-tenant-id)
+        url (str "tenants/:tenant-id/" entity-type "s")
+        url (if exclude-inactive
+              (str url "?active=true")
+              url)
+        get-url (iu/api-url
+                 url
+                 {:tenant-id tenant-id})
+        get-request {:method method
+                     :url get-url}]
+    (api/api-request get-request)))
