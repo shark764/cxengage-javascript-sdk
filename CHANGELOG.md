@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+##[6.12.3]
+* CXV1-11915 - Error Banner (Code: 7024) Has Spelling Error
+
 ## [6.12.2]
 * CXV1-12707 - MQTT Banner on connection loss
 
