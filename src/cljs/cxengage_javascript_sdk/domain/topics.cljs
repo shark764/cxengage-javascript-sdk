@@ -169,6 +169,7 @@
                  ;; Errors
                  :failed-to-refresh-sqs-integration "cxengage/errors/fatal/failed-to-refresh-sqs-integration"
                  :mqtt-failed-to-connect "cxengage/errors/fatal/mqtt-failed-to-connect"
+                 :mqtt-lost-connection "cxengage/errors/error/mqtt-lost-connection"
                  :failed-to-retrieve-messaging-history "cxengage/errors/error/failed-to-retrieve-messaging-history"
                  :failed-to-retrieve-messaging-metadata "cxengage/errors/error/failed-to-retrieve-messaging-metadata"
                  :failed-to-create-email-reply-artifact "cxengage/errors/error/failed-to-create-email-reply-artifact"

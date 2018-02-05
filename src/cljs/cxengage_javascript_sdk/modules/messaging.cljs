@@ -126,6 +126,9 @@
                                       (if (zero? (get (js->clj reason-code :keywordize-keys true) :errorCode))
                                         (log :info "Previous Mqtt Session Successfully Disconnected")
                                         (do
+                                          (p/publish {:topics (topics/get-topic :mqtt-lost-connection)
+                                                      :error (e/mqtt-connection-lost-err {:reason-code reason-code
+                                                                                          :reason-message reason-message})})
                                           (log :error "Mqtt Connection Lost")
                                           (log :error (clj->js {:reasonCode reason-code
                                                                 :reasonMessage reason-message}))))))
