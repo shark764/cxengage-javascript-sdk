@@ -363,16 +363,12 @@
                                 (let [uri-params (string/split popUri #"/")
                                       object-name (first uri-params)
                                       object-id (second uri-params)
-                                      hook {:interaction-id interactionId
-                                            :hook-id object-id
-                                            :hook-sub-type "case"
-                                            :hook-name object-name
-                                            :hook-type "salesforce-classic"}]
+                                      tab-details {:object "Case"
+                                                   :objectId object-id
+                                                   :objectName object-name}]
                                   (log :info "Popping work item URI:" object-id object-name)
                                   (js/sforce.interaction.screenPop (str "/" object-id) true)
-                                  (add-hook! interactionId hook)
-                                  (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
-                                                        :response hook}))))
+                                  (send-assign-interrupt tab-details interactionId nil "cxengage/salesforce-classic/contact-assignment-acknowledged")))
                               (catch js/Object e
                                 (ih/publish (clj->js {:topics topic
                                                       :error e}))))

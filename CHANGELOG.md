@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-##[6.12.3]
+## [6.12.4]
+* CXV1-12834 - Automatically add hooks for work items
+
+## [6.12.3]
 * CXV1-11915 - Error Banner (Code: 7024) Has Spelling Error
 
 ## [6.12.2]
