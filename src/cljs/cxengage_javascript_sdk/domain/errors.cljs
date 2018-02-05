@@ -614,7 +614,7 @@
    :data {:api-response data
           :interaction-id interaction-id}
    :level "interaction-fatal"
-   :message "Voice interaction heartbeat failed. The interaction on longer exists in CxEngage."})
+   :message "Voice interaction heartbeat failed. The interaction no longer exists in CxEngage."})
 
 (defn no-microphone-access-err [error]
   {:code 8000
