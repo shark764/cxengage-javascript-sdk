@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.12.2]
+* CXV1-12707 - MQTT Banner on connection loss
+
 ## [6.12.1]
 * CXV1-12778 - Use salesforce-classic user id for contact assignment's hook-by id
 

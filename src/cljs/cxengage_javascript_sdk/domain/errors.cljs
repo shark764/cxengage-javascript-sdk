@@ -653,6 +653,13 @@
    :level "session-fatal"
    :message "Unable to connect to MQTT."})
 
+(defn mqtt-connection-lost-err [data]
+  {:code 9001
+   :context :mqtt
+   :data data
+   :level "error"
+   :message "The connection to MQTT has been lost."})
+
 (defn failed-to-create-email-reply-artifact-err [interaction-id artifact-body data]
   {:code 10000
    :context :email
