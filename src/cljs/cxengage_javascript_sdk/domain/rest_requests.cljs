@@ -518,3 +518,83 @@
         get-request {:method method
                      :url get-url}]
     (api/api-request get-request)))
+
+(defn get-list-item-request [list-id list-item-key]
+  (let [tenant-id (state/get-active-tenant-id)
+        get-list-item-request {:method :get
+                               :url (iu/api-url
+                                     "tenants/:tenant-id/lists/:list-id/:list-item-key"
+                                     {:tenant-id tenant-id
+                                      :list-id list-id
+                                      :list-item-key list-item-key})}]
+
+    (api/api-request get-list-item-request)))
+
+(defn get-lists-request [list-type-id name]
+  (let [tenant-id (state/get-active-tenant-id)
+        url (str "tenants/:tenant-id/lists")
+        url (cond list-type-id (str url "?list-type-id=" list-type-id)
+                  name         (str url "?name=" name)
+                  :else url)
+        get-lists-request {:method :get
+                           :url    (iu/api-url
+                                    url
+                                    {:tenant-id tenant-id})}]
+    (api/api-request get-lists-request)))
+
+(defn create-list-request [list-type-id name items active]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-list-request {:method :post
+                             :url (iu/api-url
+                                   "tenants/:tenant-id/lists"
+                                   {:tenant-id tenant-id})
+                             :body {:list-type-id list-type-id
+                                    :name name
+                                    :items []
+                                    :active active}}]
+    (api/api-request create-list-request)))
+
+(defn create-list-item-request [list-id item-value]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-list-item-request {:method :post
+                                  :url (iu/api-url
+                                        "tenants/:tenant-id/lists/:list-id"
+                                        {:tenant-id tenant-id
+                                         :list-id list-id})
+                                  :body {:list-id list-id
+                                         :item-value item-value}}]
+    (api/api-request create-list-item-request)))
+
+(defn update-list-request [list-id name active]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-list-request (cond-> {:method :put
+                                     :url (iu/api-url "tenants/:tenant-id/lists/:list-id"
+                                                      {:tenant-id tenant-id
+                                                       :list-id list-id})}
+                              list-id             (assoc-in [:body :list-id] list-id)
+                              name                (assoc-in [:body :name]    name)
+                              (not (nil? active)) (assoc-in [:body :active] active))]
+    (api/api-request update-list-request)))
+
+(defn update-list-item-request [list-item-id list-item-key item-value]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-list-item-request {:method :put
+                                  :preserve-casing? true
+                                  :url (iu/api-url
+                                        "tenants/:tenant-id/lists/:list-item-id/:list-item-key"
+                                        {:tenant-id tenant-id
+                                         :list-item-id list-item-id
+                                         :list-item-key list-item-key})
+                                  :body {:item-value item-value}}]
+    (api/api-request update-list-item-request)))
+
+(defn delete-list-item-request [list-id list-item-key]
+  (let [tenant-id (state/get-active-tenant-id)
+        delete-list-item-request {:method :delete
+                                  :preserve-casing? true
+                                  :url (iu/api-url
+                                        "tenants/:tenant-id/lists/:list-id/:list-item-key"
+                                        {:tenant-id tenant-id
+                                         :list-id list-id
+                                         :list-item-key list-item-key})}]
+    (api/api-request delete-list-item-request)))

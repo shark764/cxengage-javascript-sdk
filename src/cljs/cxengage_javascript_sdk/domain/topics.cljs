@@ -54,6 +54,14 @@
                  :get-dashboards-response "cxengage/entities/get-dashboards-response"
                  :update-user-response "cxengage/entities/update-user-response"
                  :get-branding-response "cxengage/entities/get-branding-response"
+                 :get-list-response "cxengage/entities/get-list-response"
+                 :get-list-item-response "cxengage/entities/get-list-item-response"
+                 :get-lists-response "cxengage/entities/get-lists-response"
+                 :create-list-response "cxengage/entities/create-list-response"
+                 :create-list-item-response "cxengage/entities/create-list-item-response"
+                 :update-list-response "cxengage/entities/update-list-response"
+                 :update-list-item-response "cxengage/entities/update-list-item-response"
+                 :delete-list-item-response "cxengage/entities/delete-list-item-response"
 
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"

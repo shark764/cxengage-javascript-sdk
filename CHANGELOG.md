@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.13.0]
+* CXV1-12814 - Add Lists API to the SDK
+
 ## [6.12.5]
 * CXV1-12732 - Return interaction-fatal error on script send 404
 
