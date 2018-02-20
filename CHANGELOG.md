@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.12.5]
+* CXV1-12732 - Return interaction-fatal error on script send 404
+
 ## [6.12.4]
 * CXV1-12834 - Automatically add hooks for work items
 
