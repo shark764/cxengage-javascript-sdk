@@ -19,11 +19,10 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (defn add-key-to-items [list-obj]
-  (let [
-    list-item-key (camel/->kebab-case (get (first (get-in list-obj [:list-type :fields])) :name))
-    items (get list-obj :items)
-    updated-items (mapv #(assoc % :key (get % (keyword list-item-key))) items)]
-      (assoc list-obj :items updated-items)))
+  (let [list-item-key (camel/->kebab-case (get (first (get-in list-obj [:list-type :fields])) :name))
+        items (get list-obj :items)
+        updated-items (mapv #(assoc % :key (get % (keyword list-item-key))) items)]
+    (assoc list-obj :items updated-items)))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; GET Entity Functions
@@ -277,7 +276,7 @@
    :topic-key :get-lists-response}
   [params]
   (let [{:keys [callback topic list-type-id name]} params
-      {:keys [status api-response] :as entity-response} (a/<! (rest/get-lists-request list-type-id name))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-lists-request list-type-id name))]
     (if (= status 200)
       (let [lists (get-in api-response [:result])
             updated-lists (mapv #(add-key-to-items %) lists)
@@ -371,7 +370,7 @@
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :response (e/failed-to-update-user-err update-body resource-id entity-response)
+                  :error (e/failed-to-update-user-err update-body resource-id entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -397,7 +396,7 @@
                   :response (add-key-to-items (get api-response :result))
                   :callback callback})
       (p/publish {:topics topic
-                  :response (e/failed-to-update-list-err entity-response)
+                  :error (e/failed-to-update-list-err entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -432,7 +431,7 @@
                   :response entity-response
                   :callback callback})
       (p/publish {:topics topic
-                  :response (e/failed-to-update-list-item-err entity-response)
+                  :error (e/failed-to-update-list-item-err entity-response)
                   :callback callback}))))
 
 ;;--------------------------------------------------------------------------- ;;

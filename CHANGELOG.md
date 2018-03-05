@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.13.1]
+* CXV1-12814 - Fix error responses for some of Lists functions
+
 ## [6.13.0]
 * CXV1-12814 - Add Lists API to the SDK
 
