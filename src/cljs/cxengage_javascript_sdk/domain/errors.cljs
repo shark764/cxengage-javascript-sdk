@@ -862,6 +862,13 @@
    :level "error"
    :message "Failed to delete list item."})
 
+(defn failed-to-get-list-types-err [data]
+ {:Code 11017
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to get lists types."})
+
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000
    :context :reporting

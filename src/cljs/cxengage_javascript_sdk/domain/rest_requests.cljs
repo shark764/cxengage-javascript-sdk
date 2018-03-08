@@ -542,6 +542,15 @@
                                     {:tenant-id tenant-id})}]
     (api/api-request get-lists-request)))
 
+(defn get-list-types-request []
+  (let [tenant-id (state/get-active-tenant-id)
+        url (str "tenants/:tenant-id/list-types")
+        get-list-types-request {:method :get
+                                :url    (iu/api-url
+                                         url
+                                         {:tenant-id tenant-id})}]
+    (api/api-request get-list-types-request)))
+
 (defn create-list-request [list-type-id name items active]
   (let [tenant-id (state/get-active-tenant-id)
         create-list-request {:method :post
