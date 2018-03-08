@@ -288,6 +288,29 @@
       (p/publish {:topics topic
                   :error (e/failed-to-get-lists-err entity-response)
                   :callback callback}))))
+
+;;--------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getListTypes();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-list-types-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-list-types
+  {:validation ::get-list-types-params
+   :topic-key :get-list-types-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-list-types-request))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-list-types-err entity-response)
+                  :callback callback}))))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -484,6 +507,7 @@
                                        :get-list get-list
                                        :get-list-item get-list-item
                                        :get-lists get-lists
+                                       :get-list-types get-list-types
                                        :create-list create-list
                                        :create-list-item create-list-item
                                        :update-user update-user

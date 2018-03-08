@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.14.0]
+* CXV1-12814 - Added getListTypes function
+
 ## [6.13.1]
 * CXV1-12814 - Fix error responses for some of Lists functions
 

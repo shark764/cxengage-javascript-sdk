@@ -57,6 +57,7 @@
                  :get-list-response "cxengage/entities/get-list-response"
                  :get-list-item-response "cxengage/entities/get-list-item-response"
                  :get-lists-response "cxengage/entities/get-lists-response"
+                 :get-list-types-response "cxengage/entities/get-list-types-response"
                  :create-list-response "cxengage/entities/create-list-response"
                  :create-list-item-response "cxengage/entities/create-list-item-response"
                  :update-list-response "cxengage/entities/update-list-response"
