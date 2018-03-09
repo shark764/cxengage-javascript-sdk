@@ -1,3 +1,5 @@
+;; Twilio documentation: https://www.twilio.com/docs/api/client/twilio-js
+
 (ns cxengage-javascript-sdk.modules.twilio
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]]
@@ -20,12 +22,22 @@
 (defn on-twilio-incoming [connection]
   (log :debug "Twilio incoming. Connection:" connection)
   (state/set-twilio-connection connection)
-  (state/set-twilio-state "incoming"))
+  (state/set-twilio-state "incoming")
+  (when (state/get-supervisor-mode)
+    (.accept connection)))
+
+(defn on-twilio-connect [connection]
+  (log :debug "Twilio connect. Connection:" connection)
+  (state/set-twilio-connection connection)
+  (state/set-twilio-state "connect"))
 
 (defn on-twilio-ready [device]
   (log :debug "Twilio ready. Device:" device)
   (state/set-twilio-device device)
-  (state/set-twilio-state "ready"))
+  (state/set-twilio-state "ready")
+  (when (state/get-supervisor-mode)
+    (p/publish {:topics (topics/get-topic :twilio-device-ready)
+                :response {}})))
 
 (defn on-twilio-cancel [connection]
   (log :debug "Twilio cancel. Connection:" connection)
@@ -77,6 +89,7 @@
                                 (catch js/Object e
                                   (handle-twilio-error e)))
                               (js/Twilio.Device.incoming on-twilio-incoming)
+                              (js/Twilio.Device.connect on-twilio-connect)
                               (js/Twilio.Device.ready on-twilio-ready)
                               (js/Twilio.Device.cancel on-twilio-cancel)
                               (js/Twilio.Device.offline on-twilio-offline)

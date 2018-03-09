@@ -87,7 +87,7 @@
   (set-env! :source-paths #(conj % "src/cljs" "src/prod_cljs"))
   (task-options! cljs {:compiler-options {:optimizations :advanced
                                           :externs ["externs.js"]
-                                          :pseudo-names true
+                                          :pseudo-names false
                                           :output-wrapper true
                                           :compiler-stats true
                                           :anon-fn-naming-policy :mapped

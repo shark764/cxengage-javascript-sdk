@@ -33,7 +33,7 @@
             [cxengage-javascript-sdk.modules.salesforce-classic :as sfc]
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]))
 
-(def *SDK-VERSION* "6.15.0")
+(def *SDK-VERSION* "6.16.0")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -88,10 +88,16 @@
         voice {:name "voice" :record (voice/map->VoiceModule.)}
         email {:name "email" :record (email/map->EmailModule.)}
         reporting {:name "reporting" :record (reporting/map->ReportingModule.)}
-        twilio {:name "twilio" :record (twilio/map->TwilioModule.)}]
-    (doseq [module [sqs messaging voice email reporting twilio]]
-      (when-not (some #(= % (get module :name)) enabled-modules)
-        (start-internal-module (get module :record))))))
+        twilio {:name "twilio" :record (twilio/map->TwilioModule.)}
+        modules-to-be-enabled (if-not (state/get-supervisor-mode)
+                                [sqs messaging voice email reporting twilio]
+                                (if (state/is-default-extension-twilio)
+                                  [sqs voice twilio]
+                                  [sqs voice]))]
+    (doseq [module modules-to-be-enabled]
+      (if-not (some #(= % (get module :name)) enabled-modules)
+        (start-internal-module (get module :record))
+        (log :debug "Module already enabled: " (get module :name))))))
 
 (defn handle-module-registration-status
   [m]
@@ -133,11 +139,12 @@
                    (assoc :log-level (keyword (or (:log-level opts) :debug)))
                    (assoc :locale (or (:locale opts) "en-US"))
                    (assoc :blast-sqs-output (or (:blast-sqs-output opts) false))
-                   (assoc :environment (keyword (or (:environment opts) :prod))))]
+                   (assoc :environment (keyword (or (:environment opts) :prod)))
+                   (assoc :supervisor-mode (or (:supervisor-mode opts) false)))]
       (if-not (s/valid? ::initialize-options opts)
         (do (js/console.error (clj->js (e/bad-sdk-init-opts-err)))
             nil)
-        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate crm-module locale]} opts
+        (let [{:keys [log-level consumer-type base-url environment blast-sqs-output reporting-refresh-rate crm-module locale supervisor-mode]} opts
               module-comm-chan (a/chan 1024)
               core (ih/camelify {:version *SDK-VERSION*
                                  :subscribe pu/subscribe
@@ -158,6 +165,7 @@
           (state/set-reporting-refresh-rate! reporting-refresh-rate)
           (state/set-env! environment)
           (state/set-blast-sqs-output! blast-sqs-output)
+          (state/set-supervisor-mode! supervisor-mode)
           (start-base-modules module-comm-chan)
           (start-crm-module module-comm-chan crm-module)
           (start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan)))))))

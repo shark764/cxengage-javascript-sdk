@@ -618,6 +618,14 @@
    :level "interaction-fatal"
    :message "Voice interaction heartbeat failed. The interaction no longer exists in CxEngage."})
 
+(defn failed-to-start-silent-monitoring-no-extension [interaction-id extensions]
+  {:code 7025
+   :context :voice
+   :data {:interaction-id interaction-id
+          :extensions extensions}
+   :level "error"
+   :message "There is no extension to use to start silent monitoring ."})
+
 (defn no-microphone-access-err [error]
   {:code 8000
    :context :twilio
@@ -938,6 +946,20 @@
           :sub-type sub-type}
    :level "error"
    :message "Failed to retrieve CRM Interaction information."})
+
+(defn failed-to-get-groups-err [data]
+  {:code 12007
+   :context :reporting
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get groups."})
+
+(defn failed-to-get-skills-err [data]
+  {:code 12008
+   :context :reporting
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get skills."})
 
 (defn failed-to-retrieve-contact-layouts-list-err [data]
   {:code 13000

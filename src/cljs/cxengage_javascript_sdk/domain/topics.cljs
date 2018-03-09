@@ -2,10 +2,7 @@
   (:require-macros [lumbajack.macros :refer [log]])
   (:require [lumbajack.core :as jack]))
 
-(def sdk-topics {;; Misc Topics
-                 :voice-enabled "cxengage/capabilities/voice-available"
-                 :messaging-enabled "cxengage/capabilities/messaging-available"
-
+(def sdk-topics {
                  ;; Authentication Topics
                  :login-response "cxengage/authentication/login-response"
                  :auth-info-response "cxengage/authentication/auth-info-response"
@@ -25,12 +22,14 @@
                  :session-ended "cxengage/session/ended"
                  :get-active-user-id-response "cxengage/session/get-active-user-id-response"
                  :get-active-tenant-id-response "cxengage/session/get-active-tenant-id-response"
+                 :get-default-extension-response "cxengage/session/get-default-extension-response"
                  :get-token-response "cxengage/session/get-token-response"
                  :set-token-response "cxengage/session/set-token-response"
                  :set-user-identity-response "cxengage/session/set-user-identity-response"
                  :get-sso-token-response "cxengage/session/get-sso-token-response"
                  :set-locale-response "cxengage/session/set-locale-response"
                  :get-tenant-details "cxengage/session/get-tenant-details"
+                 :sqs-shut-down "cxengage/session/sqs-shut-down"
 
                  ;; Contact topics
                  :get-contact "cxengage/contacts/get-contact-response"
@@ -78,6 +77,8 @@
                  :polling-started "cxengage/reporting/polling-started"
                  :polling-stopped "cxengage/reporting/polling-stopped"
                  :get-crm-interactions-response "cxengage/reporting/get-crm-interactions-response"
+                 :get-groups-response "cxengage/reporting/get-groups-response"
+                 :get-skills-response "cxengage/reporting/get-skills-response"
 
                  ;; Logging
                  :logs-dumped "cxengage/logging/logs-dumped"
@@ -168,6 +169,11 @@
                  :voice-interaction-heartbeat "cxengage/interactions/voice/heartbeat"
                  :force-killed-twilio-connection "cxengage/interactions/voice/force-killed-twilio-connection"
                  :update-call-controls "cxengage/interactions/voice/update-call-controls"
+                 :silent-monitor-start "cxengage/interactions/voice/silent-monitor-start"
+                 :silent-monitor-end "cxengage/interactions/voice/silent-monitor-end"
+
+                 ;; Twilio Topics
+                 :twilio-device-ready "cxengage/twilio/device-ready"
 
                  ;; Messaging Interaction Topics
                  :transcript-response "cxengage/interactions/messaging/transcript-received"

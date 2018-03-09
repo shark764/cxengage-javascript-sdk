@@ -72,6 +72,12 @@
 (defn get-blast-sqs-output []
   (get-state-value [:config :blast-sqs-output]))
 
+(defn set-supervisor-mode! [supervisor-mode]
+  (swap! sdk-state assoc-in [:config :supervisor-mode] supervisor-mode))
+
+(defn get-supervisor-mode []
+  (get-state-value [:config :supervisor-mode]))
+
 (defn set-reporting-refresh-rate! [rate]
   (swap! sdk-state assoc-in [:config :reporting-refresh-rate] rate))
 
@@ -341,6 +347,13 @@
 (defn get-all-extensions []
   (get-state-value [:session :config :extensions]))
 
+(defn get-default-extension []
+  (first (get-state-value [:session :config :extensions])))
+
+(defn is-default-extension-twilio []
+  (and (= (:type (get-default-extension)) "webrtc")
+       (= (:provider (get-default-extension)) "twilio")))
+
 (defn get-all-integrations []
   (get-state-value [:session :config :integrations]))
 
@@ -430,7 +443,7 @@
   (get-state-value [:session :state]))
 
 ;;;;;;;;;;;
-;; twilio
+;; Twilio
 ;;;;;;;;;;;
 
 (defn set-twilio-device
@@ -502,3 +515,8 @@
   (let [modules (get-enabled-modules)
         appended (conj modules module-name)]
     (swap! sdk-state assoc-in [:internal :enabled-modules] appended)))
+
+(defn remove-enabled-module!
+  [module-name]
+  (let [modules-after-removal (remove #{module-name} (get-enabled-modules))]
+    (swap! sdk-state assoc-in [:internal :enabled-modules] modules-after-removal)))

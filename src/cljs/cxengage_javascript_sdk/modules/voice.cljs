@@ -22,12 +22,8 @@
           :opt-un [::specs/callback]))
 
 (s/def ::generic-resource-voice-interaction-fn-params
-  (s/keys :req-un [::specs/interaction-id ::specs/target-resource-id]
-          :opt-un [::specs/callback]))
-
-(s/def ::silent-monitoring-params
   (s/keys :req-un [::specs/interaction-id]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/callback ::specs/target-resource-id]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.silentMonitor({
@@ -36,20 +32,26 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn silent-monitor
-  {:validation ::silent-monitoring-params
+  {:validation ::generic-voice-interaction-fn-params
    :topic-key :silent-monitoring-start-acknowledged}
   [params]
   (let [{:keys [interaction-id topic callback]} params
-        interrupt-type "silent-monitoring"
-        interrupt-body {:resource-id (state/get-active-user-id)
-                        :active-extension (state/get-active-extension)}
-        {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
-    (if (= status 200)
+        extension (first (state/get-all-extensions))]
+    (if extension
+      (let [interrupt-type "silent-monitoring"
+            interrupt-body {:resource-id (state/get-active-user-id)
+                            :active-extension extension
+                            :session-id (state/get-session-id)}
+            {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
+        (if (= status 200)
+          (p/publish {:topics topic
+                      :response (merge {:interaction-id interaction-id} interrupt-body)
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-start-silent-monitoring interaction-id interrupt-response)
+                      :callback callback})))
       (p/publish {:topics topic
-                  :response (merge {:interaction-id interaction-id} interrupt-body)
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-start-silent-monitoring interaction-id interrupt-response)
+                  :error (e/failed-to-start-silent-monitoring-no-extension interaction-id (state/get-all-extensions))
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -99,7 +101,7 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.mute({
 ;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}"
+;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
@@ -111,7 +113,7 @@
         resource-id (state/get-active-user-id)
         interrupt-type "mute-resource"
         interrupt-body {:resource-id resource-id
-                        :target-resource target-resource-id}
+                        :target-resource (or target-resource-id resource-id)}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
@@ -124,7 +126,7 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.unmute({
 ;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}"
+;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
@@ -136,7 +138,7 @@
         resource-id (state/get-active-user-id)
         interrupt-type "unmute-resource"
         interrupt-body {:resource-id resource-id
-                        :target-resource target-resource-id}
+                        :target-resource (or target-resource-id resource-id)}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
@@ -149,7 +151,7 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.resourceHold({
 ;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}"
+;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
@@ -161,7 +163,7 @@
         resource-id (state/get-active-user-id)
         interrupt-type "resource-hold"
         interrupt-body {:resource-id resource-id
-                        :target-resource target-resource-id}
+                        :target-resource (or target-resource-id resource-id)}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
@@ -174,7 +176,7 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.resourceResume({
 ;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}"
+;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
@@ -186,7 +188,7 @@
         resource-id (state/get-active-user-id)
         interrupt-type "resource-resume"
         interrupt-body {:resource-id resource-id
-                        :target-resource target-resource-id}
+                        :target-resource (or target-resource-id resource-id)}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
@@ -197,7 +199,7 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.resourceAll({
+;; CxEngage.interactions.voice.resumeAll({
 ;;   interactionId: "{{uuid}}"
 ;; });
 ;; -------------------------------------------------------------------------- ;;
@@ -219,9 +221,9 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.removeResource({
+;; CxEngage.interactions.voice.resourceRemove({
 ;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}"
+;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
@@ -233,7 +235,7 @@
         resource-id (state/get-active-user-id)
         interrupt-type "remove-resource"
         interrupt-body {:resource-id resource-id
-                        :target-resource target-resource-id}
+                        :target-resource (or target-resource-id resource-id)}
         {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (= status 200)
       (p/publish {:topics topic
@@ -535,7 +537,8 @@
                                                  :resource-remove remove-resource
                                                  :resource-hold resource-hold
                                                  :resource-resume resource-resume
-                                                 :resume-all resume-all}}}
+                                                 :resume-all resume-all
+                                                 :silent-monitor silent-monitor}}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

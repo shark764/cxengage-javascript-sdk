@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [6.16.0]
+* Added Groups and Skills entity functions
+* Added Supervisor Mode
+* Silent Monitoring Changes
+
 ## [6.15.0]
 * CXV1-13353 - Bulk Upload and List Download
 

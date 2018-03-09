@@ -47,29 +47,36 @@
           current-session-id (state/get-session-id)
           msg-type (or (:notification-type parsed-body)
                        (:type parsed-body))]
-      ;; Three cases on handling SQS messages for sessions:
-      ;; First, no user session has started where the message returns
+      ;; Four cases on handling SQS messages for sessions:
+      ;; First, message has no session id. We will never know what
+      ;; session it belongs to, so we will remove it.
+      ;; Second, no user session has started where the message returns
       ;; to the queue until this SDK instance has a session.
-      ;; Second, messages from a previous session where the message
+      ;; Third, messages from a previous session where the message
       ;; is deleted and not processed by the SDK instance.
-      ;; Third, messages from this session where the message
+      ;; Fourth, messages from this session where the message
       ;; is deleted and processed by the SDK instance.
       ;; Finally, since this session is no longer valid,
       ;; the implicit case is  a newer session's messages
       ;; returning to the queue; consequently,
       ;; the newer session can delete dead messages in this queue as per
       ;; the second use case above.
-      (if (or (nil? session-id) (nil? current-session-id))
-        (do (log :error "No session ID present, or our session hasn't started yet. Ignoring message:" (clj->js parsed-body))
-            nil)
-        (do (when (nil? current-session-id)
+      (if (nil? session-id)
+        (do
+          (log :warn "No session ID present. Removing:" (clj->js parsed-body))
+          (delete-message-fn receipt-handle)
+          nil)
+        (if (nil? current-session-id)
+          (do (log :error "Our session hasn't started yet. Ignoring message:" (clj->js parsed-body))
               nil)
-            (when (iu/uuid-came-before? session-id current-session-id)
-              (delete-message-fn receipt-handle)
-              nil)
-            (when (= (state/get-session-id) session-id)
-              (delete-message-fn receipt-handle)
-              body))))))
+          (do (when (nil? current-session-id)
+                nil)
+              (when (iu/uuid-came-before? session-id current-session-id)
+                (delete-message-fn receipt-handle)
+                nil)
+              (when (= (state/get-session-id) session-id)
+                (delete-message-fn receipt-handle)
+                body)))))))
 
 (defn delete-message*
   [sqs {:keys [queue-url]} receipt-handle]
@@ -134,6 +141,9 @@
                             value (a/<! response<)]
                         (if (= value :shutdown)
                           (do (log :info "Shutting down SQS")
+                              (state/remove-enabled-module "sqs")
+                              (p/publish {:topics (topics/get-topic :sqs-shut-down)
+                                          :response nil})
                               nil)
                           (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
                             (when-let [msg (js/JSON.parse message)]
@@ -146,6 +156,9 @@
               value (a/<! response<)]
           (if (= value :shutdown)
             (do (log :info "Shutting down SQS")
+                (state/remove-enabled-module! "sqs")
+                (p/publish {:topics (topics/get-topic :sqs-shut-down)
+                            :response nil})
                 nil)
             (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
               (when-let [msg (js/JSON.parse message)]

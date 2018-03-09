@@ -311,6 +311,50 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getGroups();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-groups-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-groups
+  {:validation ::get-groups-params
+   :topic-key :get-groups-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as groups-response} (a/<! (rest/get-groups-request))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-groups-err groups-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getSkills();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-skills-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-skills
+  {:validation ::get-skills-params
+   :topic-key :get-skills-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as skills-response} (a/<! (rest/get-skills-request))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-skills-err skills-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.downloadList({
 ;;   listId: {{uuid}}
 ;; });
@@ -565,6 +609,8 @@
                                        :get-list-item get-list-item
                                        :get-lists get-lists
                                        :get-list-types get-list-types
+                                       :get-skills get-skills
+                                       :get-groups get-groups
                                        :create-list create-list
                                        :create-list-item create-list-item
                                        :update-user update-user

@@ -178,6 +178,22 @@
                              {:tenant-id tenant-id})}]
     (api/api-request batch-request)))
 
+(defn get-groups-request []
+  (let [tenant-id (state/get-active-tenant-id)
+        groups-request {:method :get
+                        :url (iu/api-url
+                              "tenants/:tenant-id/groups"
+                              {:tenant-id tenant-id})}]
+    (api/api-request groups-request)))
+
+(defn get-skills-request []
+  (let [tenant-id (state/get-active-tenant-id)
+        skills-request {:method :get
+                        :url (iu/api-url
+                              "tenants/:tenant-id/skills"
+                              {:tenant-id tenant-id})}]
+    (api/api-request skills-request)))
+
 (defn get-artifact-by-id-request [artifact-id interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
         artifact-request {:method :get
