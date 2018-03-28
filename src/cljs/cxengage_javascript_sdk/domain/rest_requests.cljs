@@ -588,7 +588,6 @@
 (defn update-list-item-request [list-item-id list-item-key item-value]
   (let [tenant-id (state/get-active-tenant-id)
         update-list-item-request {:method :put
-                                  :preserve-casing? true
                                   :url (iu/api-url
                                         "tenants/:tenant-id/lists/:list-item-id/:list-item-key"
                                         {:tenant-id tenant-id
