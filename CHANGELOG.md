@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.14.1]
+* CXV1-12282 - fixed update entity call
+
 ## [6.14.0]
 * CXV1-12814 - Added getListTypes function
 
