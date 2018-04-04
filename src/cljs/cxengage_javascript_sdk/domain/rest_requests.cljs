@@ -535,6 +535,10 @@
                      :url get-url}]
     (api/api-request get-request)))
 
+;;--------------------------------------------------------------------------- ;;
+;; Lists
+;;--------------------------------------------------------------------------- ;;
+
 (defn get-list-item-request [list-id list-item-key]
   (let [tenant-id (state/get-active-tenant-id)
         get-list-item-request {:method :get
@@ -633,3 +637,66 @@
                                :csv-download? true
                                :url url}]
     (api/api-request download-list-request)))
+
+;;--------------------------------------------------------------------------- ;;
+;; Email templates
+;;--------------------------------------------------------------------------- ;;
+
+(defn get-email-types-request [email-type-id]
+  (let [url (if email-type-id
+              "email-types/:email-type-id"
+              "email-types")
+        get-email-types-request {:method :get
+                                 :url    (iu/api-url
+                                           url
+                                           {:email-type-id email-type-id})}]
+    (api/api-request get-email-types-request)))
+
+(defn get-email-templates-request [email-type-id fallback]
+  (let [tenant-id (state/get-active-tenant-id)
+        url "tenants/:tenant-id/email-templates"
+        url (if email-type-id
+              (if fallback
+                (str url "/:email-type-id/fallback")
+                (str url "/:email-type-id"))
+              url)
+        get-email-templates-request {:method :get
+                                     :url    (iu/api-url
+                                               url
+                                               {:tenant-id tenant-id
+                                                :email-type-id email-type-id})}]
+    (api/api-request get-email-templates-request)))
+
+(defn create-email-template-request [email-type-id active shared body subject]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-email-template-request {:method :post
+                                       :url (iu/api-url
+                                              "tenants/:tenant-id/email-templates/:email-type-id"
+                                              {:tenant-id tenant-id
+                                               :email-type-id email-type-id})
+                                       :body {:active active
+                                              :shared shared
+                                              :body body
+                                              :subject subject}}]
+    (api/api-request create-email-template-request)))
+
+(defn update-email-template-request [email-type-id active shared body subject]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-email-template-request (cond-> {:method :put
+                                               :url (iu/api-url "tenants/:tenant-id/email-templates/:email-type-id"
+                                                                {:tenant-id tenant-id
+                                                                 :email-type-id email-type-id})}
+                                        (not (nil? active)) (assoc-in [:body :active]  active)
+                                        (not (nil? shared)) (assoc-in [:body :shared]  shared)
+                                        body                (assoc-in [:body :body]    body)
+                                        subject             (assoc-in [:body :subject] subject))]
+    (api/api-request update-email-template-request)))
+
+(defn delete-email-template-request [email-type-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        delete-email-template-request {:method :delete
+                                       :url (iu/api-url
+                                              "tenants/:tenant-id/email-templates/:email-type-id"
+                                              {:tenant-id tenant-id
+                                               :email-type-id email-type-id})}]
+    (api/api-request delete-email-template-request)))

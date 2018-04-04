@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.17.0]
+* CXV1-13444 - CRUD functions for Custom Email Templates
+
 ## [6.16.2]
 * <No Jira> - Changed getGroups and getSkills topic response to be entities instead of reporting.
 * <No Jira> - Added reporting as a base module.
