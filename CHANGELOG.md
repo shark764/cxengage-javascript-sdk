@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.15.0]
+* CXV1-13353 - Bulk Upload and List Download
+
 ## [6.14.1]
 * CXV1-12282 - fixed update entity call
 
