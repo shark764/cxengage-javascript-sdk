@@ -41,6 +41,7 @@
 (s/def ::extension-value (s/or ::uuid string?))
 (s/def ::exclude-inactive boolean?)
 (s/def ::exclude-offline boolean?)
+(s/def ::file any?)
 (s/def ::height number?)
 (s/def ::html-body string?)
 (s/def ::id (s/or :id number? :id string?))

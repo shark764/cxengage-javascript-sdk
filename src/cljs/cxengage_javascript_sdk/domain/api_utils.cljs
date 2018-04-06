@@ -36,7 +36,7 @@
   (let [resp-chan (a/promise-chan)]
     (go-loop [failed-attempts 0]
       (let [response-channel (a/promise-chan)
-            {:keys [method url body preserve-casing? third-party-request? authless-request?]} request-map
+            {:keys [method url body preserve-casing? third-party-request? authless-request? csv-download?]} request-map
             request (merge {:uri url
                             :method method
                             :timeout 120000
@@ -44,7 +44,7 @@
                                         (update-local-time-offset normalized-response)
                                         (a/put! response-channel normalized-response))
                             :format (ajax/json-request-format)
-                            :response-format (if third-party-request?
+                            :response-format (if (or third-party-request? csv-download?)
                                                (ajax/text-response-format)
                                                (ajax/json-response-format {:keywords? true}))}
                            (when body

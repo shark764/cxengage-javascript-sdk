@@ -392,7 +392,7 @@
    :message "Failed to create outbound SMS interaction."})
 
 (defn failed-to-send-outbound-sms-err [interaction-id message data]
-  {:Code 6004
+  {:code 6004
    :context :messaging
    :data {:interaction-id interaction-id
           :message message
@@ -748,7 +748,7 @@
    :message "Failed to get specified user."})
 
 (defn failed-to-get-user-list-err [data]
-  {:Code 11001
+  {:code 11001
    :context :entities
    :data {:api-response data}
    :level "error"
@@ -800,74 +800,88 @@
    :message "Failed to update user."})
 
 (defn failed-to-get-dashboards-list-err [data]
-  {:Code 11008
+  {:code 11008
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to get dashboards list."})
 
 (defn failed-to-get-list-err [data]
-  {:Code 11009
+  {:code 11009
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to get list."})
 
 (defn failed-to-get-list-item-err [data]
- {:Code 11010
+ {:code 11010
   :context :entities
   :data {:api-response data}
   :level "error"
   :message "Failed to get list item."})
 
 (defn failed-to-get-lists-err [data]
- {:Code 11011
+ {:code 11011
   :context :entities
   :data {:api-response data}
   :level "error"
   :message "Failed to get lists."})
 
 (defn failed-to-create-list-err [data]
-  {:Code 11012}
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to create list.")
+  {:code 11012
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create list."})
 
 (defn failed-to-create-list-item-err [data]
- {:Code 11013
+ {:code 11013
   :context :entities
   :data {:api-response data}
   :level "error"
   :message "Failed to create list item."})
 
 (defn failed-to-update-list-err [data]
- {:Code 11014
+ {:code 11014
   :context :entities
   :data {:api-response data}
   :level "error"
   :message "Failed to update list."})
 
 (defn failed-to-update-list-item-err [data]
- {:Code 11015
+ {:code 11015
   :context :entities
   :data {:api-response data}
   :level "error"
   :message "Failed to update list item."})
 
 (defn failed-to-delete-list-item-err [data list-id list-itemid]
-  {:Code 11016
+  {:code 11016
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to delete list item."})
 
 (defn failed-to-get-list-types-err [data]
- {:Code 11017
+ {:code 11017
   :context :entities
   :data {:api-response data}
   :level "error"
   :message "Failed to get lists types."})
+
+(defn failed-to-download-list-err [data]
+ {:code 11018
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to download list."})
+
+(defn failed-to-upload-list-err [data]
+ {:code 11019
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to upload list."})
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000

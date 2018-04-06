@@ -4,11 +4,10 @@
                    [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
   (:require [cljs.spec.alpha :as s]
             [cljs.core.async :as a]
-            [camel-snake-kebab.core :as camel]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.state :as st]
+            [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
@@ -19,7 +18,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (defn add-key-to-items [list-obj]
-  (let [list-item-key (camel/->kebab-case (get (first (get-in list-obj [:list-type :fields])) :name))
+  (let [list-item-key (ih/kebabify (get (first (get-in list-obj [:list-type :fields])) :name))
         items (get list-obj :items)
         updated-items (mapv #(assoc % :key (get % (keyword list-item-key))) items)]
     (assoc list-obj :items updated-items)))
@@ -311,6 +310,64 @@
                   :error (e/failed-to-get-list-types-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.downloadList({
+;;   listId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::download-list-params
+  (s/keys :req-un [::specs/list-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn download-list
+  {:validation ::download-list-params
+   :topic-key :download-list-response}
+  [params]
+  (let [{:keys [list-id callback topic]} params
+        {:keys [api-response status] :as list-items-response} (a/<! (rest/download-list-request list-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-download-list-err list-items-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.uploadList({
+;;   listId: {{uuid}},
+;;   file: {{file}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::upload-list-params
+  (s/keys :req-un [::specs/list-id ::specs/file]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn upload-list
+  {:validation ::upload-list-params
+   :topic-key :upload-list-response}
+  [params]
+  (let [{:keys [list-id file callback topic]} params
+        tenant-id (state/get-active-tenant-id)
+        url (iu/api-url
+              (str "tenants/:tenant-id/lists/:list-id/upload")
+              {:tenant-id tenant-id
+               :list-id list-id})
+        form-data (doto (js/FormData.) (.append "file" file (.-name file)))
+        {:keys [api-response status] :as list-upload-response} (a/<! (rest/file-api-request
+                                                                           {:method :post
+                                                                            :url url
+                                                                            :body form-data}))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-upload-list-err list-upload-response)
+                  :callback callback}))))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -513,7 +570,9 @@
                                        :update-user update-user
                                        :update-list update-list
                                        :update-list-item update-list-item
-                                       :delete-list-item delete-list-item}}
+                                       :delete-list-item delete-list-item
+                                       :download-list download-list
+                                       :upload-list upload-list}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

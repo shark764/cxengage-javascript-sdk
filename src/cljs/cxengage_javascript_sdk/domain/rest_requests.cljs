@@ -606,3 +606,14 @@
                                          :list-id list-id
                                          :list-item-key list-item-key})}]
     (api/api-request delete-list-item-request)))
+
+(defn download-list-request [list-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        url (iu/api-url
+             (str "tenants/:tenant-id/lists/:list-id/download/list-items.csv")
+             {:tenant-id tenant-id
+              :list-id list-id})
+        download-list-request {:method :get
+                               :csv-download? true
+                               :url url}]
+    (api/api-request download-list-request)))
