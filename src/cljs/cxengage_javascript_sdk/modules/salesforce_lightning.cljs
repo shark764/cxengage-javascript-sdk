@@ -89,9 +89,10 @@
   (let [{:keys [topic callback]} params]
     (try (js/sforce.opencti.isSoftphonePanelVisible
           (clj->js {:callback (fn [response]
+              (let [result (aget response "returnValue" "visible")]
                                (ih/publish (clj->js {:topics topic
-                                                     :response true
-                                                     :callback callback})))}))
+                                                     :response result
+                                                     :callback callback}))))}))
          (catch js/Object e
            (ih/publish (clj->js {:topics topic
                                  :error e
