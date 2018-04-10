@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.16.1]
+* CXV1-12495 - Made response from CxEngage.salesforceLightning.isVisible() dynamic instead of just hard-coded to true
+
 ## [6.16.0]
 * Added Groups and Skills entity functions
 * Added Supervisor Mode
