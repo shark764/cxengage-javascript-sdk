@@ -49,15 +49,15 @@
 
 (s/def ::add-statistic-params
   (s/keys :req-un [::specs/statistic]
-          :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
+          :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id ::specs/stat-id]))
 
 (def-sdk-fn add-stat-subscription
   {:validation ::add-statistic-params
    :topic-key :add-stat}
   [params]
-  (let [{:keys [topic callback]} params
-        stat-bundle (dissoc params :callback)
-        stat-id (str (uuid/make-random-uuid))]
+  (let [{:keys [topic stat-id callback]} params
+        stat-bundle (dissoc params :callback :stat-id :topic)
+        stat-id (or stat-id (str (uuid/make-random-uuid)))]
     (swap! stat-subscriptions assoc-in [:statistics stat-id] stat-bundle)
     (p/publish {:topics topic
                 :response {:statId stat-id}

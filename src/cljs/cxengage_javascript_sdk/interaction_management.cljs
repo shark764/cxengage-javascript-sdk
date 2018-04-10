@@ -359,6 +359,14 @@
   (p/publish {:topics (topics/get-topic :show-banner)
               :response message}))
 
+(defn handle-silent-monitor-start [message]
+  (p/publish {:topics (topics/get-topic :silent-monitor-start)
+              :response message}))
+
+(defn handle-silent-monitor-end [message]
+  (p/publish {:topics (topics/get-topic :silent-monitor-end)
+              :response message}))
+
 (defn msg-router [message]
   (let [handling-fn (case (:sdk-msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
@@ -389,6 +397,8 @@
                       :INTERACTIONS/RESOURCE_RESUME handle-resource-resume
                       :INTERACTIONS/UPDATE_CALL_CONTROLS handle-update-call-controls
                       :INTERACTIONS/SHOW_BANNER handle-show-banner
+                      :INTERACTIONS/SILENT_MONITOR_START handle-silent-monitor-start
+                      :INTERACTIONS/SILENT_MONITOR_END handle-silent-monitor-end
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
@@ -439,6 +449,8 @@
                                        "transfer-connected" :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED
                                        "update-call-controls" :INTERACTIONS/UPDATE_CALL_CONTROLS
                                        "show-banner" :INTERACTIONS/SHOW_BANNER
+                                       "silent-monitor-start" :INTERACTIONS/SILENT_MONITOR_START
+                                       "silent-monitor-end" :INTERACTIONS/SILENT_MONITOR_END
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:sdk-msg-type inferred-notification-type} message))))
 

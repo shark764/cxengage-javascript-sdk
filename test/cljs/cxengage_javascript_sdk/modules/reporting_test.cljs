@@ -284,7 +284,7 @@
        (p/subscribe
         (topics/get-topic :batch-response)
         (fn [error topic response]
-          (is (= (camels (e/reporting-batch-request-failed-err (:statistics successful-stat-subs-update) not-found)) (js->clj error :keywordize-keys true)))
+          (is (= (e/reporting-batch-request-failed-err (:statistics successful-stat-subs-update) not-found)) (js->clj error :keywordize-keys true))
           (set! uuid/make-random-uuid old-id)
           (done)))
        (rep/add-stat-subscription {:statistic "queue-length"})))))

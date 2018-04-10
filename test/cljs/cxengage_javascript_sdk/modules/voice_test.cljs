@@ -49,7 +49,7 @@
       (fn [error topic response]
         (is (= (camels {:interaction-id interaction-id
                         :resource-id resource-id
-                        :active-extension (state/get-active-extension)}) (js->clj response :keywordize-keys true)))
+                        :active-extension (js->clj response :keywordize-keys true)})))
         (done)))
      (voice/silent-monitor {:interaction-id interaction-id}))))
 
@@ -62,7 +62,7 @@
      (p/subscribe
       (topics/get-topic :silent-monitoring-start-acknowledged)
       (fn [error topic response]
-        (is (= (camels (e/failed-to-start-silent-monitoring interaction-id not-found)) (js->clj error :keywordize-keys true)))
+        (is (= (e/failed-to-start-silent-monitoring interaction-id not-found)) (js->clj error :keywordize-keys true))
         (done)))
      (voice/silent-monitor {:interaction-id interaction-id}))))
 

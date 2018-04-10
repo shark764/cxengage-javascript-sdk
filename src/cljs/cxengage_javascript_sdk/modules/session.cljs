@@ -67,6 +67,7 @@
     (if (= "offline" (state/get-user-session-state))
       (do (log :info "Session is now offline; ceasing future heartbeats.")
           (state/set-session-expired! true)
+          (state/set-user-session-state! {:state nil})
           nil)
       (let [topic (topics/get-topic :presence-heartbeats-response)
             resp (a/<! (rest/heartbeat-request))
@@ -95,7 +96,6 @@
               (p/publish {:topics topic
                           :response session-details})
               (go-not-ready)
-              (state/set-session-expired! false)
               (start-heartbeats*))
           (p/publish {:topics topic
                       :error (e/failed-to-start-agent-session-err resp)}))
@@ -109,6 +109,7 @@
             extensions (get user-config :extensions)]
         (if (= status 200)
           (do (state/set-config! user-config)
+              (state/set-session-expired! false)
               (p/publish {:topics topic
                           :response user-config})
               (p/publish {:topics (topics/get-topic :extension-list)
@@ -344,6 +345,19 @@
     locale))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.getDefaultExtension();
+;; -------------------------------------------------------------------------- ;;
+
+(defn get-default-extension [& params]
+  (let [callback (first params)
+        callback (if (fn? callback) callback nil)
+        extension (clj->js (state/get-default-extension))]
+    (p/publish {:topic (topics/get-topic :get-default-extension-response)
+                :response extension
+                :callback callback})
+    extension))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.getTenantDetails();
 ;; -------------------------------------------------------------------------- ;;
 
@@ -386,6 +400,7 @@
                                        :set-locale set-locale
                                        :set-token set-token
                                        :set-user-identity set-user-identity
+                                       :get-default-extension get-default-extension
                                        :get-tenant-details get-tenant-details}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
