@@ -64,6 +64,8 @@
                  :delete-list-item-response "cxengage/entities/delete-list-item-response"
                  :download-list-response "cxengage/entities/download-list-response"
                  :upload-list-response "cxengage/entities/upload-list-response"
+                 :get-groups-response "cxengage/entities/get-groups-response"
+                 :get-skills-response "cxengage/entities/get-skills-response"
 
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"
@@ -77,8 +79,6 @@
                  :polling-started "cxengage/reporting/polling-started"
                  :polling-stopped "cxengage/reporting/polling-stopped"
                  :get-crm-interactions-response "cxengage/reporting/get-crm-interactions-response"
-                 :get-groups-response "cxengage/reporting/get-groups-response"
-                 :get-skills-response "cxengage/reporting/get-skills-response"
 
                  ;; Logging
                  :logs-dumped "cxengage/logging/logs-dumped"
