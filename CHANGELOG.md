@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.16.2]
+* <No Jira> - Changed getGroups and getSkills topic response to be entities instead of reporting.
+* <No Jira> - Added reporting as a base module.
+
 ## [6.16.1]
 * CXV1-12495 - Made response from CxEngage.salesforceLightning.isVisible() dynamic instead of just hard-coded to true
 
@@ -139,7 +143,7 @@
 * CXV1-11949 - Added dynamic detection of outbound integration type
 
 ## [6.8.0]
-* CXV1-11731 - Added SDK support for non-voice transfers  
+* CXV1-11731 - Added SDK support for non-voice transfers
 
 ## [6.7.0]
 * Added `updateUser` and `updateTicket` functions and pubsubs for zendesk to communicate with toolbar on user/ticket changes
