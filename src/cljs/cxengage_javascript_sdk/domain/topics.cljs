@@ -66,6 +66,11 @@
                  :upload-list-response "cxengage/entities/upload-list-response"
                  :get-groups-response "cxengage/entities/get-groups-response"
                  :get-skills-response "cxengage/entities/get-skills-response"
+                 :get-email-types-response "cxengage/entities/get-email-types-response"
+                 :get-email-templates-response "cxengage/entities/get-email-templates-response"
+                 :create-email-template-response "cxengage/entities/create-email-template-response"
+                 :update-email-template-response "cxengage/entities/update-email-template-response"
+                 :delete-email-template-response "cxengage/entities/delete-email-template-response"
 
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"

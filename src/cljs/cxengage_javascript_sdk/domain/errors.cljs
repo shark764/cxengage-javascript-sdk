@@ -863,7 +863,7 @@
   :level "error"
   :message "Failed to update list item."})
 
-(defn failed-to-delete-list-item-err [data list-id list-itemid]
+(defn failed-to-delete-list-item-err [data]
   {:code 11016
    :context :entities
    :data {:api-response data}
@@ -890,6 +890,41 @@
   :data {:api-response data}
   :level "error"
   :message "Failed to upload list."})
+
+(defn failed-to-get-email-types-err [data]
+  {:code 11020
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get email types."})
+
+(defn failed-to-get-email-templates-err [data]
+  {:code 11021
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get email templates."})
+
+(defn failed-to-create-email-template-err [data]
+  {:code 11022
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create email template."})
+
+(defn failed-to-update-email-template-err [data]
+  {:code 11023
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update email template."})
+
+(defn failed-to-delete-email-template-err [data]
+  {:code 11024
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to delete email template."})
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000
@@ -1105,7 +1140,7 @@
    :level "warn"
    :message "Failed to assign item. Cannot assign blank active tab."})
 
-(defn failed-to-assign-blank-salesforce-classic-item-err [error]
+(defn failed-to-get-current-salesforce-classic-user-id-err [error]
   {:code 15008
    :context :salesforce-classic
    :data {:error error}

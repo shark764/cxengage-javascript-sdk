@@ -413,6 +413,55 @@
                   :callback callback}))))
 
 ;;--------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getEmailTypes({
+;;   emailTypeId: {{uuid}} (optional)
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-email-types-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback ::specs/email-type-id]))
+
+(def-sdk-fn get-email-types
+  {:validation ::get-email-types-params
+   :topic-key :get-email-types-response}
+  [params]
+  (let [{:keys [callback topic email-type-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-email-types-request email-type-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-email-types-err entity-response)
+                  :callback callback}))))
+
+;;--------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getEmailTemplates({
+;;   emailTypeId: {{uuid}} (optional)
+;;   fallback: {{boolean}} (optional)
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-email-templates-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback ::specs/email-type-id ::specs/fallback]))
+
+(def-sdk-fn get-email-templates
+  {:validation ::get-email-templates-params
+   :topic-key :get-email-templates-response}
+  [params]
+  (let [{:keys [callback topic email-type-id fallback]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-email-templates-request email-type-id fallback))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-email-templates-err entity-response)
+                  :callback callback}))))
+
+;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
 
@@ -432,7 +481,7 @@
   {:validation ::create-list-params
    :topic-key :create-list-response}
   [params]
-  (let [{:keys [list-type-id name  active callback topic]} params
+  (let [{:keys [list-type-id name active callback topic]} params
         {:keys [api-response status] :as entity-response} (a/<! (rest/create-list-request list-type-id name [] active))]
     (if (= status 200)
       (p/publish {:topics topic
@@ -466,6 +515,34 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-create-list-item-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.createEmailTemplate({
+;;   emailTypeId: {{uuid}},
+;;   active: {{boolean}},
+;;   shared: {{boolean}},
+;;   subject: {{string}},
+;;   body: {{string}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::create-email-template-params
+  (s/keys :req-un [::specs/email-type-id ::specs/active ::specs/shared ::specs/body ::specs/subject]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn create-email-template
+  {:validation ::create-email-template-params
+   :topic-key :create-email-template-response}
+  [params]
+  (let [{:keys [email-type-id active shared body subject callback topic]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/create-email-template-request email-type-id active shared body subject))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-email-template-err entity-response)
                   :callback callback}))))
 
 ;;--------------------------------------------------------------------------- ;;
@@ -558,6 +635,34 @@
                   :error (e/failed-to-update-list-item-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.updateEmailTemplate({
+;;   emailTypeId: {{uuid}},
+;;   active: {{boolean}}, (optional)
+;;   shared: {{boolean}}, (optional)
+;;   subject: {{string}}, (optional)
+;;   body: {{string}} (optional)
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::update-email-template-params
+  (s/keys :req-un [::specs/email-type-id]
+          :opt-un [::specs/callback ::specs/active ::specs/shared ::specs/body ::specs/subject]))
+
+(def-sdk-fn update-email-template
+  {:validation ::update-email-template-params
+   :topic-key :update-email-template-response}
+  [params]
+  (let [{:keys [email-type-id active shared body subject callback topic]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/update-email-template-request email-type-id active shared body subject))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-email-template-err entity-response)
+                  :callback callback}))))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; DELETE Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -586,7 +691,32 @@
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic
-                  :error (e/failed-to-delete-list-item-err list-id list-item-key list-items-response)
+                  :error (e/failed-to-delete-list-item-err list-items-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.deleteEmailTemplate({
+;;   emailTypeId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::delete-email-template-params
+  (s/keys :req-un [::specs/email-type-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn delete-email-template
+  {:validation ::delete-email-template-params
+   :topic-key :delete-email-template-response}
+  [params]
+  (let [{:keys [email-type-id callback topic]} params
+        {:keys [api-response status] :as list-items-response} (a/<! (rest/delete-email-template-request email-type-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-delete-email-template-err list-items-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -611,14 +741,19 @@
                                        :get-list-types get-list-types
                                        :get-skills get-skills
                                        :get-groups get-groups
+                                       :get-email-types get-email-types
+                                       :get-email-templates get-email-templates
                                        :create-list create-list
                                        :create-list-item create-list-item
+                                       :create-email-template create-email-template
                                        :update-user update-user
                                        :update-list update-list
                                        :update-list-item update-list-item
-                                       :delete-list-item delete-list-item
                                        :download-list download-list
-                                       :upload-list upload-list}}
+                                       :upload-list upload-list
+                                       :update-email-template update-email-template
+                                       :delete-list-item delete-list-item
+                                       :delete-email-template delete-email-template}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
