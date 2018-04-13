@@ -141,7 +141,7 @@
                             value (a/<! response<)]
                         (if (= value :shutdown)
                           (do (log :info "Shutting down SQS")
-                              (state/remove-enabled-module "sqs")
+                              (state/remove-enabled-module! "sqs")
                               (p/publish {:topics (topics/get-topic :sqs-shut-down)
                                           :response nil})
                               nil)

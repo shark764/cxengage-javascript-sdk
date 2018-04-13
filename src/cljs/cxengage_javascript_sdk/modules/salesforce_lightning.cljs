@@ -22,6 +22,12 @@
 
 (def sfl-state (atom {}))
 
+(defn set-current-salesforce-user-id! [user-id]
+  (swap! sfl-state assoc :user-id user-id))
+
+(defn get-current-salesforce-user-id []
+  (or (:user-id @sfl-state) ""))
+
 (defn get-interaction [interaction-id]
   (or (get-in @sfl-state [:interactions interaction-id]) {}))
 
@@ -138,7 +144,7 @@
   (go
     (let [resource-id (state/get-active-user-id)
           interrupt-type "interaction-hook-add"
-          interrupt-body (merge new-hook {:hook-by resource-id
+          interrupt-body (merge new-hook {:hook-by (get-current-salesforce-user-id)
                                           :hook-type "salesforce-lightning"
                                           :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js new-hook)))
                                           :resource-id resource-id})
@@ -250,7 +256,7 @@
 (defn auto-assign-from-search-pop [response interaction-id]
   (let [result (:returnValue (ih/extract-params response true))]
     (if (= 1 (count (vals result)))
-      (let [_ (log :info "Only one search result. Assigning:" (clj->js parsed-result))
+      (let [_ (log :info "Only one search result. Assigning:" (clj->js result))
             record (first (vals result))
             hook {:hook-id (:Id record)
                   :hook-sub-type (:RecordType record)
@@ -283,11 +289,6 @@
             (ih/publish (clj->js {:topics topic
                                   :error e}))))))))
 
-(defn handle-get-app-view-info [response]
-  (let [result (js->clj response :keywordize-keys true)
-        focus-response (clj->js (:returnValue result))]
-    (handle-focus-change focus-response)))
-
 (defn handle-focus-change [response]
   (let [active-tab (get-active-tab)
         result (js->clj response :keywordize-keys true)
@@ -301,6 +302,11 @@
         (ih/publish {:topics "cxengage/salesforce-lightning/active-tab-changed"
                      :response hook}))
       (log :debug "Active tab is the same. Not publishing change."))))
+
+(defn handle-get-app-view-info [response]
+  (let [result (js->clj response :keywordize-keys true)
+        focus-response (clj->js (:returnValue result))]
+    (handle-focus-change focus-response)))
 
 (defn handle-click-to-dial [dial-details]
   (ih/publish {:topics "cxengage/salesforce-lightning/on-click-to-interaction"
@@ -352,6 +358,15 @@
         :else (log :error "Invalid pop type" popType))
       (log :debug "Ignoring non-v2 screen pop"))))
 
+(defn handle-get-current-user-id [js-response]
+  (let [response (js->clj js-response :keywordize-keys true)
+        result (get-in response [:returnValue :runApex])
+        error (:errors response)]
+    (if-not error
+      (set-current-salesforce-user-id! result)
+      (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/failed-to-get-current-user-id"
+                            :error (e/failed-to-get-current-salesforce-lightning-user-id-err error)})))))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; Salesforce Initialization Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -372,6 +387,10 @@
     (if (sfl-ready?)
       (do
         (js/sforce.opencti.onNavigationChange (clj->js {:listener handle-focus-change}))
+        (js/sforce.opencti.runApex (clj->js {:apexClass "net_cxengage.CxLookup"
+                                             :methodName "getCurrentUserId"
+                                             :methodParams ""
+                                             :callback handle-get-current-user-id}))
         (try
           (js/sforce.opencti.onClickToDial (clj->js {:listener handle-click-to-dial}))
           (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/initialize-complete"

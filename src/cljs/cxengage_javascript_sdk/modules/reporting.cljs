@@ -156,6 +156,41 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.bulkStatQuery({
+;;   queries: {{array of stat objects}}
+;; });
+;;
+;; Stat Objects:
+;; {statistic: {{stat-name}},
+;;  queueId: {{uuid}}, [Optional]
+;;  resourceId: {{uuid}} [Optional]}
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::bulk-stat-query-params
+  (s/keys :req-un [::specs/queries]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn bulk-stat-query
+  {:validation ::bulk-stat-query-params
+   :topic-key :get-bulk-stat-query-response
+   :preserve-casing? true}
+  [params]
+  (let [{:keys [queries topic callback]} params
+        stat-body (reduce #(assoc %1 (str (or (get %2 :statId) (uuid/make-random-uuid))) %2)
+                          {}
+                          queries)
+        {:keys [api-response status] :as batch-response} (a/<! (rest/batch-request stat-body))
+        {:keys [results]} api-response]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response results
+                  :callback callback
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/failed-to-perform-bulk-stat-query-err stat-body batch-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.getAvailableStats();
 ;; -------------------------------------------------------------------------- ;;
 
@@ -263,6 +298,7 @@
                                        :remove-stat-subscription remove-stat-subscription
                                        :get-capacity get-capacity
                                        :stat-query stat-query
+                                       :bulk-stat-query bulk-stat-query
                                        :get-available-stats get-available-stats
                                        :get-contact-interaction-history get-contact-interaction-history
                                        :get-interaction get-interaction
