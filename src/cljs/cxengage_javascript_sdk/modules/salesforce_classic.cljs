@@ -384,8 +384,8 @@
                                          "inbound"
                                          pop-callback)
                                        (catch js/Object e
-                                         (ih/publish (clj->js {:topics topic})
-                                           :error e)))
+                                         (ih/publish (clj->js {:topics topic
+                                                               :error e}))))
                                      (= searchType "strict")
                                      (try
                                        (js/sforce.interaction.searchAndScreenPop

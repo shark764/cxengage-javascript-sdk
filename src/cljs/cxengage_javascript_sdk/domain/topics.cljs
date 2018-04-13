@@ -84,6 +84,7 @@
                  :polling-started "cxengage/reporting/polling-started"
                  :polling-stopped "cxengage/reporting/polling-stopped"
                  :get-crm-interactions-response "cxengage/reporting/get-crm-interactions-response"
+                 :get-bulk-stat-query-response "cxengage/reporting/get-bulk-stat-query-response"
 
                  ;; Logging
                  :logs-dumped "cxengage/logging/logs-dumped"

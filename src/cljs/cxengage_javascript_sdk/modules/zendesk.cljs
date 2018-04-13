@@ -398,6 +398,26 @@
 ;; Subscription Handlers
 ;; -------------------------------------------------------------------------- ;;
 
+;; Helper function for handle-screen-pop strict and fuzzy search results
+(defn handle-search-results [search-results interaction interaction-id]
+  (cond
+    (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
+                                              :response []})
+    (= (count search-results) 1) (if (= (:result_type (first search-results)) "user")
+                                  (auto-assign-from-search-pop (first search-results) interaction-id "user")
+                                  (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
+    :else (if (or (= (:auto-answer interaction) true)
+                  (and (= (:direction interaction) "outbound")
+                    (or (= (:channel-type interaction) "email")
+                        (= (:channel-type interaction) "sms"))))
+              (pop-search-modal search-results interaction-id)
+              (ih/subscribe (topics/get-topic :work-accepted-received)
+                            (fn [e,t,r,subscription-id]
+                              (if (= interaction-id (:interaction-id (ih/extract-params r)))
+                                (do
+                                  (pop-search-modal search-results interaction-id)
+                                  (p/unsubscribe subscription-id))))))))
+                                  
 (defn handle-work-offer [error topic interaction-details]
   (let [interaction (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)
@@ -457,26 +477,6 @@
                                               (fn [result]
                                                 (let [search-results (:results (ih/extract-params result))]
                                                   (handle-search-results search-results interaction interaction-id))))))))))
-
-;; Helper function for handle-screen-pop strict and fuzzy search results
-(defn handle-search-results [search-results interaction interaction-id]
-  (cond
-    (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
-                                              :response []})
-    (= (count search-results) 1) (if (= (:result_type (first search-results)) "user")
-                                  (auto-assign-from-search-pop (first search-results) interaction-id "user")
-                                  (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
-    :else (if (or (= (:auto-answer interaction) true)
-                  (and (= (:direction interaction) "outbound")
-                    (or (= (:channel-type interaction) "email")
-                        (= (:channel-type interaction) "sms"))))
-              (pop-search-modal search-results interaction-id)
-              (ih/subscribe (topics/get-topic :work-accepted-received)
-                            (fn [e,t,r,subscription-id]
-                              (if (= interaction-id (:interaction-id (ih/extract-params r)))
-                                (do
-                                  (pop-search-modal search-results interaction-id)
-                                  (p/unsubscribe subscription-id))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Zendesk Module

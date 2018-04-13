@@ -926,6 +926,20 @@
    :level "error"
    :message "Failed to delete email template."})
 
+(defn failed-to-get-groups-err [data]
+  {:code 11025
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get groups."})
+
+(defn failed-to-get-skills-err [data]
+  {:code 11026
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get skills."})
+
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000
    :context :reporting
@@ -982,19 +996,13 @@
    :level "error"
    :message "Failed to retrieve CRM Interaction information."})
 
-(defn failed-to-get-groups-err [data]
+(defn failed-to-perform-bulk-stat-query-err [stats response]
   {:code 12007
    :context :reporting
-   :data {:api-response data}
+   :data {:api-response response
+          :stats stats}
    :level "error"
-   :message "Failed to get groups."})
-
-(defn failed-to-get-skills-err [data]
-  {:code 12008
-   :context :reporting
-   :data {:api-response data}
-   :level "error"
-   :message "Failed to get skills."})
+   :message "Failed to perform bulk stat query."})
 
 (defn failed-to-retrieve-contact-layouts-list-err [data]
   {:code 13000
@@ -1204,6 +1212,13 @@
    :data {:interaction-id interaction-id}
    :level "warn"
    :message "Failed to assign item. Cannot assign blank active tab."})
+
+(defn failed-to-get-current-salesforce-lightning-user-id-err [error]
+  {:code 16008
+   :context :salesforce-lightning
+   :data error
+   :level "warn"
+   :message "Failed to retrieve Salesforce Lightning user id."})
 
 (defn failed-to-init-zendesk-client-err [data]
   {:code 17000

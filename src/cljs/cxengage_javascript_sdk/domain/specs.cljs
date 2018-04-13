@@ -68,6 +68,7 @@
 (s/def ::phone-number string?)
 (s/def ::plain-text-body string?)
 (s/def ::query map?)
+(s/def ::queries (s/coll-of ::stat-query))
 (s/def ::queue-id ::uuid)
 (s/def ::group-id ::uuid)
 (s/def ::skill-id ::uuid)
@@ -83,6 +84,9 @@
 (s/def ::state string?)
 (s/def ::statistic string?)
 (s/def ::stats map?)
+(s/def ::stat-query
+  (s/keys :req-un [::statistic]
+          :opt-un [::queue-id ::resource-id]))
 (s/def ::subject string?)
 (s/def ::subscription-id ::uuid)
 (s/def ::sub-type string?)

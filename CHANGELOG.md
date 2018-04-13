@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.18.0]
+* Added Bulk Stat Query function
+* Fixed Salesforce Lightning hook-by id
+
 ## [6.17.0]
 * CXV1-13444 - CRUD functions for Custom Email Templates
 

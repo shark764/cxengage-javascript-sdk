@@ -33,7 +33,7 @@
             [cxengage-javascript-sdk.modules.salesforce-classic :as sfc]
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]))
 
-(def *SDK-VERSION* "6.17.0")
+(def *SDK-VERSION* "6.18.0")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -64,7 +64,7 @@
         entities (entities/map->EntitiesModule.)
         contacts (contacts/map->ContactsModule.)
         logging (logging/map->LoggingModule.)
-        reporting (reporting/map->ReportingModule)]
+        reporting (reporting/map->ReportingModule.)]
     (doseq [module [authentication session interaction entities contacts logging reporting]]
       (start-internal-module module))))
 
