@@ -145,20 +145,20 @@
 
 (defn send-assign-interrupt [tab-details interaction-id callback topic]
   (go
-    (let [{:keys [object objectId objectName]} tab-details
+    (let [{:keys [object objectId objectName hookSubType hookId hookName]} tab-details
           resource-id (state/get-active-user-id)
           interrupt-type "interaction-hook-add"
           interrupt-body {:hook-by (get-current-salesforce-user-id)
                           :hook-type "salesforce-classic"
-                          :hook-sub-type object
-                          :hook-id objectId
-                          :hook-name objectName
+                          :hook-sub-type (or object hookSubType)
+                          :hook-id (or objectId hookId)
+                          :hook-name (or objectName hookName)
                           :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js tab-details)))
                           :resource-id resource-id}
           {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
       (if (= status 200)
         (let [hook (merge {:interaction-id interaction-id} (dissoc interrupt-body :hook-by :hook-pop :resource-id))]
-          (add-hook! interaction-id hook)
+          (add-hook! interaction-id (js->clj (ih/camelify hook) :keywordize-keys true))
           (ih/publish (clj->js {:topics topic
                                 :response hook
                                 :callback callback})))
@@ -349,15 +349,15 @@
                                     (catch js/Object e
                                       false))
                                 (let [tab-details (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)
-                                      object-id (get tab-details :objectId)
+                                      object-id (or (get tab-details :objectId) (get tab-details :hook-id))
                                       hook {:interaction-id interactionId
                                             :hook-id object-id
-                                            :hook-sub-type (get tab-details :object)
-                                            :hook-name (get tab-details :objectName)
+                                            :hook-sub-type (or (get tab-details :object) (get tab-details :hook-sub-type))
+                                            :hook-name (or (get tab-details :objectName) (get tab-details :hook-name))
                                             :hook-type "salesforce-classic"}]
                                   (log :info "Popping transferred URI:" (clj->js tab-details))
                                   (js/sforce.interaction.screenPop (str "/" object-id) true)
-                                  (add-hook! interactionId hook)
+                                  (add-hook! interactionId (js->clj (ih/camelify hook) :keywordize-keys true))
                                   (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
                                                         :response hook})))
                                 (let [uri-params (string/split popUri #"/")

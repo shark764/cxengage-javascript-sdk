@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [6.18.1]
+* Fixed Salesforce Lightning work items
+* Fixed transfers between salesforce classic and salesforce lightning
+* Fixed generic list item keys
+
 ## [6.18.0]
 * Added Bulk Stat Query function
 * Fixed Salesforce Lightning hook-by id
