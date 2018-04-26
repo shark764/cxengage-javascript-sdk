@@ -71,6 +71,8 @@
                  :create-email-template-response "cxengage/entities/create-email-template-response"
                  :update-email-template-response "cxengage/entities/update-email-template-response"
                  :delete-email-template-response "cxengage/entities/delete-email-template-response"
+                 :get-artifacts-response "cxengage/entities/get-artifacts-response"
+                 :get-artifact-response "cxengage/entities/get-artifact-response"
 
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"
