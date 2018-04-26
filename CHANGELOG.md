@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.19.0]
+* CXV1-12492 - Get functions for artifacts
+
 ## [6.18.1]
 * Fixed Salesforce Lightning work items
 * Fixed transfers between salesforce classic and salesforce lightning

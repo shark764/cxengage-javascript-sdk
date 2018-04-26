@@ -940,6 +940,20 @@
    :level "error"
    :message "Failed to get skills."})
 
+(defn failed-to-get-artifacts-err [data]
+  {:code 11027
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get artifacts."})
+
+(defn failed-to-get-artifact-err [data]
+  {:code 11028
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get artifact."})
+
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000
    :context :reporting

@@ -194,8 +194,8 @@
                               {:tenant-id tenant-id})}]
     (api/api-request skills-request)))
 
-(defn get-artifact-by-id-request [artifact-id interaction-id]
-  (let [tenant-id (state/get-active-tenant-id)
+(defn get-artifact-by-id-request [artifact-id interaction-id tenant-id]
+  (let [tenant-id (or tenant-id (state/get-active-tenant-id))
         artifact-request {:method :get
                           :url (iu/api-url
                                 "tenants/:tenant-id/interactions/:interaction-id/artifacts/:artifact-id"
@@ -213,8 +213,8 @@
                                 :interaction-id interaction-id})}]
     (api/api-request history-request)))
 
-(defn get-interaction-artifacts-request [interaction-id]
-  (let [tenant-id (state/get-active-tenant-id)
+(defn get-interaction-artifacts-request [interaction-id tenant-id]
+  (let [tenant-id (or tenant-id (state/get-active-tenant-id))
         url (iu/api-url
              "tenants/:tenant-id/interactions/:interaction-id/artifacts"
              {:interaction-id interaction-id

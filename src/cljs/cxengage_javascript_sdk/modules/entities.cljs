@@ -11,6 +11,7 @@
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
+            [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -461,6 +462,57 @@
                   :error (e/failed-to-get-email-templates-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getArtifacts({
+;;   interactionId: "{{uuid}}",
+;;   tenantId: "{{uuid}}" (optional)
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-artifacts-params
+  (s/keys :req-un [::specs/interaction-id]
+    :opt-un [::specs/tenant-id ::specs/callback]))
+
+(def-sdk-fn get-artifacts
+  {:validation ::get-artifacts-params
+   :topic-key :get-artifacts-response}
+  [params]
+  (let [{:keys [interaction-id tenant-id topic callback]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/get-interaction-artifacts-request interaction-id tenant-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-artifacts-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getArtifact({
+;;   interactionId: "{{uuid}}",
+;;   artifactId: "{{uuid}}",
+;;   tenantId: "{{uuid}}" (optional)
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-artifact-params
+  (s/keys :req-un [::specs/interaction-id ::specs/artifact-id]
+    :opt-un [::specs/tenant-id ::specs/callback]))
+
+(def-sdk-fn get-artifact
+  {:validation ::get-artifact-params
+   :topic-key :get-artifact-response}
+  [params]
+  (let [{:keys [interaction-id artifact-id tenant-id topic callback]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id tenant-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-artifact-err entity-response)
+                  :callback callback}))))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -743,6 +795,8 @@
                                        :get-groups get-groups
                                        :get-email-types get-email-types
                                        :get-email-templates get-email-templates
+                                       :get-artifacts get-artifacts
+                                       :get-artifact get-artifact
                                        :create-list create-list
                                        :create-list-item create-list-item
                                        :create-email-template create-email-template
