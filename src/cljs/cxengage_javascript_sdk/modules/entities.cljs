@@ -18,7 +18,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (defn add-key-to-items [list-obj]
-  (let [list-item-key (ih/kebabify (get (first (get-in list-obj [:list-type :fields])) :name))
+  (let [list-item-key (get (first (get-in list-obj [:list-type :fields])) :name)
         items (get list-obj :items)
         updated-items (mapv #(assoc % :key (get % (keyword list-item-key))) items)]
     (assoc list-obj :items updated-items)))

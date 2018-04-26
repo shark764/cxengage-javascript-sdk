@@ -142,16 +142,20 @@
 
 (defn send-assign-interrupt [new-hook interaction-id callback topic]
   (go
-    (let [resource-id (state/get-active-user-id)
+    (let [{:keys [hook-id hook-sub-type hook-name]} new-hook
+          resource-id (state/get-active-user-id)
           interrupt-type "interaction-hook-add"
           interrupt-body (merge new-hook {:hook-by (get-current-salesforce-user-id)
+                                          :hook-name hook-name
+                                          :hook-id hook-id
+                                          :hook-sub-type hook-sub-type
                                           :hook-type "salesforce-lightning"
                                           :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js new-hook)))
                                           :resource-id resource-id})
           {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
        (if (= status 200)
          (do
-           (add-hook! interaction-id new-hook)
+           (add-hook! interaction-id (js->clj (ih/camelify new-hook) :keywordize-keys true))
            (ih/publish (clj->js {:topics topic
                                  :response (merge {:interaction-id interaction-id} new-hook)
                                  :callback callback})))
@@ -169,7 +173,7 @@
         tab (get-active-tab)]
     (if-not (empty? interaction)
       (if (empty? hook)
-        (if (and (not (empty? (:hook-sub-type tab))) (not (empty? (:hook-id tab))))
+        (if (and (not (empty? (:hookSubType tab))) (not (empty? (:hookId tab))))
           (send-assign-interrupt tab interaction-id callback topic)
           (ih/publish (clj->js {:topics topic
                                 :error (e/failed-to-assign-blank-salesforce-lightning-item-err interaction-id)
@@ -292,11 +296,21 @@
 (defn handle-focus-change [response]
   (let [active-tab (get-active-tab)
         result (js->clj response :keywordize-keys true)
-        hook {:hook-id (:recordId result)
-              :hook-sub-type (:objectType result)
-              :hook-name (:recordName result)}]
-    (if-not (and (= (:hook-id active-tab) (:hook-id hook))
-                 (= (:hook-sub-type active-tab) (:hook-sub-type hook)))
+        ;; So.. the Salesforce Classic SDK provides us with the salesforce object
+        ;; id with the last 3 characters removed. Salesforce Gateway accounts for
+        ;; this by also removing the 3 characters on the end of the fully qualified
+        ;; object id. However - in the salesforce lightning SDK, it returns us
+        ;; the fully qualified id, so in order to work properly with salesforce
+        ;; gateway, we need to preemtively remove the trailing 3 characters.
+        ;; ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯
+        hook-id (if (:recordId result)
+                  (.slice (:recordId result) 0 -3)
+                  nil)
+        hook {:hookId hook-id
+              :hookSubType (:objectType result)
+              :hookName (:recordName result)}]
+    (if-not (and (= (:hookId active-tab) (:hookId hook))
+                 (= (:hookSubType active-tab) (:hookSubType hook)))
       (do
         (set-active-tab! hook)
         (ih/publish {:topics "cxengage/salesforce-lightning/active-tab-changed"
@@ -329,12 +343,33 @@
     (if (= "v2" version)
       (cond
         (= popType "url") (try
-                            (let [hook (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)]
-                              (log :info "Popping URI:" (clj->js hook))
-                              (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId (:hook-id hook)}}))
-                              (add-hook! interactionId hook)
-                              (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/contact-assignment-acknowledged"
-                                                    :response (merge {:interaction-id interactionId} hook)})))
+                            ;; Check if the popUri is JSON. If it is, that is one we assigned and are getting transferred.
+                            ;; If not, it is a work item from flow. It will be formatted like: "<case-number>/<object-id>"
+                            (if (try (js/JSON.parse (js/decodeURIComponent popUri))
+                                  true
+                                  (catch js/Object e
+                                    false))
+                              (let [tab-details (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)
+                                    object-id (or (get tab-details :objectId) (get tab-details :hook-id))
+                                    hook {:interaction-id interactionId
+                                          :hook-id object-id
+                                          :hook-sub-type (or (get tab-details :object) (get tab-details :hook-sub-type))
+                                          :hook-name (or (get tab-details :objectName) (get tab-details :hook-name))
+                                          :hook-type "salesforce-lightning"}]
+                                (log :info "Popping transferred URI:" (clj->js tab-details))
+                                (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId object-id}}))
+                                (add-hook! interactionId (js->clj (ih/camelify hook) :keywordize-keys true))
+                                (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/contact-assignment-acknowledged"
+                                                      :response hook})))
+                              (let [uri-params (string/split popUri #"/")
+                                    object-name (first uri-params)
+                                    object-id (second uri-params)
+                                    tab-details {:hook-sub-type "Case"
+                                                 :hook-id object-id
+                                                 :hook-name object-name}]
+                                (log :info "Popping work item URI:" object-id object-name)
+                                (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId object-id}}))
+                                (send-assign-interrupt tab-details interactionId nil "cxengage/salesforce-lightning/contact-assignment-acknowledged")))
                             (catch js/Object e
                               (ih/publish (clj->js {:topics topic
                                                     :error e}))))
