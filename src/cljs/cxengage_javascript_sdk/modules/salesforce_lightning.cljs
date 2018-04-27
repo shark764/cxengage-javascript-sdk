@@ -142,13 +142,13 @@
 
 (defn send-assign-interrupt [new-hook interaction-id callback topic]
   (go
-    (let [{:keys [hook-id hook-sub-type hook-name]} new-hook
+    (let [{:keys [hookId hookSubType hookName]} new-hook
           resource-id (state/get-active-user-id)
           interrupt-type "interaction-hook-add"
           interrupt-body (merge new-hook {:hook-by (get-current-salesforce-user-id)
-                                          :hook-name hook-name
-                                          :hook-id hook-id
-                                          :hook-sub-type hook-sub-type
+                                          :hook-name hookName
+                                          :hook-id hookId
+                                          :hook-sub-type hookSubType
                                           :hook-type "salesforce-lightning"
                                           :hook-pop (js/encodeURIComponent (js/JSON.stringify (clj->js new-hook)))
                                           :resource-id resource-id})
@@ -262,9 +262,12 @@
     (if (= 1 (count (vals result)))
       (let [_ (log :info "Only one search result. Assigning:" (clj->js result))
             record (first (vals result))
-            hook {:hook-id (:Id record)
-                  :hook-sub-type (:RecordType record)
-                  :hook-name (:Name record)}]
+            hook-id (.slice (:Id record) 0 -3)
+            ;; Refer to the handle-focus-change comment block for a description
+            ;; of why we are slicin here. TL;DR Salesforce Gateway adherence
+            hook {:hookId hook-id
+                  :hookSubType (:RecordType record)
+                  :hookName (:Name record)}]
         (send-assign-interrupt hook interaction-id nil "cxengage/salesforce-lightning/contact-assignment-acknowledged"))
       (log :info "More than one result - skipping auto-assign"))))
 
