@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.19.2]
+* <no-ticket> - Fixed Salesforce Lightning work item not assigning on transfer
+
 ## [6.19.1]
 * <no-ticket> - Fixed list item editing/deleting
 * <no-ticket> - Fixed auto-assigned interactions not being able to be unassigned (Salesforce Lightning)
