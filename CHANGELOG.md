@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.19.1]
+* <no-ticket> - Fixed list item editing/deleting
+* <no-ticket> - Fixed auto-assigned interactions not being able to be unassigned (Salesforce Lightning)
+
 ## [6.19.0]
 * CXV1-12492 - Get functions for artifacts
 

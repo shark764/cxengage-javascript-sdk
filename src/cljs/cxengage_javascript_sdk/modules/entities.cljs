@@ -20,7 +20,7 @@
 
 (defn add-key-to-items [list-obj]
   (let [list-item-key (get (first (get-in list-obj [:list-type :fields])) :name)
-        items (get list-obj :items)
+        items (js->clj (ih/camelify (get list-obj :items)) :keywordize-keys true)
         updated-items (mapv #(assoc % :key (get % (keyword list-item-key))) items)]
     (assoc list-obj :items updated-items)))
 
