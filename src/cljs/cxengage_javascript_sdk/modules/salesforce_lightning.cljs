@@ -353,11 +353,11 @@
                                   (catch js/Object e
                                     false))
                               (let [tab-details (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)
-                                    object-id (or (get tab-details :objectId) (get tab-details :hook-id))
+                                    object-id (or (get tab-details :objectId) (get tab-details :hookId))
                                     hook {:interaction-id interactionId
                                           :hook-id object-id
-                                          :hook-sub-type (or (get tab-details :object) (get tab-details :hook-sub-type))
-                                          :hook-name (or (get tab-details :objectName) (get tab-details :hook-name))
+                                          :hook-sub-type (or (get tab-details :object) (get tab-details :hookSubType))
+                                          :hook-name (or (get tab-details :objectName) (get tab-details :hookName))
                                           :hook-type "salesforce-lightning"}]
                                 (log :info "Popping transferred URI:" (clj->js tab-details))
                                 (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId object-id}}))
@@ -372,7 +372,10 @@
                                                  :hook-name object-name}]
                                 (log :info "Popping work item URI:" object-id object-name)
                                 (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId object-id}}))
-                                (send-assign-interrupt tab-details interactionId nil "cxengage/salesforce-lightning/contact-assignment-acknowledged")))
+                                (send-assign-interrupt (js->clj (ih/camelify tab-details) :keywordize-keys true)
+                                                       interactionId
+                                                       nil
+                                                       "cxengage/salesforce-lightning/contact-assignment-acknowledged")))
                             (catch js/Object e
                               (ih/publish (clj->js {:topics topic
                                                     :error e}))))
