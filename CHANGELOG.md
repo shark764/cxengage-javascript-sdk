@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.19.3]
+* <no-ticket> - Fixed Focusing interactions for Salesforce
+
 ## [6.19.2]
 * <no-ticket> - Fixed Salesforce Lightning work item not assigning on transfer
 
