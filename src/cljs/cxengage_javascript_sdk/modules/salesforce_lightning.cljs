@@ -241,7 +241,7 @@
    :topic-key "cxengage/salesforce-lightning/focus-interaction"}
   [params]
   (let [{:keys [callback topic interaction-id]} params
-        hook-id (:hook-id (get-hook interaction-id))]
+        hook-id (:hookId (get-hook interaction-id))]
     (if hook-id
       (try
         (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId hook-id}}))
