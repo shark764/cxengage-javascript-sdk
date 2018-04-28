@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.19.4]
+* <no-ticket> - Fixed Lightning to Classic screen pop
+
 ## [6.19.3]
 * <no-ticket> - Fixed Focusing interactions for Salesforce
 

@@ -349,11 +349,11 @@
                                     (catch js/Object e
                                       false))
                                 (let [tab-details (js->clj (js/JSON.parse (js/decodeURIComponent popUri)) :keywordize-keys true)
-                                      object-id (or (get tab-details :objectId) (get tab-details :hook-id))
+                                      object-id (or (get tab-details :objectId) (get tab-details :hookId))
                                       hook {:interaction-id interactionId
                                             :hook-id object-id
-                                            :hook-sub-type (or (get tab-details :object) (get tab-details :hook-sub-type))
-                                            :hook-name (or (get tab-details :objectName) (get tab-details :hook-name))
+                                            :hook-sub-type (or (get tab-details :object) (get tab-details :hookSubType))
+                                            :hook-name (or (get tab-details :objectName) (get tab-details :hookName))
                                             :hook-type "salesforce-classic"}]
                                   (log :info "Popping transferred URI:" (clj->js tab-details))
                                   (js/sforce.interaction.screenPop (str "/" object-id) true)
