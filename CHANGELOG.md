@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.19.5]
+* CXV1-13718 - Fixed auth-info response for SSO
+
 ## [6.19.4]
 * <no-ticket> - Fixed Lightning to Classic screen pop
 
