@@ -478,7 +478,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (defn get-recording [interaction-id tenant-id artifact-id callback]
-  (go (let [audio-recording (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
+  (go (let [audio-recording (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id nil))
             {:keys [api-response status]} audio-recording
             topic (topics/get-topic :recording-response)]
         (if (= status 200)
@@ -498,7 +498,7 @@
    :topic-key :recording-response}
   [params]
   (let [{:keys [interaction-id topic callback]} params
-        interaction-files (a/<! (rest/get-interaction-artifacts-request interaction-id))
+        interaction-files (a/<! (rest/get-interaction-artifacts-request interaction-id nil))
         {:keys [api-response status]} interaction-files
         {:keys [results]} api-response
         tenant-id (state/get-active-tenant-id)
