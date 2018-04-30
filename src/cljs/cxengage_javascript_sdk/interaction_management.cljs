@@ -34,7 +34,7 @@
               (get-messaging-history interaction-id))))))
 
 (defn get-email-artifact-data [interaction-id artifact-id]
-  (go (let [artifact-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
+  (go (let [artifact-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id nil))
             {:keys [status api-response]} artifact-response
             topic (topics/get-topic :email-artifact-received)]
         (if (not= status 200)

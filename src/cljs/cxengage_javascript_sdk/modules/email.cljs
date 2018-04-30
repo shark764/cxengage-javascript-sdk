@@ -35,7 +35,7 @@
    :topic-key :attachment-received}
   [params]
   (let [{:keys [topic interaction-id artifact-file-id artifact-id callback]} params
-        attachment-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
+        attachment-response (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id nil))
         {:keys [api-response status]} attachment-response]
     (if (= status 200)
       (let [attachment (first

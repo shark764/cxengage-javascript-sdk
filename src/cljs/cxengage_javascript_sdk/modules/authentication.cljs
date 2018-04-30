@@ -176,8 +176,8 @@
   (let [client-details (state/get-sso-client-details)
         api (state/get-base-api-url)
         env (name (state/get-env))
-        details (:result (state/get-sso-client-details))
-        {:keys [client domain]} details
+        details (state/get-sso-client-details)
+        {:keys [client domain]} (or (:result details) details)
         url (if (= env "prod")
               "https://identity.cxengage.net"
               "https://identity.cxengagelabs.net")

@@ -296,7 +296,7 @@
           :opt-un [::specs/callback]))
 
 (defn get-transcript [interaction-id tenant-id artifact-id callback]
-  (go (let [transcript (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id))
+  (go (let [transcript (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id nil))
             {:keys [api-response status]} transcript
             topic (topics/get-topic :transcript-response)]
         (if (= status 200)
@@ -312,7 +312,7 @@
    :topic-key :transcript-response}
   [params]
   (let [{:keys [interaction-id topic callback]} params
-        interaction-files (a/<! (rest/get-interaction-artifacts-request interaction-id))
+        interaction-files (a/<! (rest/get-interaction-artifacts-request interaction-id nil))
         {:keys [api-response status]} interaction-files
         {:keys [results]} api-response
         tenant-id (state/get-active-tenant-id)

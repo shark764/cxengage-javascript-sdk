@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.19.6]
+* CXV1-13718 - Updated to make sure it's backward compatible
+
 ## [6.19.5]
 * CXV1-13718 - Fixed auth-info response for SSO
 
