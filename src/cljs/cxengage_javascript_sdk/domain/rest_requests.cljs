@@ -481,6 +481,14 @@
                                     {:tenant-id tenant-id})}]
     (api/api-request get-branding-request)))
 
+(defn get-protected-branding-request []
+  (let [tenant-id (state/get-active-tenant-id)
+        get-protected-branding-request {:method :get
+                                        :url (iu/api-url
+                                              "tenants/:tenant-id/protected-brandings"
+                                              {:tenant-id tenant-id})}]
+    (api/api-request get-protected-branding-request)))
+
 (defn get-tenant-request [tenant-id]
   (let [get-tenant-request {:method :get
                             :url (iu/api-url

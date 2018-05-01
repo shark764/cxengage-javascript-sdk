@@ -187,7 +187,29 @@
       (p/publish {:topics topic
                   :error (e/failed-to-get-tenant-branding-err entity-response)
                   :callback callback}))))
-;
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getProtectedBranding();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-protected-branding-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-protected-branding
+  {:validation ::get-protected-branding-params
+   :topic-key :get-protected-branding-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-protected-branding-request))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (:result api-response)
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-tenant-protected-branding-err entity-response)
+                  :callback callback}))))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getDashboards();
 ;; -------------------------------------------------------------------------- ;;
@@ -787,6 +809,7 @@
                                        :get-transfer-list get-transfer-list
                                        :get-dashboards get-dashboards
                                        :get-branding get-branding
+                                       :get-protected-branding get-protected-branding
                                        :get-list get-list
                                        :get-list-item get-list-item
                                        :get-lists get-lists
