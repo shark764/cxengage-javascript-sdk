@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.20.1]
+* <no-ticket> - Ensure the Cognito event listener only gets triggered once
+
 ## [6.20.0]
 * CXV1-13761 - Get function for protected branding
 

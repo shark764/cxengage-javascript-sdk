@@ -182,7 +182,7 @@
               "https://identity.cxengage.net"
               "https://identity.cxengagelabs.net")
         window (js/window.open (str url "?env=" api "&domain=" domain "&clientid=" client) "cxengageSsoWindow" "width=500,height=500")
-        _ (js/window.addEventListener "message" (partial post-message-handler window))]
+        _ (js/window.addEventListener "message" (partial post-message-handler window) (clj->js {:once true}))]
     (go-loop []
       (if (= (.-closed window) false)
         (do
