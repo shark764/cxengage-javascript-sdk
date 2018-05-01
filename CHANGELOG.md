@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.20.0]
+* CXV1-13761 - Get function for protected branding
+
 ## [6.19.6]
 * CXV1-13718 - Updated to make sure it's backward compatible
 

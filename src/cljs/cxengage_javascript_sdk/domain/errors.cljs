@@ -954,6 +954,13 @@
    :level "error"
    :message "Failed to get artifact."})
 
+(defn failed-to-get-tenant-protected-branding-err [data]
+  {:code 11029
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get tenant protected branding."})
+
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000
    :context :reporting
