@@ -19,8 +19,9 @@
                  [cljsjs/paho "1.0.3-0"]
                  [cljs-ajax "0.6.0"]
                  [expound "0.1.0"]
-                 
+
                  [serenova/cljs-sdk-utils "0.0.16"]
+                 [boot-codox "0.10.3" :scope "test"]
 
                  [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
                  [org.clojure/tools.nrepl "0.2.13" :scope "test"]
@@ -47,6 +48,7 @@
  '[pandeiro.boot-http :refer [serve]]
  '[crisptrutski.boot-cljs-test :refer [test-cljs]]
  '[tolitius.boot-check :as check]
+ '[codox.boot :refer [codox]]
  'boot.repl)
 
 (swap! boot.repl/*default-dependencies*
@@ -105,6 +107,31 @@
 ;; =============================================
 ;; Below are the only boot tasks you should ever have to run.
 ;; =============================================
+
+(deftask docs []
+  (set-env! :source-paths #{"src/cljs"})
+  (comp
+    (codox
+      :name "CxEngage Javascript SDK Documentation"
+      :description "Auto-generated Documentation for the various modules contained in the SDK."
+      :language :clojurescript
+      :version "1.0.0"
+      :exclude-vars #"(Module)+"
+      :filter-namespaces #{'cxengage-javascript-sdk.domain.errors
+                           'cxengage-javascript-sdk.modules.authentication
+                           'cxengage-javascript-sdk.modules.contacts
+                           'cxengage-javascript-sdk.modules.email
+                           'cxengage-javascript-sdk.modules.interaction
+                           'cxengage-javascript-sdk.modules.entities
+                           'cxengage-javascript-sdk.modules.messaging
+                           'cxengage-javascript-sdk.modules.reporting
+                           'cxengage-javascript-sdk.modules.salesforce-classic
+                           'cxengage-javascript-sdk.modules.salesforce-lightning
+                           'cxengage-javascript-sdk.modules.session
+                           'cxengage-javascript-sdk.modules.voice
+                           'cxengage-javascript-sdk.modules.zendesk}
+      :metadata {:doc/format :markdown})
+    (target)))
 
 (deftask make-prod-release []
   (comp (production*)

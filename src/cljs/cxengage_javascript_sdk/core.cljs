@@ -32,7 +32,7 @@
             [cxengage-javascript-sdk.modules.salesforce-classic :as sfc]
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]))
 
-(def *SDK-VERSION* "8.14.0")
+(def *SDK-VERSION* "8.15.0")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."

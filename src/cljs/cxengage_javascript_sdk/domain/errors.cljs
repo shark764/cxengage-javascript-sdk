@@ -1,6 +1,26 @@
 (ns cxengage-javascript-sdk.domain.errors)
 
-(defn bad-sdk-init-opts-err []
+(defn bad-sdk-init-opts-err
+  "## SDK initialization error
+   This error is commonly received if the initialize function was provided with invalid
+   parameters. The available parameters are listed as following:
+
+   - baseUrl
+   - crmModule
+   - reporitngRefreshRate
+   - logLevel
+   - environment
+
+   ``` javascript
+    CxEngage.initialize({
+      baseUrl: 'http://api.cxengage.net/v1/',
+      environment: 'dev',
+      reportingRefreshRate: 3000,
+      logLevel: 'info',
+      crmModule: 'salesforce-classic'
+    });
+   ```"
+  []
   {:code 1000
    :context :general
    :data {}
@@ -133,21 +153,50 @@
    :level "error"
    :message "Failed to retrieve user's tenant details. The API returned an error."})
 
-(defn login-failed-token-request-err [data]
+(defn login-failed-token-request-err
+  "**Error Code:** 3000
+   Message: Login attempt failed. Unable to retrieve token.
+
+   This error can be thrown if a User attempts to login and the API request
+   returns an error. The most common cause for this would be incorrect
+   credentials.
+
+   **Solution:** Verify that the credentials being used are correct."
+  [data]
   {:code 3000
    :context :authentication
    :data {:api-response data}
    :level "error"
    :message "Login attempt failed. Unable to retrieve token."})
 
-(defn logout-failed-err [data]
+(defn logout-failed-err
+  "**Error Code:** 3001
+   Message: Logout attempt failed.
+
+   This error can be thrown if an Agent attempts to logout and the API request
+   to update the Agent's state to 'offline' fails. This would likely be caused
+   by an expired session.
+
+   **Solution:** The simplest solution would be to close the browser, as the session
+   has already ended.
+
+   Support Notes: In the case of a 500 error, this would be a problem with
+   Presence."
+  [data]
   {:code 3001
    :context :authentication
    :data {:api-response data}
    :level "error"
    :message "Logout attempt failed."})
 
-(defn login-failed-login-request-err [data]
+(defn login-failed-login-request-err
+  "**Error Code:** 3002
+   Message: Login attempt failed. Login request failed.
+
+   This error is typically thrown if the token being used is invalid or expired.
+
+   **Solution:** Refresh the page, and attempt to log in once more."
+  [data]
   {:code 3002
    :context :authentication
    :data {:api-response data}
@@ -168,7 +217,18 @@
    :level "error"
    :message "Failed to authenticate with AWS Cognito."})
 
-(defn failed-to-get-auth-info-err [data]
+(defn failed-to-get-auth-info-err
+  "**Error Code:** 3005
+   Message: Failed to retrieve SSO authentication information.
+
+   This error can be thrown if we are unable to find any SSO information
+   associated with their email address or tenant ID / identity provider ID
+   combination.
+
+   **Solution:** Ensure that the email or tenant being used is properly associated
+   with a valid identity provider, and that the SAML provider is configured
+   correctly."
+  [data]
   {:code 3005
    :context :authentication
    :data data
@@ -182,7 +242,16 @@
    :level "error"
    :message "Failed to update default tenant."})
 
-(defn active-interactions-err [data]
+(defn active-interactions-err
+  "**Error Code:** 4000
+   Message: Unable to perform this action as there are interactions still active.
+
+   This error can be thrown if an Agent attempts to logout while there are still
+   active / unfinished interactions.
+
+   **Solution:** Change your status to a not-ready state, complete/end any remaining
+   interactions. Ensure all scripts have been completed, and wrap-up has ended."
+  [data]
   {:code 4000
    :context :interaction
    :data {:active-interactions data}

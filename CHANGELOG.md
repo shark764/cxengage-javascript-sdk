@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [8.15.0]
+* CXV1-13804 - Setup Codox Documentation Generation
+* CXV1-13805 - Update def-sdk-fn macro to accept docstrings
+* CXV1-13806 - Update all module functions to adhere to the updated macro
+* <no-ticket> - Added "Documentation" section to README.md
+
 ## [8.14.0]
 * CXV1-13733 - Update SDK to log errors to Kibana
 * <no-ticket> - Remove Lumbajack as a dependency

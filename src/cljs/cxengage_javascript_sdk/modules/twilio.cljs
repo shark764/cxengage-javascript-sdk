@@ -18,19 +18,19 @@
 ;; Twilio Initialization Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn on-twilio-incoming [connection]
+(defn- on-twilio-incoming [connection]
   (log :debug "Twilio incoming. Connection:" connection)
   (state/set-twilio-connection connection)
   (state/set-twilio-state "incoming")
   (when (state/get-supervisor-mode)
     (.accept connection)))
 
-(defn on-twilio-connect [connection]
+(defn- on-twilio-connect [connection]
   (log :debug "Twilio connect. Connection:" connection)
   (state/set-twilio-connection connection)
   (state/set-twilio-state "connect"))
 
-(defn on-twilio-ready [device]
+(defn- on-twilio-ready [device]
   (log :debug "Twilio ready. Device:" device)
   (state/set-twilio-device device)
   (state/set-twilio-state "ready")
@@ -38,27 +38,27 @@
     (p/publish {:topics (topics/get-topic :twilio-device-ready)
                 :response {}})))
 
-(defn on-twilio-cancel [connection]
+(defn- on-twilio-cancel [connection]
   (log :debug "Twilio cancel. Connection:" connection)
   (state/set-twilio-connection connection)
   (state/set-twilio-state "cancel"))
 
-(defn on-twilio-offline [device]
+(defn- on-twilio-offline [device]
   (log :debug "Twilio offline. Device:" device)
   (state/set-twilio-device device)
   (state/set-twilio-state "offline"))
 
-(defn on-twilio-disconnect [connection]
+(defn- on-twilio-disconnect [connection]
   (log :debug "Twilio disconnect. Connection:" connection)
   (state/set-twilio-connection connection)
   (state/set-twilio-state "disconnect"))
 
-(defn handle-twilio-error [error]
+(defn- handle-twilio-error [error]
   (log :error "Twilio error" error)
   (p/publish {:topics "cxengage/errors/error/twilio-device-error"
               :error (e/failed-to-init-twilio-err error)}))
 
-(defn ^:private twilio-init
+(defn- twilio-init
   [config]
   (let [audio-params (ih/camelify {"audio" true})
         script-init (fn [& args]

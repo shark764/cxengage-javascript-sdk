@@ -11,8 +11,8 @@
   - returning nil to prevent core/async channel leakage
   - providing the SDK API fn with a simple params map to work with
   - merging optional callback function into said params map."
-  [name options _ & body]
-  `(defn ~name
+  [name description options _ & body]
+  `(defn ~name ~description
      ([& args#]
       (let [validation# (:validation ~options)
             topic-key# (:topic-key ~options)

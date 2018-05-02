@@ -13,14 +13,20 @@
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.authentication.logout();
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::logout-spec
   (s/keys :req-un []))
 
 (def-sdk-fn logout
+  "``` javascript
+  CxEngage.authentication.logout();
+  ```
+  Logs the active Agent out, and sets their state to 'Offline'. This function
+  is unable to be called if there are any active interactions.
+
+  Possible Errors:
+
+  - [Interaction:    4000](/cxengage-javascript-sdk.domain.errors.html#var-active-interactions-err)
+  - [Authentication: 3001](/cxengage-javascript-sdk.domain.errors.html#var-logout-failed-err)"
   {:validation ::logout-spec
    :topic-key :presence-state-change-request-acknowledged}
   [params]
@@ -44,20 +50,6 @@
                       :error (e/logout-failed-err resp)
                       :callback callback}))))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.authentication.login({
-;;   username: "{{string}}",
-;;   password: "{{string}}"
-;;   ttl: "{{number}}"
-;; });
-;;
-;; OR
-;;
-;; CxEngage.authentication.login({
-;;   token: "{{string}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::login-spec
   (s/or
     :credentials (s/keys :req-un [::specs/username ::specs/password]
@@ -66,6 +58,25 @@
                    :opt-un [::specs/callback])))
 
 (def-sdk-fn login
+  "The login function is able to be called two different ways. Either with a
+   username and password, or a token. When logging in with a username and password
+   you can optionally pass a TTL as well.
+  ``` javascript
+  CxEngage.authentication.login({
+    username: '{{string}}',
+    password: '{{string}}'
+    ttl: '{{number}}'
+  });
+  ```
+  ``` javascript
+  CxEngage.authentication.login({
+    token: '{{string}}'
+  });
+  ```
+  Possible Errors:
+
+  - [Authentication: 3000](/cxengage-javascript-sdk.domain.errors.html#var-login-failed-token-request-err)
+  - [Authentication: 3002](/cxengage-javascript-sdk.domain.errors.html#var-login-failed-login-request-err)"
   {:validation ::login-spec
    :topic-key :login-response}
   [params]
@@ -112,12 +123,6 @@
                               :response user-identity
                               :callback callback}))))))))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.authentication.getAuthInfo({
-;;   username: "{{string}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::auth-info-spec
   (s/or
     :tenant (s/keys :req-un [::specs/tenant-id]
@@ -126,6 +131,42 @@
                    :opt-un [::specs/callback])))
 
 (def-sdk-fn get-auth-info
+  "The getAuthInfo function is used to retrieve a user's Single Sign On details,
+   and when used in conjunction with the popIdentityPage function - will open a
+   window for a user to sign into their third party SAML provider. There are
+   multiple ways to call this function to get a particular identity provider for
+   a user. The first way is to simply use their email - which will grab their
+   default tenant's 'client' and 'domain' fields.
+
+  ``` javascript
+  CxEngage.authentication.getAuthInfo({
+      username: '{{string}}'
+  })
+  ```
+  The second way to use this function is to specify a tenant ID - which will be
+  used to retrieve that tenant's default identity provider information in order
+  to open the third party sign on window.
+
+  ``` javascript
+  CxEngage.authentication.getAuthInfo({
+      tenantId: '{{uuid}}'
+  })
+  ```
+  The third way is to specify an identity provider ID in addition to a tenant ID
+  in order to retrieve the information if it is not the default identity provider
+  on the tenant.
+
+  ``` javascript
+  CxEngage.authentication.getAuthInfo({
+      tenantId: '{{uuid}}',
+      idpId: '{{uuid}}'
+  })
+  ```
+
+  Possible Errors:
+
+  - [Authentication: 3005](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-auth-info-err)
+  "
   {:validation ::auth-info-spec
    :topic-key :auth-info-response}
   [params]
@@ -150,8 +191,7 @@
 ;; CxEngage.authentication.popIdentityPage();
 ;; -------------------------------------------------------------------------- ;;
 
-
-(defn post-message-handler [event]
+(defn- post-message-handler [event]
   (let [token (aget event "data" "token")
         error (aget event "data" "error")]
     (if error
@@ -169,6 +209,15 @@
 ;; cxengageSsoWindow opened here will be blocked by popup blockers by default.
 ;; The window must be previously opened by a on-click handler to not be blocked.
 (def-sdk-fn pop-identity-page
+  "The popIdentityPage function is used to open a third party Single Sign On
+   provider using the information gathered from the getAuthInfo function. This
+   information is stored in the SDK's internal state, and does not require it
+   passed in as parameters. We require this to be a separate function in order
+   to bypass the browser's popup blocker.
+
+   ``` javascript
+   CxEngage.authentication.popIdentityPage();
+   ```"
   {:validation ::identity-window-spec
    :topic-key :identity-window-response}
   [params]
@@ -205,6 +254,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn update-default-tenant
+  ""
   {:validation ::update-default-tenant-spec
    :topic-key :update-default-tenant-response}
   [params]

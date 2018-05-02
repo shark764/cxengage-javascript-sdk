@@ -9,7 +9,7 @@
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
-(defn get-query-str
+(defn- get-query-str
   [query]
   (let [queryv (->> query
                     (reduce-kv (fn [acc k v] (conj acc (name k) "=" v "&")) [])
@@ -26,6 +26,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-contact
+  ""
   {:validation ::get-contact-params
    :topic-key :get-contact}
   [params]
@@ -50,6 +51,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-contacts
+  ""
   {:validation ::get-contacts-params
    :topic-key :get-contacts}
   [params]
@@ -78,6 +80,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn search-contacts
+  ""
   {:validation ::search-contacts-params
    :topic-key :search-contacts
    :preserve-casing? true}
@@ -104,6 +107,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-contact
+  ""
   {:validation ::create-contact-params
    :topic-key :create-contact
    :preserve-casing? true}
@@ -130,6 +134,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn update-contact
+  ""
   {:validation ::update-contact-params
    :topic-key :update-contact
    :preserve-casing? true}
@@ -154,6 +159,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn delete-contact
+  ""
   {:validation ::delete-contact-params
    :topic-key :delete-contact}
   [params]
@@ -179,6 +185,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn merge-contacts
+  ""
   {:validation ::merge-contacts-params
    :topic-key :merge-contacts
    :preserve-casing? true}
@@ -205,6 +212,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn list-attributes
+  ""
   {:validation ::list-attributes-params
    :topic-key :list-attributes}
   [params]
@@ -229,6 +237,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-layout
+  ""
   {:validation ::get-layout-params
    :topic-key :get-layout}
   [params]
@@ -253,6 +262,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn list-layouts
+  ""
   {:validation ::list-layouts-params
    :topic-key :list-layouts}
   [params]
