@@ -182,7 +182,7 @@
         {:keys [status api-response] :as entity-response} (a/<! (rest/get-branding-request))]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response (:result api-response)
+                  :response api-response
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-tenant-branding-err entity-response)
@@ -204,7 +204,7 @@
         {:keys [status api-response] :as entity-response} (a/<! (rest/get-protected-branding-request))]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response (:result api-response)
+                  :response api-response
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-tenant-protected-branding-err entity-response)
@@ -250,7 +250,7 @@
         {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "list" list-id))]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response (add-key-to-items (get api-response :result))
+                  :response (add-key-to-items api-response)
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-list-err entity-response)
@@ -303,7 +303,6 @@
       (let [lists (get-in api-response [:result])
             updated-lists (mapv #(add-key-to-items %) lists)
             api-response (assoc api-response :result updated-lists)]
-
         (p/publish {:topics topic
                     :response api-response
                     :callback callback}))
@@ -559,7 +558,7 @@
         {:keys [api-response status] :as entity-response} (a/<! (rest/create-list-request list-type-id name [] active))]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response (add-key-to-items (get api-response :result))
+                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-create-list-err entity-response)
@@ -582,7 +581,7 @@
   [params]
   (let [{:keys [list-id item-value callback topic]} params
         {:keys [api-response status] :as entity-response} (a/<! (rest/create-list-item-request list-id item-value))
-        created-list-item (:result api-response)]
+        created-list-item api-response]
     (if (= status 200)
       (p/publish {:topics topic
                   :response created-list-item
@@ -668,7 +667,7 @@
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-request list-id name active))]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response (add-key-to-items (get api-response :result))
+                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-update-list-err entity-response)
@@ -703,7 +702,7 @@
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-item-request list-id list-item-key item-value))]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response entity-response
+                  :response api-response
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-update-list-item-err entity-response)
@@ -757,11 +756,10 @@
    :topic-key :delete-list-item-response}
   [params]
   (let [{:keys [list-id list-item-key callback topic]} params
-        {:keys [api-response status] :as list-items-response} (a/<! (rest/delete-list-item-request list-id list-item-key))
-        deleted-list-item? (:result api-response)]
+        {:keys [api-response status] :as list-items-response} (a/<! (rest/delete-list-item-request list-id list-item-key))]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response deleted-list-item?
+                  :response api-response
                   :callback callback
                   :preserve-casing? true})
       (p/publish {:topics topic

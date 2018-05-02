@@ -91,10 +91,10 @@
                                                                             :styles "some css"
                                                                             :tenant-id tenant-id}}})))
              (p/subscribe topic (fn [e t r]
-                                  (is (= {:logo "unit test"
-                                          :favicon "test favicon"
-                                          :styles "some css"
-                                          :tenantId tenant-id} (js->clj r :keywordize-keys true)))
+                                  (is (= ({:result {:logo "unit test"}
+                                                   :favicon "test favicon"
+                                                   :styles "some css"
+                                                   :tenantId tenant-id} (js->clj r :keywordize-keys true))))
                                   (set! rest/get-branding-request old)
                                   (done)))
              (ent/get-branding)))))
