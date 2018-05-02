@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [7.0.0]
+* CXV1-13762 - Make entities function's responses consistent by always returning the api response directly or the altered response in the same shape: `{ result : { ... }}`
+
 ## [6.20.1]
 * <no-ticket> - Ensure the Cognito event listener only gets triggered once
 
