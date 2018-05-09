@@ -44,9 +44,11 @@
                             :session-id (state/get-session-id)}
             {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
         (if (= status 200)
-          (p/publish {:topics topic
-                      :response (merge {:interaction-id interaction-id} interrupt-body)
-                      :callback callback})
+          (do
+            (state/set-monitored-interaction! interaction-id)
+            (p/publish {:topics topic
+                        :response (merge {:interaction-id interaction-id} interrupt-body)
+                        :callback callback}))
           (p/publish {:topics topic
                       :error (e/failed-to-start-silent-monitoring interaction-id interrupt-response)
                       :callback callback})))

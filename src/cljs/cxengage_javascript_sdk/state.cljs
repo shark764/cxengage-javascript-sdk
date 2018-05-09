@@ -5,6 +5,7 @@
             [cljs-uuid-utils.core :as id]))
 
 (def initial-state {:authentication {:token false}
+                    :supervisor {}
                     :user {}
                     :session {}
                     :config {}
@@ -520,3 +521,14 @@
   [module-name]
   (let [modules-after-removal (remove #{module-name} (get-enabled-modules))]
     (swap! sdk-state assoc-in [:internal :enabled-modules] modules-after-removal)))
+
+
+;;;;;;;;;;;;;;;;;;
+;; Supervisor Mode
+;;;;;;;;;;;;;;;;;;
+
+(defn get-monitored-interaction []
+  (get-state-value [:supervisor :monitored-interaction]))
+
+(defn set-monitored-interaction! [interaction]
+  (swap! sdk-state assoc-in [:supervisor :monitored-interaction] interaction))

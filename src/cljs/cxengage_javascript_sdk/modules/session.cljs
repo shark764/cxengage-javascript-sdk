@@ -382,6 +382,20 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.getMonitoredInteraction();
+;; -------------------------------------------------------------------------- ;;
+
+(defn get-monitored-interaction [& params]
+  (let [callback (first params)
+        callback (if (fn? callback) callback nil)
+        interaction (state/get-monitored-interaction)]
+    (p/publish {:topic (topics/get-topic :get-monitored-interaction-response)
+                :response interaction
+                :callback callback})
+    interaction))
+
+
+;; -------------------------------------------------------------------------- ;;
 ;; SDK Presence Session Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -401,7 +415,8 @@
                                        :set-token set-token
                                        :set-user-identity set-user-identity
                                        :get-default-extension get-default-extension
-                                       :get-tenant-details get-tenant-details}}
+                                       :get-tenant-details get-tenant-details
+                                       :get-monitored-interaction get-monitored-interaction}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
