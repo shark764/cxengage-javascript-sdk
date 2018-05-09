@@ -364,6 +364,7 @@
               :response message}))
 
 (defn handle-silent-monitor-end [message]
+  (state/set-monitored-interaction! nil)
   (p/publish {:topics (topics/get-topic :silent-monitor-end)
               :response message}))
 
