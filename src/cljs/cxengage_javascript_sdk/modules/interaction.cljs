@@ -640,7 +640,9 @@
 ;; CxEngage.interactions.sendScript({
 ;;   interactionId: "{{uuid}}",
 ;;   scriptId: "{{uuid}}",
-;;   answers: "{{object}}"
+;;   answers: "{{object}}",
+;;   dismissed: "{{bool}}",
+;;   scriptReporting: "{{bool}}",
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
@@ -665,14 +667,14 @@
     updated-elements))
 
 (s/def ::script-params
-  (s/keys :req-un [::specs/interaction-id ::specs/answers ::specs/script-id]
+  (s/keys :req-un [::specs/interaction-id ::specs/answers ::specs/script-id ::specs/dismissed ::specs/script-reporting]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-script
   {:validation ::script-params
    :topic-key :send-script}
   [params]
-  (let [{:keys [topic answers script-id interaction-id callback]} params
+  (let [{:keys [topic answers script-id interaction-id dismissed script-reporting callback]} params
         original-script (state/get-script interaction-id script-id)]
     (if-not original-script
       (p/publish {:topics topic
@@ -699,6 +701,8 @@
                              answers)
             final-elements (add-answers-to-elements elements updated-answers)
             script-update {:resource-id (state/get-active-user-id)
+                           :dismissed dismissed
+                           :script-reporting script-reporting
                            :script-response {(keyword (:name parsed-script)) {:elements final-elements
                                                                               :id (:id parsed-script)
                                                                               :name (:name parsed-script)}}}
