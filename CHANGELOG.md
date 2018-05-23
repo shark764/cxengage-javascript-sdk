@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.0.0]
+* CXV1-13512 - Added reporting args for auto dismiss scripts
+
 ## [7.1.0]
 * CXV1-13897 - Save interaction monitoring call id in state and add a function to retrieve it
 
