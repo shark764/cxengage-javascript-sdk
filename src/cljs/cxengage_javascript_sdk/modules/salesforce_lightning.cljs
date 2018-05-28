@@ -61,16 +61,17 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::set-dimensions-params
-  (s/keys :req-un [::specs/height ::specs/width]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [::specs/width]
+          :opt-un [::specs/height ::specs/callback]))
 
 (def-sdk-fn set-dimensions
   {:validation ::set-dimensions-params
    :topic-key "cxengage/salesforce-lightning/set-dimensions-response"}
   [params]
   (let [{:keys [topic height width callback]} params]
-      (try
-        (js/sforce.opencti.setSoftphonePanelHeight (clj->js {:heightPX height}))
+    (try
+      (if height
+        (js/sforce.opencti.setSoftphonePanelHeight (clj->js {:heightPX height})))
         (js/sforce.opencti.setSoftphonePanelWidth (clj->js {:widthPX width}))
         (ih/publish (clj->js {:topics topic
                               :response true

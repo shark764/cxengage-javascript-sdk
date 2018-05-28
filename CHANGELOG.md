@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.1.0]
+* CXV1-13643 - Skylight toolbar cut off in SalesForce
+
 ## [8.0.0]
 * CXV1-13512 - Added reporting args for auto dismiss scripts
 

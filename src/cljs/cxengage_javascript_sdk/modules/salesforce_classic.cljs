@@ -61,20 +61,21 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::set-dimensions-params
-  (s/keys :req-un [::specs/height ::specs/width]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [::specs/width]
+          :opt-un [::specs/height ::specs/callback]))
 
 (def-sdk-fn set-dimensions
   {:validation ::set-dimensions-params
    :topic-key "cxengage/salesforce-classic/set-dimensions-response"}
   [params]
   (let [{:keys [topic height width callback]} params]
+    (if height
       (try
         (js/sforce.interaction.cti.setSoftphoneHeight height)
         (catch js/Object e
           (ih/publish (clj->js {:topics topic
                                 :error e
-                                :callback callback}))))
+                                :callback callback})))))
       (try
         (js/sforce.interaction.cti.setSoftphoneWidth width)
         (catch js/Object e
@@ -84,6 +85,7 @@
       (ih/publish (clj->js {:topics topic
                             :response "true"
                             :callback callback}))))
+
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceClassic.isVisible();
