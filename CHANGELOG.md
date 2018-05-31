@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.1.1]
+* CXV1-13643 - Fixed SalesForce(Classic and Lightning) setHeight() issue where previously set heights were cached and not overwritten.
+
 ## [8.1.0]
 * CXV1-13643 - Skylight toolbar cut off in SalesForce
 

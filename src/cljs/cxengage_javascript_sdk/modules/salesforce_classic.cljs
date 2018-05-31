@@ -69,22 +69,30 @@
    :topic-key "cxengage/salesforce-classic/set-dimensions-response"}
   [params]
   (let [{:keys [topic height width callback]} params]
-    (if height
-      (try
+    (try
+      (if height
         (js/sforce.interaction.cti.setSoftphoneHeight height)
-        (catch js/Object e
-          (ih/publish (clj->js {:topics topic
-                                :error e
-                                :callback callback})))))
-      (try
-        (js/sforce.interaction.cti.setSoftphoneWidth width)
-        (catch js/Object e
-          (ih/publish (clj->js {:topics topic
-                                :error e
-                                :callback callback}))))
-      (ih/publish (clj->js {:topics topic
-                            :response "true"
-                            :callback callback}))))
+        (js/sforce.interaction.cti.getCallCenterSettings
+         (fn [response]
+           (let [sfHeight (-> response
+                              (aget "result")
+                              (js/JSON.parse)
+                              (aget "/reqGeneralInfo/reqSoftphoneHeight")) 
+                 height (if (string/blank? sfHeight) 800 sfHeight)]
+             (js/sforce.interaction.cti.setSoftphoneHeight height)))))
+      (catch js/Object e
+        (ih/publish (clj->js {:topics topic
+                              :error e
+                              :callback callback}))))
+    (try
+      (js/sforce.interaction.cti.setSoftphoneWidth width)
+      (catch js/Object e
+        (ih/publish (clj->js {:topics topic
+                              :error e
+                              :callback callback}))))
+    (ih/publish (clj->js {:topics topic
+                          :response "true"
+                          :callback callback}))))
 
 
 ;; -------------------------------------------------------------------------- ;;

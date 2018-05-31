@@ -68,18 +68,22 @@
   {:validation ::set-dimensions-params
    :topic-key "cxengage/salesforce-lightning/set-dimensions-response"}
   [params]
-  (let [{:keys [topic height width callback]} params]
+  (let [{:keys [topic height width callback] } params]
     (try
       (if height
-        (js/sforce.opencti.setSoftphonePanelHeight (clj->js {:heightPX height})))
-        (js/sforce.opencti.setSoftphonePanelWidth (clj->js {:widthPX width}))
+        (js/sforce.opencti.setSoftphonePanelHeight (clj->js {:heightPX height}))
+        (js/sforce.opencti.getCallCenterSettings
+         (clj->js {:callback  (fn [response]
+                                (let [sfHeight (aget response "returnValue" "/reqGeneralInfo/reqSoftphoneHeight")]
+                                  (js/sforce.opencti.setSoftphonePanelHeight (clj->js {:heightPX sfHeight}))))})))
+      (js/sforce.opencti.setSoftphonePanelWidth (clj->js {:widthPX width}))
+      (ih/publish (clj->js {:topics topic
+                            :response true
+                            :callback callback}))
+      (catch js/Object e
         (ih/publish (clj->js {:topics topic
-                              :response true
-                              :callback callback}))
-        (catch js/Object e
-          (ih/publish (clj->js {:topics topic
-                                :error e
-                                :callback callback}))))))
+                              :error e
+                              :callback callback}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.salesforceLightning.isVisible();
@@ -96,10 +100,10 @@
   (let [{:keys [topic callback]} params]
     (try (js/sforce.opencti.isSoftphonePanelVisible
           (clj->js {:callback (fn [response]
-              (let [result (aget response "returnValue" "visible")]
-                               (ih/publish (clj->js {:topics topic
-                                                     :response result
-                                                     :callback callback}))))}))
+                                (let [result (aget response "returnValue" "visible")]
+                                  (ih/publish (clj->js {:topics topic
+                                                        :response result
+                                                        :callback callback}))))}))
          (catch js/Object e
            (ih/publish (clj->js {:topics topic
                                  :error e
@@ -140,7 +144,6 @@
 (s/def ::assign-contact-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
-
 (defn send-assign-interrupt [new-hook interaction-id callback topic]
   (go
     (let [{:keys [hookId hookSubType hookName]} new-hook
