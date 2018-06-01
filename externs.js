@@ -136,6 +136,11 @@ sforce.interaction.cti.setSoftphoneHeight = function() {};
 sforce.interaction.cti.setSoftphoneWidth = function() {};
 
 /**
+ * @return {Object}
+ */
+sforce.interaction.cti.getCallCenterSettings = function() {};
+
+/**
 * @return {Object}
 */
 sforce.interaction.isVisible = function() {};
@@ -199,6 +204,11 @@ sforce.interaction.runApex = function() {};
 * @interface
 */
 sforce.opencti = function() {};
+
+/**
+* @return {Object}
+*/
+sforce.opencti.getCallCenterSettings = function () {};
 
 /**
 * @return {Object}
