@@ -542,20 +542,21 @@
 ;; CxEngage.entities.createList({
 ;;   listTypeId: {{uuid}},
 ;;   name: {{string}},
+;;   shared: {{boolean}},
 ;;   active: {{boolean}}
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::create-list-params
-  (s/keys :req-un [::specs/list-type-id ::specs/name ::specs/active]
+  (s/keys :req-un [::specs/list-type-id ::specs/name ::specs/shared ::specs/active]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-list
   {:validation ::create-list-params
    :topic-key :create-list-response}
   [params]
-  (let [{:keys [list-type-id name active callback topic]} params
-        {:keys [api-response status] :as entity-response} (a/<! (rest/create-list-request list-type-id name [] active))]
+  (let [{:keys [list-type-id name shared active callback topic]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/create-list-request list-type-id name shared [] active))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (assoc api-response :result (add-key-to-items (get api-response :result)))
@@ -650,21 +651,22 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.updateList({
 ;;   listId: {{uuid}},
-;;   name: {{string}} (optional)
+;;   name: {{string}} (optional),
+;;   shared: {{boolean}} (optional),
 ;;   active: {{boolean}} (optional)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::update-list-params
   (s/keys :req-un [::specs/list-id]
-          :opt-un [::specs/callback ::name ::active]))
+          :opt-un [::specs/callback ::specs/name ::specs/shared ::specs/active]))
 
 (def-sdk-fn update-list
   {:validation ::update-list-params
    :topic-key :update-list-response}
   [params]
-  (let [{:keys [callback list-id topic name active]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-request list-id name active))]
+  (let [{:keys [callback list-id topic name shared active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-request list-id name shared active))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (assoc api-response :result (add-key-to-items (get api-response :result)))
