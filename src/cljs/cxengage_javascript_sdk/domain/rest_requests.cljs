@@ -579,7 +579,7 @@
                                          {:tenant-id tenant-id})}]
     (api/api-request get-list-types-request)))
 
-(defn create-list-request [list-type-id name items active]
+(defn create-list-request [list-type-id name shared items active]
   (let [tenant-id (state/get-active-tenant-id)
         create-list-request {:method :post
                              :url (iu/api-url
@@ -587,6 +587,7 @@
                                    {:tenant-id tenant-id})
                              :body {:list-type-id list-type-id
                                     :name name
+                                    :shared shared
                                     :items []
                                     :active active}}]
     (api/api-request create-list-request)))
@@ -602,7 +603,7 @@
                                          :item-value item-value}}]
     (api/api-request create-list-item-request)))
 
-(defn update-list-request [list-id name active]
+(defn update-list-request [list-id name shared active]
   (let [tenant-id (state/get-active-tenant-id)
         update-list-request (cond-> {:method :put
                                      :url (iu/api-url "tenants/:tenant-id/lists/:list-id"
@@ -610,6 +611,7 @@
                                                        :list-id list-id})}
                               list-id             (assoc-in [:body :list-id] list-id)
                               name                (assoc-in [:body :name]    name)
+                              (not (nil? shared)) (assoc-in [:body :shared] shared)
                               (not (nil? active)) (assoc-in [:body :active] active))]
     (api/api-request update-list-request)))
 

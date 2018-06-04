@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.2.0]
+* CXV1-13838 - Added shared parameter to create and update lists
+
 ## [8.1.1]
 * CXV1-13643 - Fixed SalesForce(Classic and Lightning) setHeight() issue where previously set heights were cached and not overwritten.
 
