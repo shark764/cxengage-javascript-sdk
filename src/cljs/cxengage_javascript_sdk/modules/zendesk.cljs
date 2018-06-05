@@ -17,7 +17,8 @@
             [cxengage-javascript-sdk.domain.api-utils :as api]
             [cxengage-javascript-sdk.domain.errors :as errors]
             [promesa.core :as prom :refer [promise all then]]
-            [cljs.spec.alpha :as s]))
+            [cljs.spec.alpha :as s]
+            [goog.object :as goog]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; State Functions
@@ -110,17 +111,27 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::set-dimensions-params
-  (s/keys :req-un [::specs/height ::specs/width]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [::specs/width]
+          :opt-un [::specs/callback ::specs/height]))
 
 (def-sdk-fn set-dimensions
   {:validation ::set-dimensions-params
    :topic-key "cxengage/zendesk/set-dimensions-response"}
   [params]
   (let [{:keys [topic height width callback]} params]
-      (try
-        (js/client.invoke "resize" (clj->js {:width width
-                                             :height height}))
+    (try
+      (let [resize (fn [height width]
+                     (js/client.invoke "resize" (clj->js {:width width
+                                                          :height height})))]
+        (if height
+          (resize height width)
+          (.then (js/client.metadata)
+                 (fn [metadata]
+                   (-> metadata
+                       (aget "settings")
+                       (goog/get "height" "800")
+                       (js/parseInt)
+                       (resize width))))))
         (ih/publish {:topics topic
                      :response "true"
                      :callback callback})
