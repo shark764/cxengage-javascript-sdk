@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.3.0]
+* CXV1-12770 - SDK Functions to retrieve Outbound Identifiers
+
 ## [8.2.0]
 * CXV1-13838 - Added shared parameter to create and update lists
 

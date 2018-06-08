@@ -615,6 +615,34 @@
                               (not (nil? active)) (assoc-in [:body :active] active))]
     (api/api-request update-list-request)))
 
+(defn update-outbound-identifier-request [outbound-identifier-id name active value flow-id channel-type description]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-outbound-identifier-request (cond-> {:method :put
+                                                    :url (iu/api-url "tenants/:tenant-id/outbound-identifiers/:outbound-identifier-id"
+                                                                    {:tenant-id tenant-id
+                                                                    :outbound-identifier-id outbound-identifier-id})}
+                                            outbound-identifier-id    (assoc-in [:body :outbound-identifier-id] outbound-identifier-id)
+                                            (not (nil? name))         (assoc-in [:body :name] name)
+                                            (not (nil? value))        (assoc-in [:body :value] value)
+                                            (not (nil? flow-id))      (assoc-in [:body :flow-id] flow-id)
+                                            (not (nil? channel-type)) (assoc-in [:body :channel-type] channel-type)
+                                            (not (nil? description))  (assoc-in [:body :description] description)
+                                            (not (nil? active))       (assoc-in [:body :active] active))]
+    (api/api-request update-outbound-identifier-request)))
+
+(defn create-outbound-identifier-request [name active value flow-id channel-type description]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-outbound-identifier-request (cond-> {:method :post
+                                                    :url (iu/api-url "tenants/:tenant-id/outbound-identifiers"
+                                                                    {:tenant-id tenant-id})}
+                                            name                     (assoc-in [:body :name] name)
+                                            value                    (assoc-in [:body :value] value)
+                                            flow-id                  (assoc-in [:body :flow-id] flow-id)
+                                            channel-type             (assoc-in [:body :channel-type] channel-type)
+                                            (not (nil? description)) (assoc-in [:body :description] description)
+                                            active                   (assoc-in [:body :active] active))]
+    (api/api-request create-outbound-identifier-request)))
+
 (defn update-list-item-request [list-item-id list-item-key item-value]
   (let [tenant-id (state/get-active-tenant-id)
         update-list-item-request {:method :put

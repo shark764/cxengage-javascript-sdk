@@ -961,6 +961,27 @@
    :level "error"
    :message "Failed to get tenant protected branding."})
 
+(defn failed-to-create-outbound-identifier-err [data]
+  {:code 11030
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to create outbound identifier."})
+
+(defn failed-to-get-outbound-identifiers-err [data]
+  {:code 11031
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get outbound identifiers."})
+
+(defn failed-to-update-outbound-identifier-err [data]
+  {:code 11032
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to update outbound identifier."})
+
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000
    :context :reporting

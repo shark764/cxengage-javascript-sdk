@@ -167,6 +167,50 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getOutboundIdentifiers();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-outbound-identifiers-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-outbound-identifiers
+  {:validation ::get-outbound-identifiers-params
+   :topic-key :get-outbound-identifiers-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "outbound-identifier"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-outbound-identifiers-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getFlows();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-flows-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-flows
+  {:validation ::get-flows-params
+   :topic-key :get-flows-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "flow"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-flows-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getBranding();
 ;; -------------------------------------------------------------------------- ;;
 
@@ -676,6 +720,65 @@
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.updateOutboundIdentifier({
+;;   id: {{uuid}} (required)
+;;   name: {{string}} (optional)
+;;   active: {{boolean}} (optional)
+;;   value: {{string}} (optional)
+;;   flowId: {{string}} (optional)
+;;   channelType: {{string}} (optional)
+;;   description: {{string}} (optional)
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::update-outbound-identifier-params
+  (s/keys :req-un [::specs/outbound-identifier-id]
+          :opt-un [::specs/callback ::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type ::specs/description]))
+
+(def-sdk-fn update-outbound-identifier
+  {:validation ::update-outbound-identifier-params
+   :topic-key :update-outbound-identifier-response}
+  [params]
+  (let [{:keys [callback outbound-identifier-id topic name active value flowId channel-type description]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-outbound-identifier-request outbound-identifier-id name active value flowId channel-type description))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-outbound-identifier-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.createOutboundIdentifier({
+;;   name: {{string}} (required)
+;;   active: {{boolean}} (required)
+;;   value: {{string}} (required)
+;;   flowId: {{string}} (required)
+;;   channelType: {{string}} (required)
+;;   description: {{string}} (optional)
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::create-outbound-identifier-params
+  (s/keys :req-un [::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type]
+          :opt-un [::specs/description]))
+
+(def-sdk-fn create-outbound-identifier
+  {:validation ::create-outbound-identifier-params
+   :topic-key :create-outbound-identifier-response}
+  [params]
+  (let [{:keys [callback topic name active value flow-id channel-type description]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-outbound-identifier-request name active value flow-id channel-type description))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-outbound-identifier-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.updateListItem({
 ;;   listId: {{uuid}},
 ;;   listItemKey: {{string}}
@@ -806,6 +909,10 @@
                                        :get-queues get-queues
                                        :get-queue get-queue
                                        :get-transfer-lists get-transfer-lists
+                                       :get-outbound-identifiers get-outbound-identifiers
+                                       :update-outbound-identifier update-outbound-identifier
+                                       :create-outbound-identifier create-outbound-identifier
+                                       :get-flows get-flows
                                        :get-transfer-list get-transfer-list
                                        :get-dashboards get-dashboards
                                        :get-branding get-branding
