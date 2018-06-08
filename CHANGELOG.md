@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.4.1]
+* SDK module to detect when the microphone is enabled within the browser
+
 ## [8.4.0]
 * Add update default tenant function
 
