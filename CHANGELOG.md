@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.4.0]
+* Add update default tenant function
+
 ## [8.3.0]
 * CXV1-12770 - SDK Functions to retrieve Outbound Identifiers
 

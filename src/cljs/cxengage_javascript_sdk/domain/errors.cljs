@@ -175,6 +175,13 @@
    :level "error"
    :message "Failed to retrieve SSO authentication information."})
 
+(defn failed-to-update-default-tenant-err [data]
+  {:code 3006
+   :context :authentication
+   :data data
+   :level "error"
+   :message "Failed to update default tenant."})
+
 (defn active-interactions-err [data]
   {:code 4000
    :context :interaction

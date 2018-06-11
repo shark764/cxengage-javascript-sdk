@@ -738,3 +738,12 @@
                                               {:tenant-id tenant-id
                                                :email-type-id email-type-id})}]
     (api/api-request delete-email-template-request)))
+
+(defn update-default-tenant-request [tenant-id]
+  (let [resource-id (state/get-active-user-id)
+        tenant-request {:method :put
+                        :url (iu/api-url
+                              "users/:resource-id"
+                              {:resource-id resource-id})
+                        :body {:default-tenant tenant-id}}]
+    (api/api-request tenant-request)))
