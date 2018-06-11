@@ -193,6 +193,34 @@
                     :response true})))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.authentication.updateDefaultTenant({
+;;  tenantId: "{{uuid}}"
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+;; This function is here rather than say, entities, because it's purpose is to
+;; be used before tenant selection, in order to update the default SSO tenant
+
+(s/def ::update-default-tenant-spec
+  (s/keys :req-un [::specs/tenant-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn update-default-tenant
+  {:validation ::update-default-tenant-spec
+   :topic-key :update-default-tenant-response}
+  [params]
+  (let [{:keys [callback topic tenant-id]} params
+        resp (a/<! (rest/update-default-tenant-request tenant-id))
+        {:keys [status api-response]} resp]
+    (if (not (= status 200))
+      (p/publish {:topics topic
+                  :callback callback
+                  :error (e/failed-to-update-default-tenant-err resp)})
+      (p/publish {:topics topic
+                  :callback callback
+                  :response api-response}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; SDK Authentication Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -203,7 +231,8 @@
       (ih/register {:api {module-name {:login login
                                        :logout logout
                                        :get-auth-info get-auth-info
-                                       :pop-identity-page pop-identity-page}}
+                                       :pop-identity-page pop-identity-page
+                                       :update-default-tenant update-default-tenant}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

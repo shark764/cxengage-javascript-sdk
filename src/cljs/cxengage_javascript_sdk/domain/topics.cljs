@@ -8,6 +8,7 @@
                  :auth-info-response "cxengage/authentication/auth-info-response"
                  :cognito-auth-response "cxengage/authentication/cognito-auth-response"
                  :identity-window-response "cxengage/authentication/identity-window-response"
+                 :update-default-tenant-response "cxengage/authentication/update-default-tenant-response"
 
                  ;; Session Topics
                  :active-tenant-set "cxengage/session/set-active-tenant-response"
