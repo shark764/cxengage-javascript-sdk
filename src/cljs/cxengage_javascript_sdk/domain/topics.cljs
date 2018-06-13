@@ -44,7 +44,7 @@
                  :get-layout "cxengage/contacts/get-layout-response"
                  :list-layouts "cxengage/contacts/list-layouts-response"
 
-                 ;; CRUD topics
+                 ;; CRUD-topics
                  :get-queue-response "cxengage/entities/get-queue-response"
                  :get-queues-response "cxengage/entities/get-queues-response"
                  :get-transfer-list-response "cxengage/entities/get-transfer-list-response"
@@ -70,15 +70,20 @@
                  :get-skills-response "cxengage/entities/get-skills-response"
                  :get-email-types-response "cxengage/entities/get-email-types-response"
                  :get-email-templates-response "cxengage/entities/get-email-templates-response"
-                 :get-outbound-identifiers-response "cxengage/entities/get-outbound-identifiers-response"
                  :get-flows-response "cxengage/entities/get-flows-response"
                  :create-email-template-response "cxengage/entities/create-email-template-response"
                  :update-email-template-response "cxengage/entities/update-email-template-response"
-                 :update-outbound-identifier-response "cxengage/entities/update-outbound-identifier-response"
-                 :create-outbound-identifier-response "cxengage/entities/create-outbound-identifier-response"
                  :delete-email-template-response "cxengage/entities/delete-email-template-response"
                  :get-artifacts-response "cxengage/entities/get-artifacts-response"
                  :get-artifact-response "cxengage/entities/get-artifact-response"
+                 :get-outbound-identifiers-response "cxengage/entities/get-outbound-identifiers-response"
+                 :update-outbound-identifier-response "cxengage/entities/update-outbound-identifier-response"
+                 :create-outbound-identifier-response "cxengage/entities/create-outbound-identifier-response"
+                 :get-outbound-identifier-list-response "cxengage/entities/get-outbound-identifier-list-response"
+                 :update-outbound-identifier-list-response "cxengage/entities/update-outbound-identifier-list-response"
+                 :create-outbound-identifier-list-response "cxengage/entities/create-outbound-identifier-list-response"
+                 :get-outbound-identifier-lists-response "cxengage/entities/get-outbound-identifier-lists-response"
+                ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"

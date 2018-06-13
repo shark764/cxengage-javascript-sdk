@@ -989,6 +989,36 @@
     :level "error"
     :message "Failed to update outbound identifier."})
 
+(defn failed-to-get-outbound-identifier-lists-err [data]
+  {:code 11033
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to get outbound identifier lists."})
+
+(defn failed-to-create-outbound-identifier-list-err [data]
+  {:code 11034
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to create outbound identifier list."})
+
+(defn failed-to-update-outbound-identifier-list-err [data]
+  {:code 11035
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to update outbound identifier list."})
+
+(defn failed-to-get-outbound-identifier-list-err [data]
+  {:code 11036
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to get outbound identifier list."})
+
+;;hygen-insert-before-11000s
+
 (defn reporting-batch-request-failed-err [batch-body api-response]
   {:code 12000
    :context :reporting

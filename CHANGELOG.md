@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.7.0]
+* CXV1-14265 - Add update and create outbound identifier lists functions
+
 ## [8.6.6]
 * CXV1-14703 - Fix org-id assignment in salesforce lightning
 
