@@ -104,7 +104,10 @@
         ;; If a user "blocks" microphone access through their browser
         ;; it causes issues with Twilio. This is a our way of detecting
         ;; and notifying the user of this problem.
-        (.catch (fn [err] (e/no-microphone-access-err err))))))
+        (.catch
+          (fn [err]
+            (p/publish {:topics "cxengage/microphone-not-available"
+                        :error (e/no-microphone-access-err err)}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Twilio Module
