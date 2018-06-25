@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.5.1]
+* CXV1-13095 - Change the error level severity of the microphone error
+
 ## [8.5.0]
 * CXV1-12423 - Skylight for Zendesk window not properly resizing
 

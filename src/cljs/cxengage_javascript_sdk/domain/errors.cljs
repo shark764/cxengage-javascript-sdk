@@ -637,7 +637,7 @@
   {:code 8000
    :context :twilio
    :data {:error error}
-   :level "session-fatal"
+   :level "error"
    :message "Failed to connect to Twilio. Microphone access must be enabled within your browser to utilize voice features."})
 
 (defn failed-to-send-twilio-digits-err [digit]
