@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.5.0]
+* CXV1-12423 - Skylight for Zendesk window not properly resizing
+
 ## [8.4.1]
 * SDK module to detect when the microphone is enabled within the browser
 

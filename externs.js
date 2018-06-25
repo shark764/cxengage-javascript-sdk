@@ -91,6 +91,11 @@ client.request = function() {};
 client.instance = function() {};
 
 /**
+* @return {Object}
+*/
+client.metadata = function() {};
+
+/**
  * @return {Object}
  */
 ZAFClient.init = function() {};
