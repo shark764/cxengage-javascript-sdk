@@ -418,7 +418,7 @@
                                   (auto-assign-from-search-pop (first search-results) interaction-id "user")
                                   (auto-assign-from-search-pop (first search-results) interaction-id "ticket"))
     :else (if (or (= (:auto-answer interaction) true)
-                  (and (= (:direction interaction) "outbound")
+                  (and (= (:direction interaction) "agent-initiated")
                     (or (= (:channel-type interaction) "email")
                         (= (:channel-type interaction) "sms"))))
               (pop-search-modal search-results interaction-id)
@@ -428,7 +428,7 @@
                                 (do
                                   (pop-search-modal search-results interaction-id)
                                   (p/unsubscribe subscription-id))))))))
-                                  
+
 (defn handle-work-offer [error topic interaction-details]
   (let [interaction (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)

@@ -150,9 +150,9 @@
                           :callback callback})
               (get-config* no-session))))))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.setDirection({ direction: "{{inbound/outbound}}" });
-;; -------------------------------------------------------------------------- ;;
+;; ---------------------------------------------------------------------------------- ;;
+;; CxEngage.session.setDirection({ direction: "{{inbound/outbound/agent-initiated}}" });
+;; ---------------------------------------------------------------------------------- ;;
 
 (s/def ::set-direction-spec
   (s/keys :req-un [::specs/direction]

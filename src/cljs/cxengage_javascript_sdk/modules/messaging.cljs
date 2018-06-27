@@ -270,7 +270,7 @@
                   :customer phone-number
                   :contact-point "outbound"
                   :channel-type "sms"
-                  :direction "outbound"
+                  :direction "agent-initiated"
                   :metadata metadata
                   :interaction {:message message
                                 :resource-id resource-id
