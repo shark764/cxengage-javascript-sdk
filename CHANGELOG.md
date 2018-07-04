@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [8.6.0]
+* CXV1-14207 - Update setDirection function to allow "agent-initiated"
+* CXV1-14205 - Update the direction from "outbound" to "agent-initiated" in click-to-XXX
+
 ## [8.5.1]
 * CXV1-13095 - Change the error level severity of the microphone error
 

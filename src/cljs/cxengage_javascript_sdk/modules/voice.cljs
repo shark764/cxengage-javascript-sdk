@@ -392,7 +392,7 @@
         dial-body {:channel-type "voice"
                    :contact-point "click to call"
                    :customer phone-number
-                   :direction "outbound"
+                   :direction "agent-initiated"
                    :interaction {:resource-id resource-id
                                  :session-id session-id}
                    :metadata {}

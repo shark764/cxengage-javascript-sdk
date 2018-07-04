@@ -55,7 +55,7 @@
                             :customer mock-email-address
                             :contact-point "outbound-email"
                             :channel-type "email"
-                            :direction "outbound"
+                            :direction "agent-initiated"
                             :interaction {:resource-id resource-id}
                             :metadata {}})
 
