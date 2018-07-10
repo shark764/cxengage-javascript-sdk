@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.6.1]
+* CXV1-13266 - Transferring Calls between agents and reporting on the last agent who handled the call as opposed to the 1st Agent
+
 ## [8.6.0]
 * CXV1-14207 - Update setDirection function to allow "agent-initiated"
 * CXV1-14205 - Update the direction from "outbound" to "agent-initiated" in click-to-XXX
