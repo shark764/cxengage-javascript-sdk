@@ -367,9 +367,7 @@
                                             :hook-type "salesforce-classic"}]
                                   (log :info "Popping transferred URI:" (clj->js tab-details))
                                   (js/sforce.interaction.screenPop (str "/" object-id) true)
-                                  (add-hook! interactionId (js->clj (ih/camelify hook) :keywordize-keys true))
-                                  (ih/publish (clj->js {:topics "cxengage/salesforce-classic/contact-assignment-acknowledged"
-                                                        :response hook})))
+                                  (send-assign-interrupt tab-details interactionId nil "cxengage/salesforce-classic/contact-assignment-acknowledged"))
                                 (let [uri-params (string/split popUri #"/")
                                       object-name (first uri-params)
                                       object-id (second uri-params)

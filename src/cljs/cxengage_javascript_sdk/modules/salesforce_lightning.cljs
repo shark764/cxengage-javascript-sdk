@@ -365,9 +365,10 @@
                                           :hook-type "salesforce-lightning"}]
                                 (log :info "Popping transferred URI:" (clj->js tab-details))
                                 (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId object-id}}))
-                                (add-hook! interactionId (js->clj (ih/camelify hook) :keywordize-keys true))
-                                (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/contact-assignment-acknowledged"
-                                                      :response hook})))
+                                (send-assign-interrupt (js->clj (ih/camelify tab-details) :keywordize-keys true)
+                                                        interactionId
+                                                        nil
+                                                        "cxengage/salesforce-lightning/contact-assignment-acknowledged"))
                               (let [uri-params (string/split popUri #"/")
                                     object-name (first uri-params)
                                     object-id (second uri-params)
