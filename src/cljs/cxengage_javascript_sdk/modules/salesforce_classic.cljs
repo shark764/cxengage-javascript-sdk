@@ -211,7 +211,9 @@
 (defn send-unassign-interrupt [hook interaction-id callback topic]
   (go
     (let [interrupt-type "interaction-hook-drop"
-          {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type hook))]
+          agent-id (state/get-active-user-id)
+          agent-hook (assoc hook :resourceId agent-id)
+          {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type agent-hook))]
       (if (= status 200)
         (do
           (remove-hook! interaction-id)
