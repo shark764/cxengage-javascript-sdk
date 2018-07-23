@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.6.3]
+* CXV1-14660 - hookBy parameter added to send-unassign-interrupt request in salesforce
+
 ## [8.6.2]
 * CXV1-14660 - resourceId parameter added to send-unassign-interrupt request in salesforce
 

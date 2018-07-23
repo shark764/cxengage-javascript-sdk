@@ -203,13 +203,13 @@
   (go
     (let [interrupt-type "interaction-hook-drop"
           agent-id (state/get-active-user-id)
-          agent-hook (assoc hook :resourceId agent-id)
+          agent-hook (assoc hook :resourceId agent-id :hookBy (get-current-salesforce-user-id))
           {:keys [status] :as interrupt-response} (a/<! (rest/send-interrupt-request interaction-id interrupt-type agent-hook))]
       (if (= status 200)
         (do
           (remove-hook! interaction-id)
           (ih/publish (clj->js {:topics topic
-                                :response (merge {:interaction-id interaction-id} hook)
+                                :response (merge {:interaction-id interaction-id} agent-hook)
                                 :callback callback})))
         (ih/publish (clj->js {:topics topic
                               :error (e/failed-to-send-salesforce-lightning-unassign-err interaction-id interrupt-response)
