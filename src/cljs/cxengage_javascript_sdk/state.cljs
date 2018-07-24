@@ -229,18 +229,21 @@
                           scripts))]
     filtered-script))
 
+(defn get-reply-artifact-id-by-interaction-id [interaction-id]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (get-state-value [:interactions interaction-location interaction-id :email-artifact :reply :artifact-id])))
+
 (defn add-email-artifact-data [interaction-id artifact-data]
   (let [interaction-location (find-interaction-location interaction-id)
         email-artifact-data (assoc-in artifact-data [:reply :attachments] {})]
-    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact] email-artifact-data)))
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact]
+           (if-let [reply-artifact-id (get-reply-artifact-id-by-interaction-id interaction-id)]
+             (assoc-in email-artifact-data [:reply :artifact-id] reply-artifact-id)
+             email-artifact-data))))
 
 (defn store-email-reply-artifact-id [artifact-id interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact :reply :artifact-id] artifact-id)))
-
-(defn get-reply-artifact-id-by-interaction-id [interaction-id]
-  (let [interaction-location (find-interaction-location interaction-id)]
-    (get-state-value [:interactions interaction-location interaction-id :email-artifact :reply :artifact-id])))
 
 (defn get-all-reply-email-attachments [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]

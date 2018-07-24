@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.6.4]
+* CXV1-14274 - Email Reply Failing to Send
+
 ## [8.6.3]
 * CXV1-14660 - hookBy parameter added to send-unassign-interrupt request in salesforce
 
