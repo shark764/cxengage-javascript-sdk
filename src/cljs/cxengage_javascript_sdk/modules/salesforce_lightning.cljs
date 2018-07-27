@@ -22,6 +22,12 @@
 
 (def sfl-state (atom {}))
 
+(defn set-current-salesforce-org-id! [org-id]
+  (swap! sfc-state assoc-in [:org-id] org-id))
+
+(defn get-current-salesforce-org-id []
+  (or (:org-id @sfc-state) ""))
+
 (defn set-current-salesforce-user-id! [user-id]
   (swap! sfl-state assoc :user-id user-id))
 
@@ -150,6 +156,7 @@
           resource-id (state/get-active-user-id)
           interrupt-type "interaction-hook-add"
           interrupt-body (merge new-hook {:hook-by (get-current-salesforce-user-id)
+                                          :org-id (get-current-salesforce-org-id)
                                           :hook-name hookName
                                           :hook-id hookId
                                           :hook-sub-type hookSubType
@@ -368,9 +375,9 @@
                                 (log :info "Popping transferred URI:" (clj->js tab-details))
                                 (js/sforce.opencti.screenPop (clj->js {:type "sobject" :params {:recordId object-id}}))
                                 (send-assign-interrupt (js->clj (ih/camelify tab-details) :keywordize-keys true)
-                                                        interactionId
-                                                        nil
-                                                        "cxengage/salesforce-lightning/contact-assignment-acknowledged"))
+                                                       interactionId
+                                                       nil
+                                                       "cxengage/salesforce-lightning/contact-assignment-acknowledged"))
                               (let [uri-params (string/split popUri #"/")
                                     object-name (first uri-params)
                                     object-id (second uri-params)
@@ -415,6 +422,17 @@
       (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/failed-to-get-current-user-id"
                             :error (e/failed-to-get-current-salesforce-lightning-user-id-err error)})))))
 
+(defn handle-get-current-org-id [js-response]
+  (let [response (js->clj js-response :keywordize-keys true)
+        result (get-in response [:returnValue :runApex])
+        error (:errors response)]
+    (if-not error
+      (set-current-salesforce-org-id! result)
+      (log :debug "Unable to get org-id. Managed package 1.8 has probably not yet been released/installed."))))
+      ;; TODO publish error when managed package 1.8 has been released:
+      ;; (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/failed-to-get-current-org-id"
+      ;;                       :error (e/failed-to-get-current-salesforce-lightning-org-id-err error)})))))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; Salesforce Initialization Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -439,6 +457,10 @@
                                              :methodName "getCurrentUserId"
                                              :methodParams ""
                                              :callback handle-get-current-user-id}))
+        (js/sforce.opencti.runApex (clj->js {:apexClass "net_cxengage.CxLookup"
+                                             :methodName "getOrganizationId"
+                                             :methodParams ""
+                                             :callback handle-get-current-org-id}))
         (try
           (js/sforce.opencti.onClickToDial (clj->js {:listener handle-click-to-dial}))
           (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/initialize-complete"

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.6.5]
+* CXV1-14703 - Call apex class function to add org-id in hooks
+
 ## [8.6.4]
 * CXV1-14274 - Email Reply Failing to Send
 

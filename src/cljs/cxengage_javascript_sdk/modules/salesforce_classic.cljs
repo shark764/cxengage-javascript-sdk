@@ -22,6 +22,12 @@
 
 (def sfc-state (atom {}))
 
+(defn set-current-salesforce-org-id! [org-id]
+  (swap! sfc-state assoc-in [:org-id] org-id))
+
+(defn get-current-salesforce-org-id []
+  (or (:org-id @sfc-state) ""))
+
 (defn set-current-salesforce-user-id! [user-id]
   (swap! sfc-state assoc-in [:user-id] user-id))
 
@@ -159,6 +165,7 @@
           resource-id (state/get-active-user-id)
           interrupt-type "interaction-hook-add"
           interrupt-body {:hook-by (get-current-salesforce-user-id)
+                          :org-id (get-current-salesforce-org-id)
                           :hook-type "salesforce-classic"
                           :hook-sub-type (or object hookSubType)
                           :hook-id (or objectId hookId)
@@ -331,6 +338,17 @@
       (ih/publish (clj->js {:topics "cxengage/salesforce-classic/failed-to-get-current-user-id"
                             :error (e/failed-to-get-current-salesforce-classic-user-id-err error)})))))
 
+(defn handle-get-current-org-id [js-response]
+  (let [response (js->clj js-response :keywordize-keys true)
+        result (:result response)
+        error (:error response)]
+    (if-not error
+      (set-current-salesforce-org-id! result)
+      (log :debug "Unable to get org-id. Managed package 1.8 has probably not yet been released/installed."))))
+      ;; TODO publish error when managed package 1.8 has been released:
+      ;; (ih/publish (clj->js {:topics "cxengage/salesforce-classic/failed-to-get-current-org-id"
+      ;;                       :error (e/failed-to-get-current-salesforce-classic-org-id-err error)})))))
+
 (defn handle-click-to-dial [dial-details]
   (let [result (:result (js->clj dial-details :keywordize-keys true))
         parsed-result (js/JSON.parse result)]
@@ -433,6 +451,7 @@
         (js/sforce.interaction.onFocus handle-focus-change)
         (js/sforce.interaction.cti.disableClickToDial)
         (js/sforce.interaction.runApex "net_cxengage.CxLookup" "getCurrentUserId" "" handle-get-current-user-id)
+        (js/sforce.interaction.runApex "net_cxengage.CxLookup" "getOrganizationId" "" handle-get-current-org-id)
         (try
           (js/sforce.interaction.cti.onClickToDial handle-click-to-dial)
           (ih/publish (clj->js {:topics "cxengage/salesforce-classic/initialize-complete"
