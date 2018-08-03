@@ -23,10 +23,10 @@
 (def sfl-state (atom {}))
 
 (defn set-current-salesforce-org-id! [org-id]
-  (swap! sfc-state assoc-in [:org-id] org-id))
+  (swap! sfl-state assoc-in [:org-id] org-id))
 
 (defn get-current-salesforce-org-id []
-  (or (:org-id @sfc-state) ""))
+  (or (:org-id @sfl-state) ""))
 
 (defn set-current-salesforce-user-id! [user-id]
   (swap! sfl-state assoc :user-id user-id))

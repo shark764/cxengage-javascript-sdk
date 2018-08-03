@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.6.6]
+* CXV1-14703 - Fix org-id assignment in salesforce lightning
+
 ## [8.6.5]
 * CXV1-14703 - Call apex class function to add org-id in hooks
 
