@@ -1204,6 +1204,13 @@
    :level "error"
    :message "Failed to get current salesforce classic user ID. Managed package may not have been installed or not be the correct version."})
 
+(defn failed-to-get-current-salesforce-classic-org-id-err [error]
+  {:code 15009
+   :context :salesforce-classic
+   :data {:error error}
+   :level "error"
+   :message "Failed to get current salesforce classic organization ID. Managed package may not have been installed or not be the correct version."})
+
 (defn failed-to-send-salesforce-lightning-assign-err [interaction-id data]
   {:code 16000
    :context :salesforce-lightning
@@ -1266,8 +1273,15 @@
   {:code 16008
    :context :salesforce-lightning
    :data error
-   :level "warn"
+   :level "error"
    :message "Failed to retrieve Salesforce Lightning user id."})
+
+(defn failed-to-get-current-salesforce-lightning-org-id-err [error]
+  {:code 16009
+   :context :salesforce-lightning
+   :data error
+   :level "error"
+   :message "Failed to get Salesforce Lightning organization ID. Managed package may not have been installed or not be the correct version."})
 
 (defn failed-to-init-zendesk-client-err [data]
   {:code 17000
