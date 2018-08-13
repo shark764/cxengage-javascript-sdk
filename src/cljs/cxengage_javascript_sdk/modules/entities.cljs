@@ -24,6 +24,10 @@
         updated-items (mapv #(assoc % :key (get % (keyword list-item-key))) items)]
     (assoc list-obj :items updated-items)))
 
+(s/def ::get-entities-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; GET Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -102,12 +106,8 @@
 ;; CxEngage.entities.getQueues();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-queues-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-queues
-  {:validation ::get-queues-params
+  {:validation ::get-entities-params
    :topic-key :get-queues-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -148,12 +148,8 @@
 ;; CxEngage.entities.getTransferLists();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-transfer-lists-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-transfer-lists
-  {:validation ::get-transfer-lists-params
+  {:validation ::get-entities-params
    :topic-key :get-transfer-lists-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -170,12 +166,8 @@
 ;; CxEngage.entities.getOutboundIdentifiers();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-outbound-identifiers-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-outbound-identifiers
-  {:validation ::get-outbound-identifiers-params
+  {:validation ::get-entities-params
    :topic-key :get-outbound-identifiers-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -192,12 +184,8 @@
 ;; CxEngage.entities.getFlows();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-flows-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-flows
-  {:validation ::get-flows-params
+  {:validation ::get-entities-params
    :topic-key :get-flows-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -214,12 +202,8 @@
 ;; CxEngage.entities.getBranding();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-branding-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-branding
-  {:validation ::get-branding-params
+  {:validation ::get-entities-params
    :topic-key :get-branding-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -236,12 +220,8 @@
 ;; CxEngage.entities.getProtectedBranding();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-protected-branding-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-protected-branding
-  {:validation ::get-protected-branding-params
+  {:validation ::get-entities-params
    :topic-key :get-protected-branding-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -358,12 +338,8 @@
 ;; CxEngage.entities.getListTypes();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-list-types-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-list-types
-  {:validation ::get-list-types-params
+  {:validation ::get-entities-params
    :topic-key :get-list-types-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -380,12 +356,8 @@
 ;; CxEngage.entities.getGroups();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-groups-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-groups
-  {:validation ::get-groups-params
+  {:validation ::get-entities-params
    :topic-key :get-groups-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -402,12 +374,8 @@
 ;; CxEngage.entities.getSkills();
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::get-skills-params
-  (s/keys :req-un []
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn get-skills
-  {:validation ::get-skills-params
+  {:validation ::get-entities-params
    :topic-key :get-skills-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -578,6 +546,50 @@
                   :error (e/failed-to-get-artifact-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getOutboundIdentifierList({
+;;   outboundIdentifierListId: {{uuid}}, 
+;;})
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-outbound-identifier-list-params
+  (s/keys :req-un [::specs/outbound-identifier-list-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-outbound-identifier-list
+  {:validation ::get-outbound-identifier-list-params
+   :topic-key :get-outbound-identifier-list-response}
+  [params]
+  (let [{:keys [callback topic outbound-identifier-list-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "outbound-identifier-list" outbound-identifier-list-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-outbound-identifier-list-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getOutboundIdentifierLists();
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn get-outbound-identifier-lists
+  {:validation ::get-entities-params
+   :topic-key :get-outbound-identifier-lists-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "outbound-identifier-list"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-outbound-identifier-lists-err entity-response)
+                  :callback callback}))))
+
+;;hygen-insert-before-get
+
 ;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -663,6 +675,34 @@
                   :error (e/failed-to-create-email-template-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.createOutboundIdentifierList({
+;;   active: {{boolean}},
+;;   name: {{string}},
+;;   description: {{string}},
+;;})
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::create-outbound-identifier-list-params
+  (s/keys :req-un [::specs/active ::specs/name ::specs/description]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn create-outbound-identifier-list
+  {:validation ::create-outbound-identifier-list-params
+   :topic-key :create-outbound-identifier-list-response}
+  [params]
+  (let [{:keys [active name description callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-outbound-identifier-list-request active name description ))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-outbound-identifier-list-err entity-response)
+                  :callback callback}))))
+
+;;hygen-insert-before-create
+
 ;;--------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -721,7 +761,7 @@
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.updateOutboundIdentifier({
-;;   id: {{uuid}} (required)
+;;   id: {{uuid}}
 ;;   name: {{string}} (optional)
 ;;   active: {{boolean}} (optional)
 ;;   value: {{string}} (optional)
@@ -751,11 +791,11 @@
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.createOutboundIdentifier({
-;;   name: {{string}} (required)
-;;   active: {{boolean}} (required)
-;;   value: {{string}} (required)
-;;   flowId: {{string}} (required)
-;;   channelType: {{string}} (required)
+;;   name: {{string}} 
+;;   active: {{boolean}} 
+;;   value: {{string}} 
+;;   flowId: {{string}} 
+;;   channelType: {{string}} 
 ;;   description: {{string}} (optional)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
@@ -841,6 +881,35 @@
                   :error (e/failed-to-update-email-template-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.updateOutboundIdentifierList({
+;;   id: {{uuid}},
+;;   active: {{boolean}}, (optional)
+;;   name: {{string}}, (optional)
+;;   description: {{string}}, (optional)
+;;})
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::update-outbound-identifier-list-params
+  (s/keys :req-un [::specs/outbound-identifier-list-id]
+          :opt-un [::specs/callback ::specs/active ::specs/name ::specs/description]))
+
+(def-sdk-fn update-outbound-identifier-list
+  {:validation ::update-outbound-identifier-list-params
+   :topic-key :update-outbound-identifier-list-response}
+  [params]
+  (let [{:keys [outbound-identifier-list-id active name description callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-outbound-identifier-list-request outbound-identifier-list-id active name description))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-outbound-identifier-list-err entity-response)
+                  :callback callback}))))
+
+;;hygen-insert-before-update
+
 ;;--------------------------------------------------------------------------- ;;
 ;; DELETE Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -896,6 +965,8 @@
                   :error (e/failed-to-delete-email-template-err list-items-response)
                   :callback callback}))))
 
+;;hygen-insert-before-delete
+
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Entities Module
 ;; -------------------------------------------------------------------------- ;;
@@ -910,8 +981,8 @@
                                        :get-queue get-queue
                                        :get-transfer-lists get-transfer-lists
                                        :get-outbound-identifiers get-outbound-identifiers
-                                       :update-outbound-identifier update-outbound-identifier
-                                       :create-outbound-identifier create-outbound-identifier
+                                       :get-outbound-identifier-list get-outbound-identifier-list
+                                       :get-outbound-identifier-lists get-outbound-identifier-lists
                                        :get-flows get-flows
                                        :get-transfer-list get-transfer-list
                                        :get-dashboards get-dashboards
@@ -927,17 +998,26 @@
                                        :get-email-templates get-email-templates
                                        :get-artifacts get-artifacts
                                        :get-artifact get-artifact
+                                      ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
                                        :create-email-template create-email-template
+                                       :create-outbound-identifier create-outbound-identifier
+                                       :create-outbound-identifier-list create-outbound-identifier-list
+                                      ;;hygen-insert-above-create
                                        :update-user update-user
                                        :update-list update-list
                                        :update-list-item update-list-item
-                                       :download-list download-list
                                        :upload-list upload-list
                                        :update-email-template update-email-template
+                                       :update-outbound-identifier update-outbound-identifier
+                                       :update-outbound-identifier-list update-outbound-identifier-list
+                                      ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
-                                       :delete-email-template delete-email-template}}
+                                       :delete-email-template delete-email-template
+                                      ;;hygen-insert-above-delete
+                                       :download-list download-list
+                                       }}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

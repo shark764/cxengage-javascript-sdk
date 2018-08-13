@@ -630,6 +630,18 @@
                                             (not (nil? active))       (assoc-in [:body :active] active))]
     (api/api-request update-outbound-identifier-request)))
 
+(defn update-outbound-identifier-list-request [outbound-identifier-list-id active name description]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-outbound-identifier-list-request (cond-> {:method :put
+                                                        :url (iu/api-url "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id"
+                                                                            {:tenant-id tenant-id
+                                                                            :outbound-identifier-list-id outbound-identifier-list-id})}
+                                                outbound-identifier-list-id (assoc-in [:body :outbound-identifier-list-id] outbound-identifier-list-id)
+                                                (not (nil? active))         (assoc-in [:body :active] active)
+                                                (not (nil? name))           (assoc-in [:body :name] name)
+                                                (not (nil? description))    (assoc-in [:body :description] description))]
+    (api/api-request update-outbound-identifier-list-request)))
+
 (defn create-outbound-identifier-request [name active value flow-id channel-type description]
   (let [tenant-id (state/get-active-tenant-id)
         create-outbound-identifier-request (cond-> {:method :post
@@ -641,6 +653,16 @@
                                             channel-type             (assoc-in [:body :channel-type] channel-type)
                                             (not (nil? description)) (assoc-in [:body :description] description)
                                             active                   (assoc-in [:body :active] active))]
+    (api/api-request create-outbound-identifier-request)))
+
+(defn create-outbound-identifier-list-request [active name description]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-outbound-identifier-request (cond-> {:method :post
+                                                    :url (iu/api-url "tenants/:tenant-id/outbound-identifier-lists"
+                                                                    {:tenant-id tenant-id})}
+                                            active                  (assoc-in [:body :active] active)
+                                            name                    (assoc-in [:body :name] name)
+                                            description             (assoc-in [:body :description] description))]
     (api/api-request create-outbound-identifier-request)))
 
 (defn update-list-item-request [list-item-id list-item-key item-value]
