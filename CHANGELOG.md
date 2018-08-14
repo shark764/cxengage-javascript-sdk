@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.7.1]
+* Add us-east-1-test to environment spec to support ilities environment
+
 ## [8.7.0]
 * CXV1-14265 - Add update and create outbound identifier lists functions
 

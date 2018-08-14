@@ -41,7 +41,7 @@
 (s/def ::dismissed boolean?)
 (s/def ::disposition-id ::uuid)
 (s/def ::email-type-id ::uuid)
-(s/def ::environment #{:dev :qe :staging :prod})
+(s/def ::environment #{:dev :qe :staging :prod :us-east-1-test})
 (s/def ::extension-id string?)
 (s/def ::extension-value (s/or ::uuid string?))
 (s/def ::exclude-inactive boolean?)
