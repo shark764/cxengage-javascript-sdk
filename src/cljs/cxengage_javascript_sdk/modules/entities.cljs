@@ -908,6 +908,80 @@
                   :error (e/failed-to-update-outbound-identifier-list-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.deleteOutboundIdentifier({
+;;   outboundIdentifierId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::delete-outbound-identifier-params
+  (s/keys :req-un [::specs/outbound-identifier-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn delete-outbound-identifier
+  {:validation ::delete-outbound-identifier-params
+   :topic-key :delete-outbound-identifier-response}
+  [params]
+  (let [{:keys [callback outbound-identifier-id topic]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/delete-outbound-identifier-request outbound-identifier-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-delete-outbound-identifier-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.addOutboundIdentifierListMember({
+;;   outboundIdentifierListId: {{uuid}}
+;;   outboundIdentifierId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::add-outbound-identifier-list-member-params
+  (s/keys :req-un [::specs/outbound-identifier-list-id ::specs/outbound-identifier-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn add-outbound-identifier-list-member
+  {:validation ::add-outbound-identifier-list-member-params
+   :topic-key :add-outbound-identifier-list-member-response}
+  [params]
+  (let [{:keys [callback topic outbound-identifier-list-id outbound-identifier-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/add-outbound-identifier-list-member-request outbound-identifier-list-id outbound-identifier-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-add-outbound-identifier-list-member-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.removeOutboundIdentifierListMember({
+;;   outboundIdentifierListId: {{uuid}}
+;;   outboundIdentifierId: {{uuid}}
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::remove-outbound-identifier-list-member-params
+  (s/keys :req-un [::specs/outbound-identifier-list-id ::specs/outbound-identifier-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn remove-outbound-identifier-list-member
+  {:validation ::remove-outbound-identifier-list-member-params
+   :topic-key :remove-outbound-identifier-list-member-response}
+  [params]
+  (let [{:keys [callback topic outbound-identifier-list-id outbound-identifier-id]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/remove-outbound-identifier-list-member-request outbound-identifier-list-id outbound-identifier-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-remove-outbound-identifier-list-member-err entity-response)
+                  :callback callback}))))
+
 ;;hygen-insert-before-update
 
 ;;--------------------------------------------------------------------------- ;;
@@ -1011,7 +1085,10 @@
                                        :upload-list upload-list
                                        :update-email-template update-email-template
                                        :update-outbound-identifier update-outbound-identifier
+                                       :delete-outbound-identifier delete-outbound-identifier
                                        :update-outbound-identifier-list update-outbound-identifier-list
+                                       :add-outbound-identifier-list-member add-outbound-identifier-list-member
+                                       :remove-outbound-identifier-list-member remove-outbound-identifier-list-member
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template

@@ -1017,6 +1017,27 @@
   :level "error"
   :message "Failed to get outbound identifier list."})
 
+(defn failed-to-delete-outbound-identifier-err [data]
+{:code 11037
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to delete outbound identifier."})
+
+(defn failed-to-add-outbound-identifier-list-member-err [data]
+{:code 11038
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to add outbound identifier to list."})
+
+(defn failed-to-remove-outbound-identifier-list-member-err [data]
+{:code 11039
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to remove outbound identifier from list."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

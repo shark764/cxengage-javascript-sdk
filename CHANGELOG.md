@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.8.0]
+* CXV1-14931 - Outbound Identification - Create remaining sdk functions for outbound ani.
+
 ## [8.7.2]
 * CXV1-14662 - Fix SSO identity-ui error handling
 
