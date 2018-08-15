@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.7.2]
+* CXV1-14662 - Fix SSO identity-ui error handling
+
 ## [8.7.1]
 * Add us-east-1-test to environment spec to support ilities environment
 
