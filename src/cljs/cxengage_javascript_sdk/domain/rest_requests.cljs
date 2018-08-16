@@ -687,6 +687,42 @@
                                          :list-item-key list-item-key})}]
     (api/api-request delete-list-item-request)))
 
+(defn delete-outbound-identifier-request [outbound-identifier-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        delete-outbound-identifier-request {
+                                  :method :delete
+                                  :preserve-casing? true
+                                  :url (iu/api-url
+                                        "tenants/:tenant-id/outbound-identifiers/:outbound-identifier-id"
+                                        {:tenant-id tenant-id
+                                         :outbound-identifier-id outbound-identifier-id})}]
+    (api/api-request delete-outbound-identifier-request)))
+
+(defn add-outbound-identifier-list-member-request [outbound-identifier-list-id outbound-identifier-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        add-outbound-identifier-list-member-request {
+                                  :method :post
+                                  :url (iu/api-url
+                                        "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id/members/:outbound-identifier-id"
+                                        {:tenant-id tenant-id
+                                         :outbound-identifier-list-id outbound-identifier-list-id
+                                         :outbound-identifier-id outbound-identifier-id})
+                                  :body {:outbound-identifier-list outbound-identifier-list-id
+                                         :outbound-identifier outbound-identifier-id}}]
+    (api/api-request add-outbound-identifier-list-member-request)))
+
+(defn remove-outbound-identifier-list-member-request [outbound-identifier-list-id outbound-identifier-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        remove-outbound-identifier-list-member-request {
+                                  :method :delete
+                                  :preserve-casing? true
+                                  :url (iu/api-url
+                                        "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id/members/:outbound-identifier-id"
+                                        {:tenant-id tenant-id
+                                         :outbound-identifier-list-id outbound-identifier-list-id
+                                         :outbound-identifier-id outbound-identifier-id})}]
+    (api/api-request remove-outbound-identifier-list-member-request)))
+
 (defn download-list-request [list-id]
   (let [tenant-id (state/get-active-tenant-id)
         url (iu/api-url

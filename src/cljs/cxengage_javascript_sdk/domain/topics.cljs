@@ -79,10 +79,13 @@
                  :get-outbound-identifiers-response "cxengage/entities/get-outbound-identifiers-response"
                  :update-outbound-identifier-response "cxengage/entities/update-outbound-identifier-response"
                  :create-outbound-identifier-response "cxengage/entities/create-outbound-identifier-response"
+                 :delete-outbound-identifier-response "cxengage/entities/delete-outbound-identifier-response"
                  :get-outbound-identifier-list-response "cxengage/entities/get-outbound-identifier-list-response"
                  :update-outbound-identifier-list-response "cxengage/entities/update-outbound-identifier-list-response"
                  :create-outbound-identifier-list-response "cxengage/entities/create-outbound-identifier-list-response"
                  :get-outbound-identifier-lists-response "cxengage/entities/get-outbound-identifier-lists-response"
+                 :add-outbound-identifier-list-member-response "cxengage/entities/add-outbound-identifier-list-member-response"
+                 :remove-outbound-identifier-list-member-response "cxengage/entities/remove-outbound-identifier-list-member-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
