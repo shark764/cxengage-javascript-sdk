@@ -85,6 +85,7 @@
 (s/def ::resource-id ::uuid)
 (s/def ::script-id ::uuid)
 (s/def ::shared boolean?)
+(s/def ::silent-monitoring boolean?)
 (s/def ::stat-id (s/or ::uuid string?))
 (s/def ::state string?)
 (s/def ::statistic string?)
