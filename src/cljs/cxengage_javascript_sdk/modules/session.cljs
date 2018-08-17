@@ -86,8 +86,8 @@
                           :error (e/session-heartbeats-failed-err resp)})
               nil))))))
 
-(defn- start-session* []
-  (go (let [resp (a/<! (rest/start-session-request))
+(defn- start-session* [silent-monitoring]
+  (go (let [resp (a/<! (rest/start-session-request silent-monitoring))
             {:keys [status api-response]} resp
             topic (topics/get-topic :session-started)
             session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
@@ -101,7 +101,7 @@
                       :error (e/failed-to-start-agent-session-err resp)}))
         nil)))
 
-(defn- get-config* [no-session]
+(defn- get-config* [no-session silent-monitoring]
   (go (let [topic (topics/get-topic :config-response)
             config-response (a/<! (rest/get-config-request))
             {:keys [api-response status]} config-response
@@ -115,7 +115,7 @@
               (p/publish {:topics (topics/get-topic :extension-list)
                           :response (select-keys user-config [:active-extension :extensions])})
               (when-not no-session
-                (start-session*)
+                (start-session* silent-monitoring)
                 (ih/send-core-message {:type :config-ready})))
           (p/publish {:topics topic
                       :error (e/failed-to-get-session-config-err config-response)}))))
@@ -123,13 +123,13 @@
 
 (s/def ::set-active-tenant-spec
   (s/keys :req-un [::specs/tenant-id]
-          :opt-un [::specs/callback ::specs/no-session]))
+          :opt-un [::specs/callback ::specs/no-session ::specs/silent-monitoring]))
 
 (def-sdk-fn set-active-tenant
   {:validation ::set-active-tenant-spec
    :topic-key :active-tenant-set}
   [params]
-  (let [{:keys [callback topic tenant-id no-session]} params
+  (let [{:keys [callback topic tenant-id no-session silent-monitoring]} params
         tenant-permissions (state/get-tenant-permissions tenant-id)
         {:keys [status api-response] :as resp} (a/<! (rest/get-tenant-request tenant-id))
         region-id (get-in api-response [:result :region-id])]
@@ -148,7 +148,7 @@
               (p/publish {:topics topic
                           :response {:tenant-id tenant-id}
                           :callback callback})
-              (get-config* no-session))))))))
+              (get-config* no-session silent-monitoring))))))))
 
 ;; ---------------------------------------------------------------------------------- ;;
 ;; CxEngage.session.setDirection({ direction: "{{inbound/outbound/agent-initiated}}" });

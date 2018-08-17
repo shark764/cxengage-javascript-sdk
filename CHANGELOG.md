@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.9.0]
+* CXV1-14754 - Add ability to enter a silent session
+
 ## [8.8.0]
 * CXV1-14931 - Outbound Identification - Create remaining sdk functions for outbound ani.
 

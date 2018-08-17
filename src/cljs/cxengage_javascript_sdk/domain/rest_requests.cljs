@@ -235,14 +235,17 @@
                            :body body}]
     (api/api-request save-logs-request)))
 
-(defn start-session-request []
+(defn start-session-request [silent-monitoring]
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
         start-session-req {:method :post
                            :url (iu/api-url
                                  "tenants/:tenant-id/presence/:resource-id/session"
                                  {:tenant-id tenant-id
-                                  :resource-id resource-id})}]
+                                  :resource-id resource-id})
+                           :body (if silent-monitoring
+                                    {:silent-monitoring true}
+                                    {})}]
     (api/api-request start-session-req)))
 
 (defn heartbeat-request []
