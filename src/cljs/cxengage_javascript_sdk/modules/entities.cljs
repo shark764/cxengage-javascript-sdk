@@ -588,6 +588,48 @@
                   :error (e/failed-to-get-outbound-identifier-lists-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getCustomMetrics();
+;; -------------------------------------------------------------------------- ;;
+
+(def-sdk-fn get-custom-metrics
+  {:validation ::get-entities-params
+   :topic-key :get-custom-metrics-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "custom-metric"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-custom-metrics-err entity-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getCustomMetric({
+;;   customMetricsId: {{uuid}}, 
+;;})
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-custom-metric-params
+  (s/keys :req-un [::specs/custom-metrics-id]
+          :opt-un []))
+
+(def-sdk-fn get-custom-metric
+  {:validation ::get-custom-metric-params
+   :topic-key :get-custom-metric-response}
+  [params]
+  (let [{:keys [callback topic custom-metrics-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "custom-metric" custom-metrics-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-custom-metric-err entity-response)
+                  :callback callback}))))
+
 ;;hygen-insert-before-get
 
 ;;--------------------------------------------------------------------------- ;;
@@ -692,7 +734,7 @@
    :topic-key :create-outbound-identifier-list-response}
   [params]
   (let [{:keys [active name description callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-outbound-identifier-list-request active name description ))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-outbound-identifier-list-request active name description))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -982,6 +1024,37 @@
                   :error (e/failed-to-remove-outbound-identifier-list-member-err entity-response)
                   :callback callback}))))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.updateCustomMetric({
+;;   customMetricsId: {{uuid}},
+;;   slaThreshold: {{integer}},
+;;   slaAbandonType: {{string}},
+;;   status: {{boolean}},
+;;   customMetricsName: {{string}},
+;;   slaAbandonThreshold: {{integer}}, (optional)
+;;   customMetricsType: {{string}}, (optional)
+;;   description: {{string}}, (optional)
+;;})
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::update-custom-metric-params
+    (s/keys :req-un [::specs/custom-metrics-id ::specs/sla-threshold ::specs/sla-abandon-type ::specs/status ::specs/custom-metrics-name]
+            :opt-un [::specs/callback ::specs/sla-abandon-threshold ::specs/custom-metrics-type ::specs/description]))
+  
+(def-sdk-fn update-custom-metric
+    {:validation ::update-custom-metric-params
+     :topic-key :update-custom-metric-response}
+    [params]
+    (let [{:keys [custom-metrics-id sla-abandon-type status custom-metrics-name custom-metrics-type sla-threshold sla-abandon-threshold description  callback topic]} params
+          {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metrics-id status sla-abandon-type sla-threshold custom-metrics-name sla-abandon-threshold))]
+      (if (= status 200)
+        (p/publish {:topics topic
+                    :response api-response
+                    :callback callback})
+        (p/publish {:topics topic
+                    :error (e/failed-to-update-custom-metric-err entity-response)
+                    :callback callback}))))
+ 
 ;;hygen-insert-before-update
 
 ;;--------------------------------------------------------------------------- ;;
@@ -1072,6 +1145,8 @@
                                        :get-email-templates get-email-templates
                                        :get-artifacts get-artifacts
                                        :get-artifact get-artifact
+                                       :get-custom-metrics get-custom-metrics
+                                       :get-custom-metric get-custom-metric
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
@@ -1089,12 +1164,13 @@
                                        :update-outbound-identifier-list update-outbound-identifier-list
                                        :add-outbound-identifier-list-member add-outbound-identifier-list-member
                                        :remove-outbound-identifier-list-member remove-outbound-identifier-list-member
+                                       :update-custom-metric update-custom-metric
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template
                                       ;;hygen-insert-above-delete
-                                       :download-list download-list
-                                       }}
+                                       :download-list download-list}}
+                                       
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

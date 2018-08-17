@@ -86,6 +86,9 @@
                  :get-outbound-identifier-lists-response "cxengage/entities/get-outbound-identifier-lists-response"
                  :add-outbound-identifier-list-member-response "cxengage/entities/add-outbound-identifier-list-member-response"
                  :remove-outbound-identifier-list-member-response "cxengage/entities/remove-outbound-identifier-list-member-response"
+                 :get-custom-metrics-response "cxengage/entities/get-custom-metrics-response"
+                 :get-custom-metric-response "cxengage/entities/get-custom-metric-response"
+                 :update-custom-metric-response "cxengage/entities/update-custom-metric-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
