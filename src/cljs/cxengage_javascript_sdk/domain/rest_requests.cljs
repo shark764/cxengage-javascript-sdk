@@ -176,7 +176,7 @@
                        :url (iu/api-url
                              "tenants/:tenant-id/realtime-statistics/batch"
                              {:tenant-id tenant-id})}]
-    (api/api-request batch-request)))
+    (api/api-request batch-request true)))
 
 (defn get-groups-request []
   (let [tenant-id (state/get-active-tenant-id)
