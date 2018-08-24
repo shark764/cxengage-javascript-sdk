@@ -349,6 +349,21 @@
                                        {:tenant-id tenant-id})}]
     (api/api-request list-attributes-request)))
 
+(defn update-custom-metric-request [description custom-metrics-type custom-metrics-id status sla-abandon-type sla-threshold custom-metrics-name sla-abandon-threshold]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-custom-metric-request (cond-> {:method :put
+                                              :url (iu/api-url "tenants/:tenant-id/custom-metrics/:custom-metrics-id"
+                                                            {:tenant-id tenant-id :custom-metrics-id custom-metrics-id})}
+                                            description                             (assoc-in [:body :description] description)
+                                            custom-metrics-type                     (assoc-in [:body :custom-metrics-type] custom-metrics-type)
+                                            (not (nil? custom-metrics-id))          (assoc-in [:body :custom-metrics-id] custom-metrics-id)
+                                            (not (nil? status))                     (assoc-in [:body :status] status)
+                                            (not (nil? sla-abandon-type))           (assoc-in [:body :sla-abandon-type] sla-abandon-type)
+                                            (not (nil? sla-threshold))              (assoc-in [:body :sla-threshold] sla-threshold)
+                                            (not (nil? custom-metrics-name))        (assoc-in [:body :custom-metrics-name] custom-metrics-name)
+                                            sla-abandon-threshold                   (assoc-in [:body :sla-abandon-threshold] sla-abandon-threshold))]
+    (api/api-request update-custom-metric-request)))
+
 (defn get-layout-request [layout-id]
   (let [tenant-id (state/get-active-tenant-id)
         get-layout-request {:method :get
@@ -623,7 +638,7 @@
         update-outbound-identifier-request (cond-> {:method :put
                                                     :url (iu/api-url "tenants/:tenant-id/outbound-identifiers/:outbound-identifier-id"
                                                                     {:tenant-id tenant-id
-                                                                    :outbound-identifier-id outbound-identifier-id})}
+                                                                     :outbound-identifier-id outbound-identifier-id})}
                                             outbound-identifier-id    (assoc-in [:body :outbound-identifier-id] outbound-identifier-id)
                                             (not (nil? name))         (assoc-in [:body :name] name)
                                             (not (nil? value))        (assoc-in [:body :value] value)
@@ -636,13 +651,13 @@
 (defn update-outbound-identifier-list-request [outbound-identifier-list-id active name description]
   (let [tenant-id (state/get-active-tenant-id)
         update-outbound-identifier-list-request (cond-> {:method :put
-                                                        :url (iu/api-url "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id"
-                                                                            {:tenant-id tenant-id
-                                                                            :outbound-identifier-list-id outbound-identifier-list-id})}
-                                                outbound-identifier-list-id (assoc-in [:body :outbound-identifier-list-id] outbound-identifier-list-id)
-                                                (not (nil? active))         (assoc-in [:body :active] active)
-                                                (not (nil? name))           (assoc-in [:body :name] name)
-                                                (not (nil? description))    (assoc-in [:body :description] description))]
+                                                         :url (iu/api-url "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id"
+                                                                             {:tenant-id tenant-id
+                                                                              :outbound-identifier-list-id outbound-identifier-list-id})}
+                                                 outbound-identifier-list-id (assoc-in [:body :outbound-identifier-list-id] outbound-identifier-list-id)
+                                                 (not (nil? active))         (assoc-in [:body :active] active)
+                                                 (not (nil? name))           (assoc-in [:body :name] name)
+                                                 (not (nil? description))    (assoc-in [:body :description] description))]
     (api/api-request update-outbound-identifier-list-request)))
 
 (defn create-outbound-identifier-request [name active value flow-id channel-type description]
@@ -693,37 +708,37 @@
 (defn delete-outbound-identifier-request [outbound-identifier-id]
   (let [tenant-id (state/get-active-tenant-id)
         delete-outbound-identifier-request {
-                                  :method :delete
-                                  :preserve-casing? true
-                                  :url (iu/api-url
-                                        "tenants/:tenant-id/outbound-identifiers/:outbound-identifier-id"
-                                        {:tenant-id tenant-id
-                                         :outbound-identifier-id outbound-identifier-id})}]
+                                            :method :delete
+                                            :preserve-casing? true
+                                            :url (iu/api-url
+                                                  "tenants/:tenant-id/outbound-identifiers/:outbound-identifier-id"
+                                                  {:tenant-id tenant-id
+                                                   :outbound-identifier-id outbound-identifier-id})}]
     (api/api-request delete-outbound-identifier-request)))
 
 (defn add-outbound-identifier-list-member-request [outbound-identifier-list-id outbound-identifier-id]
   (let [tenant-id (state/get-active-tenant-id)
         add-outbound-identifier-list-member-request {
-                                  :method :post
-                                  :url (iu/api-url
-                                        "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id/members/:outbound-identifier-id"
-                                        {:tenant-id tenant-id
-                                         :outbound-identifier-list-id outbound-identifier-list-id
-                                         :outbound-identifier-id outbound-identifier-id})
-                                  :body {:outbound-identifier-list outbound-identifier-list-id
-                                         :outbound-identifier outbound-identifier-id}}]
+                                                     :method :post
+                                                     :url (iu/api-url
+                                                           "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id/members/:outbound-identifier-id"
+                                                           {:tenant-id tenant-id
+                                                            :outbound-identifier-list-id outbound-identifier-list-id
+                                                            :outbound-identifier-id outbound-identifier-id})
+                                                     :body {:outbound-identifier-list outbound-identifier-list-id
+                                                            :outbound-identifier outbound-identifier-id}}]
     (api/api-request add-outbound-identifier-list-member-request)))
 
 (defn remove-outbound-identifier-list-member-request [outbound-identifier-list-id outbound-identifier-id]
   (let [tenant-id (state/get-active-tenant-id)
         remove-outbound-identifier-list-member-request {
-                                  :method :delete
-                                  :preserve-casing? true
-                                  :url (iu/api-url
-                                        "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id/members/:outbound-identifier-id"
-                                        {:tenant-id tenant-id
-                                         :outbound-identifier-list-id outbound-identifier-list-id
-                                         :outbound-identifier-id outbound-identifier-id})}]
+                                                        :method :delete
+                                                        :preserve-casing? true
+                                                        :url (iu/api-url
+                                                              "tenants/:tenant-id/outbound-identifier-lists/:outbound-identifier-list-id/members/:outbound-identifier-id"
+                                                              {:tenant-id tenant-id
+                                                               :outbound-identifier-list-id outbound-identifier-list-id
+                                                               :outbound-identifier-id outbound-identifier-id})}]
     (api/api-request remove-outbound-identifier-list-member-request)))
 
 (defn download-list-request [list-id]

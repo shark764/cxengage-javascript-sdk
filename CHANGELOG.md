@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.10.0]
+* CXV1-14968 - Added Custom Metrics Services for retrieve and change information.
+
 ## [8.9.0]
 * CXV1-14754 - Add ability to enter a silent session
 

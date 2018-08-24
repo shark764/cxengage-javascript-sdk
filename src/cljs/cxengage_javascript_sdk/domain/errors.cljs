@@ -991,52 +991,73 @@
 
 (defn failed-to-get-outbound-identifier-lists-err [data]
   {:code 11033
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to get outbound identifier lists."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get outbound identifier lists."})
 
 (defn failed-to-create-outbound-identifier-list-err [data]
   {:code 11034
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to create outbound identifier list."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create outbound identifier list."})
 
 (defn failed-to-update-outbound-identifier-list-err [data]
   {:code 11035
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to update outbound identifier list."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update outbound identifier list."})
 
 (defn failed-to-get-outbound-identifier-list-err [data]
   {:code 11036
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to get outbound identifier list."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get outbound identifier list."})
 
 (defn failed-to-delete-outbound-identifier-err [data]
-{:code 11037
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to delete outbound identifier."})
+  {:code 11037
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to delete outbound identifier."})
 
 (defn failed-to-add-outbound-identifier-list-member-err [data]
-{:code 11038
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to add outbound identifier to list."})
+  {:code 11038
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to add outbound identifier to list."})
 
 (defn failed-to-remove-outbound-identifier-list-member-err [data]
-{:code 11039
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to remove outbound identifier from list."})
+  {:code 11039
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to remove outbound identifier from list."})
+
+(defn failed-to-get-custom-metrics-err [data]
+  {:code 11040
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get custom metrics list."})
+  
+(defn failed-to-get-custom-metric-err [data]
+  {:code 11041
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get custom metric."})
+  
+(defn failed-to-update-custom-metric-err [data]
+  {:code 11042
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update custom metric."})
 
 ;;hygen-insert-before-11000s
 
