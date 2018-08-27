@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.10.1]
+* CXV1-14962 - Batch request logic in Agent Desktop.
+
 ## [8.10.0]
 * CXV1-14968 - Added Custom Metrics Services for retrieve and change information.
 

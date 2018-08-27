@@ -1067,7 +1067,7 @@
    :data {:batch-body batch-body
           :api-response api-response}
    :level "error"
-   :message "Reporting batch request failed. Ceasing further polling."})
+   :message "Reporting batch request failed."})
 
 (defn failed-to-get-interaction-reporting-err [interaction-id data]
   {:code 12001

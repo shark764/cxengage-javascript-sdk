@@ -32,7 +32,7 @@
       (ih/set-time-offset! offset))))
 
 (defn api-request
-  [request-map]
+  [request-map skip-retries]
   (let [resp-chan (a/promise-chan)]
     (go-loop [failed-attempts 0]
       (let [response-channel (a/promise-chan)
@@ -57,7 +57,8 @@
         (let [response (a/<! response-channel)
               {:keys [status]} response]
           (if (and (server-error? status) (< failed-attempts 3))
-            (do
+            (when
+              (not skip-retries)
               (log :error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
               (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
               (recur (inc failed-attempts)))

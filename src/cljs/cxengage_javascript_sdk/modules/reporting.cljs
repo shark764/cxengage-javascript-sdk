@@ -21,22 +21,23 @@
   [module]
   (let [topic (topics/get-topic :batch-response)
         polling-delay (st/get-reporting-refresh-rate)]
-    (go-loop []
-      (a/<! (a/timeout polling-delay))
+    (go-loop [polling-delay-param polling-delay]
+      (a/<! (a/timeout polling-delay-param))
       (if (empty? (:statistics @stat-subscriptions))
-        (recur)
+        (recur polling-delay-param)
         (let [batch-body (:statistics @stat-subscriptions)
               {:keys [api-response status]} (a/<! (rest/batch-request batch-body))
               {:keys [results]} api-response]
           (if (not= status 200)
             (do (log :error "Batch request failed.")
                 (p/publish {:topics topic
-                            :error (e/reporting-batch-request-failed-err batch-body batch-body)}))
+                            :error (e/reporting-batch-request-failed-err batch-body batch-body)})
+                (recur (max (* polling-delay-param 2) 60000)))
             (do (log :info "Batch request received!")
                 (p/publish {:topics topic
                             :response results
                             :preserve-casing? true})
-                (recur))))))
+                (recur polling-delay-param))))))
     nil))
 
 ;; -------------------------------------------------------------------------- ;;
