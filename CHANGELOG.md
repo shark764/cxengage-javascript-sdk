@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.10.2]
+* CXV1-15198 - Remove interaction hearbeats
+
 ## [8.10.1]
 * CXV1-14962 - Batch request logic in Agent Desktop.
 
