@@ -20,8 +20,10 @@
 
 (defn server-error?
   [status]
-  (and (>= status 500)
-       (< status 600)))
+  (not (or (and (>= status 200)
+                (< status 300))
+           (and (>= status 400)
+                (< status 500)))))
 
 (defn update-local-time-offset
   [response]

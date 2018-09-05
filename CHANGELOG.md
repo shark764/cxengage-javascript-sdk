@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.10.4]
+* CXV1-15134 - Update API retry logic to any non 2xx/4xx error code (was previously any 5xx code)
+
 ## [8.10.3]
 * CXV1-14962 - Update on batch request logic in Agent Desktop.
 
