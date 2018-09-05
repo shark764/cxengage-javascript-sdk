@@ -32,7 +32,7 @@
             (do (log :error "Batch request failed.")
                 (p/publish {:topics topic
                             :error (e/reporting-batch-request-failed-err batch-body batch-body)})
-                (recur (max (* polling-delay-param 2) 60000)))
+                (recur (min (* polling-delay-param 2) 60000)))
             (do (log :info "Batch request received!")
                 (p/publish {:topics topic
                             :response results

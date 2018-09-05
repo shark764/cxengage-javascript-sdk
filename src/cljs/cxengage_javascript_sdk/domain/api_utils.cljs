@@ -57,10 +57,11 @@
         (let [response (a/<! response-channel)
               {:keys [status]} response]
           (if (and (server-error? status) (< failed-attempts 3))
-            (when
-              (not skip-retries)
-              (log :error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
-              (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
-              (recur (inc failed-attempts)))
+            (if (not skip-retries)
+              (do
+                (log :error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
+                (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
+                (recur (inc failed-attempts)))
+              (a/put! resp-chan response))
             (a/put! resp-chan response)))))
     resp-chan))
