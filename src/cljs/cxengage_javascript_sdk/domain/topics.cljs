@@ -191,7 +191,6 @@
                  :resume-all-acknowledged "cxengage/interactions/voice/resume-all-acknowledged"
                  :resource-removed-acknowledged "cxengage/interactions/voice/resource-removed-acknowledged"
                  :silent-monitoring-start-acknowledged "cxengage/interactions/voice/silent-monitoring-start-acknowledged"
-                 :voice-interaction-heartbeat "cxengage/interactions/voice/heartbeat"
                  :force-killed-twilio-connection "cxengage/interactions/voice/force-killed-twilio-connection"
                  :update-call-controls "cxengage/interactions/voice/update-call-controls"
                  :silent-monitor-start "cxengage/interactions/voice/silent-monitor-start"
