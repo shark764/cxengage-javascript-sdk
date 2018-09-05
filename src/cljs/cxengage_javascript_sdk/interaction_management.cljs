@@ -184,23 +184,6 @@
                            :active-resources active-resources
                            :customer-on-hold customer-on-hold
                            :recording recording}})
-    (when (= channel-type "voice")
-      (go-loop [t (a/timeout 30000)]
-        (let [interaction-bucket (state/find-interaction-location interaction-id)]
-          (when (or (= interaction-bucket :pending)
-                    (= interaction-bucket :active))
-            (let [{:keys [status api-response]} (a/<! (rest/send-interrupt-request
-                                                       interaction-id
-                                                       "voice-heartbeat"
-                                                       {:resource-id (state/get-active-user-id)}))]
-              (if (or (= status 200)
-                      (= status 204))
-                (do (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
-                                :response {:interaction-id interaction-id}})
-                    (a/<! t)
-                    (recur (a/timeout 30000)))
-                (p/publish {:topics (topics/get-topic :voice-interaction-heartbeat)
-                            :error (e/failed-to-send-voice-interaction-heartbeat-err interaction-id api-response)})))))))
     (when (or (= channel-type "sms")
               (= channel-type "messaging"))
       (messaging/subscribe-to-messaging-interaction
