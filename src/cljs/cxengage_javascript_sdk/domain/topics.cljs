@@ -197,6 +197,7 @@
                  :silent-monitor-start "cxengage/interactions/voice/silent-monitor-start"
                  :silent-monitor-end "cxengage/interactions/voice/silent-monitor-end"
                  :get-monitored-interaction-response "cxengage/interactions/voice/get-monitored-interaction-response"
+                 :set-monitored-interaction-response "cxengage/interactions/voice/set-monitored-interaction-response"
 
                  ;; Twilio Topics
                  :twilio-device-ready "cxengage/twilio/device-ready"
