@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.11.2]
+* CXV1-15038 - Update abandon-threshold value depending of which abandon-type is selected.
+
 ## [8.11.1]
 * CXV1-15198: Deleted voice heartbeat topic and error
 

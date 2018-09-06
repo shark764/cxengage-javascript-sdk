@@ -361,7 +361,10 @@
                                             (not (nil? sla-abandon-type))           (assoc-in [:body :sla-abandon-type] sla-abandon-type)
                                             (not (nil? sla-threshold))              (assoc-in [:body :sla-threshold] sla-threshold)
                                             (not (nil? custom-metrics-name))        (assoc-in [:body :custom-metrics-name] custom-metrics-name)
-                                            sla-abandon-threshold                   (assoc-in [:body :sla-abandon-threshold] sla-abandon-threshold))]
+                                            sla-abandon-threshold                   (assoc-in [:body :sla-abandon-threshold]
+                                                                                      (if (= sla-abandon-type "ignored-abandoned-calls")
+                                                                                          sla-abandon-threshold
+                                                                                          nil)))]
     (api/api-request update-custom-metric-request)))
 
 (defn get-layout-request [layout-id]
