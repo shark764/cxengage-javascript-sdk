@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.11.1]
+* CXV1-15198: Deleted voice heartbeat topic and error
+
 ## [8.11.0]
 * CXV1-15088 - Added function session.clearMonitoredInteraction() so we can clear it when we catch an error
 

@@ -617,14 +617,6 @@
    :level "interaction-fatal"
    :message "Twilio Device encountered an error."})
 
-(defn failed-to-send-voice-interaction-heartbeat-err [interaction-id data]
-  {:code 7024
-   :context :voice
-   :data {:api-response data
-          :interaction-id interaction-id}
-   :level "interaction-fatal"
-   :message "Voice interaction heartbeat failed. The interaction no longer exists in CxEngage."})
-
 (defn failed-to-start-silent-monitoring-no-extension [interaction-id extensions]
   {:code 7025
    :context :voice
