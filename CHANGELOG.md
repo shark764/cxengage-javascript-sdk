@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.11.0]
+* CXV1-15088 - Added function session.clearMonitoredInteraction() so we can clear it when we catch an error
+
 ## [8.10.4]
 * CXV1-15134 - Update API retry logic to any non 2xx/4xx error code (was previously any 5xx code)
 

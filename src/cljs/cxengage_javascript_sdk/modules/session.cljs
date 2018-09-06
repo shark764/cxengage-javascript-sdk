@@ -394,6 +394,18 @@
                 :callback callback})
     interaction))
 
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.session.clearMonitoredInteraction();
+;; -------------------------------------------------------------------------- ;;
+
+(defn clear-monitored-interaction [& params]
+  (let [callback (first params)
+        callback (if (fn? callback) callback nil)
+        _ (state/set-monitored-interaction! nil)]
+    (p/publish {:topic (topics/get-topic :set-monitored-interaction-response)
+                :response nil
+                :callback callback})
+    nil))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Presence Session Module
@@ -416,7 +428,8 @@
                                        :set-user-identity set-user-identity
                                        :get-default-extension get-default-extension
                                        :get-tenant-details get-tenant-details
-                                       :get-monitored-interaction get-monitored-interaction}}
+                                       :get-monitored-interaction get-monitored-interaction
+                                       :clear-monitored-interaction clear-monitored-interaction}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
