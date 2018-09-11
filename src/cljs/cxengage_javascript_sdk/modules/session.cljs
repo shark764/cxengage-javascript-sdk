@@ -106,7 +106,8 @@
             config-response (a/<! (rest/get-config-request))
             {:keys [api-response status]} config-response
             user-config (:result api-response)
-            extensions (get user-config :extensions)]
+            extensions (:extensions user-config)
+            active-extension (:active-extension user-config)]
         (if (= status 200)
           (do (state/set-config! user-config)
               (state/set-session-expired! false)
@@ -114,6 +115,14 @@
                           :response user-config})
               (p/publish {:topics (topics/get-topic :extension-list)
                           :response (select-keys user-config [:active-extension :extensions])})
+              (if (nil? active-extension)
+                (let [extension (first (state/get-all-extensions))
+                      resp (a/<! (rest/update-user-request {:activeExtension extension}))
+                      status (:status resp)]
+                  (if-not (= status 200)
+                    (p/publish {:topics topic
+                                :error (e/failed-to-update-extension-err resp)
+                                :callback callback}))))
               (when-not no-session
                 (start-session* silent-monitoring)
                 (ih/send-core-message {:type :config-ready})))
