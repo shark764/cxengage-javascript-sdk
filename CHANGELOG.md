@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.12.0]
+* CXV1-15094 - New User unable to monitor interactions
+
 ## [8.11.2]
 * CXV1-15038 - Update abandon-threshold value depending of which abandon-type is selected.
 
