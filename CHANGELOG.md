@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.13.0]
+* CXV1-15006 - Transfer menu agent refresh button should be greyed out until response is returned
+
 ## [8.12.0]
 * CXV1-15094 - New User unable to monitor interactions
 
