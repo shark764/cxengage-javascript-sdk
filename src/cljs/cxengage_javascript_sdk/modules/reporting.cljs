@@ -78,6 +78,31 @@
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
+;; CxEngage.reporting.triggerBatch();
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::trigger-batch-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn trigger-batch
+  {:validation ::trigger-batch-params
+    :topic-key :batch-response}
+  [params]
+  (let [{:keys [topic callback]} params
+        batch-body (:statistics @stat-subscriptions)
+        {:keys [api-response status] :as batch-response} (a/<! (rest/batch-request batch-body))
+        {:keys [results]} api-response]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response results
+                  :callback callback
+                  :preserve-casing? true})
+      (p/publish {:topics topic
+                  :error (e/reporting-batch-request-failed-err batch-body batch-response)
+                  :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.removeStatSubscription({
 ;;   statId: "{{uuid}}"
 ;; });
@@ -297,6 +322,7 @@
     (let [module-name :reporting]
       (ih/register {:api {module-name {:add-stat-subscription add-stat-subscription
                                        :remove-stat-subscription remove-stat-subscription
+                                       :trigger-batch trigger-batch
                                        :get-capacity get-capacity
                                        :stat-query stat-query
                                        :bulk-stat-query bulk-stat-query
