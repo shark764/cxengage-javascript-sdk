@@ -37,7 +37,7 @@
                 (p/publish {:topics topic
                             :response results
                             :preserve-casing? true})
-                (recur polling-delay-param))))))
+                (recur polling-delay))))))
     nil))
 
 ;; -------------------------------------------------------------------------- ;;
