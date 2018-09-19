@@ -19,9 +19,8 @@
                  [cljsjs/paho "1.0.3-0"]
                  [cljs-ajax "0.6.0"]
                  [expound "0.1.0"]
-
+                 
                  [serenova/cljs-sdk-utils "0.0.16"]
-                 [serenova/lumbajack "3.0.2-SNAPSHOT"]
 
                  [crisptrutski/boot-cljs-test "0.3.0" :scope "test"]
                  [org.clojure/tools.nrepl "0.2.13" :scope "test"]
@@ -124,9 +123,9 @@
 (deftask test []
   (comp (testing*)
         (watch)
-        (test-cljs :js-env :phantom
+        (test-cljs :js-env :phantom)))
                    ;;:namespaces ["cxengage-javascript-sdk.modules.interaction-test"]
-                   )))
+
 
 (deftask dev []
   (comp (development*)

@@ -1,7 +1,7 @@
 (ns cxengage-javascript-sdk.internal-utils
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as a]
+            [clojure.string :as str]
             [goog.crypt :as c]
             [ajax.core :as ajax]
             [clojure.string :as str]
@@ -11,6 +11,41 @@
             [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]])
   (:import [goog.crypt Sha256 Hmac]))
+
+;;;;;;;;;;
+;; logging
+;;;;;;;;;;
+
+(def levels
+  {:debug {:color "color:blue;"
+           :priority 5}
+   :info {:color "color:green;"
+          :priority 4}
+   :warn {:color "color:orange;"
+          :priority 3}
+   :error {:color "color:red;"
+           :priority 2}
+   :fatal {:color "color:white; background-color:black;"
+           :priority 1}})
+
+(defn log-message*
+  [level & data]
+  (let [requested-level (keyword level)
+        requested-priority (get-in levels [requested-level :priority])
+        current-level (keyword (aget js/window "CxEngage" "logging" "level"))
+        current-priority (get-in levels [current-level :priority])]
+    (when (>= current-priority requested-priority)
+      (if-let [color (get-in levels [level :color])]
+        (do (js/console.log (str "%c[" (str/upper-case (name level)) " - " (js/Date.) "] ") color)
+            (doseq [d data]
+              (if (string? d)
+                (js/console.log (str "  %c↳ " d) color)
+                (js/console.log d))))
+        (js/console.log (str "Invalid logging level speciified. Correct values are: " (str/join ", " (keys levels))))))))
+
+(defn log-message [level & args]
+  (doseq [arg args]
+    (log-message* level arg)))
 
 (defn normalize-phone-number
   [phone-number]
@@ -56,9 +91,9 @@
          (str (state/get-base-api-url) url)
          params)
      (catch js/Object e
-       (log :warn "An exception occurred attempting to form an API URL.")
-       (log :warn "URL provided:" url)
-       (log :warn "Params provided:" (clj->js params))
+       (log-message :warn "An exception occurred attempting to form an API URL.")
+       (log-message :warn "URL provided:" url)
+       (log-message :warn "Params provided:" (js/JSON.stringify (clj->js params)))
        nil))))
 
 (defn get-now

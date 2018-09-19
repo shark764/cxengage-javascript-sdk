@@ -1,7 +1,6 @@
 (ns cxengage-javascript-sdk.state
-  (:require-macros [lumbajack.macros :refer [log]])
-  (:require [lumbajack.core]
-            [clojure.set :as s :refer [intersection]]
+  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [log]])
+  (:require [clojure.set :as s :refer [intersection]]
             [cljs-uuid-utils.core :as id]))
 
 (def initial-state {:authentication {:token false}

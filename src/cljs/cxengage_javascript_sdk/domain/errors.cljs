@@ -1036,20 +1036,27 @@
    :data {:api-response data}
    :level "error"
    :message "Failed to get custom metrics list."})
-  
+
 (defn failed-to-get-custom-metric-err [data]
   {:code 11041
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to get custom metric."})
-  
+
 (defn failed-to-update-custom-metric-err [data]
   {:code 11042
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to update custom metric."})
+
+(defn failed-to-get-flows-err [data]
+  {:code 11043
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get flows."})
 
 ;;hygen-insert-before-11000s
 

@@ -1,7 +1,6 @@
 (ns cxengage-javascript-sdk.modules.voice
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
+                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]])
   (:require [cljsjs.paho]
             [cljs.core.async :as a]
             [cljs-uuid-utils.core :as id]

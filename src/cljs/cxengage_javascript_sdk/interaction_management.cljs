@@ -1,6 +1,6 @@
 (ns cxengage-javascript-sdk.interaction-management
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]])
+                   [cxengage-javascript-sdk.domain.macros :refer [log]])
   (:require [cljs.core.async :as a]
             [clojure.string :refer [starts-with? lower-case]]
             [cxengage-javascript-sdk.state :as state]

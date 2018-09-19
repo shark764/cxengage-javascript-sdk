@@ -1,6 +1,5 @@
 (ns cxengage-javascript-sdk.modules.contacts
-  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]]
-                   [lumbajack.macros :refer [log]])
+  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]])
   (:require [cljs.core.async :as a]
             [cljs.spec.alpha :as s]
             [cxengage-javascript-sdk.domain.protocols :as pr]

@@ -1,8 +1,7 @@
 (ns cxengage-javascript-sdk.core
-  (:require-macros [lumbajack.macros :refer [log]]
+  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]]
                    [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.spec.alpha :as s]
-            [lumbajack.core :as l]
             [cljs.core.async :as a]
             [expound.alpha :as es]
             [camel-snake-kebab.core :as camel]
@@ -33,7 +32,7 @@
             [cxengage-javascript-sdk.modules.salesforce-classic :as sfc]
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]))
 
-(def *SDK-VERSION* "8.13.2")
+(def *SDK-VERSION* "8.14.0")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."

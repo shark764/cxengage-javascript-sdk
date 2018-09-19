@@ -1,7 +1,6 @@
 (ns cxengage-javascript-sdk.modules.salesforce-classic
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
+                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]])
   (:require [cljs.core.async :as a]
             [clojure.string :as string]
             [cxengage-javascript-sdk.internal-utils :as iu]
@@ -83,7 +82,7 @@
            (let [sfHeight (-> response
                               (aget "result")
                               (js/JSON.parse)
-                              (aget "/reqGeneralInfo/reqSoftphoneHeight")) 
+                              (aget "/reqGeneralInfo/reqSoftphoneHeight"))
                  height (if (string/blank? sfHeight) 800 sfHeight)]
              (js/sforce.interaction.cti.setSoftphoneHeight height)))))
       (catch js/Object e

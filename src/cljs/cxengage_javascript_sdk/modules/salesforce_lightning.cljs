@@ -1,7 +1,6 @@
 (ns cxengage-javascript-sdk.modules.salesforce-lightning
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
+                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]])
   (:require [cljs.core.async :as a]
             [clojure.string :as string]
             [cxengage-javascript-sdk.internal-utils :as iu]

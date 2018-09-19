@@ -1,6 +1,6 @@
 (ns cxengage-javascript-sdk.domain.topics
-  (:require-macros [lumbajack.macros :refer [log]])
-  (:require [lumbajack.core :as jack]))
+  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [log]])
+  (:require [cxengage-javascript-sdk.internal-utils :as iu]))
 
 (def sdk-topics {
                  ;; Authentication Topics

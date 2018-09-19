@@ -1,7 +1,6 @@
 (ns cxengage-javascript-sdk.modules.authentication
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]]
-                   [lumbajack.macros :refer [log]])
+                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
   (:require [cljs.spec.alpha :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.domain.specs :as specs]
