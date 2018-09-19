@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.13.1]
+* CXV1-15239 - Do not cease heatbeating until presence returns a 4xx
+
 ## [8.13.0]
 * CXV1-15006 - Transfer menu agent refresh button should be greyed out until response is returned
 

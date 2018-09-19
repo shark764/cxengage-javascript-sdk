@@ -175,8 +175,9 @@
                        :body {:requests batch-body}
                        :url (iu/api-url
                              "tenants/:tenant-id/realtime-statistics/batch"
-                             {:tenant-id tenant-id})}]
-    (api/api-request batch-request true)))
+                             {:tenant-id tenant-id})
+                       :retry-logic :skip-retries}]
+    (api/api-request batch-request)))
 
 (defn get-groups-request []
   (let [tenant-id (state/get-active-tenant-id)
@@ -257,7 +258,8 @@
                        :url (iu/api-url
                              "tenants/:tenant-id/presence/:resource-id/heartbeat"
                              {:tenant-id tenant-id
-                              :resource-id resource-id})}]
+                              :resource-id resource-id})
+                       :retry-logic :retry-indefinitely}]
     (api/api-request heartbeat-req)))
 
 (defn change-state-request [change-state-body]

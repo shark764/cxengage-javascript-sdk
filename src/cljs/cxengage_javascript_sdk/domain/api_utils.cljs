@@ -34,11 +34,11 @@
       (ih/set-time-offset! offset))))
 
 (defn api-request
-  [request-map skip-retries]
+  [request-map]
   (let [resp-chan (a/promise-chan)]
     (go-loop [failed-attempts 0]
       (let [response-channel (a/promise-chan)
-            {:keys [method url body preserve-casing? third-party-request? authless-request? csv-download?]} request-map
+            {:keys [method url body retry-logic preserve-casing? third-party-request? authless-request? csv-download?]} request-map
             request (merge {:uri url
                             :method method
                             :timeout 120000
@@ -47,23 +47,26 @@
                                         (a/put! response-channel normalized-response))
                             :format (ajax/json-request-format)
                             :response-format (if (or third-party-request? csv-download?)
-                                               (ajax/text-response-format)
-                                               (ajax/json-response-format {:keywords? true}))}
-                           (when body
-                             {:params (if preserve-casing? body (ih/camelify body))})
-                           (when-let [token (ih/get-token)]
-                             (if (or third-party-request? authless-request?)
-                               {}
-                               {:headers {"Authorization" (str "Token " token)}})))]
+                                              (ajax/text-response-format)
+                                              (ajax/json-response-format {:keywords? true}))}
+                          (when body
+                            {:params (if preserve-casing? body (ih/camelify body))})
+                          (when-let [token (ih/get-token)]
+                            (if (or third-party-request? authless-request?)
+                              {}
+                              {:headers {"Authorization" (str "Token " token)}})))]
         (ajax/ajax-request request)
         (let [response (a/<! response-channel)
               {:keys [status]} response]
-          (if (and (server-error? status) (< failed-attempts 3))
-            (if (not skip-retries)
-              (do
-                (log :error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
-                (a/<! (a/timeout (* 3000 (+ 1 failed-attempts))))
-                (recur (inc failed-attempts)))
-              (a/put! resp-chan response))
+          (if (and
+                (server-error? status)
+                (not= :skip-retries retry-logic)
+                (or
+                  (< failed-attempts 3)
+                  (= :retry-indefinitely retry-logic)))
+            (let [failed-attempts (min failed-attempts 3)]
+              (log :error (str "Received server error " status " retrying in " (* 3 failed-attempts) " seconds."))
+              (a/<! (a/timeout (* 3000 failed-attempts)))
+              (recur (inc failed-attempts)))
             (a/put! resp-chan response)))))
     resp-chan))
