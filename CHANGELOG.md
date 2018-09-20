@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.13.2]
+* CXV1-15284 - Hide "Failed to get available stats (code:12003) error" when hyperion is down
+
 ## [8.13.1]
 * CXV1-15239 - Do not cease heatbeating until presence returns a 4xx
 
