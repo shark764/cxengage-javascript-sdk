@@ -13,9 +13,16 @@
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs.test :refer-macros [deftest is testing async use-fixtures]]))
 
+
+(defn setup-fake-window-globals []
+  (aset js/window "CxEngage" {})
+  (aset js/window "CxEngage" "logging" {})
+  (aset js/window "CxEngage" "logging" "level" "debug"))
+
 (use-fixtures :each {:before (fn []
                                (state/destroy-state)
-                               (p/destroy-subscriptions))})
+                               (p/destroy-subscriptions)
+                               (setup-fake-window-globals))})
 
 (deftest end-test
   (testing "the end interaction function"

@@ -14,7 +14,7 @@
 (deftest click-to-email-test-happy
   (testing "The click to email function called start-outbound-email"
     (async done
-           (reset! p/sdk-subscriptions)
+           (reset! p/sdk-subscriptions {})
            (let [old rest/create-interaction-request
                  tenant-id (str (id/make-random-squuid))
                  resource-id (str (id/make-random-squuid))
@@ -82,7 +82,7 @@
                                                                   direction interaction metadata id)
                                                          (go mock-sad-interaction-response)))))
              (p/subscribe "cxengage/errors/error/failed-to-create-outbound-email-interaction" (fn [e t r]
-                                                                                                (is (= (camels (dissoc (e/failed-to-create-outbound-email-interaction-err mock-interaction-body mock-sad-interaction-response) :data))  (dissoc (js->clj e :keywordize-keys true) :data)))
+                                                                                                (is (= (camels (dissoc (e/failed-to-create-outbound-email-interaction-err mock-interaction-body interaction-id mock-sad-interaction-response) :data))  (dissoc (js->clj e :keywordize-keys true) :data)))
                                                                                                 (set! rest/create-interaction-request old)
                                                                                                 (done)))
              (email/start-outbound-email {:address mock-email-address})))))

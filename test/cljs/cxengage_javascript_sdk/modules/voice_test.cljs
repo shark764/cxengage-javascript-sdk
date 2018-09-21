@@ -458,7 +458,7 @@
       (fn [error topic response]
         (is (= (camels (e/failed-to-cancel-resource-transfer-err {:transfer-resource-id transfer-resource-id
                                                                   :resource-id resource-id
-                                                                  :transfer-type "warm-transfer"} not-found (js->clj error :keywordize-keys true)))))
+                                                                  :transfer-type "warm-transfer"} (js->clj error :keywordize-keys true)))))
         (done)))
      (voice/cancel-resource-transfer {:interaction-id interaction-id :transfer-resource-id transfer-resource-id}))))
 

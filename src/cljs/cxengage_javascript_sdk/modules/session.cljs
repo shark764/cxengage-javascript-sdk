@@ -1,6 +1,5 @@
 (ns cxengage-javascript-sdk.modules.session
-  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]]
-                   [lumbajack.macros :refer [log]]
+  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]]
                    [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.spec.alpha :as s]
             [cljs.core.async :as a]
@@ -101,7 +100,7 @@
                       :error (e/failed-to-start-agent-session-err resp)}))
         nil)))
 
-(defn- get-config* [no-session silent-monitoring]
+(defn- get-config* [no-session silent-monitoring callback]
   (go (let [topic (topics/get-topic :config-response)
             config-response (a/<! (rest/get-config-request))
             {:keys [api-response status]} config-response
@@ -157,7 +156,7 @@
               (p/publish {:topics topic
                           :response {:tenant-id tenant-id}
                           :callback callback})
-              (get-config* no-session silent-monitoring))))))))
+              (get-config* no-session silent-monitoring callback))))))))
 
 ;; ---------------------------------------------------------------------------------- ;;
 ;; CxEngage.session.setDirection({ direction: "{{inbound/outbound/agent-initiated}}" });

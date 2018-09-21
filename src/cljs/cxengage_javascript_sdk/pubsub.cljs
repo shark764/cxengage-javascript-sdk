@@ -1,13 +1,16 @@
 (ns cxengage-javascript-sdk.pubsub
-  (:require-macros [lumbajack.macros :refer [log]])
-  (:require [cljs.spec.alpha :as s]
-            [lumbajack.core]
+  (:require-macros [cxengage-javascript-sdk.domain.macros :refer [log]]
+                   [cljs.core.async.macros :refer [go go-loop]])
+  (:require [cljs.core.async :as a]
+            [cljs.spec.alpha :as s]
             [clojure.string :as string]
             [expound.alpha :as e]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cljs-uuid-utils.core :as id]
             [cxengage-javascript-sdk.domain.specs :as specs]
-            [cxengage-javascript-sdk.domain.topics :as topics]))
+            [cxengage-javascript-sdk.domain.topics :as topics]
+            [cxengage-javascript-sdk.domain.rest-requests :as rest]
+            [cljs-uuid-utils.core :as uuid]))
 
 (def sdk-subscriptions (atom {}))
 
@@ -80,6 +83,37 @@
     (when-let [matched-topic (first (filter #(= topic %) all-topics))]
       (get @sdk-subscriptions matched-topic))))
 
+
+(defn format-request-logs
+  [log]
+  (let [{:keys [level data]} log
+        date-time (js/Date.)]
+    (try
+      (let [data (-> data
+                     (clj->js)
+                     (js/JSON.stringify))]
+        (assoc {}
+               :level "info"
+               :message (js/JSON.stringify (clj->js {:data data :original-client-log-level (name level)}))
+               :timestamp (.toISOString date-time)))
+      (catch js/Object e
+        (js/console.debug "Exception when trying to format request logs; unable to format request logs for publishing. Likely passing a circularly dependent javascript object to a CxEngage logging statement.")
+        {}))))
+
+(defn save-logs
+  [error]
+  (go (let [log (format-request-logs error)
+            logs-body {:logs [log]
+                       :context {:client-url js/window.location.href}
+                       :device {:user-agent js/window.navigator.userAgent}
+                       :app-id (str (uuid/make-random-squuid))
+                       :app-name "CxEngage SDK"}
+            {:keys [status api-response] :as log-response} (a/<! (rest/save-logs-request logs-body))]
+        (if (= status 200)
+          (log :info "Successfully logged to CxEngage.")
+          (log :warn "Unable to upload logs to CxEngage.")))))
+
+
 (defn publish
   "Publishes a value (or error) to a specific topic, optionally calling the callback provided and optionally leaving the casing of the response unaltered."
   [publish-details]
@@ -95,7 +129,8 @@
 
         ; relevant-subscribers is a list of maps: 1 map per topic (keys=subscription ids, values=callbacks)
         relevant-subscribers (filter (complement nil?) (map get-subscribers-by-topic topic-permutations))]
-
+    (if error
+      (save-logs (ih/kebabify error)))
     (when (not-empty relevant-subscribers)
       ; Iterate through each map (representing each topic-permutation)
       (doseq [topic-permutation relevant-subscribers]

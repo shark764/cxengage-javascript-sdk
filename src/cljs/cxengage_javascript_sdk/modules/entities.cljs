@@ -1,7 +1,6 @@
 (ns cxengage-javascript-sdk.modules.entities
   (:require-macros [cljs.core.async.macros :refer [go]]
-                   [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]])
+                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]])
   (:require [cljs.spec.alpha :as s]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.domain.protocols :as pr]
@@ -548,7 +547,7 @@
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getOutboundIdentifierList({
-;;   outboundIdentifierListId: {{uuid}}, 
+;;   outboundIdentifierListId: {{uuid}},
 ;;})
 ;; -------------------------------------------------------------------------- ;;
 
@@ -608,7 +607,7 @@
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getCustomMetric({
-;;   customMetricsId: {{uuid}}, 
+;;   customMetricsId: {{uuid}},
 ;;})
 ;; -------------------------------------------------------------------------- ;;
 
@@ -833,11 +832,11 @@
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.createOutboundIdentifier({
-;;   name: {{string}} 
-;;   active: {{boolean}} 
-;;   value: {{string}} 
-;;   flowId: {{string}} 
-;;   channelType: {{string}} 
+;;   name: {{string}}
+;;   active: {{boolean}}
+;;   value: {{string}}
+;;   flowId: {{string}}
+;;   channelType: {{string}}
 ;;   description: {{string}} (optional)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
@@ -1040,7 +1039,7 @@
 (s/def ::update-custom-metric-params
     (s/keys :req-un [::specs/custom-metrics-id ::specs/sla-threshold ::specs/sla-abandon-type ::specs/status ::specs/custom-metrics-name]
             :opt-un [::specs/callback ::specs/sla-abandon-threshold ::specs/custom-metrics-type ::specs/description]))
-  
+
 (def-sdk-fn update-custom-metric
     {:validation ::update-custom-metric-params
      :topic-key :update-custom-metric-response}
@@ -1054,7 +1053,7 @@
         (p/publish {:topics topic
                     :error (e/failed-to-update-custom-metric-err entity-response)
                     :callback callback}))))
- 
+
 ;;hygen-insert-before-update
 
 ;;--------------------------------------------------------------------------- ;;
@@ -1170,7 +1169,7 @@
                                        :delete-email-template delete-email-template
                                       ;;hygen-insert-above-delete
                                        :download-list download-list}}
-                                       
+
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

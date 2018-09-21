@@ -1,7 +1,6 @@
 (ns cxengage-javascript-sdk.modules.email
   (:require-macros [cljs.core.async.macros :refer [go]]
-                   [lumbajack.macros :refer [log]]
-                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]]
+                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]]
                    [clojure.string :as str])
   (:require [cljs.core.async :as a]
             [cljs.spec.alpha :as s]

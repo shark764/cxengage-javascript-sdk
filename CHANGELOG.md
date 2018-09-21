@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [8.14.0]
+* CXV1-13733 - Update SDK to log errors to Kibana
+* <no-ticket> - Remove Lumbajack as a dependency
+
 ## [8.13.2]
 * CXV1-15284 - Hide "Failed to get available stats (code:12003) error" when hyperion is down
 

@@ -2,8 +2,7 @@
 
 (ns cxengage-javascript-sdk.modules.twilio
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn]]
-                   [lumbajack.macros :refer [log]])
+                   [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]])
   (:require [cljsjs.paho]
             [cljs.core.async :as a]
             [cxengage-javascript-sdk.state :as state]

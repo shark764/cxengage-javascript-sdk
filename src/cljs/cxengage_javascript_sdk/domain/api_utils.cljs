@@ -1,8 +1,8 @@
 (ns cxengage-javascript-sdk.domain.api-utils
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
-                   [lumbajack.macros :refer [log]])
+                   [cxengage-javascript-sdk.domain.macros :refer [log]])
   (:require [cxengage-javascript-sdk.domain.interop-helpers :as ih]
-            [lumbajack.core :as jack]
+            [cxengage-javascript-sdk.state :as state]
             [ajax.core :as ajax]
             [cljs.core.async :as a]))
 
@@ -51,7 +51,7 @@
                                               (ajax/json-response-format {:keywords? true}))}
                           (when body
                             {:params (if preserve-casing? body (ih/camelify body))})
-                          (when-let [token (ih/get-token)]
+                          (when-let [token (state/get-token)]
                             (if (or third-party-request? authless-request?)
                               {}
                               {:headers {"Authorization" (str "Token " token)}})))]
