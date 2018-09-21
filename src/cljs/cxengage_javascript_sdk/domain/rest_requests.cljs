@@ -141,7 +141,8 @@
         get-available-stats-req {:method :get
                                  :url (iu/api-url
                                        url-string
-                                       {:tenant-id tenant-id})}]
+                                       {:tenant-id tenant-id})
+                                 :retry-logic :retry-indefinitely}]
     (api/api-request get-available-stats-req)))
 
 (defn get-raw-url-request [url]
