@@ -28,6 +28,7 @@
           :opt-un [::specs/callback ::specs/reason-info]))
 
 (def-sdk-fn go-not-ready
+  ""
   {:validation ::go-not-ready-spec
    :topic-key :presence-state-change-request-acknowledged}
   [params]
@@ -134,6 +135,7 @@
           :opt-un [::specs/callback ::specs/no-session ::specs/silent-monitoring]))
 
 (def-sdk-fn set-active-tenant
+  ""
   {:validation ::set-active-tenant-spec
    :topic-key :active-tenant-set}
   [params]
@@ -167,6 +169,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn set-direction
+  ""
   {:validation ::set-direction-spec
    :topic-key :set-direction-response}
   [params]
@@ -206,6 +209,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn go-ready
+  ""
   {:validation ::go-ready-spec
    :topic-key :presence-state-change-request-acknowledged}
   [params]
@@ -374,6 +378,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-tenant-details
+  ""
   {:validation ::get-tenant-details-spec
    :topic-key :get-tenant-details}
   [params]

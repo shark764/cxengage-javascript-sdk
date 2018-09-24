@@ -17,7 +17,7 @@
 ;; Entity Utility Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn add-key-to-items [list-obj]
+(defn- add-key-to-items [list-obj]
   (let [list-item-key (get (first (get-in list-obj [:list-type :fields])) :name)
         items (js->clj (ih/camelify (get list-obj :items)) :keywordize-keys true)
         updated-items (mapv #(assoc % :key (get % (keyword list-item-key))) items)]
@@ -42,6 +42,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-user
+  ""
   {:validation ::get-user-params
    :topic-key :get-user-response}
   [params]
@@ -64,6 +65,7 @@
           :opt-un [::specs/callback ::specs/exclude-offline]))
 
 (def-sdk-fn get-users
+  ""
   {:validation ::get-users-params
    :topic-key :get-users-response}
   [params]
@@ -88,6 +90,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-queue
+  ""
   {:validation ::get-queue-params
    :topic-key :get-queue-response}
   [params]
@@ -106,6 +109,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-queues
+  ""
   {:validation ::get-entities-params
    :topic-key :get-queues-response}
   [params]
@@ -130,6 +134,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-transfer-list
+  ""
   {:validation ::get-transfer-list-params
    :topic-key :get-transfer-list-response}
   [params]
@@ -148,6 +153,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-transfer-lists
+  ""
   {:validation ::get-entities-params
    :topic-key :get-transfer-lists-response}
   [params]
@@ -166,6 +172,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-outbound-identifiers
+  ""
   {:validation ::get-entities-params
    :topic-key :get-outbound-identifiers-response}
   [params]
@@ -184,6 +191,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-flows
+  ""
   {:validation ::get-entities-params
    :topic-key :get-flows-response}
   [params]
@@ -202,6 +210,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-branding
+  ""
   {:validation ::get-entities-params
    :topic-key :get-branding-response}
   [params]
@@ -220,7 +229,8 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-protected-branding
-  {:validation ::get-entities-params
+  ""
+  {:validation ::get-entities-paramsing-params
    :topic-key :get-protected-branding-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -242,6 +252,7 @@
           :opt-un [::specs/callback ::specs/exclude-inactive]))
 
 (def-sdk-fn get-dashboards
+  ""
   {:validation ::get-dashboards-params
    :topic-key :get-dashboards-response}
   [params]
@@ -266,6 +277,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-list
+  ""
   {:validation ::get-list-params
    :topic-key :get-list-response}
   [params]
@@ -291,6 +303,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-list-item
+  ""
   {:validation ::get-list-item-params
    :topic-key :get-list-item-response}
   [params]
@@ -317,6 +330,7 @@
           :opt-un [::specs/callback ::specs/list-type-id ::specs/name]))
 
 (def-sdk-fn get-lists
+  ""
   {:validation ::get-lists-params
    :topic-key :get-lists-response}
   [params]
@@ -338,6 +352,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-list-types
+  ""
   {:validation ::get-entities-params
    :topic-key :get-list-types-response}
   [params]
@@ -356,6 +371,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-groups
+  ""
   {:validation ::get-entities-params
    :topic-key :get-groups-response}
   [params]
@@ -374,6 +390,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-skills
+  ""
   {:validation ::get-entities-params
    :topic-key :get-skills-response}
   [params]
@@ -398,6 +415,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn download-list
+  ""
   {:validation ::download-list-params
    :topic-key :download-list-response}
   [params]
@@ -423,6 +441,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn upload-list
+  ""
   {:validation ::upload-list-params
    :topic-key :upload-list-response}
   [params]
@@ -456,6 +475,7 @@
           :opt-un [::specs/callback ::specs/email-type-id]))
 
 (def-sdk-fn get-email-types
+  ""
   {:validation ::get-email-types-params
    :topic-key :get-email-types-response}
   [params]
@@ -481,6 +501,7 @@
           :opt-un [::specs/callback ::specs/email-type-id ::specs/fallback]))
 
 (def-sdk-fn get-email-templates
+  ""
   {:validation ::get-email-templates-params
    :topic-key :get-email-templates-response}
   [params]
@@ -506,6 +527,7 @@
     :opt-un [::specs/tenant-id ::specs/callback]))
 
 (def-sdk-fn get-artifacts
+  ""
   {:validation ::get-artifacts-params
    :topic-key :get-artifacts-response}
   [params]
@@ -532,6 +554,7 @@
     :opt-un [::specs/tenant-id ::specs/callback]))
 
 (def-sdk-fn get-artifact
+  ""
   {:validation ::get-artifact-params
    :topic-key :get-artifact-response}
   [params]
@@ -556,6 +579,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-outbound-identifier-list
+  ""
   {:validation ::get-outbound-identifier-list-params
    :topic-key :get-outbound-identifier-list-response}
   [params]
@@ -574,6 +598,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-outbound-identifier-lists
+  ""
   {:validation ::get-entities-params
    :topic-key :get-outbound-identifier-lists-response}
   [params]
@@ -592,6 +617,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn get-custom-metrics
+  ""
   {:validation ::get-entities-params
    :topic-key :get-custom-metrics-response}
   [params]
@@ -616,6 +642,7 @@
           :opt-un []))
 
 (def-sdk-fn get-custom-metric
+  ""
   {:validation ::get-custom-metric-params
    :topic-key :get-custom-metric-response}
   [params]
@@ -649,6 +676,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-list
+  ""
   {:validation ::create-list-params
    :topic-key :create-list-response}
   [params]
@@ -674,6 +702,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-list-item
+  ""
   {:validation ::create-list-item-params
    :topic-key :create-list-item-response}
   [params]
@@ -703,6 +732,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-email-template
+  ""
   {:validation ::create-email-template-params
    :topic-key :create-email-template-response}
   [params]
@@ -729,6 +759,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-outbound-identifier-list
+  ""
   {:validation ::create-outbound-identifier-list-params
    :topic-key :create-outbound-identifier-list-response}
   [params]
@@ -760,6 +791,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn update-user
+  ""
   {:validation ::update-user-params
    :topic-key :update-user-response}
   [params]
@@ -787,6 +819,7 @@
           :opt-un [::specs/callback ::specs/name ::specs/shared ::specs/active]))
 
 (def-sdk-fn update-list
+  ""
   {:validation ::update-list-params
    :topic-key :update-list-response}
   [params]
@@ -817,6 +850,7 @@
           :opt-un [::specs/callback ::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type ::specs/description]))
 
 (def-sdk-fn update-outbound-identifier
+  ""
   {:validation ::update-outbound-identifier-params
    :topic-key :update-outbound-identifier-response}
   [params]
@@ -846,6 +880,7 @@
           :opt-un [::specs/description]))
 
 (def-sdk-fn create-outbound-identifier
+  ""
   {:validation ::create-outbound-identifier-params
    :topic-key :create-outbound-identifier-response}
   [params]
@@ -881,6 +916,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn update-list-item
+  ""
   {:validation ::update-list-item-params
    :topic-key :update-list-item-response}
   [params]
@@ -909,6 +945,7 @@
           :opt-un [::specs/callback ::specs/active ::specs/shared ::specs/body ::specs/subject]))
 
 (def-sdk-fn update-email-template
+  ""
   {:validation ::update-email-template-params
    :topic-key :update-email-template-response}
   [params]
@@ -936,6 +973,7 @@
           :opt-un [::specs/callback ::specs/active ::specs/name ::specs/description]))
 
 (def-sdk-fn update-outbound-identifier-list
+  ""
   {:validation ::update-outbound-identifier-list-params
    :topic-key :update-outbound-identifier-list-response}
   [params]
@@ -960,6 +998,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn delete-outbound-identifier
+  ""
   {:validation ::delete-outbound-identifier-params
    :topic-key :delete-outbound-identifier-response}
   [params]
@@ -985,6 +1024,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn add-outbound-identifier-list-member
+  ""
   {:validation ::add-outbound-identifier-list-member-params
    :topic-key :add-outbound-identifier-list-member-response}
   [params]
@@ -1010,6 +1050,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn remove-outbound-identifier-list-member
+  ""
   {:validation ::remove-outbound-identifier-list-member-params
    :topic-key :remove-outbound-identifier-list-member-response}
   [params]
@@ -1041,18 +1082,19 @@
             :opt-un [::specs/callback ::specs/sla-abandon-threshold ::specs/custom-metrics-type ::specs/description]))
 
 (def-sdk-fn update-custom-metric
-    {:validation ::update-custom-metric-params
-     :topic-key :update-custom-metric-response}
-    [params]
-    (let [{:keys [custom-metrics-id sla-abandon-type status custom-metrics-name custom-metrics-type sla-threshold sla-abandon-threshold description  callback topic]} params
-          {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metrics-id status sla-abandon-type sla-threshold custom-metrics-name sla-abandon-threshold))]
-      (if (= status 200)
-        (p/publish {:topics topic
-                    :response api-response
-                    :callback callback})
-        (p/publish {:topics topic
-                    :error (e/failed-to-update-custom-metric-err entity-response)
-                    :callback callback}))))
+  ""
+  {:validation ::update-custom-metric-params
+   :topic-key :update-custom-metric-response}
+  [params]
+  (let [{:keys [custom-metrics-id sla-abandon-type status custom-metrics-name custom-metrics-type sla-threshold sla-abandon-threshold description  callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metrics-id status sla-abandon-type sla-threshold custom-metrics-name sla-abandon-threshold))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-custom-metric-err entity-response)
+                  :callback callback}))))
 
 ;;hygen-insert-before-update
 
@@ -1072,6 +1114,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn delete-list-item
+  ""
   {:validation ::delete-list-item-params
    :topic-key :delete-list-item-response}
   [params]
@@ -1097,6 +1140,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn delete-email-template
+  ""
   {:validation ::delete-email-template-params
    :topic-key :delete-email-template-response}
   [params]

@@ -30,6 +30,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-attachment-url
+  ""
   {:validation ::get-attachment-url-params
    :topic-key :attachment-received}
   [params]
@@ -60,6 +61,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn add-attachment
+  ""
   {:validation ::add-attachment-params
    :topic-key :add-attachment}
   [params]
@@ -84,6 +86,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn remove-attachment
+  ""
   {:validation ::remove-attachment-params
    :topic-key :remove-attachment}
   [params]
@@ -111,15 +114,15 @@
   (s/keys :req-un [::specs/cc ::specs/bcc ::specs/html-body ::specs/plain-text-body ::specs/subject ::specs/to ::specs/interaction-id]
           :opt-un [::specs/callback]))
 
-(defn html-body-id [files]
+(defn- html-body-id [files]
   (log :debug "[Email Processing] Files when building html body id" files)
   (:artifact-file-id (first (filter #(= (:filename %) "htmlBody") files))))
 
-(defn plain-body-id [files]
+(defn- plain-body-id [files]
   (log :debug "[Email Processing] Files when building plain body id" files)
   (:artifact-file-id (first (filter #(= (:filename %) "plainTextBody") files))))
 
-(defn build-attachments [files]
+(defn- build-attachments [files]
   (filterv
    identity
    (mapv
@@ -134,6 +137,7 @@
     files)))
 
 (def-sdk-fn send-reply
+  ""
   {:validation ::send-reply-params
    :topic-key :send-reply}
   [params]
@@ -257,6 +261,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn start-outbound-email
+  ""
   {:validation ::start-outbound-email-params
    :topic-key :start-outbound-email}
   [params]
@@ -293,6 +298,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn agent-reply-started
+  ""
   {:validation ::agent-reply-started-params
    :topic-key :agent-reply-started-acknowledged}
   [params]
@@ -322,6 +328,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn agent-no-reply
+  ""
   {:validation ::agent-no-reply-params
    :topic-key :agent-no-reply-acknowledged}
   [params]
@@ -351,6 +358,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn agent-cancel-reply
+  ""
   {:validation ::agent-cancel-reply-params
    :topic-key :agent-cancel-reply-acknowledged}
   [params]

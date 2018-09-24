@@ -23,16 +23,16 @@
 ;; State Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(def zendesk-state (atom {:active-tabs #{}}))
+(def ^:no-doc zendesk-state (atom {:active-tabs #{}}))
 
-(defn add-active-tab! [tab-guid]
+(defn- add-active-tab! [tab-guid]
   (swap! zendesk-state update-in [:active-tabs] conj tab-guid))
 
-(defn add-interaction! [interaction]
+(defn- add-interaction! [interaction]
   (let [{:keys [interaction-id]} interaction]
     (swap! zendesk-state assoc-in [:interactions interaction-id] interaction)))
 
-(defn update-active-tab! [interaction-id active-tab]
+(defn- update-active-tab! [interaction-id active-tab]
   (swap! zendesk-state assoc-in [:interactions interaction-id :active-tab] active-tab))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -50,6 +50,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn focus-interaction
+  ""
   {:validation ::focus-interaction-params
    :topic-key "cxengage/zendesk/focus-interaction"}
   [params]
@@ -84,6 +85,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn set-visibility
+  ""
   {:validation ::set-visibility-params
    :topic-key "cxengage/zendesk/set-visibility-response"}
   [params]
@@ -114,6 +116,7 @@
           :opt-un [::specs/callback ::specs/height]))
 
 (def-sdk-fn set-dimensions
+  ""
   {:validation ::set-dimensions-params
    :topic-key "cxengage/zendesk/set-dimensions-response"}
   [params]
@@ -150,6 +153,7 @@
           :opt-un [::specs/callback ::specs/active-tab]))
 
 (def-sdk-fn assign-related-to
+  ""
   {:validation ::assign-params
    :topic-key "cxengage/zendesk/related-to-assignment-acknowledged"}
   [params]
@@ -188,6 +192,7 @@
           :opt-un [::specs/callback ::specs/active-tab]))
 
 (def-sdk-fn unassign-related-to
+  ""
   {:validation ::assign-params
    :topic-key "cxengage/zendesk/related-to-unassignment-acknowledged"}
   [params]
@@ -222,6 +227,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn assign-contact
+  ""
   {:validation ::assign-params
    :topic-key "cxengage/zendesk/contact-assignment-acknowledged"}
   [params]
@@ -256,6 +262,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn unassign-contact
+  ""
   {:validation ::assign-params
    :topic-key "cxengage/zendesk/contact-unassignment-acknowledged"}
   [params]
@@ -286,10 +293,10 @@
 ;; Zendesk Initialization Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn zendesk-ready? []
+(defn- zendesk-ready? []
   (aget js/window "ZAFClient"))
 
-(defn ^:private zendesk-init
+(defn- zendesk-init
   [integration]
   (let [script (js/document.createElement "script")
         body (.-body js/document)]

@@ -16,6 +16,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn set-level
+  ""
   {:validation ::set-level-params
    :topic-key :log-level-set}
   [params]

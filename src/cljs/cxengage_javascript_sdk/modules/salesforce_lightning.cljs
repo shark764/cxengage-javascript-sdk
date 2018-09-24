@@ -19,43 +19,43 @@
 ;; State Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(def sfl-state (atom {}))
+(def ^:no-doc sfl-state (atom {}))
 
-(defn set-current-salesforce-org-id! [org-id]
+(defn- set-current-salesforce-org-id! [org-id]
   (swap! sfl-state assoc-in [:org-id] org-id))
 
-(defn get-current-salesforce-org-id []
+(defn- get-current-salesforce-org-id []
   (or (:org-id @sfl-state) ""))
 
-(defn set-current-salesforce-user-id! [user-id]
+(defn- set-current-salesforce-user-id! [user-id]
   (swap! sfl-state assoc :user-id user-id))
 
-(defn get-current-salesforce-user-id []
+(defn- get-current-salesforce-user-id []
   (or (:user-id @sfl-state) ""))
 
-(defn get-interaction [interaction-id]
+(defn- get-interaction [interaction-id]
   (or (get-in @sfl-state [:interactions interaction-id]) {}))
 
-(defn add-interaction! [interaction]
+(defn- add-interaction! [interaction]
   (let [{:keys [interactionId]} interaction]
     (swap! sfl-state assoc-in [:interactions interactionId] {:hook {}})))
 
-(defn remove-interaction! [interaction-id]
+(defn- remove-interaction! [interaction-id]
   (swap! sfl-state iu/dissoc-in [:interactions interaction-id]))
 
-(defn get-active-tab []
+(defn- get-active-tab []
   (:active-tab @sfl-state))
 
-(defn set-active-tab! [tab-details]
+(defn- set-active-tab! [tab-details]
   (swap! sfl-state assoc-in [:active-tab] tab-details))
 
-(defn get-hook [interaction-id]
+(defn- get-hook [interaction-id]
   (or (get-in @sfl-state [:interactions interaction-id :hook]) {}))
 
-(defn add-hook! [interaction-id hook-details]
+(defn- add-hook! [interaction-id hook-details]
   (swap! sfl-state assoc-in [:interactions interaction-id :hook] hook-details))
 
-(defn remove-hook! [interaction-id]
+(defn- remove-hook! [interaction-id]
   (swap! sfl-state assoc-in [:interactions interaction-id :hook] {}))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -70,6 +70,7 @@
           :opt-un [::specs/height ::specs/callback]))
 
 (def-sdk-fn set-dimensions
+  ""
   {:validation ::set-dimensions-params
    :topic-key "cxengage/salesforce-lightning/set-dimensions-response"}
   [params]
@@ -99,6 +100,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn is-visible?
+  ""
   {:validation ::is-visible-params
    :topic-key "cxengage/salesforce-lightning/is-visible-response"}
   [params]
@@ -125,6 +127,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn set-visibility
+  ""
   {:validation ::set-visibility-params
    :topic-key "cxengage/salesforce-lightning/set-visibility-response"}
   [params]
@@ -149,7 +152,7 @@
 (s/def ::assign-contact-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
-(defn send-assign-interrupt [new-hook interaction-id callback topic]
+(defn- send-assign-interrupt [new-hook interaction-id callback topic]
   (go
     (let [{:keys [hookId hookSubType hookName]} new-hook
           resource-id (state/get-active-user-id)
@@ -174,6 +177,7 @@
                                :callback callback}))))))
 
 (def-sdk-fn assign
+  ""
   {:validation ::assign-contact-params
    :topic-key "cxengage/salesforce-lightning/contact-assignment-acknowledged"}
   [params]
@@ -205,7 +209,7 @@
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
-(defn send-unassign-interrupt [hook interaction-id callback topic]
+(defn- send-unassign-interrupt [hook interaction-id callback topic]
   (go
     (let [interrupt-type "interaction-hook-drop"
           agent-id (state/get-active-user-id)
@@ -222,6 +226,7 @@
                               :callback callback}))))))
 
 (def-sdk-fn unassign
+  ""
   {:validation ::unassign-contact-params
    :topic-key "cxengage/salesforce-lightning/contact-unassignment-acknowledged"}
   [params]
@@ -249,6 +254,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn focus-interaction
+  ""
   {:validation ::focus-interaction-params
    :topic-key "cxengage/salesforce-lightning/focus-interaction"}
   [params]
@@ -269,7 +275,7 @@
 ;; Helper Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn auto-assign-from-search-pop [response interaction-id]
+(defn- auto-assign-from-search-pop [response interaction-id]
   (let [result (:returnValue (ih/extract-params response true))]
     (if (= 1 (count (vals result)))
       (let [_ (log :info "Only one search result. Assigning:" (clj->js result))
@@ -283,14 +289,14 @@
         (send-assign-interrupt hook interaction-id nil "cxengage/salesforce-lightning/contact-assignment-acknowledged"))
       (log :info "More than one result - skipping auto-assign"))))
 
-(defn dump-state []
+(defn- dump-state []
   (js/console.log (clj->js @sfl-state)))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Subscription Handlers
 ;; -------------------------------------------------------------------------- ;;
 
-(defn handle-state-change [error topic response]
+(defn- handle-state-change [error topic response]
   (if error
     (ih/publish {:topics topic
                  :error error})
@@ -308,7 +314,7 @@
             (ih/publish (clj->js {:topics topic
                                   :error e}))))))))
 
-(defn handle-focus-change [response]
+(defn- handle-focus-change [response]
   (let [active-tab (get-active-tab)
         result (js->clj response :keywordize-keys true)
         ;; So.. the Salesforce Classic SDK provides us with the salesforce object
@@ -332,24 +338,24 @@
                      :response hook}))
       (log :debug "Active tab is the same. Not publishing change."))))
 
-(defn handle-get-app-view-info [response]
+(defn- handle-get-app-view-info [response]
   (let [result (js->clj response :keywordize-keys true)
         focus-response (clj->js (:returnValue result))]
     (handle-focus-change focus-response)))
 
-(defn handle-click-to-dial [dial-details]
+(defn- handle-click-to-dial [dial-details]
   (ih/publish {:topics "cxengage/salesforce-lightning/on-click-to-interaction"
                :response dial-details}))
 
-(defn handle-work-offer [error topic interaction-details]
+(defn- handle-work-offer [error topic interaction-details]
   (let [interaction (js->clj interaction-details :keywordize-keys true)]
     (add-interaction! interaction)))
 
-(defn handle-work-ended [error topic interaction-details]
+(defn- handle-work-ended [error topic interaction-details]
   (let [interaction-id (:interactionId (js->clj interaction-details :keywordize-keys true))]
     (remove-interaction! interaction-id)))
 
-(defn handle-screen-pop [error topic interaction-details]
+(defn- handle-screen-pop [error topic interaction-details]
   (let [_ (log :debug "Handling screen pop:" interaction-details)
         result (js->clj interaction-details :keywordize-keys true)
         {:keys [version popType popUrl popUri newWindow size searchType filter filterType terms interactionId]} result
@@ -412,7 +418,7 @@
         :else (log :error "Invalid pop type" popType))
       (log :debug "Ignoring non-v2 screen pop"))))
 
-(defn handle-get-current-user-id [js-response]
+(defn- handle-get-current-user-id [js-response]
   (let [response (js->clj js-response :keywordize-keys true)
         result (get-in response [:returnValue :runApex])
         error (:errors response)]
@@ -421,7 +427,7 @@
       (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/failed-to-get-current-user-id"
                             :error (e/failed-to-get-current-salesforce-lightning-user-id-err error)})))))
 
-(defn handle-get-current-org-id [js-response]
+(defn- handle-get-current-org-id [js-response]
   (let [response (js->clj js-response :keywordize-keys true)
         result (get-in response [:returnValue :runApex])
         error (:errors response)]
@@ -436,11 +442,11 @@
 ;; Salesforce Initialization Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn sfl-ready? []
+(defn- sfl-ready? []
   (and (aget js/window "sforce")
        (aget js/window "sforce" "opencti")))
 
-(defn ^:private sfl-init
+(defn- sfl-init
   [interaction]
   (doseq [url [interaction]]
     (let [script (js/document.createElement "script")

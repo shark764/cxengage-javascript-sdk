@@ -14,9 +14,9 @@
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs-uuid-utils.core :as uuid]))
 
-(def stat-subscriptions (atom {}))
+(def ^:no-doc stat-subscriptions (atom {}))
 
-(defn start-polling
+(defn- start-polling
   [module]
   (let [topic (topics/get-topic :batch-response)
         polling-delay (st/get-reporting-refresh-rate)]
@@ -52,6 +52,7 @@
           :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id ::specs/stat-id]))
 
 (def-sdk-fn add-stat-subscription
+  ""
   {:validation ::add-statistic-params
    :topic-key :add-stat}
   [params]
@@ -85,6 +86,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn trigger-batch
+  ""
   {:validation ::trigger-batch-params
     :topic-key :batch-response}
   [params]
@@ -112,6 +114,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn remove-stat-subscription
+  ""
   {:validation ::remove-statistics-params
    :topic-key :remove-stat}
   [params]
@@ -134,6 +137,7 @@
           :opt-un [::specs/callback ::specs/resource-id]))
 
 (def-sdk-fn get-capacity
+  ""
   {:validation ::get-capacity-params
    :topic-key :get-capacity-response}
   [params]
@@ -161,6 +165,7 @@
           :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id]))
 
 (def-sdk-fn stat-query
+  ""
   {:validation ::stat-query-params
    :topic-key :get-stat-query-response
    :preserve-casing? true}
@@ -196,6 +201,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn bulk-stat-query
+  ""
   {:validation ::bulk-stat-query-params
    :topic-key :get-bulk-stat-query-response
    :preserve-casing? true}
@@ -224,6 +230,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-available-stats
+  ""
   {:validation ::get-available-stats-params
    :topic-key :get-available-stats-response}
   [params]
@@ -248,6 +255,7 @@
           :opt-un [::specs/callback ::specs/page]))
 
 (def-sdk-fn get-contact-interaction-history
+  ""
   {:validation ::get-contact-interaction-history-params
    :topic-key :get-contact-interaction-history-response}
   [params]
@@ -272,6 +280,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-interaction
+  ""
   {:validation ::get-interaction-params
    :topic-key :get-interaction-response}
   [params]
@@ -298,6 +307,7 @@
           :opt-un [::specs/callback ::specs/page]))
 
 (def-sdk-fn get-crm-interactions
+  ""
   {:validation ::get-crm-interactions-params
    :topic-key :get-crm-interactions-response}
   [params]

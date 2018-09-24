@@ -26,7 +26,7 @@
   (s/keys :req-un [::specs/interaction-id ::specs/contact-id]
           :opt-un [::specs/callback]))
 
-(defn build-detailed-interrupt-body
+(defn- build-detailed-interrupt-body
   [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
         {:keys [sub-id action-id channel-type resource-id tenant-id
@@ -55,6 +55,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn end
+  ""
   {:validation ::generic-interaction-fn-params
    :topic-key :interaction-end-acknowledged}
   [params]
@@ -91,6 +92,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn accept
+  ""
   {:validation ::generic-interaction-fn-params
    :topic-key :interaction-accept-acknowledged}
   [params]
@@ -143,6 +145,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn focus
+  ""
   {:validation ::generic-interaction-fn-params
    :topic-key :interaction-focus-acknowledged}
   [params]
@@ -165,6 +168,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn unfocus
+  ""
   {:validation ::generic-interaction-fn-params
    :topic-key :interaction-unfocus-acknowledged}
   [params]
@@ -188,6 +192,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn assign
+  ""
   {:validation ::contact-operation-params
    :topic-key :contact-assignment-acknowledged}
   [params]
@@ -211,6 +216,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn unassign
+  ""
   {:validation ::contact-operation-params
    :topic-key :contact-unassignment-acknowledged}
   [params]
@@ -233,6 +239,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn enable-wrapup
+  ""
   {:validation ::generic-interaction-fn-params
    :topic-key :enable-wrapup-acknowledged}
   [params]
@@ -255,6 +262,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn disable-wrapup
+  ""
   {:validation ::generic-interaction-fn-params
    :topic-key :disable-wrapup-acknowledged}
   [params]
@@ -277,6 +285,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn end-wrapup
+  ""
   {:validation ::generic-interaction-fn-params
    :topic-key :end-wrapup-acknowledged}
   [params]
@@ -299,6 +308,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn deselect-disposition
+  ""
   {:validation ::generic-interaction-fn-params
    :topic-key :disposition-code-changed}
   [params]
@@ -322,6 +332,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn select-disposition
+  ""
   {:validation ::disposition-operation-params
    :topic-key :disposition-code-changed}
   [params]
@@ -358,6 +369,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-note
+  ""
   {:validation ::get-one-note-params
    :topic-key :get-note-response}
   [params]
@@ -384,6 +396,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-all-notes
+  ""
   {:validation ::get-all-notes-params
    :topic-key :get-notes-response}
   [params]
@@ -410,6 +423,7 @@
           :opt-un [::specs/callback ::specs/title ::specs/body ::specs/contact-id]))
 
 (def-sdk-fn update-note
+  ""
   {:validation ::update-note-params
    :topic-key :update-note-response}
   [params]
@@ -438,6 +452,7 @@
           :opt-un [::specs/callback ::specs/contact-id ::specs/tenant-id ::specs/resource-id]))
 
 (def-sdk-fn create-note
+  ""
   {:validation ::create-note-params
    :topic-key :create-note-response}
   [params]
@@ -465,6 +480,7 @@
           :opt-un [::specs/transfer-type ::specs/callback]))
 
 (def-sdk-fn transfer-to-resource
+  ""
   {:validation ::resource-transfer-params
    :topic-key :customer-transfer-acknowledged}
   [params]
@@ -495,6 +511,7 @@
           :opt-un [::specs/transfer-type ::specs/callback]))
 
 (def-sdk-fn transfer-to-queue
+  ""
   {:validation ::queue-transfer-params
    :topic-key :customer-transfer-acknowledged}
   [params]
@@ -526,6 +543,7 @@
           :opt-un [::specs/transfer-type ::specs/callback]))
 
 (def-sdk-fn transfer-to-extension
+  ""
   {:validation ::extension-transfer-params
    :topic-key :customer-transfer-acknowledged}
   [params]
@@ -556,6 +574,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn cancel-resource-transfer
+  ""
   {:validation ::cancel-resource-transfer-params
    :topic-key :cancel-transfer-acknowledged}
   [params]
@@ -586,6 +605,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn cancel-queue-transfer
+  ""
   {:validation ::cancel-queue-transfer-params
    :topic-key :cancel-transfer-acknowledged}
   [params]
@@ -616,6 +636,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn cancel-extension-transfer
+  ""
   {:validation ::cancel-extension-transfer-params
    :topic-key :cancel-transfer-acknowledged}
   [params]
@@ -645,7 +666,7 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-(defn modify-elements
+(defn- modify-elements
   "One of two helper functions for prepping the send-script payload. Modifies the keys to be the same as the front-end element's name."
   [elements]
   (let [updated-elements (reduce
@@ -655,7 +676,7 @@
                           elements)]
     (clojure.walk/keywordize-keys updated-elements)))
 
-(defn add-answers-to-elements
+(defn- add-answers-to-elements
   "Second helper function - injects the values for each element into the scriptResponse object solely for Reporting to parse them easier."
   [elements answers]
   (let [updated-elements (reduce-kv
@@ -670,6 +691,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-script
+  ""
   {:validation ::script-params
    :topic-key :send-script}
   [params]
@@ -734,6 +756,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn custom-interrupt
+  ""
   {:validation ::custom-interrupt-params
    :topic-key :send-custom-interrupt-acknowledged}
   [params]

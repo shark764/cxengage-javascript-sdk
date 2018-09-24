@@ -31,6 +31,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn silent-monitor
+  ""
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :silent-monitoring-start-acknowledged}
   [params]
@@ -62,6 +63,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn customer-hold
+  ""
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :hold-acknowledged}
   [params]
@@ -84,6 +86,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn customer-resume
+  ""
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :resume-acknowledged}
   [params]
@@ -107,6 +110,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn mute
+  ""
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :mute-acknowledged}
   [params]
@@ -132,6 +136,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn unmute
+  ""
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :unmute-acknowledged}
   [params]
@@ -157,6 +162,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn resource-hold
+  ""
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :resource-hold-acknowledged}
   [params]
@@ -182,6 +188,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn resource-resume
+  ""
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :resource-resume-acknowledged}
   [params]
@@ -206,6 +213,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn resume-all
+  ""
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :resume-all-acknowledged}
   [params]
@@ -229,6 +237,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn remove-resource
+  ""
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :resource-removed-acknowledged}
   [params]
@@ -253,6 +262,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn start-recording
+  ""
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :recording-start-acknowledged}
   [params]
@@ -276,6 +286,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn stop-recording
+  ""
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :recording-stop-acknowledged}
   [params]
@@ -381,6 +392,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn dial
+  ""
   {:validation ::dial-params
    :topic-key :dial-send-acknowledged}
   [params]
@@ -417,6 +429,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn cancel-dial
+  ""
   {:validation ::cancel-dial-params
    :topic-key :cancel-dial-acknowledged}
   [params]
@@ -446,6 +459,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-digits
+  ""
   {:validation ::send-digits-params
    :topic-key :send-digits-acknowledged}
   [params]
@@ -478,7 +492,7 @@
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
-(defn get-recording [interaction-id tenant-id artifact-id callback]
+(defn- get-recording [interaction-id tenant-id artifact-id callback]
   (go (let [audio-recording (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id nil))
             {:keys [api-response status]} audio-recording
             topic (topics/get-topic :recording-response)]
@@ -495,6 +509,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-recordings
+  ""
   {:validation ::get-recordings-params
    :topic-key :recording-response}
   [params]

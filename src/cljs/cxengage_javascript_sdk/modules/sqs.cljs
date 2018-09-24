@@ -14,7 +14,7 @@
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]))
 
-(defn handle-response*
+(defn- handle-response*
   [response<]
   (fn [err data]
     (if err
@@ -24,7 +24,7 @@
                            js->clj
                            (transform-keys ->kebab-case-keyword)))))))
 
-(defn receive-message*
+(defn- receive-message*
   [sqs queue-url]
   (let [response (a/promise-chan)]
     (if (state/get-session-expired)
@@ -37,7 +37,7 @@
         (.receiveMessage sqs params (handle-response* response))
         response))))
 
-(defn process-message*
+(defn- process-message*
   [{:keys [messages]} delete-message-fn]
   (when (seq messages)
     (let [{:keys [receipt-handle body]} (first messages)
@@ -78,7 +78,7 @@
                 (delete-message-fn receipt-handle)
                 body)))))))
 
-(defn delete-message*
+(defn- delete-message*
   [sqs {:keys [queue-url]} receipt-handle]
   (let [params (clj->js {:QueueUrl queue-url
                          :ReceiptHandle receipt-handle})]
@@ -86,7 +86,7 @@
                                  (when err
                                    (log :error err))))))
 
-(defn sqs-init*
+(defn- sqs-init*
   [integration on-received]
   (let [{:keys [queue credentials]} integration
         {:keys [access-key secret-key session-token ttl]} credentials

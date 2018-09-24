@@ -22,30 +22,30 @@
             [cljs.spec.alpha :as s])
   (:import goog.crypt))
 
-(def service-name "iotdevicegateway")
-(def algorithm "AWS4-HMAC-SHA256")
-(def method "GET")
-(def canonical-uri "/mqtt")
+(def ^:no-doc service-name "iotdevicegateway")
+(def ^:no-doc algorithm "AWS4-HMAC-SHA256")
+(def ^:no-doc method "GET")
+(def ^:no-doc canonical-uri "/mqtt")
 
 (s/def ::mqtt-conf (s/keys :req-un [::endpoint ::region-name ::secret-key ::access-key]
                            :opt-un [::session-token]))
 
-(def get-host
+(def ^:no-doc get-host
   (memoize
    (fn [endpoint region-name]
      (str endpoint ".iot." region-name ".amazonaws.com"))))
 
-(def get-date-stamp
+(def ^:no-doc get-date-stamp
   (memoize
    (fn [date]
      (fmt/unparse (fmt/formatter "yyyyMMdd") date))))
 
-(def get-amz-date-stamp
+(def ^:no-doc get-amz-date-stamp
   (memoize
    (fn [date]
      (fmt/unparse (fmt/formatter "yyyyMMddTHHmmssZ") date))))
 
-(defn get-canonical-query-string
+(defn- get-canonical-query-string
   [date access-key credential-scope]
   (str "X-Amz-Algorithm=AWS4-HMAC-SHA256"
        "&X-Amz-Credential=" (js/encodeURIComponent (str access-key "/" credential-scope))
@@ -53,24 +53,24 @@
        "&X-Amz-Expires=86400"
        "&X-Amz-SignedHeaders=host"))
 
-(defn get-canonical-request
+(defn- get-canonical-request
   [date access-key credential-scope host]
   (let [canonical-query-string (get-canonical-query-string date access-key credential-scope)
         canonical-headers (str "host:" host "\n")
         canonical-request (clojure.string/join "\n" [method canonical-uri canonical-query-string canonical-headers "host" (iu/sha256 "")])]
     canonical-request))
 
-(defn get-credential-scope
+(defn- get-credential-scope
   [date region-name service-name]
   (str (get-date-stamp date) "/" region-name "/" service-name "/aws4_request"))
 
-(defn sign-string
+(defn- sign-string
   [date {:keys [secret-key region-name]} service-name credential-scope canonical-request]
   (let [string-to-sign (clojure.string/join "\n" [algorithm (get-amz-date-stamp date) credential-scope (iu/sha256 canonical-request)])
         signing-key (iu/get-signature-key secret-key (get-date-stamp date) region-name service-name)]
     (iu/sign signing-key string-to-sign)))
 
-(defn get-iot-url
+(defn- get-iot-url
   [date {:keys [endpoint region-name access-key secret-key session-token] :as mqtt-conf}]
   (let [host (get-host endpoint region-name)
         credential-scope (get-credential-scope date region-name service-name)
@@ -81,16 +81,16 @@
                                 (str "&X-Amz-Security-Token=" (js/encodeURIComponent session-token)))]
     (str "wss://" host canonical-uri "?" canonical-query-string security-token-string)))
 
-(defn subscribe
+(defn- subscribe
   [topic]
   (.subscribe (state/get-mqtt-client) topic #js {:qos 1})
   (log :info (str "Subscribed to MQTT topic: " topic)))
 
-(defn unsubscribe
+(defn- unsubscribe
   [topic]
   (.unsubscribe (state/get-mqtt-client) topic))
 
-(defn send-message-impl
+(defn- send-message-impl
   [payload topic callback]
   (let [msg (Paho.MQTT.Message. payload)
         pubsub-topic (topics/get-topic :send-message-acknowledged)]
@@ -101,10 +101,10 @@
                 :response true
                 :callback callback})))
 
-(defn on-connect []
+(defn- on-connect []
   (log :debug "Mqtt client connected"))
 
-(defn on-failure [msg]
+(defn- on-failure [msg]
   (log :error "Mqtt Client failed to connect " msg)
   (p/publish {:topics (topics/get-topic :mqtt-failed-to-connect)
               :error (e/failed-to-connect-to-mqtt-err msg)})
@@ -112,11 +112,11 @@
                          :status :failure
                          :module-name :messaging}))
 
-(defn disconnect [client]
+(defn- disconnect [client]
   (log :debug "Disconnecting mqtt client")
   (.disconnect client))
 
-(defn connect
+(defn- connect
   [endpoint client-id on-received]
   (let [mqtt (Paho.MQTT.Client. endpoint client-id)
         connect-options (js/Object.)]
@@ -143,24 +143,24 @@
 (s/fdef init
         :args (s/cat :mqtt-conf ::mqtt-conf :client-id string? :on-received fn?))
 
-(defn mqtt-init
+(defn- mqtt-init
   [mqtt-conf client-id on-received]
   (let [mqtt-client (connect (get-iot-url (time/now) mqtt-conf) client-id on-received)]
     (state/set-mqtt-client mqtt-client)))
 
-(defn subscribe-to-messaging-interaction [message]
+(defn- subscribe-to-messaging-interaction [message]
   (let [{:keys [tenant-id interaction-id env]} message
         topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
     (log :debug "Subscribing to topic:" topic)
     (subscribe topic)))
 
-(defn unsubscribe-to-messaging-interaction [message]
+(defn- unsubscribe-to-messaging-interaction [message]
   (let [{:keys [tenant-id interaction-id env]} message
         topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
     (log :debug "Unsubscribing from topic:" topic)
     (unsubscribe topic)))
 
-(defn gen-payload [message]
+(defn- gen-payload [message]
   (let [{:keys [message resource-id tenant-id interaction-id]} message
         uid (str (id/make-random-uuid))
         metadata {:name "Agent"
@@ -177,7 +177,7 @@
      :body body
      :timestamp (fmt/unparse (fmt/formatters :date-time) (time/now))}))
 
-(defn format-payload [message]
+(defn- format-payload [message]
   (t/write (t/writer :json-verbose) (clojure.walk/stringify-keys message)))
 
 ;; ----------------------------------------------------------------;;
@@ -193,6 +193,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-message
+  ""
   {:validation ::send-message-params
    :topic-key :send-message-acknowledged}
   [params]
@@ -220,6 +221,7 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-sms-by-interrupt
+  ""
   {:validation ::send-sms-by-interrupt-params
    :topic-key :send-outbound-sms-response}
   [params]
@@ -249,6 +251,7 @@
           :opt-on [::specs/callback]))
 
 (def-sdk-fn click-to-sms
+  ""
   {:validation ::click-to-sms-params
    :topic-key :initialize-outbound-sms-response}
   [params]
@@ -294,7 +297,7 @@
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
-(defn get-transcript [interaction-id tenant-id artifact-id callback]
+(defn- get-transcript [interaction-id tenant-id artifact-id callback]
   (go (let [transcript (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id nil))
             {:keys [api-response status]} transcript
             topic (topics/get-topic :transcript-response)]
@@ -307,6 +310,7 @@
                       :callback callback})))))
 
 (def-sdk-fn get-transcripts
+  ""
   {:validation ::get-transcripts-params
    :topic-key :transcript-response}
   [params]
