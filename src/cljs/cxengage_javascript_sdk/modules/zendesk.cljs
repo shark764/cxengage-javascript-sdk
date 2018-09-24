@@ -459,9 +459,6 @@
                                    (fn [response]
                                     (ih/publish {:topics "cxengage/zendesk/internal-pop-received"
                                                  :response (merge {:interaction-id interaction-id} (js->clj response :keywordize-keys true))}))))
-      (= pop-type "external-url") (if (= new-window "true")
-                                    (js/window.open pop-uri "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
-                                    (js/window.open pop-uri))
       (= pop-type "search-pop") (do
                                   (when (= search-type "fuzzy")
                                     (let [all-req-promises (reduce

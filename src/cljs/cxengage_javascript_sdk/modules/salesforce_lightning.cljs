@@ -398,9 +398,6 @@
                             (catch js/Object e
                               (ih/publish (clj->js {:topics topic
                                                     :error e}))))
-        (= popType "external") (if (= newWindow "true")
-                                 (js/window.open popUrl "targetWindow" (str "width=" (:width size) ",height=" (:height size)))
-                                 (js/window.open popUrl))
         (= popType "search-pop") (if (or (= searchType "fuzzy")
                                          (= searchType "strict"))
                                    (let [search-params (if (= searchType "fuzzy")
@@ -415,7 +412,7 @@
                                          (ih/publish (clj->js {:topics topic
                                                                :error e})))))
                                   (log :error "Invalid search type" searchType))
-        :else (log :error "Invalid pop type" popType))
+        (not= popType "external") (log :error "Invalid pop type" popType))
       (log :debug "Ignoring non-v2 screen pop"))))
 
 (defn- handle-get-current-user-id [js-response]

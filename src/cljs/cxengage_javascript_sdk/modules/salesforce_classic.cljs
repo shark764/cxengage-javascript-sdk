@@ -405,9 +405,6 @@
                               (catch js/Object e
                                 (ih/publish (clj->js {:topics topic
                                                       :error e}))))
-          (= popType "external-url") (if (= newWindow "true")
-                                       (js/window.open popUrl "targetWindow" ()(:width size) (:height size))
-                                       (js/window.open popUrl (:width size) (:height size)))
           (= popType "search-pop") (cond
                                      (= searchType "fuzzy")
                                      (try
@@ -430,7 +427,7 @@
                                         (ih/publish (clj->js {:topics topic
                                                                  :error e}))))
                                      :else (log :error "Invalid search type" searchType))
-           :else (log :error "Invalid pop type" popType))
+           (not= popType "external-url") (log :error "Invalid pop type" popType))
         (log :debug "Ignoring non-v2 screen pop"))))
 
 ;; -------------------------------------------------------------------------- ;;

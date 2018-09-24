@@ -303,8 +303,13 @@
               :response message}))
 
 (defn handle-screen-pop [message]
-  (p/publish {:topics (topics/get-topic :generic-screen-pop-received)
-              :response message}))
+  (let [{:keys [pop-type new-window pop-uri]} message]
+    (when (= pop-type "external-url") 
+      (if (= new-window "true")
+        (js/window.open pop-uri "targetWindow" (:width size) (:height size))
+        (js/window.open pop-uri (:width size) (:height size))))
+    (p/publish {:topics (topics/get-topic :generic-screen-pop-received)
+                :response message})))
 
 (defn handle-wrapup [message]
   (let [wrapup-details (select-keys message [:wrapup-time :wrapup-enabled :wrapup-update-allowed :target-wrapup-time])
