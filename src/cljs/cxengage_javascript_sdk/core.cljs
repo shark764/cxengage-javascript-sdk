@@ -30,9 +30,10 @@
             [cxengage-javascript-sdk.modules.authentication :as authentication]
             [cxengage-javascript-sdk.modules.zendesk :as zendesk]
             [cxengage-javascript-sdk.modules.salesforce-classic :as sfc]
-            [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]))
+            [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]
+            [cxengage-javascript-sdk.modules.testing :as testing]))
 
-(def *SDK-VERSION* "8.15.0")
+(def *SDK-VERSION* "8.15.1")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -63,8 +64,9 @@
         entities (entities/map->EntitiesModule.)
         contacts (contacts/map->ContactsModule.)
         logging (logging/map->LoggingModule.)
-        reporting (reporting/map->ReportingModule.)]
-    (doseq [module [authentication session interaction entities contacts logging reporting]]
+        reporting (reporting/map->ReportingModule.)
+        testing (testing/map->TestingModule. )]
+    (doseq [module [authentication session interaction entities contacts logging reporting testing]]
       (start-internal-module module))))
 
 (defn start-crm-module

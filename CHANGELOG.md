@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.15.1]
+* CXV1-13732 - Make sure we catch SDK JavaScript exceptions in Sentry
+
 ## [8.15.0]
 * CXV1-13804 - Setup Codox Documentation Generation
 * CXV1-13805 - Update def-sdk-fn macro to accept docstrings
