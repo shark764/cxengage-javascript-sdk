@@ -86,9 +86,19 @@
                  :get-outbound-identifier-lists-response "cxengage/entities/get-outbound-identifier-lists-response"
                  :add-outbound-identifier-list-member-response "cxengage/entities/add-outbound-identifier-list-member-response"
                  :remove-outbound-identifier-list-member-response "cxengage/entities/remove-outbound-identifier-list-member-response"
+                 :add-role-list-member-response "cxengage/entities/add-role-list-member-response"
+                 :remove-role-list-member-response "cxengage/entities/remove-role-list-member-response"
                  :get-custom-metrics-response "cxengage/entities/get-custom-metrics-response"
                  :get-custom-metric-response "cxengage/entities/get-custom-metric-response"
                  :update-custom-metric-response "cxengage/entities/update-custom-metric-response"
+                 :get-roles-response "cxengage/entities/get-roles-response"
+                 :get-integrations-response "cxengage/entities/get-integrations-response"
+                 :get-capacity-rules-response "cxengage/entities/get-capacity-rules-response"
+                 :get-reasons-response "cxengage/entities/get-reasons-response"
+                 :get-reason-lists-response "cxengage/entities/get-reason-lists-response"
+                 :get-permissions-response "cxengage/entities/get-permissions-response"
+                 :create-role-response "cxengage/entities/create-role-response"
+                 :update-role-response "cxengage/entities/update-role-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
