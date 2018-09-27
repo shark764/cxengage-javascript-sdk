@@ -230,7 +230,7 @@
 
 (def-sdk-fn get-protected-branding
   ""
-  {:validation ::get-entities-paramsing-params
+  {:validation ::get-entities-params
    :topic-key :get-protected-branding-response}
   [params]
   (let [{:keys [callback topic]} params
@@ -658,6 +658,142 @@
 
 ;;hygen-insert-before-get
 
+(def-sdk-fn get-permissions
+  "``` javascript
+  CxEngage.entities.getPermissions();
+  ```
+  Retirieves Permissions for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11049](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-permissions-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-permissions-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "permission"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-permissions-err entity-response)
+                  :callback callback}))))
+
+
+(def-sdk-fn get-reason-lists
+  "``` javascript
+  CxEngage.entities.getReasonLists();
+  ```
+  Retirieves available ReasonLists for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11048](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-reason-lists-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-reason-lists-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "reason-list"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-reason-lists-err entity-response)
+                  :callback callback}))))
+
+
+(def-sdk-fn get-reasons
+  "``` javascript
+  CxEngage.entities.getReasons();
+  ```
+  Retirieves available Presence Reasons for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11047](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-reasons-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-reasons-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "reason"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-reasons-err entity-response)
+                  :callback callback}))))
+
+
+(def-sdk-fn get-capacity-rules
+  "``` javascript
+  CxEngage.entities.getCapacityRules();
+  ```
+  Retirieves available CapacityRules for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11046](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-capacity-rules-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-capacity-rules-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "capacity-rule"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-capacity-rules-err entity-response)
+                  :callback callback}))))
+
+
+(def-sdk-fn get-integrations
+  "``` javascript
+  CxEngage.entities.getIntegrations();
+  ```
+  Retirieves available Integrations for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11045](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-integrations-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-integrations-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "integration"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-integrations-err entity-response)
+                  :callback callback}))))
+
+(def-sdk-fn get-roles
+  "``` javascript
+  CxEngage.entities.getRoles();
+  ```
+  Retirieves available roles for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities:    11044](/cxengage-javascript-sdk.domain.errors.html#failed-to-get-roles-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-roles-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "role"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-roles-err entity-response)
+                  :callback callback}))))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -774,6 +910,37 @@
                   :callback callback}))))
 
 ;;hygen-insert-before-create
+
+(s/def ::create-role-params
+  (s/keys :req-un [::specs/name ::specs/description]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn create-role
+  "``` javascript
+  CxEngage.entities.createRole({
+    name: {{string}},
+    description: {{string}},
+    permissions: {{array}}
+  });
+  ```
+  Create Role for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11050](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-role-err)"
+  {:validation ::create-role-params
+   :topic-key :create-role-response}
+  [params]
+  (let [{:keys [active name description permissions callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-role-request name description permissions))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-role-err entity-response)
+                  :callback callback}))))
+
 
 ;;--------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
@@ -1098,6 +1265,38 @@
 
 ;;hygen-insert-before-update
 
+(s/def ::update-role-params
+  (s/keys :req-un [::specs/role-id]
+          :opt-un [::specs/callback ::specs/name ::specs/description ::specs/permissions]))
+
+(def-sdk-fn update-role
+  "``` javascript
+  CxEngage.entities.updateRole({
+    roleId: {{uuid}}
+    name: {{string}},
+    description: {{string}},
+    permissions: {{array}}
+  });
+  ```
+  Updates specified Role
+
+  Possible Errors:
+
+  - [Entities: 11051](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-role-err)"
+  {:validation ::update-role-params
+   :topic-key :update-role-response}
+  [params]
+  (let [{:keys [role-id name description permissions callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-role-request role-id name description permissions))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-role-err entity-response)
+                  :callback callback}))))
+
+
 ;;--------------------------------------------------------------------------- ;;
 ;; DELETE Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -1190,12 +1389,19 @@
                                        :get-artifact get-artifact
                                        :get-custom-metrics get-custom-metrics
                                        :get-custom-metric get-custom-metric
+                                       :get-roles get-roles
+                                       :get-integrations get-integrations
+                                       :get-capacity-rules get-capacity-rules
+                                       :get-reasons get-reasons
+                                       :get-reason-lists get-reason-lists
+                                       :get-permissions get-permissions
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
                                        :create-email-template create-email-template
                                        :create-outbound-identifier create-outbound-identifier
                                        :create-outbound-identifier-list create-outbound-identifier-list
+                                       :create-role create-role
                                       ;;hygen-insert-above-create
                                        :update-user update-user
                                        :update-list update-list
@@ -1207,7 +1413,10 @@
                                        :update-outbound-identifier-list update-outbound-identifier-list
                                        :add-outbound-identifier-list-member add-outbound-identifier-list-member
                                        :remove-outbound-identifier-list-member remove-outbound-identifier-list-member
+                                       :add-role-list-member add-role-list-member
+                                       :remove-role-list-member remove-role-list-member
                                        :update-custom-metric update-custom-metric
+                                       :update-role update-role
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.16.0]
+* <no-ticket> - Added roles to entities modules and other get entity functions
+
 ## [8.15.2]
 * CXV1-14896 - Screenpop for Skylight popping 2 browser windows (1 correct, 1 blank)
 

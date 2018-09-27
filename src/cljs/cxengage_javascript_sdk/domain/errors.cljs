@@ -1127,6 +1127,120 @@
    :level "error"
    :message "Failed to get flows."})
 
+(defn failed-to-get-roles-err
+  "**Error Code:** 11044
+   Message: Failed to get roles.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11044
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get roles."})
+
+(defn failed-to-get-integrations-err 
+  "**Error Code:** 11045
+   Message: Failed to get integrations.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11045
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to get integrations."})
+
+(defn failed-to-get-capacity-rules-err 
+  "**Error Code:** 11046
+   Message: Failed to get capacity rules.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11046
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to get capacity rules."})
+
+(defn failed-to-get-reasons-err 
+  "**Error Code:** 11047
+   Message: Failed to get presence reasons.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11047
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to get presence reasons."})
+
+(defn failed-to-get-reason-lists-err 
+  "**Error Code:** 11048
+   Message: Failed to get presence reasons lists.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11048
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to get presence reason lists."})
+
+(defn failed-to-get-permissions-err 
+  "**Error Code:** 11049
+   Message: Failed to get permissions.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11049
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to get permissions."})
+
+(defn failed-to-create-role-err 
+  "**Error Code:** 11050
+   Message: Failed to create role.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information."
+  [data]
+  {:code 11050
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to create role."})
+
+(defn failed-to-update-role-err 
+  "**Error Code:** 11051
+   Message: Failed to get integrations.
+
+   This error is usually due to a unexpected status code returned from the API.
+   Validate the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11051
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to update role."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

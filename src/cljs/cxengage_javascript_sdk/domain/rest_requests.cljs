@@ -689,6 +689,27 @@
                                             description             (assoc-in [:body :description] description))]
     (api/api-request create-outbound-identifier-request)))
 
+(defn create-role-request [name description permissions]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-role-request (cond-> {:method :post
+                                     :url (iu/api-url "tenants/:tenant-id/roles"
+                                                      {:tenant-id tenant-id})
+                                     :body            {:permissions (or permissions [])}}
+                            name                      (assoc-in [:body :name] name)
+                            description               (assoc-in [:body :description] description))]
+    (api/api-request create-role-request)))
+
+(defn update-role-request [role-id name description permissions]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-role-request (cond-> {:method :put
+                                     :url (iu/api-url "tenants/:tenant-id/roles/:role-id"
+                                                      {:tenant-id tenant-id
+                                                      :role-id role-id})}
+                            (not (nil? permissions))  (assoc-in [:body :permissions]  permissions)
+                            (not (nil? name))         (assoc-in [:body :name] name)
+                            (not (nil? description))  (assoc-in [:body :description] description))]
+    (api/api-request update-role-request)))
+
 (defn update-list-item-request [list-item-id list-item-key item-value]
   (let [tenant-id (state/get-active-tenant-id)
         update-list-item-request {:method :put
