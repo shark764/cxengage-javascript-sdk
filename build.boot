@@ -84,7 +84,9 @@
   (set-env! :source-paths #(conj % "src/cljs" "test/cljs"))
   identity)
 
-(deftask production* []
+(deftask production* [
+  _ gen-source-maps  bool "Flag to set wether or not we want to generate source maps"
+  ]
   (set-env! :source-paths #(conj % "src/cljs" "src/prod_cljs"))
   (task-options! cljs {:compiler-options {:optimizations :advanced
                                           :externs ["externs.js"]
@@ -93,13 +95,14 @@
                                           :compiler-stats true
                                           :anon-fn-naming-policy :mapped
                                           :pretty-print false
-                                          :source-map true
                                           :parallel-build true
                                           :static-fns true
                                           :language-in :ecmascript5
                                           :print-input-delimiter true
                                           :language-out :ecmascript5
-                                          :verbose true}})
+                                          :verbose true
+                                          :source-map (when gen-source-maps 
+                                                          "release/main.js.map")}})
   (comp (cljs)))
 
 (ns-unmap 'boot.user 'test)
@@ -157,3 +160,7 @@
 (deftask dev []
   (comp (development*)
         (run*)))
+
+(deftask make-dev-release []
+  (comp (production* :gen-source-maps true)
+        (target :dir #{"release"})))

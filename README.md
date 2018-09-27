@@ -30,6 +30,10 @@ To make a prod release (you shouldn't ever really have to do this; jenkins does 
 
 `boot make-prod-release`
 
+To make a prod alike release for development purposes (includes source maps, which make-prod-release doesn't, to help with development)
+
+`boot make-dev-release`
+
 To run the documentation generator:
 
 `boot docs`
