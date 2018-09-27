@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.15.2]
+* CXV1-14896 - Screenpop for Skylight popping 2 browser windows (1 correct, 1 blank)
+
 ## [8.15.1]
 * CXV1-13732 - Make sure we catch SDK JavaScript exceptions in Sentry
 
