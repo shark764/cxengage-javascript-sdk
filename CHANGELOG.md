@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.16.1]
+* CXV1-13807 - Filter Private Functions from documentation
+
 ## [8.16.0]
 * <no-ticket> - Added roles to entities modules and other get entity functions
 
