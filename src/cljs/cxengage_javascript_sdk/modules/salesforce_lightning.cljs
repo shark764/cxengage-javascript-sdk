@@ -344,8 +344,15 @@
     (handle-focus-change focus-response)))
 
 (defn- handle-click-to-dial [dial-details]
-  (ih/publish {:topics "cxengage/salesforce-lightning/on-click-to-interaction"
-               :response dial-details}))
+  (let [result (js->clj dial-details :keywordize-keys true)
+        {:keys [number recordId recordName objectType]} result
+        response {:number number
+                  :hookId recordId
+                  :hookName recordName
+                  :hookSubType objectType}]
+    (ih/publish {:topics "cxengage/salesforce-lightning/on-click-to-interaction"
+                 :response (merge response
+                                  {:pop-uri (js/encodeURIComponent (js/JSON.stringify (clj->js response)))})})))
 
 (defn- handle-work-offer [error topic interaction-details]
   (let [interaction (js->clj interaction-details :keywordize-keys true)]

@@ -356,9 +356,10 @@
 
 (defn- handle-click-to-dial [dial-details]
   (let [result (:result (js->clj dial-details :keywordize-keys true))
-        parsed-result (js/JSON.parse result)]
+        parsed-result (js->clj (js/JSON.parse result))]
     (ih/publish {:topics "cxengage/salesforce-classic/on-click-to-interaction"
-                 :response parsed-result})))
+                 :response (merge parsed-result
+                                  {:popUri (js/encodeURIComponent result)})})))
 
 (defn- handle-work-offer [error topic interaction-details]
   (let [interaction (js->clj interaction-details :keywordize-keys true)]
@@ -377,7 +378,7 @@
     (if (= "v2" version)
         (cond
           (= popType "url") (try
-                              ;; Check if the popUri is JSON. If it is, that is one we assigned and are getting transferred.
+                              ;; Check if the popUri is JSON. If it is, that is one we assigned and are getting transferred or one we passed in from a click to dial.
                               ;; If not, it is a work item from flow. It will be formatted like: "<case-number>/<object-id>"
                               (if (try (js/JSON.parse (js/decodeURIComponent popUri))
                                     true

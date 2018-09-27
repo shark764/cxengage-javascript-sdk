@@ -242,20 +242,21 @@
 ;; CxEngage.interactions.messaging.initializeOutboundSms({
 ;;   phoneNumber: "+18005555555",
 ;;   message: "The message you want to send"
+;;   popUri: "{{string}}" (Optional, used for salesforce screen pop)
 ;; });
 ;; ----------------------------------------------------------------;;
 
 (s/def ::click-to-sms-params
   (s/keys :req-un [::specs/phone-number
                    ::specs/message]
-          :opt-on [::specs/callback]))
+          :opt-on [::specs/pop-uri ::specs/callback]))
 
 (def-sdk-fn click-to-sms
   ""
   {:validation ::click-to-sms-params
    :topic-key :initialize-outbound-sms-response}
   [params]
-  (let [{:keys [phone-number message topic callback]} params
+  (let [{:keys [phone-number message pop-uri topic callback]} params
         phone-number (iu/normalize-phone-number phone-number)
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
@@ -274,9 +275,12 @@
                   :channel-type "sms"
                   :direction "agent-initiated"
                   :metadata metadata
-                  :interaction {:message message
-                                :resource-id resource-id
-                                :session-id session-id}}
+                  :interaction (merge {:message message
+                                       :resource-id resource-id
+                                       :session-id session-id}
+                                      (if pop-uri
+                                        {:pop-uri pop-uri}
+                                        {}))}
         sms-response (a/<! (rest/create-interaction-request sms-body))
         {:keys [api-response status]} sms-response]
     (if (= status 200)
