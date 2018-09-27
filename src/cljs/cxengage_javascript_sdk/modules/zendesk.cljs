@@ -367,14 +367,14 @@
         (do (a/<! (a/timeout 250))
             (recur))))))
 
-(defn dump-state []
+(defn- dump-state []
   (js/console.log (clj->js @zendesk-state)))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Helper Functions
 ;; -------------------------------------------------------------------------- ;;
 
-(defn auto-assign-from-search-pop [search-result interaction-id type]
+(defn- auto-assign-from-search-pop [search-result interaction-id type]
   (let [agent-id (get @zendesk-state :zen-user-id)]
     (if (= type "user")
       (.then
@@ -388,7 +388,7 @@
         (fn []
           (assign-related-to (clj->js {:interactionId interaction-id :active-tab search-result})))))))
 
-(defn pop-search-modal [search-results interaction-id]
+(defn- pop-search-modal [search-results interaction-id]
   (let [region (state/get-region)
         env (name (state/get-env))]
     (.then (js/client.invoke
@@ -416,7 +416,7 @@
 ;; -------------------------------------------------------------------------- ;;
 
 ;; Helper function for handle-screen-pop strict and fuzzy search results
-(defn handle-search-results [search-results interaction interaction-id]
+(defn- handle-search-results [search-results interaction interaction-id]
   (cond
     (= (count search-results) 0) (ih/publish {:topics "cxengage/zendesk/search-and-pop-no-results-received"
                                               :response []})
@@ -435,7 +435,7 @@
                                   (pop-search-modal search-results interaction-id)
                                   (p/unsubscribe subscription-id))))))))
 
-(defn handle-work-offer [error topic interaction-details]
+(defn- handle-work-offer [error topic interaction-details]
   (let [interaction (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)
         {:keys [contact related-to pop-on-accept interactionId]} interaction]
@@ -446,7 +446,7 @@
         related-to (js/client.invoke "routeTo" "ticket" related-to)
         :else (log :info "No screen pop details on work offer"))))
 
-(defn handle-screen-pop [error topic interaction-details]
+(defn- handle-screen-pop [error topic interaction-details]
   (let [result (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)
         {:keys [pop-type pop-uri new-window size search-type filter filter-type terms interaction-id]} result
