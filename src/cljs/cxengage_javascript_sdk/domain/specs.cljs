@@ -79,6 +79,7 @@
 (s/def ::password string?)
 (s/def ::phone-number string?)
 (s/def ::plain-text-body string?)
+(s/def ::pop-uri string?)
 (s/def ::query map?)
 (s/def ::queries (s/coll-of ::stat-query))
 (s/def ::queue-id ::uuid)

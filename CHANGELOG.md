@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.17.0]
+* CXV1-15259 - Added screen pop for click to dial/sms for salesforce
+
 ## [8.16.1]
 * CXV1-13807 - Filter Private Functions from documentation
 
