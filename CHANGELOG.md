@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.17.2]
+* CXV1-15151 - Rename attributes customMetricsId, customMetricsName on SLA form to coincide with API new fixes.
+
 ## [8.17.1]
 * CXV1-15294 - Outbound Identifiers - Spec Fails when creating outbound identifier list. SDK treating Description as a required field.
 
