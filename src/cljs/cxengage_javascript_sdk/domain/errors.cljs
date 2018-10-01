@@ -1057,7 +1057,15 @@
    :level "error"
    :message "Failed to get outbound identifier lists."})
 
-(defn failed-to-create-outbound-identifier-list-err [data]
+(defn failed-to-create-outbound-identifier-list-err
+  "**Error Code:** 11034
+   Message: Failed to create outbound identifier list.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function are correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information."
+  [data]
   {:code 11034
    :context :entities
    :data {:api-response data}
