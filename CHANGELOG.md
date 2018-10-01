@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.17.1]
+* CXV1-15294 - Outbound Identifiers - Spec Fails when creating outbound identifier list. SDK treating Description as a required field.
+
 ## [8.17.0]
 * CXV1-15259 - Added screen pop for click to dial/sms for salesforce
 

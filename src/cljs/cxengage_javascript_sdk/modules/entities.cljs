@@ -882,20 +882,23 @@
                   :error (e/failed-to-create-email-template-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.createOutboundIdentifierList({
-;;   active: {{boolean}},
-;;   name: {{string}},
-;;   description: {{string}},
-;;})
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::create-outbound-identifier-list-params
-  (s/keys :req-un [::specs/active ::specs/name ::specs/description]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [::specs/active ::specs/name]
+          :opt-un [::specs/description ::specs/callback]))
 
 (def-sdk-fn create-outbound-identifier-list
-  ""
+  "``` javascript
+  CxEngage.entities.createOutboundIdentifierList({
+    active: {{boolean}},
+    name: {{string}},
+    description: {{string}} (optional)
+  });
+  ```
+  Create new list of outbound identifiers for current tenant
+
+  Possible Errors:
+
+  - [Entities: 11034](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-outbound-identifier-list-err)"
   {:validation ::create-outbound-identifier-list-params
    :topic-key :create-outbound-identifier-list-response}
   [params]
