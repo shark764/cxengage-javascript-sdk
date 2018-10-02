@@ -612,12 +612,15 @@
                   :error (e/failed-to-get-outbound-identifier-lists-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getCustomMetrics();
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn get-custom-metrics
-  ""
+  "``` javascript
+  CxEngage.entities.getCustomMetrics();
+  ```
+  Retrieves available Custom Metrics configured for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11040](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-custom-metrics-err)"
   {:validation ::get-entities-params
    :topic-key :get-custom-metrics-response}
   [params]
@@ -631,23 +634,27 @@
                   :error (e/failed-to-get-custom-metrics-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getCustomMetric({
-;;   customMetricsId: {{uuid}},
-;;})
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::get-custom-metric-params
-  (s/keys :req-un [::specs/custom-metrics-id]
+  (s/keys :req-un [::specs/custom-metric-id]
           :opt-un []))
 
 (def-sdk-fn get-custom-metric
-  ""
+  "``` javascript
+  CxEngage.entities.getCustomMetric({
+    customMetricId: {{uuid}},
+  });
+  ```
+  Retrieves single Custom Metrics given parameter customMetricId
+  as a unique key
+
+  Possible Errors:
+
+  - [Entities: 11041](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-custom-metric-err)"
   {:validation ::get-custom-metric-params
    :topic-key :get-custom-metric-response}
   [params]
-  (let [{:keys [callback topic custom-metrics-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "custom-metric" custom-metrics-id))]
+  (let [{:keys [callback topic custom-metric-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "custom-metric" custom-metric-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -662,7 +669,7 @@
   "``` javascript
   CxEngage.entities.getPermissions();
   ```
-  Retirieves Permissions for current logged in tenant
+  Retrieves Permissions for current logged in tenant
 
   Possible Errors:
 
@@ -685,7 +692,7 @@
   "``` javascript
   CxEngage.entities.getReasonLists();
   ```
-  Retirieves available ReasonLists for current logged in tenant
+  Retrieves available ReasonLists for current logged in tenant
 
   Possible Errors:
 
@@ -708,7 +715,7 @@
   "``` javascript
   CxEngage.entities.getReasons();
   ```
-  Retirieves available Presence Reasons for current logged in tenant
+  Retrieves available Presence Reasons for current logged in tenant
 
   Possible Errors:
 
@@ -731,7 +738,7 @@
   "``` javascript
   CxEngage.entities.getCapacityRules();
   ```
-  Retirieves available CapacityRules for current logged in tenant
+  Retrieves available CapacityRules for current logged in tenant
 
   Possible Errors:
 
@@ -754,7 +761,7 @@
   "``` javascript
   CxEngage.entities.getIntegrations();
   ```
-  Retirieves available Integrations for current logged in tenant
+  Retrieves available Integrations for current logged in tenant
 
   Possible Errors:
 
@@ -776,7 +783,7 @@
   "``` javascript
   CxEngage.entities.getRoles();
   ```
-  Retirieves available roles for current logged in tenant
+  Retrieves available roles for current logged in tenant
 
   Possible Errors:
 
@@ -1234,30 +1241,34 @@
                   :error (e/failed-to-remove-outbound-identifier-list-member-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.updateCustomMetric({
-;;   customMetricsId: {{uuid}},
-;;   slaThreshold: {{integer}},
-;;   slaAbandonType: {{string}},
-;;   status: {{boolean}},
-;;   customMetricsName: {{string}},
-;;   slaAbandonThreshold: {{integer}}, (optional)
-;;   customMetricsType: {{string}}, (optional)
-;;   description: {{string}}, (optional)
-;;})
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::update-custom-metric-params
-    (s/keys :req-un [::specs/custom-metrics-id ::specs/sla-threshold ::specs/sla-abandon-type ::specs/status ::specs/custom-metrics-name]
-            :opt-un [::specs/callback ::specs/sla-abandon-threshold ::specs/custom-metrics-type ::specs/description]))
+    (s/keys :req-un [::specs/custom-metric-id]
+            :opt-un [::specs/callback ::specs/sla-threshold ::specs/sla-abandon-type ::specs/active ::specs/name ::specs/sla-abandon-threshold ::specs/custom-metrics-type ::specs/description]))
 
 (def-sdk-fn update-custom-metric
-  ""
+  "``` javascript
+  CxEngage.entities.updateCustomMetric({
+    customMetricId: {{uuid}},
+    slaThreshold: {{integer}}, (optional)
+    slaAbandonType: {{string}}, (optional)
+    active: {{boolean}}, (optional)
+    name: {{string}}, (optional)
+    slaAbandonThreshold: {{integer}}, (optional)
+    customMetricsType: {{string}}, (optional)
+    description: {{string}}, (optional)
+  });
+  ```
+  Updates a single Custom Metric by calling rest/update-custom-metric-request
+  with the new data and customMetricId as the unique key.
+
+  Possible Errors:
+
+  - [Entities: 11042](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-custom-metric-err)"
   {:validation ::update-custom-metric-params
    :topic-key :update-custom-metric-response}
   [params]
-  (let [{:keys [custom-metrics-id sla-abandon-type status custom-metrics-name custom-metrics-type sla-threshold sla-abandon-threshold description  callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metrics-id status sla-abandon-type sla-threshold custom-metrics-name sla-abandon-threshold))]
+  (let [{:keys [custom-metric-id sla-abandon-type active name custom-metrics-type sla-threshold sla-abandon-threshold description  callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metric-id active sla-abandon-type sla-threshold name sla-abandon-threshold))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response

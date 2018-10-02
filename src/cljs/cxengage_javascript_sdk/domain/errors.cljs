@@ -1107,21 +1107,44 @@
    :level "error"
    :message "Failed to remove outbound identifier from list."})
 
-(defn failed-to-get-custom-metrics-err [data]
+(defn failed-to-get-custom-metrics-err
+  "**Error Code:** 11040
+   Message: Failed to get custom metrics list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
   {:code 11040
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to get custom metrics list."})
 
-(defn failed-to-get-custom-metric-err [data]
+(defn failed-to-get-custom-metric-err
+  "**Error Code:** 11041
+   Message: Failed to get custom metric.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function is correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 11041
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to get custom metric."})
 
-(defn failed-to-update-custom-metric-err [data]
+(defn failed-to-update-custom-metric-err
+  "**Error Code:** 11042
+   Message: Failed to update custom metric.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function are correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 11042
    :context :entities
    :data {:api-response data}
@@ -1238,7 +1261,7 @@
   "**Error Code:** 11051
    Message: Failed to get integrations.
 
-   This error is usually due to a unexpected status code returned from the API.
+   This error is usually due to an unexpected status code returned from the API.
    Validate the values passed into the sdk function were correct.
 
    **Solution:** Check your browsers dev tools console for additional error information"
