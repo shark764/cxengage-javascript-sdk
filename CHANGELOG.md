@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [8.18.0]
+* <no-ticket> - Removing the source maps generation from the make-prod-release task (they don't work anyways).
+* <no-ticket> - Adding a new boot task: make-dev-release, so we can have source maps in that one.
+
 ## [8.17.2]
 * CXV1-15151 - Rename attributes customMetricsId, customMetricsName on SLA form to coincide with API new fixes.
 
