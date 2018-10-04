@@ -102,7 +102,7 @@
                                           :language-out :ecmascript5
                                           :verbose true
                                           :source-map (when gen-source-maps 
-                                                          "release/main.js.map")}})
+                                                            "release/main.js.map")}})
   (comp (cljs)))
 
 (ns-unmap 'boot.user 'test)

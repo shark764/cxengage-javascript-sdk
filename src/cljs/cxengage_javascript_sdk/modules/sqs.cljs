@@ -18,7 +18,9 @@
   [response<]
   (fn [err data]
     (if err
-      (log :error err)
+      (go
+        (log :error err)
+        (>! response< {:error err}))
       (go
         (>! response< (->> data
                            js->clj
@@ -84,7 +86,9 @@
                          :ReceiptHandle receipt-handle})]
     (.deleteMessage sqs params (fn [err data]
                                  (when err
-                                   (log :error err))))))
+                                   (log :error err)
+                                   (p/publish {:topics (topics/get-topic :failed-to-delete-sqs-message)
+                                               :error (e/failed-to-delete-sqs-message err)}))))))
 
 (defn- sqs-init*
   [integration on-received]
@@ -139,27 +143,47 @@
                             new-sqs-queue (AWS.SQS. new-options)
                             response< (receive-message* new-sqs-queue new-sqs-queue-url)
                             value (a/<! response<)]
-                        (if (= value :shutdown)
+                        (cond
+                          (contains? value :error)
+                          (do
+                            (p/publish {:topics (topics/get-topic :failed-to-receive-sqs-message)
+                                        :error (e/failed-to-receive-sqs-message (:error value))})
+                            (a/<! (a/timeout 2000))
+                            (recur new-sqs-queue
+                                   new-sqs-queue-url
+                                   new-sqs-needs-refresh-time))
+                          (= value :shutdown)
                           (do (log :info "Shutting down SQS")
                               (state/remove-enabled-module! "sqs")
                               (p/publish {:topics (topics/get-topic :sqs-shut-down)
                                           :response nil})
                               nil)
-                          (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
-                            (when-let [msg (js/JSON.parse message)]
-                              (on-received msg))
-                            (recur new-sqs-queue
-                                   new-sqs-queue-url
-                                   new-sqs-needs-refresh-time))))))))))
+                          :else
+                           (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
+                             (when-let [msg (js/JSON.parse message)]
+                               (on-received msg))
+                             (recur new-sqs-queue
+                                    new-sqs-queue-url
+                                    new-sqs-needs-refresh-time))))))))))
         ;; It is still less than 1/2 of the TTL for the previously instantiated SQS Queue object, continue using the same one
         (let [response< (receive-message* sqs-queue sqs-queue-url)
               value (a/<! response<)]
-          (if (= value :shutdown)
+          (cond
+            (contains? value :error)
+            (do
+              (p/publish {:topics (topics/get-topic :failed-to-receive-sqs-message)
+                          :error (e/failed-to-receive-sqs-message (:error value))})
+              (a/<! (a/timeout 2000))
+              (recur sqs-queue
+                     sqs-queue-url
+                     sqs-needs-refresh-time))
+            (= value :shutdown)
             (do (log :info "Shutting down SQS")
                 (state/remove-enabled-module! "sqs")
                 (p/publish {:topics (topics/get-topic :sqs-shut-down)
                             :response nil})
                 nil)
+            :else
             (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
               (when-let [msg (js/JSON.parse message)]
                 (on-received msg))
