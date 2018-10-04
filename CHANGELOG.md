@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.18.1]
+* <no-ticket> - Adding condition to handle sla-abandon-threshold when type ignored-abandoned-calls is selected.
+
 ## [8.18.0]
 * <no-ticket> - Removing the source maps generation from the make-prod-release task (they don't work anyways).
 * <no-ticket> - Adding a new boot task: make-dev-release, so we can have source maps in that one.

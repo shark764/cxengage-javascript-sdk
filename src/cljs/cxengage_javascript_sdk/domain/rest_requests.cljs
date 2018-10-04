@@ -357,16 +357,14 @@
         update-custom-metric-request (cond-> {:method :put
                                               :url (iu/api-url "tenants/:tenant-id/custom-metrics/:custom-metric-id"
                                                             {:tenant-id tenant-id :custom-metric-id custom-metric-id})}
-                                            (not (nil? description))                (assoc-in [:body :description] description)
-                                            custom-metrics-type                     (assoc-in [:body :custom-metrics-type] custom-metrics-type)
-                                            (not (nil? active))                     (assoc-in [:body :active] active)
-                                            (not (nil? sla-abandon-type))           (assoc-in [:body :sla-abandon-type] sla-abandon-type)
-                                            (not (nil? sla-threshold))              (assoc-in [:body :sla-threshold] sla-threshold)
-                                            (not (nil? name))                       (assoc-in [:body :name] name)
-                                            sla-abandon-threshold                   (assoc-in [:body :sla-abandon-threshold]
-                                                                                      (if (= sla-abandon-type "ignored-abandoned-calls")
-                                                                                          sla-abandon-threshold
-                                                                                          nil)))]
+                                            (not (nil? description))                        (assoc-in [:body :description] description)
+                                            (not (nil? custom-metrics-type))                (assoc-in [:body :custom-metrics-type] custom-metrics-type)
+                                            (not (nil? active))                             (assoc-in [:body :active] active)
+                                            (not (nil? sla-abandon-type))                   (assoc-in [:body :sla-abandon-type] sla-abandon-type)
+                                            (not (nil? sla-threshold))                      (assoc-in [:body :sla-threshold] sla-threshold)
+                                            (not (nil? name))                               (assoc-in [:body :name] name)
+                                            (= sla-abandon-type "ignored-abandoned-calls")  (assoc-in [:body :sla-abandon-threshold] sla-abandon-threshold)
+                                            (= sla-abandon-type "count-against-sla")        (assoc-in [:body :sla-abandon-threshold] nil))]
     (api/api-request update-custom-metric-request)))
 
 (defn get-layout-request [layout-id]
