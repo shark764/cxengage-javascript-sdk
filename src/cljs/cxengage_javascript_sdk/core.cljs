@@ -33,7 +33,7 @@
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]
             [cxengage-javascript-sdk.modules.testing :as testing]))
 
-(def *SDK-VERSION* "8.18.2")
+(def *SDK-VERSION* "8.18.3")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -65,7 +65,7 @@
         contacts (contacts/map->ContactsModule.)
         logging (logging/map->LoggingModule.)
         reporting (reporting/map->ReportingModule.)
-        testing (testing/map->TestingModule. )]
+        testing (testing/map->TestingModule.)]
     (doseq [module [authentication session interaction entities contacts logging reporting testing]]
       (start-internal-module module))))
 
@@ -89,10 +89,9 @@
         messaging {:name "messaging" :record (messaging/map->MessagingModule {:on-msg-fn int/messaging-msg-router})}
         voice {:name "voice" :record (voice/map->VoiceModule.)}
         email {:name "email" :record (email/map->EmailModule.)}
-        reporting {:name "reporting" :record (reporting/map->ReportingModule.)}
         twilio {:name "twilio" :record (twilio/map->TwilioModule.)}
         modules-to-be-enabled (if-not (state/get-supervisor-mode)
-                                [sqs messaging voice email reporting twilio]
+                                [sqs messaging voice email twilio]
                                 (if (state/is-default-extension-twilio)
                                   [sqs voice twilio]
                                   [sqs voice]))]

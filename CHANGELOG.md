@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.18.3]
+* CXV1-15353 - Fixed duplicate batch polling
+
 ## [8.18.2]
 * CXV1-15422 - Js-utils version bump to 1.3.1. Update references from utils inside each repo to serenova-js-utils.
 
