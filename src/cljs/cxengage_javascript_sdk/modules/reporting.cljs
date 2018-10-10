@@ -23,7 +23,7 @@
     (go-loop [polling-delay-param polling-delay]
       (a/<! (a/timeout polling-delay-param))
       (if (empty? (:statistics @stat-subscriptions))
-        (recur polling-delay-param)
+        (recur polling-delay)
         (let [batch-body (:statistics @stat-subscriptions)
               {:keys [api-response status]} (a/<! (rest/batch-request batch-body))
               {:keys [results]} api-response]
