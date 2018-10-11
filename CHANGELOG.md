@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.19.1]
+* CXV1-15293 - Removing a callback in add-stat-subscription to avoid getting response of the batch-request when adding a new subscription.
+
 ## [8.19.0]
 * CXV1-14306 - Added SQS on-message error retry logic
 

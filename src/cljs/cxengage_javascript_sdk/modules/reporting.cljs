@@ -71,11 +71,9 @@
       (if (= status 200)
         (p/publish {:topics batch-topic
                     :response results
-                    :callback callback
                     :preserve-casing? true})
         (p/publish {:topics batch-topic
-                    :error (e/reporting-batch-request-failed-err batch-body batch-response)
-                    :callback callback})))))
+                    :error (e/reporting-batch-request-failed-err batch-body batch-response)})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.triggerBatch();
