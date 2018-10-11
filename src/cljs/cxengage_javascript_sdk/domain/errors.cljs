@@ -434,6 +434,42 @@
    :level "session-fatal"
    :message "Failed to refresh SQS Queue object. Unable to continue agent notification polling."})
 
+(defn failed-to-delete-sqs-message [error]
+  "**Error Code:** 5001
+   Message: Failed to delete sqs message. Will likely receive the previous message again.
+
+   This error occurs when the AWS SQS SDK is unable to remove the SQS message from the queue.
+   This will likely result in the SQS message coming in again.
+   
+   **Solution:** This should only happen once in a while. If it does, it can probably be ignored.
+   If it happens more frequently, you may need to inviestigate more into the SQS settings.
+   
+   Support Notes: This is most likely caused by internet connectivity issues."
+  {:code 5001
+   :context :sqs
+   :data {:error error}
+   :level "warn"
+   :log-level "error"
+   :message "Failed to delete sqs message. Will likely receive the previous message again."})
+
+(defn failed-to-receive-sqs-message [error]
+  "**Error Code:** 5002
+    Message: Failed to receive sqs message. Will retry in 2 seconds.
+
+    This error occurs when the AWS SQS SDK is unable to receive a message.
+    CxEngage SDK will retry again every 2 seconds until it properly receives it.
+    
+    **Solution:** This should only happen once in a while. If it does, it can probably be ignored.
+    If it happens more frequently, you may need to inviestigate more into the SQS settings.
+    
+    Support Notes: This is most likely caused by internet connectivity issues."
+  {:code 5002
+   :context :sqs
+   :data {:error error}
+   :level "warn"
+   :log-level "error"
+   :message "Failed to receive sqs message. Will retry in 2 seconds."})
+
 (defn failed-to-retrieve-messaging-history-err [interaction-id data]
   {:code 6000
    :context :messaging
@@ -771,6 +807,7 @@
    :data {:interaction-id interaction-id
           :api-response data}
    :level "warn"
+   :log-level "error"
    :message "Failed to send agent reply started signal. Reporting around this email may be affected."})
 
 (defn failed-to-send-agent-no-reply-err [interaction-id data]
@@ -779,6 +816,7 @@
    :data {:interaction-id interaction-id
           :api-response data}
    :level "warn"
+   :log-level "error"
    :message "Failed to send agent no reply signal. Reporting around this email may be affected."})
 
 (defn failed-to-send-email-reply-err [interaction-id data]
@@ -1181,10 +1219,10 @@
    **Solution:** Check network tab for additional error information."
   [data]
   {:code 11045
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to get integrations."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get integrations."})
 
 (defn failed-to-get-capacity-rules-err 
   "**Error Code:** 11046
@@ -1195,10 +1233,10 @@
    **Solution:** Check network tab for additional error information."
   [data]
   {:code 11046
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to get capacity rules."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get capacity rules."})
 
 (defn failed-to-get-reasons-err 
   "**Error Code:** 11047
@@ -1209,10 +1247,10 @@
    **Solution:** Check network tab for additional error information."
   [data]
   {:code 11047
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to get presence reasons."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get presence reasons."})
 
 (defn failed-to-get-reason-lists-err 
   "**Error Code:** 11048
@@ -1223,10 +1261,10 @@
    **Solution:** Check network tab for additional error information."
   [data]
   {:code 11048
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to get presence reason lists."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get presence reason lists."})
 
 (defn failed-to-get-permissions-err 
   "**Error Code:** 11049
@@ -1237,10 +1275,10 @@
    **Solution:** Check network tab for additional error information."
   [data]
   {:code 11049
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to get permissions."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get permissions."})
 
 (defn failed-to-create-role-err 
   "**Error Code:** 11050
@@ -1252,10 +1290,10 @@
    **Solution:** Check your browsers dev tools console for additional error information."
   [data]
   {:code 11050
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to create role."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create role."})
 
 (defn failed-to-update-role-err 
   "**Error Code:** 11051
@@ -1267,10 +1305,10 @@
    **Solution:** Check your browsers dev tools console for additional error information"
   [data]
   {:code 11051
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to update role."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update role."})
 
 ;;hygen-insert-before-11000s
 

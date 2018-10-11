@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.19.0]
+* CXV1-14306 - Added SQS on-message error retry logic
+
 ## [8.18.3]
 * CXV1-15353 - Fixed duplicate batch polling
 

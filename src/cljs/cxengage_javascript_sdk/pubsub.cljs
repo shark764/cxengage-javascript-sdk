@@ -86,14 +86,19 @@
 
 (defn format-request-logs
   [log]
-  (let [{:keys [level data]} log
+  (let [{:keys [log-level level data]} log
         date-time (js/Date.)]
     (try
       (let [data (-> data
                      (clj->js)
-                     (js/JSON.stringify))]
+                     (js/JSON.stringify))
+            log-level (if log-level
+                        log-level
+                        (if (or (= "session-fatal" level) (= "interaction-fatal"))
+                          "error"
+                          level))]
         (assoc {}
-               :level "info"
+               :level log-level
                :message (js/JSON.stringify (clj->js {:data data :original-client-log-level (name level)}))
                :timestamp (.toISOString date-time)))
       (catch js/Object e
