@@ -663,6 +663,85 @@
                   :error (e/failed-to-get-custom-metric-err entity-response)
                   :callback callback}))))
 
+(def-sdk-fn get-historical-report-folders
+  "``` javascript
+  CxEngage.entities.getHistoricalReportFolders();
+  ```
+  Retrieves available Report Types configured for current logged in tenant
+
+  Topic: cxengage/entities/get-historical-report-folders-response
+
+  Possible Errors:
+
+  - [Entities: 11052](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-historical-report-folders-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-historical-report-folders-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "historical-report-folder"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-historical-report-folders-err entity-response)
+                  :callback callback}))))
+
+(def-sdk-fn get-data-access-reports
+  "``` javascript
+  CxEngage.entities.getDataAccessReports();
+  ```
+  Retrieves available Data Access Controls configured for current logged in tenant
+
+  Topic: cxengage/entities/get-data-access-reports-response
+
+  Possible Errors:
+
+  - [Entities: 11053](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-data-access-reports-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-data-access-reports-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "data-access-report"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-data-access-reports-err entity-response)
+                  :callback callback}))))
+
+(s/def ::get-data-access-report-params
+  (s/keys :req-un [::specs/data-access-report-id]
+          :opt-un []))
+
+(def-sdk-fn get-data-access-report
+  "``` javascript
+  CxEngage.entities.getDataAccessReport({
+    dataAccessReportId: {{uuid}}
+  });
+  ```
+  Retrieves single Data Access Controls given parameter dataAccessReportId
+  as a unique key
+
+  Topic: cxengage/entities/get-data-access-report-response
+
+  Possible Errors:
+
+  - [Entities: 11054](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-data-access-report-err)"
+  {:validation ::get-data-access-report-params
+   :topic-key :get-data-access-report-response}
+  [params]
+  (let [{:keys [callback topic data-access-report-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "data-access-report" data-access-report-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-data-access-report-err entity-response)
+                  :callback callback}))))
+
 ;;hygen-insert-before-get
 
 (def-sdk-fn get-permissions
@@ -917,6 +996,43 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-create-outbound-identifier-list-err entity-response)
+                  :callback callback}))))
+
+(s/def ::create-data-access-report-params
+  (s/keys :req-un [::specs/name ::specs/active ::specs/report-type]
+            :opt-un [::specs/callback ::specs/description ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name]))
+
+(def-sdk-fn create-data-access-report
+  "``` javascript
+  CxEngage.entities.createDataAccessReport({
+    name: {{string}},
+    description: {{string}}, (optional)
+    active: {{boolean}},
+    reportType: {{string}},
+    realtimeReportType: {{string}}, (optional)
+    realtimeReportName: {{string}}, (optional)
+    historicalCatalogName: {{string}}, (optional)
+  });
+  ```
+  Creates new single Data Access Report by calling rest/create-data-access-report-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-data-access-report-response
+
+  Possible Errors:
+
+  - [Entities: 11055](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-data-access-report-err)"
+  {:validation ::create-data-access-report-params
+   :topic-key :create-data-access-report-response}
+  [params]
+  (let [{:keys [name description active report-type realtime-report-type realtime-report-name historical-catalog-name callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-data-access-report-request name description active report-type realtime-report-type realtime-report-name historical-catalog-name))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-data-access-report-err entity-response)
                   :callback callback}))))
 
 ;;hygen-insert-before-create
@@ -1267,7 +1383,7 @@
   {:validation ::update-custom-metric-params
    :topic-key :update-custom-metric-response}
   [params]
-  (let [{:keys [custom-metric-id sla-abandon-type active name custom-metrics-type sla-threshold sla-abandon-threshold description  callback topic]} params
+  (let [{:keys [custom-metric-id sla-abandon-type active name custom-metrics-type sla-threshold sla-abandon-threshold description callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metric-id active sla-abandon-type sla-threshold name sla-abandon-threshold))]
     (if (= status 200)
       (p/publish {:topics topic
@@ -1275,6 +1391,44 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-update-custom-metric-err entity-response)
+                  :callback callback}))))
+
+(s/def ::update-data-access-report-params
+    (s/keys :req-un [::specs/data-access-report-id]
+            :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/report-type ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name]))
+
+(def-sdk-fn update-data-access-report
+  "``` javascript
+  CxEngage.entities.updateDataAccessReport({
+    dataAccessReportId: {{uuid}},
+    name: {{string}}, (optional)
+    description: {{string}}, (optional)
+    active: {{boolean}}, (optional)
+    reportType: {{string}}, (optional)
+    realtimeReportType: {{string}}, (optional)
+    realtimeReportName: {{string}}, (optional)
+    historicalCatalogName: {{string}}, (optional)
+  });
+  ```
+  Updates a single Data Access Report by calling rest/update-data-access-report-request
+  with the new data and dataAccessReportId as the unique key.
+
+  Topic: cxengage/entities/update-data-access-report-response
+
+  Possible Errors:
+
+  - [Entities: 11056](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-data-access-report-err)"
+  {:validation ::update-data-access-report-params
+   :topic-key :update-data-access-report-response}
+  [params]
+  (let [{:keys [data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-data-access-report-request data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-data-access-report-err entity-response)
                   :callback callback}))))
 
 ;;hygen-insert-before-update
@@ -1409,6 +1563,9 @@
                                        :get-reasons get-reasons
                                        :get-reason-lists get-reason-lists
                                        :get-permissions get-permissions
+                                       :get-historical-report-folders get-historical-report-folders
+                                       :get-data-access-reports get-data-access-reports
+                                       :get-data-access-report get-data-access-report
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
@@ -1416,6 +1573,7 @@
                                        :create-outbound-identifier create-outbound-identifier
                                        :create-outbound-identifier-list create-outbound-identifier-list
                                        :create-role create-role
+                                       :create-data-access-report create-data-access-report
                                       ;;hygen-insert-above-create
                                        :update-user update-user
                                        :update-list update-list
@@ -1431,6 +1589,7 @@
                                        :remove-role-list-member remove-role-list-member
                                        :update-custom-metric update-custom-metric
                                        :update-role update-role
+                                       :update-data-access-report update-data-access-report
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template

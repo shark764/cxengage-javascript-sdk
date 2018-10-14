@@ -1,6 +1,13 @@
-# Change Log
+# Changelog
+All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [8.20.0] - 2018-10-15
+### Added
+- CXV1-15018 - Adding new SDK Functions for Data Access Control (Create, Update Get All, Get)
+- Adding function to get a list of historical report folders.
 
 ## [8.19.2]
 * CXV1-13818 - Documentation for Session Module

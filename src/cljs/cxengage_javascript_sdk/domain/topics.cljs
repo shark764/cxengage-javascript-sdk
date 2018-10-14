@@ -99,6 +99,11 @@
                  :get-permissions-response "cxengage/entities/get-permissions-response"
                  :create-role-response "cxengage/entities/create-role-response"
                  :update-role-response "cxengage/entities/update-role-response"
+                 :get-historical-report-folders-response "cxengage/entities/get-historical-report-folders-response"
+                 :get-data-access-reports-response "cxengage/entities/get-data-access-reports-response"
+                 :get-data-access-report-response "cxengage/entities/get-data-access-report-response"
+                 :create-data-access-report-response "cxengage/entities/create-data-access-report-response"
+                 :update-data-access-report-response "cxengage/entities/update-data-access-report-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
