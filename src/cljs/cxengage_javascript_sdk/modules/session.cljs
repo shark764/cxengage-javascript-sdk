@@ -13,22 +13,40 @@
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.specs :as specs]))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.goNotReady({
-;;   reasonInfo: {
-;;     reason: "{{string}}",
-;;     reasonId: "{{uuid}}",
-;;     reasonListId: "{{uuid}}"
-;;   }
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::go-not-ready-spec
   (s/keys :req-un []
           :opt-un [::specs/callback ::specs/reason-info]))
 
 (def-sdk-fn go-not-ready
-  ""
+  "The goNotReady function is used to set an agent's state to one that is unable
+  to receive new work offers. This function can be used one of two ways.
+
+  The first way is to call the function without any parameters. This will set an
+  agent to the default not ready state, without any additional context provided.
+
+  ``` javascript
+  CxEngage.session.goNotReady();
+  ```
+
+  The second way to call this function is to pass in a set of data containing
+  three properties: reason, reasonId, and reasonListId. These are used to provide
+  context to the state change.
+
+  ``` javascript
+  CxEngage.session.goNotReady({
+    reasonInfo: {
+       reason: '{{string}}',
+       reasonId: '{{uuid}}',
+       reasonListId: '{{uuid}}'
+    }
+  });
+  ```
+
+  Possible Errors:
+
+  - [Session: 2004](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-change-state-err)
+  - [Session: 2007](/cxengage-javascript-sdk.domain.errors.html#var-invalid-reason-info-err)
+  "
   {:validation ::go-not-ready-spec
    :topic-key :presence-state-change-request-acknowledged}
   [params]
@@ -135,7 +153,35 @@
           :opt-un [::specs/callback ::specs/no-session ::specs/silent-monitoring]))
 
 (def-sdk-fn set-active-tenant
-  ""
+  "The setActiveTenant function is used to bootstrap necessary user and tenant
+  data, integrations, and sessions. Tenant ID is it's only required parameter, but
+  it allows for two other option parameters that impact how your session will
+  behave.
+
+  ``` javascript
+  CxEngage.session.setActiveTenant({
+    tenantId: '{{uuid}}',
+    noSession: '{{bool}}', <Optional>
+    silentMonitoring: '{{bool}}', <Optional>
+  });
+  ```
+  The 'noSession' flag will set the user's active tenant as normal, but will
+  forgo the session creation and heartbeat polling.
+
+  The 'silentMonitoring' flag will set the user's active tenant as normal, and
+  will start a session as normal, with the caveat that the session will be omitted
+  from reporting data.
+
+
+  Possible Errors:
+
+  - [Session: 2001](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-session-config-err)
+  - [Session: 2002](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-start-agent-session-err)
+  - [Session: 2003](/cxengage-javascript-sdk.domain.errors.html#var-session-heartbeats-failed-err)
+  - [Session: 2006](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-extension-err)
+  - [Session: 2010](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-tenant-err)
+  - [Session: 2011](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-region-err)
+  "
   {:validation ::set-active-tenant-spec
    :topic-key :active-tenant-set}
   [params]
@@ -169,7 +215,26 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn set-direction
-  ""
+  "
+  ``` javascript
+  CxEngage.session.setDirection({
+    direction: {{'inbound' / 'outbound' / 'agent-initiated'}}
+  });
+  ```
+
+  Used to set an Agent's direction to one of three available options:
+
+  - inbound
+  - outbound
+  - agent-initiated
+
+  Please refer to our [documentation](https://docs.cxengage.net/Help/Content/Skylight/Tutorials/SkylightCRMNavigation.htm?Highlight=direction) for a detailed description of the differences
+  between each direction.
+
+  Possible Errors:
+
+  - [Session: 2008](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-set-direction-err)
+  "
   {:validation ::set-direction-spec
    :topic-key :set-direction-response}
   [params]
@@ -209,7 +274,23 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn go-ready
-  ""
+  "
+  ``` javascript
+  CxEngage.session.goReady({
+    extensionValue: {{uuid}}
+  });
+  ```
+
+  Used to put the Agent in a 'ready' state. Requires a UUID or value string to
+  identity which extension to initalize.
+
+  Possible Errors:
+
+  - [Session: 2001](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-session-config-err)
+  - [Session: 2005](/cxengage-javascript-sdk.domain.errors.html#var-invalid-extension-provided-err)
+  - [Session: 2006](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-extension-err)
+  - [Session: 2008](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-user-extensions-err)
+  "
   {:validation ::go-ready-spec
    :topic-key :presence-state-change-request-acknowledged}
   [params]
@@ -261,11 +342,13 @@
                 ;; same, no user update request is necessary, simply go ready.
                 (go-ready* topic callback))))))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.getActiveUserId();
-;; -------------------------------------------------------------------------- ;;
-
-(defn get-active-user-id [& params]
+(defn get-active-user-id
+  "``` javascript
+  CxEngage.session.getActiveUserId();
+  ```
+  Used to fetch the active user ID currently stored in state. Will return null
+  otherwise."
+  [& params]
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         user-id (state/get-active-user-id)]
@@ -274,11 +357,13 @@
                 :callback callback})
     user-id))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.getActiveTenantId();
-;; -------------------------------------------------------------------------- ;;
-
-(defn get-active-tenant-id [& params]
+(defn get-active-tenant-id
+  "``` javascript
+  CxEngage.session.getActiveTenantId();
+  ```
+  Used to fetch the active tenant ID currently stored in state. Will return null
+  otherwise."
+  [& params]
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         tenant-id (state/get-active-tenant-id)]
@@ -287,11 +372,13 @@
                 :callback callback})
     tenant-id))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.getToken();
-;; -------------------------------------------------------------------------- ;;
-
-(defn get-token [& params]
+(defn get-token
+  "``` javascript
+  CxEngage.session.getToken();
+  ```
+  Used to fetch the auth token currently stored in state. Will return null
+  otherwise."
+  [& params]
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         token (state/get-token)]
@@ -304,7 +391,13 @@
 ;; CxEngage.session.setToken();
 ;; -------------------------------------------------------------------------- ;;
 
-(defn set-token [& params]
+(defn set-token
+  "``` javascript
+  CxEngage.session.setToken('{{string}}');
+  ```
+  Used to set the token property in the SDK's internal state. Useful for SSO as
+  well as refreshing tokens."
+  [& params]
   (let [token (first params)
         callback (second params)
         callback (if (fn? callback) callback nil)
@@ -318,7 +411,12 @@
 ;; CxEngage.session.setUserIdentity();
 ;; -------------------------------------------------------------------------- ;;
 
-(defn set-user-identity [& params]
+(defn set-user-identity
+  "``` javascript
+  CxEngage.session.setUserIdentity('{{uuid}}');
+  ```
+  Used to set the userIdentity property in the SDK's internal state."
+  [& params]
   (let [user (first params)
         callback (second params)
         callback (if (fn? callback) callback nil)
@@ -328,11 +426,13 @@
                 :callback callback})
     user))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.getSSOToken();
-;; -------------------------------------------------------------------------- ;;
-
-(defn get-sso-token [& params]
+(defn get-sso-token
+  "``` javascript
+  CxEngage.session.getSSOToken();
+  ```
+  Used to fetch the SSO token currently stored in state. Will return null
+  otherwise."
+  [& params]
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         token (state/get-sso-token)]
@@ -341,11 +441,12 @@
                 :callback callback})
     token))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.getLocale();
-;; -------------------------------------------------------------------------- ;;
-
-(defn set-locale [& params]
+(defn set-locale
+  "``` javascript
+  CxEngage.session.setLocale('{{string}}');
+  ```
+  Used to set the locale property in the SDK's internal state."
+  [& params]
   (let [param-obj (js->clj (first params) :keywordize-keys true)
         {:keys [locale]} param-obj
         callback (second params)
@@ -356,11 +457,13 @@
                 :callback callback})
     locale))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.getDefaultExtension();
-;; -------------------------------------------------------------------------- ;;
-
-(defn get-default-extension [& params]
+(defn get-default-extension
+  "``` javascript
+  CxEngage.session.getDefaultExtension();
+  ```
+  Used to fetch the user's default extension currently stored in state. Will
+  return null otherwise."
+  [& params]
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         extension (clj->js (state/get-default-extension))]
@@ -378,7 +481,16 @@
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-tenant-details
-  ""
+  "``` javascript
+  CxEngage.session.getTenantDetails();
+  ```
+
+  This function is used to retrieve details of all tenants associated with the
+  actively authenticated user.
+
+  Possible Errors:
+
+  - [Session: 2012](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-tenant-details-err)"
   {:validation ::get-tenant-details-spec
    :topic-key :get-tenant-details}
   [params]
@@ -394,11 +506,13 @@
                   :error (e/failed-to-get-tenant-details-err resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.getMonitoredInteraction();
-;; -------------------------------------------------------------------------- ;;
-
-(defn get-monitored-interaction [& params]
+(defn get-monitored-interaction
+  "``` javascript
+  CxEngage.session.getMonitoredInteraction();
+  ```
+  Used to fetch the interaction ID of a call being silent monitored. Will return null
+  otherwise."
+  [& params]
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         interaction (state/get-monitored-interaction)]
@@ -411,7 +525,12 @@
 ;; CxEngage.session.clearMonitoredInteraction();
 ;; -------------------------------------------------------------------------- ;;
 
-(defn clear-monitored-interaction [& params]
+(defn clear-monitored-interaction
+  "``` javascript
+  CxEngage.session.clearMonitoredInteraction();
+  ```
+  Used to clear the interaction ID once a call is no longer being monitored."
+  [& params]
   (let [callback (first params)
         callback (if (fn? callback) callback nil)
         _ (state/set-monitored-interaction! nil)]

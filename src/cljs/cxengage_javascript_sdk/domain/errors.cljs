@@ -69,84 +69,205 @@
    :level "error"
    :message "You lack sufficient permissions in order to perform this action."})
 
-(defn failed-to-get-session-config-err [data]
+(defn failed-to-get-session-config-err
+  "**Error Code:** 2001
+   Message: Failed to get user session config. The API returned an error.
+
+   This error can be thrown if an Agent attempts to select their tenant and the
+   API returns an error.
+
+   **Solution:** Refresh the browser and attempt to select the tenant once more.
+   If it continues to fail, ensure that the tenant's integrations are configured
+   properly.
+
+   Support Notes: The Config route returns integration information and is an
+   expensive API request. The API could be timing out trying to fetch integration
+   data."
+  [data]
   {:code 2001
    :context :session
    :data {:api-response data}
    :level "error"
    :message "Failed to get user session config. The API returned an error."})
 
-(defn failed-to-start-agent-session-err [data]
+(defn failed-to-start-agent-session-err
+  "**Error Code:** 2002
+   Message: Failed to start an agent session. The API returned an error.
+
+   This error can be thrown if an Agent attempts to select their tenant and the
+   API returns an error.
+
+   **Solution:** Refresh the browser and attempt to select the tenant once more.
+
+   Support Notes: This error may indicate an issue with Presence."
+  [data]
   {:code 2002
    :context :session
    :data {:api-response data}
    :level "error"
    :message "Failed to start an agent session. The API returned an error."})
 
-(defn session-heartbeats-failed-err [data]
+(defn session-heartbeats-failed-err
+  "**Error Code:** 2003
+   Message: Session heartbeats failed. Unable to continue using agent session.
+
+   This error can be thrown if an Agent attempts to select their tenant and the
+   API returns an error. Alternatively, this error can be thrown if an Agent's
+   session was forcefully expired.
+
+   **Solution:** Refresh the browser and login again.
+
+   Support Notes: The error indicates the Agent logged in elsewhere, and as a
+   result, their session was forcefully expired. Alternatively, this error may
+   indicate an issue with Presence."
+  [data]
   {:code 2003
    :context :session
    :data {:api-response data}
    :level "session-fatal"
    :message "Session heartbeats failed. Unable to continue using agent session."})
 
-(defn failed-to-change-state-err [data]
+(defn failed-to-change-state-err
+  "**Error Code:** 2004
+   Message: Failed to change agent state. The API returned an error.
+
+   This error can be thrown if an Agent attempts to change their state and the API
+   request returns an error.
+
+   **Solution:** Attempt to change state again shortly after it fails, if it
+   continues to fail try restarting the browser.
+
+   Support Notes: In the case of a 500 error, this would be a problem with
+   Presence."
+  [data]
   {:code 2004
    :context :session
    :data {:api-response data}
    :level "error"
    :message "Failed to change agent state. The API returned an error."})
 
-(defn invalid-extension-provided-err [data]
+(defn invalid-extension-provided-err
+  "**Error Code:** 2005
+   Message: Invalid extension provided. Must be in the list of extensions provided via your user config. Unable to transition agent to a ready state.
+
+   This error can be thrown if an Agent attempts to go ready with an invalid
+   extension.
+
+   **Solution:** Ensure the Agent's extensions are properly configured, refresh
+   the browser and attempt to go ready once more.
+
+   Support Notes: this error could indicate misconfigured extensions, or the SDK
+   being out of sync with the user's extension data. Relogging should fix this
+   issue."
+  [data]
   {:code 2005
    :context :session
    :data {:valid-extensions data}
    :level "error"
    :message "Invalid extension provided. Must be in the list of extensions provided via your user config. Unable to transition agent to a ready state."})
 
-(defn failed-to-update-extension-err [data]
+(defn failed-to-update-extension-err
+  "**Error Code:** 2006
+   Message: Failed to update user extension. Unable to transition agent to ready state.
+
+   This error can be thrown if an Agent attempts to go ready with a new extension,
+   and the API returns an error while trying to update their active extension.
+
+   **Solution:** If this error occurs after refreshing the browser and logging in
+   again, have an administrator change the Agent's primary extension manually."
+  [data]
   {:code 2006
    :context :session
    :data {:api-response data}
    :level "error"
    :message "Failed to update user extension. Unable to transition agent to ready state."})
 
-(defn invalid-reason-info-err [data]
+(defn invalid-reason-info-err
+  "**Error Code:** 2007
+   Message: Invalid reason info provided. Must be in the list of reasons
+   provided via your user config. Unable to transition agent to a not ready.
+
+   This error can be thrown if the reason they are attempting to go not ready
+   with was not included in their user data on login.
+
+   **Solution:** In the event this error does occur, try changing state without
+   a reason code. Once this is done, attempt to switch to the desired reason code.
+
+   Support Notes: The SDK's internal list of available reason codes for the user
+   to switch to refreshes on state change. Therefore, switching to not-ready
+   without a reason list should refresh that list allowing the user to then switch
+   to the desired code."
+  [data]
   {:code 2007
    :context :session
    :data {:valid-reasons data}
    :level "error"
    :message "Invalid reason info provided. Must be in the list of reasons provided via your user config. Unable to transition agent to a not ready"})
 
-(defn failed-to-set-direction-err [data]
+(defn failed-to-set-direction-err
+  "**Error Code:** 2008
+   Message: Failed to set user direction. The API returned an error.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 2008
    :context :session
    :data {:api-response data}
    :level "error"
    :message "Failed to set user direction. The API returned an error."})
 
-(defn failed-to-get-user-extensions-err [data]
+(defn failed-to-get-user-extensions-err
+  "**Error Code:** 2009
+   Message: Failed to go ready; unable to retrieve user extensions. The API returned an error.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 2009
    :context :session
    :data {:api-response data}
    :level "error"
    :message "Failed to go ready; unable to retrieve user extensions. The API returned an error."})
 
-(defn failed-to-get-tenant-err [data]
+(defn failed-to-get-tenant-err
+  "**Error Code:** 2010
+   Message: Failed to select tenant; unable to retrieve tenant data. The API returned an error.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 2010
    :context :session
    :data {:api-response data}
    :level "error"
    :message "Failed to select tenant; unable to retrieve tenant data. The API returned an error."})
 
-(defn failed-to-get-region-err [data]
+(defn failed-to-get-region-err
+  "**Error Code:** 2011
+   Message: Failed to select tenant; unable to retrieve region data. The API returned an error.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 2011
    :context :session
    :data {:api-response data}
    :level "error"
    :message "Failed to select tenant; unable to retrieve region data. The API returned an error."})
 
-(defn failed-to-get-tenant-details-err [data]
+(defn failed-to-get-tenant-details-err
+  "**Error Code:** 2012
+   Message: Failed to retrieve user's tenant details. The API returned an error.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 2012
    :context :session
    :data {:api-response data}
@@ -440,10 +561,10 @@
 
    This error occurs when the AWS SQS SDK is unable to remove the SQS message from the queue.
    This will likely result in the SQS message coming in again.
-   
+
    **Solution:** This should only happen once in a while. If it does, it can probably be ignored.
    If it happens more frequently, you may need to inviestigate more into the SQS settings.
-   
+
    Support Notes: This is most likely caused by internet connectivity issues."
   {:code 5001
    :context :sqs
@@ -458,10 +579,10 @@
 
     This error occurs when the AWS SQS SDK is unable to receive a message.
     CxEngage SDK will retry again every 2 seconds until it properly receives it.
-    
+
     **Solution:** This should only happen once in a while. If it does, it can probably be ignored.
     If it happens more frequently, you may need to inviestigate more into the SQS settings.
-    
+
     Support Notes: This is most likely caused by internet connectivity issues."
   {:code 5002
    :context :sqs
@@ -1210,7 +1331,7 @@
    :level "error"
    :message "Failed to get roles."})
 
-(defn failed-to-get-integrations-err 
+(defn failed-to-get-integrations-err
   "**Error Code:** 11045
    Message: Failed to get integrations.
 
@@ -1224,7 +1345,7 @@
    :level "error"
    :message "Failed to get integrations."})
 
-(defn failed-to-get-capacity-rules-err 
+(defn failed-to-get-capacity-rules-err
   "**Error Code:** 11046
    Message: Failed to get capacity rules.
 
@@ -1238,7 +1359,7 @@
    :level "error"
    :message "Failed to get capacity rules."})
 
-(defn failed-to-get-reasons-err 
+(defn failed-to-get-reasons-err
   "**Error Code:** 11047
    Message: Failed to get presence reasons.
 
@@ -1252,7 +1373,7 @@
    :level "error"
    :message "Failed to get presence reasons."})
 
-(defn failed-to-get-reason-lists-err 
+(defn failed-to-get-reason-lists-err
   "**Error Code:** 11048
    Message: Failed to get presence reasons lists.
 
@@ -1266,7 +1387,7 @@
    :level "error"
    :message "Failed to get presence reason lists."})
 
-(defn failed-to-get-permissions-err 
+(defn failed-to-get-permissions-err
   "**Error Code:** 11049
    Message: Failed to get permissions.
 
@@ -1280,7 +1401,7 @@
    :level "error"
    :message "Failed to get permissions."})
 
-(defn failed-to-create-role-err 
+(defn failed-to-create-role-err
   "**Error Code:** 11050
    Message: Failed to create role.
 
@@ -1295,7 +1416,7 @@
    :level "error"
    :message "Failed to create role."})
 
-(defn failed-to-update-role-err 
+(defn failed-to-update-role-err
   "**Error Code:** 11051
    Message: Failed to get integrations.
 
