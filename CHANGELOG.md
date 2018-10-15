@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [8.19.2]
+* CXV1-13818 - Documentation for Session Module
+
 ## [8.19.1]
 * CXV1-15293 - Removing a callback in add-stat-subscription to avoid getting response of the batch-request when adding a new subscription.
 
