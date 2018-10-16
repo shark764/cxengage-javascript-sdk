@@ -1431,6 +1431,79 @@
    :level "error"
    :message "Failed to update role."})
 
+(defn failed-to-get-historical-report-folders-err
+  "**Error Code:** 11052
+   Message: Failed to get historical report folders.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11052
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get historical report folders."})
+
+(defn failed-to-get-data-access-reports-err
+  "**Error Code:** 11053
+   Message: Failed to get all data access reports.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11053
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get all data access reports."})
+
+(defn failed-to-get-data-access-report-err
+  "**Error Code:** 11054
+   Message: Failed to get data access report.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11054
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get data access report."})
+
+(defn failed-to-create-data-access-report-err
+  "**Error Code:** 11055
+   Message: Failed to create data access report.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11055
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create data access report."})
+
+ (defn failed-to-update-data-access-report-err
+   "**Error Code:** 11056
+    Message: Failed to update data access report.
+
+    This error is usually due to an unexpected status code returned from the API.
+    Validate that the values passed into the sdk function were correct.
+
+    **Solution:** Check your browsers dev tools console for additional error information"
+   [data]
+   {:code 11056
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to update data access report."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

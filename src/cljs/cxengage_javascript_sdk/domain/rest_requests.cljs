@@ -686,6 +686,40 @@
                                             (not (nil? description)) (assoc-in [:body :description] description))]
     (api/api-request create-outbound-identifier-request)))
 
+(defn create-data-access-report-request [name description active report-type realtime-report-type realtime-report-name historical-catalog-name]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-data-access-report-request (cond-> {:method :post
+                                                   :url (iu/api-url "tenants/:tenant-id/data-access-reports"
+                                                            {:tenant-id tenant-id})}
+                                            (not (nil? name))             (assoc-in [:body :name] name)
+                                            (not (nil? description))      (assoc-in [:body :description] description)
+                                            (not (nil? active))           (assoc-in [:body :active] active)
+                                            (not (nil? report-type))      (assoc-in [:body :report-type] report-type)
+                                            (= report-type "realtime")    (assoc-in [:body :realtime-report-type] realtime-report-type)
+                                            (= report-type "realtime")    (assoc-in [:body :realtime-report-name] realtime-report-name)
+                                            (= report-type "realtime")    (assoc-in [:body :historical-catalog-name] nil)
+                                            (= report-type "historical")  (assoc-in [:body :realtime-report-type] nil)
+                                            (= report-type "historical")  (assoc-in [:body :realtime-report-name] nil)
+                                            (= report-type "historical")  (assoc-in [:body :historical-catalog-name] historical-catalog-name))]
+    (api/api-request create-data-access-report-request)))
+
+(defn update-data-access-report-request [data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-data-access-report-request (cond-> {:method :put
+                                                   :url (iu/api-url "tenants/:tenant-id/data-access-reports/:data-access-report-id"
+                                                            {:tenant-id tenant-id :data-access-report-id data-access-report-id})}
+                                            (not (nil? name))             (assoc-in [:body :name] name)
+                                            (not (nil? description))      (assoc-in [:body :description] description)
+                                            (not (nil? active))           (assoc-in [:body :active] active)
+                                            (not (nil? report-type))      (assoc-in [:body :report-type] report-type)
+                                            (= report-type "realtime")    (assoc-in [:body :realtime-report-type] realtime-report-type)
+                                            (= report-type "realtime")    (assoc-in [:body :realtime-report-name] realtime-report-name)
+                                            (= report-type "realtime")    (assoc-in [:body :historical-catalog-name] nil)
+                                            (= report-type "historical")  (assoc-in [:body :realtime-report-type] nil)
+                                            (= report-type "historical")  (assoc-in [:body :realtime-report-name] nil)
+                                            (= report-type "historical")  (assoc-in [:body :historical-catalog-name] historical-catalog-name))]
+    (api/api-request update-data-access-report-request)))
+
 (defn create-role-request [name description permissions]
   (let [tenant-id (state/get-active-tenant-id)
         create-role-request (cond-> {:method :post
