@@ -10,7 +10,8 @@
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
-            [cljs-uuid-utils.core :as uuid]))
+            [cljs-uuid-utils.core :as uuid]
+            [cxengage-javascript-sdk.domain.errors :as error]))
 
 (def sdk-subscriptions (atom {}))
 
@@ -21,7 +22,7 @@
   "Given an SDK consumer topic string, returns a list of all possible permutatations of that topic string. I.E. 'cxengage/authentication' returns 'cxengage' & 'cxengage/authentication'."
   [topic]
   (let [parts (string/split topic #"/")]
-    (:permutations
+    (:permutations 
      (reduce
       (fn [{:keys [x permutations]} part]
         (let [permutation (string/join "/" (take x parts))]
@@ -30,9 +31,9 @@
       parts))))
 
 (defn all-topics []
-  (reduce (fn [acc v] (into acc (get-topic-permutations v)))
-          #{}
-          (vals topics/sdk-topics)))
+   (reduce (fn [acc v] (into acc (get-topic-permutations v)))
+           #{}
+           (vals topics/sdk-topics)))      
 
 (defn valid-topic?
   "Determines if a topic exists in the list of valid SDK topics."
@@ -89,10 +90,7 @@
   (let [{:keys [log-level level data]} log
         date-time (js/Date.)]
     (try
-      (let [data (-> data
-                     (clj->js)
-                     (js/JSON.stringify))
-            log-level (if log-level
+      (let [log-level (if log-level
                         log-level
                         (if (or (= "session-fatal" level) (= "interaction-fatal"))
                           "error"
@@ -102,8 +100,10 @@
                :message (js/JSON.stringify (clj->js {:data data :original-client-log-level (name level)}))
                :timestamp (.toISOString date-time)))
       (catch js/Object e
-        (js/console.debug "Exception when trying to format request logs; unable to format request logs for publishing. Likely passing a circularly dependent javascript object to a CxEngage logging statement.")
-        {}))))
+        (log :error "Exception when trying to format request logs; unable to format request logs for publishing. Likely passing a circularly dependent javascript object to a CxEngage logging statement.")
+        { :level "error"
+          :message "Exception when trying to format request logs; unable to format request logs for publishing. Likely passing a circularly dependent javascript object to a CxEngage logging statement."
+          :timestamp (.toISOString (js/Date.))}))))
 
 (defn save-logs
   [error]
@@ -116,46 +116,49 @@
             {:keys [status api-response] :as log-response} (a/<! (rest/save-logs-request logs-body))]
         (if (= status 200)
           (log :info "Successfully logged to CxEngage.")
-          (log :warn "Unable to upload logs to CxEngage.")))))
+          (do
+            (log :warn "Unable to upload logs to CxEngage.")
+            (publish {:topics (topics/get-topic :logs-saved)
+                      :error (error/failed-to-save-logs-err
+                              (update-in logs-body [:logs 0 :message]
+                                (fn [message] (js->clj (js/JSON.parse message) {:keywordize-keys true})))
+                              log-response)}))))))
 
 
 (defn publish
   "Publishes a value (or error) to a specific topic, optionally calling the callback provided and optionally leaving the casing of the response unaltered."
   [publish-details]
   (let [{:keys [topics response error callback preserve-casing?]} (js->clj publish-details :keywordize-keys true)
-        topics (if (string? topics) (conj #{} topics) topics)
-        all-topics (all-topics)
-        topics (ih/camelify topics)
         error (ih/camelify error)
         response (if preserve-casing?
                       (clj->js response)
                       (ih/camelify response))
-        topic-permutations (distinct (flatten (map get-topic-permutations topics)))
+        topic-permutations (get-topic-permutations topics)
 
         ; relevant-subscribers is a list of maps: 1 map per topic (keys=subscription ids, values=callbacks)
         relevant-subscribers (filter (complement nil?) (map get-subscribers-by-topic topic-permutations))]
-    (if error
+    ; Ignoring logs-saved topic when it errors
+    (when (and error (not= topics (topics/get-topic :logs-saved)))
       (save-logs (ih/kebabify error)))
     (when (not-empty relevant-subscribers)
       ; Iterate through each map (representing each topic-permutation)
       (doseq [topic-permutation relevant-subscribers]
         ; Iterate through each key (representing each subscriber to this topic)
         (doseq [subscription-id (keys topic-permutation)]
-          (doseq [t topics]
-            (let [cb (get topic-permutation subscription-id)]
-              (if-not (nil? cb)
-                ; we are passing subscription id as the fourth parameter as a
-                ; temporary fix for a specific bug -- we do not recommend using this
-                ; as we hope to remove it later and add subscription ID into the response
-                ; instead.
-                ;
-                ; Tech Debt - response should become standardized so that it is:
-                ;       - Always a map
-                ;       - Reliably contains system-generated information such as
-                ;            status and subscription ID
-                ;       - Custom formatted data should be stored in some standardized
-                ;            key in this map (e.g. :data))
+          (let [cb (get topic-permutation subscription-id)]
+            (if-not (nil? cb)
+              ; we are passing subscription id as the fourth parameter as a
+              ; temporary fix for a specific bug -- we do not recommend using this
+              ; as we hope to remove it later and add subscription ID into the response
+              ; instead.
+              ;
+              ; Tech Debt - response should become standardized so that it is:
+              ;       - Always a map
+              ;       - Reliably contains system-generated information such as
+              ;            status and subscription ID
+              ;       - Custom formatted data should be stored in some standardized
+              ;            key in this map (e.g. :data))
 
-                (cb error t response subscription-id)))))))
+              (cb error topics response subscription-id))))))
     (when (and (fn? callback) callback) (callback error topics response)))
   nil)
