@@ -43,37 +43,43 @@
 ;; CxEngage.reporting.addStatSubscription({
 ;;   statistic: "{{string}}",
 ;;   resourceId: "{{uuid}}",
-;;   queueId: "{{queueId}}"
+;;   queueId: "{{queueId}}",
+;;   triggerBatch: "{{boolean}}" (default true)
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::add-statistic-params
   (s/keys :req-un [::specs/statistic]
-          :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id ::specs/stat-id]))
+          :opt-un [::specs/callback ::specs/queue-id ::specs/resource-id ::specs/stat-id ::specs/trigger-batch]))
 
 (def-sdk-fn add-stat-subscription
   ""
   {:validation ::add-statistic-params
    :topic-key :add-stat}
   [params]
-  (let [{:keys [topic stat-id callback]} params
+  (let [{:keys [topic stat-id trigger-batch callback]} params
         stat-bundle (dissoc params :callback :stat-id :topic)
-        stat-id (or stat-id (str (uuid/make-random-uuid)))]
+        stat-id (or stat-id (str (uuid/make-random-uuid)))
+        trigger-batch (if (nil? trigger-batch)
+                        true
+                        trigger-batch)]
     (swap! stat-subscriptions assoc-in [:statistics stat-id] stat-bundle)
     (p/publish {:topics topic
                 :response {:statId stat-id}
                 :callback callback
                 :preserve-casing? true})
-    (let [batch-body (:statistics @stat-subscriptions)
-          {:keys [api-response status] :as batch-response} (a/<! (rest/batch-request batch-body))
-          {:keys [results]} api-response
-          batch-topic (topics/get-topic :batch-response)]
-      (if (= status 200)
-        (p/publish {:topics batch-topic
-                    :response results
-                    :preserve-casing? true})
-        (p/publish {:topics batch-topic
-                    :error (e/reporting-batch-request-failed-err batch-body batch-response)})))))
+    (when 
+      trigger-batch
+      (let [batch-body (:statistics @stat-subscriptions)
+            {:keys [api-response status] :as batch-response} (a/<! (rest/batch-request batch-body))
+            {:keys [results]} api-response
+            batch-topic (topics/get-topic :batch-response)]
+        (if (= status 200)
+          (p/publish {:topics batch-topic
+                      :response results
+                      :preserve-casing? true})
+          (p/publish {:topics batch-topic
+                      :error (e/reporting-batch-request-failed-err batch-body batch-response)}))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.triggerBatch();
