@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.21.0]
+### Added
+* CXV1-15605 - Allow stat subscriptions to be added without triggering a batch API request
+
 ## [8.20.1] - 2018-10-18
 ### Added
 * CXV1-15326 - Added a pubsub error for when the SDK is unable to upload it's logs
