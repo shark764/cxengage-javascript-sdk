@@ -87,7 +87,7 @@
 
 (defn format-request-logs
   [log]
-  (let [{:keys [log-level level data]} log
+  (let [{:keys [log-level level data code message]} log
         date-time (js/Date.)]
     (try
       (let [log-level (if log-level
@@ -97,7 +97,10 @@
                           level))]
         (assoc {}
                :level log-level
-               :message (js/JSON.stringify (clj->js {:data data :original-client-log-level (name level)}))
+               :message (js/JSON.stringify (clj->js { :data data 
+                                                      :original-client-log-level (name level)
+                                                      :code code 
+                                                      :message message}))
                :timestamp (.toISOString date-time)))
       (catch js/Object e
         (log :error "Exception when trying to format request logs; unable to format request logs for publishing. Likely passing a circularly dependent javascript object to a CxEngage logging statement.")
