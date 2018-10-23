@@ -733,7 +733,7 @@
    :topic-key :get-data-access-report-response}
   [params]
   (let [{:keys [callback topic data-access-report-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "data-access-report" data-access-report-id))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-data-access-report-request data-access-report-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -1395,7 +1395,7 @@
 
 (s/def ::update-data-access-report-params
     (s/keys :req-un [::specs/data-access-report-id]
-            :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/report-type ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name]))
+            :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/report-type ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/member-ids]))
 
 (def-sdk-fn update-data-access-report
   "``` javascript
@@ -1408,6 +1408,7 @@
     realtimeReportType: {{string}}, (optional)
     realtimeReportName: {{string}}, (optional)
     historicalCatalogName: {{string}}, (optional)
+    memberIds: {{array}}, (optional)
   });
   ```
   Updates a single Data Access Report by calling rest/update-data-access-report-request
@@ -1421,8 +1422,8 @@
   {:validation ::update-data-access-report-params
    :topic-key :update-data-access-report-response}
   [params]
-  (let [{:keys [data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-data-access-report-request data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name))]
+  (let [{:keys [data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name member-ids callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-data-access-report-request data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name member-ids))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response

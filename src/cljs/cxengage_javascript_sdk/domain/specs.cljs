@@ -43,6 +43,7 @@
              :recipient (s/coll-of ::recipient)))
 (s/def ::contact-id ::uuid)
 (s/def ::contact-ids (s/coll-of ::contact-id))
+(s/def ::member-ids (s/coll-of ::uuid))
 (s/def ::contact-point string?)
 (s/def ::crm string?)
 (s/def ::description string?)
