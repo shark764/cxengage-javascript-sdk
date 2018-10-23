@@ -974,7 +974,15 @@
    :level "error"
    :message "Failed to send email reply. There is no artifact for the interaction."})
 
-(defn failed-to-get-user-err [resource-id data]
+(defn failed-to-get-user-err
+  "**Error Code:** 11000
+   Message: Failed to get specified user.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [resource-id data]
   {:code 11000
    :context :entities
    :data {:resource-id resource-id
@@ -982,7 +990,14 @@
    :level "error"
    :message "Failed to get specified user."})
 
-(defn failed-to-get-user-list-err [data]
+(defn failed-to-get-users-err
+  "**Error Code:** 11001
+   Message: Failed to get user list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
   {:code 11001
    :context :entities
    :data {:api-response data}
@@ -1025,16 +1040,29 @@
    :level "error"
    :message "Failed to get tenant branding."})
 
-(defn failed-to-update-user-err [body resource-id data]
+(defn failed-to-update-user-err
+  "**Error Code:** 11066
+   Message: Failed to update user.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 11007
    :context :entities
-   :data {:body body
-          :resource-id resource-id
-          :api-response data}
+   :data {:api-response data}
    :level "error"
    :message "Failed to update user."})
 
-(defn failed-to-get-dashboards-list-err [data]
+(defn failed-to-get-dashboards-list-err
+  "**Error Code:** 11008
+   Message: Failed to get dashboards list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
   {:code 11008
    :context :entities
    :data {:api-response data}
@@ -1153,14 +1181,28 @@
    :level "error"
    :message "Failed to delete email template."})
 
-(defn failed-to-get-groups-err [data]
+(defn failed-to-get-groups-err
+  "**Error Code:** 11025
+   Message: Failed to get groups.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
   {:code 11025
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to get groups."})
 
-(defn failed-to-get-skills-err [data]
+(defn failed-to-get-skills-err
+  "**Error Code:** 11026
+   Message: Failed to get skills.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
   {:code 11026
    :context :entities
    :data {:api-response data}
@@ -1489,20 +1531,139 @@
    :level "error"
    :message "Failed to create data access report."})
 
- (defn failed-to-update-data-access-report-err
-   "**Error Code:** 11056
-    Message: Failed to update data access report.
+(defn failed-to-update-data-access-report-err
+  "**Error Code:** 11056
+   Message: Failed to update data access report.
 
-    This error is usually due to an unexpected status code returned from the API.
-    Validate that the values passed into the sdk function were correct.
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
 
-    **Solution:** Check your browsers dev tools console for additional error information"
-   [data]
-   {:code 11056
-    :context :entities
-    :data {:api-response data}
-    :level "error"
-    :message "Failed to update data access report."})
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11056
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update data access report."})
+
+(defn failed-to-get-skill-err
+  "**Error Code:** 11057
+   Message: Failed to get skill.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11057
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get skill."})
+
+(defn failed-to-create-skill-err
+  "**Error Code:** 11058
+   Message: Failed to create skill.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11058
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create skill."})
+
+(defn failed-to-update-skill-err
+  "**Error Code:** 11059
+   Message: Failed to update skill.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11059
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update skill."})
+
+(defn failed-to-get-group-err
+  "**Error Code:** 11060
+   Message: Failed to get group.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11060
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get group."})
+
+(defn failed-to-create-group-err
+  "**Error Code:** 11061
+   Message: Failed to create group.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11061
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create group."})
+
+(defn failed-to-update-group-err
+  "**Error Code:** 11062
+   Message: Failed to update group.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11062
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update group."})
+
+(defn failed-to-get-platform-roles-err
+  "**Error Code:** 11063
+   Message: Failed to get all platform roles predefined.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11063
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get all platform roles predefined."})
+
+(defn failed-to-create-user-err
+  "**Error Code:** 11065
+   Message: Failed to create user.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11065
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create user."})
 
 ;;hygen-insert-before-11000s
 

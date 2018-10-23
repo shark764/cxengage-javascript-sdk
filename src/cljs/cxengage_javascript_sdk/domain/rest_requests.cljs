@@ -87,14 +87,13 @@
                                  :resource-id resource-id})}]
     (api/api-request get-user-request)))
 
-(defn update-user-request [update-user-body]
-  (let [resource-id (state/get-active-user-id)
-        tenant-id (state/get-active-tenant-id)
+(defn update-user-request [user-id update-user-body]
+  (let [tenant-id (state/get-active-tenant-id)
         update-user-request {:method :put
                              :url (iu/api-url
-                                   "tenants/:tenant-id/users/:resource-id"
+                                   "tenants/:tenant-id/users/:user-id"
                                    {:tenant-id tenant-id
-                                    :resource-id resource-id})
+                                    :user-id user-id})
                              :body update-user-body}]
     (api/api-request update-user-request)))
 
@@ -195,6 +194,7 @@
                               "tenants/:tenant-id/skills"
                               {:tenant-id tenant-id})}]
     (api/api-request skills-request)))
+
 
 (defn get-artifact-by-id-request [artifact-id interaction-id tenant-id]
   (let [tenant-id (or tenant-id (state/get-active-tenant-id))
@@ -692,7 +692,7 @@
                                         :url (iu/api-url
                                               "tenants/:tenant-id/data-access-report-groups/:data-access-report-id/data-access-reports"
                                               {:tenant-id tenant-id
-                                              :data-access-report-id data-access-report-id})}]
+                                               :data-access-report-id data-access-report-id})}]
     (api/api-request get-data-access-report-request)))
 
 (defn create-data-access-report-request [name description active report-type realtime-report-type realtime-report-name historical-catalog-name]
@@ -730,14 +730,76 @@
                                             (= report-type "historical")  (assoc-in [:body :historical-catalog-name] historical-catalog-name))]
     (api/api-request update-data-access-report-request)))
 
+(defn create-skill-request [name description active has-proficiency]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-skill-request (cond-> {:method :post
+                                      :url (iu/api-url "tenants/:tenant-id/skills"
+                                                       {:tenant-id tenant-id})}
+                               (not (nil? name))            (assoc-in [:body :name] name)
+                               (not (nil? description))     (assoc-in [:body :description] description)
+                               (not (nil? active))          (assoc-in [:body :active] active)
+                               (not (nil? has-proficiency)) (assoc-in [:body :has-proficiency] has-proficiency))]
+    (api/api-request create-skill-request)))
+
+(defn update-skill-request [skill-id name description active has-proficiency]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-skill-request (cond-> {:method :put
+                                      :url (iu/api-url "tenants/:tenant-id/skills/:skill-id"
+                                                       {:tenant-id tenant-id :skill-id skill-id})}
+                               (not (nil? name))            (assoc-in [:body :name] name)
+                               (not (nil? description))     (assoc-in [:body :description] description)
+                               (not (nil? active))          (assoc-in [:body :active] active)
+                               (not (nil? has-proficiency)) (assoc-in [:body :has-proficiency] has-proficiency))]
+    (api/api-request update-skill-request)))
+
+(defn create-group-request [name description active]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-group-request (cond-> {:method :post
+                                      :url (iu/api-url "tenants/:tenant-id/groups"
+                                                       {:tenant-id tenant-id})}
+                               (not (nil? name))            (assoc-in [:body :name] name)
+                               (not (nil? description))     (assoc-in [:body :description] description)
+                               (not (nil? active))          (assoc-in [:body :active] active))]
+    (api/api-request create-group-request)))
+
+(defn update-group-request [group-id name description active]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-group-request (cond-> {:method :put
+                                      :url (iu/api-url "tenants/:tenant-id/groups/:group-id"
+                                                       {:tenant-id tenant-id :group-id group-id})}
+                               (not (nil? name))            (assoc-in [:body :name] name)
+                               (not (nil? description))     (assoc-in [:body :description] description)
+                               (not (nil? active))          (assoc-in [:body :active] active))]
+    (api/api-request update-group-request)))
+
+(defn create-user-request [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-user-request (cond-> {:method :post
+                                      :url (iu/api-url "tenants/:tenant-id/users"
+                                                       {:tenant-id tenant-id})}
+                                    (not (nil? email))                      (assoc-in [:body :email] email)
+                                    (not (nil? role-id))                    (assoc-in [:body :role-id] role-id)
+                                    (not (nil? default-identity-provider))  (assoc-in [:body :default-identity-provider] default-identity-provider)
+                                    (not (nil? no-password))                (assoc-in [:body :no-password] no-password)
+                                    (not (nil? status))                     (assoc-in [:body :status] status)
+                                    (not (nil? work-station-id))            (assoc-in [:body :work-station-id] work-station-id)
+                                    (not (nil? external-id))                (assoc-in [:body :external-id] external-id)
+                                    (and
+                                      (not (nil? extensions))
+                                      (not (empty? extensions)))            (assoc-in [:body :extensions] extensions)
+                                    (not (nil? first-name))                 (assoc-in [:body :first-name] first-name)
+                                    (not (nil? last-name))                  (assoc-in [:body :last-name] last-name)
+                                    (not (nil? capacity-rule-id))           (assoc-in [:body :capacity-rule-id] capacity-rule-id))]
+    (api/api-request create-user-request)))
+
 (defn create-role-request [name description permissions]
   (let [tenant-id (state/get-active-tenant-id)
         create-role-request (cond-> {:method :post
                                      :url (iu/api-url "tenants/:tenant-id/roles"
                                                       {:tenant-id tenant-id})
                                      :body            {:permissions (or permissions [])}}
-                            name                      (assoc-in [:body :name] name)
-                            description               (assoc-in [:body :description] description))]
+                             name                      (assoc-in [:body :name] name)
+                             description               (assoc-in [:body :description] description))]
     (api/api-request create-role-request)))
 
 (defn update-role-request [role-id name description permissions]
@@ -745,10 +807,10 @@
         update-role-request (cond-> {:method :put
                                      :url (iu/api-url "tenants/:tenant-id/roles/:role-id"
                                                       {:tenant-id tenant-id
-                                                      :role-id role-id})}
-                            (not (nil? permissions))  (assoc-in [:body :permissions]  permissions)
-                            (not (nil? name))         (assoc-in [:body :name] name)
-                            (not (nil? description))  (assoc-in [:body :description] description))]
+                                                       :role-id role-id})}
+                             (not (nil? permissions))  (assoc-in [:body :permissions]  permissions)
+                             (not (nil? name))         (assoc-in [:body :name] name)
+                             (not (nil? description))  (assoc-in [:body :description] description))]
     (api/api-request update-role-request)))
 
 (defn update-list-item-request [list-item-id list-item-key item-value]

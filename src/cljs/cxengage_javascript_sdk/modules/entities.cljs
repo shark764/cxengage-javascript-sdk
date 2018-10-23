@@ -31,18 +31,24 @@
 ;; GET Entity Functions
 ;; -------------------------------------------------------------------------- ;;
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getUser({
-;;   resourceId: {{uuid}}
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::get-user-params
   (s/keys :req-un [::specs/resource-id]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-user
-  ""
+  "``` javascript
+  CxEngage.entities.getUser({
+    resourceId: {{uuid}}
+  });
+  ```
+  Retrieves single User given parameter resourceId
+  as a unique key
+
+  Topic: cxengage/entities/get-user-response
+
+  Possible Errors:
+
+  - [Entities: 11000](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-user-err)"
   {:validation ::get-user-params
    :topic-key :get-user-response}
   [params]
@@ -65,7 +71,16 @@
           :opt-un [::specs/callback ::specs/exclude-offline]))
 
 (def-sdk-fn get-users
-  ""
+  "``` javascript
+  CxEngage.entities.getUsers();
+  ```
+  Retrieves available users for current logged in tenant
+
+  Topic: cxengage/entities/get-users-response
+
+  Possible Errors:
+
+  - [Entities: 11001](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-users-err)"
   {:validation ::get-users-params
    :topic-key :get-users-response}
   [params]
@@ -76,7 +91,7 @@
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-get-user-list-err entity-response)
+                  :error (e/failed-to-get-users-err entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -243,16 +258,21 @@
                   :error (e/failed-to-get-tenant-protected-branding-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getDashboards();
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::get-dashboards-params
   (s/keys :req-un []
           :opt-un [::specs/callback ::specs/exclude-inactive]))
 
 (def-sdk-fn get-dashboards
-  ""
+  "``` javascript
+  CxEngage.entities.getDashboards();
+  ```
+  Retrieves available Custom Dashboards created for current logged in tenant
+
+  Topic: cxengage/entities/get-dashboards-response
+
+  Possible Errors:
+
+  - [Entities: 11008](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-dashboards-err)"
   {:validation ::get-dashboards-params
    :topic-key :get-dashboards-response}
   [params]
@@ -366,12 +386,17 @@
                   :error (e/failed-to-get-list-types-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getGroups();
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn get-groups
-  ""
+  "``` javascript
+  CxEngage.entities.getGroups();
+  ```
+  Retrieves available Groups configured for current logged in tenant
+
+  Topic: cxengage/entities/get-groups-response
+
+  Possible Errors:
+
+  - [Entities: 11025](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-groups-err)"
   {:validation ::get-entities-params
    :topic-key :get-groups-response}
   [params]
@@ -385,12 +410,17 @@
                   :error (e/failed-to-get-groups-err groups-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getSkills();
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn get-skills
-  ""
+  "``` javascript
+  CxEngage.entities.getSkills();
+  ```
+  Retrieves available Skills configured for current logged in tenant
+
+  Topic: cxengage/entities/get-skills-response
+
+  Possible Errors:
+
+  - [Entities: 11026](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-skills-err)"
   {:validation ::get-entities-params
    :topic-key :get-skills-response}
   [params]
@@ -691,7 +721,7 @@
   "``` javascript
   CxEngage.entities.getDataAccessReports();
   ```
-  Retrieves available Data Access Controls configured for current logged in tenant
+  Retrieves available Data Access Reports configured for current logged in tenant
 
   Topic: cxengage/entities/get-data-access-reports-response
 
@@ -721,7 +751,7 @@
     dataAccessReportId: {{uuid}}
   });
   ```
-  Retrieves single Data Access Controls given parameter dataAccessReportId
+  Retrieves single Data Access Report given parameter dataAccessReportId
   as a unique key
 
   Topic: cxengage/entities/get-data-access-report-response
@@ -740,6 +770,68 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-data-access-report-err entity-response)
+                  :callback callback}))))
+
+(s/def ::get-skill-params
+  (s/keys :req-un [::specs/skill-id]
+          :opt-un []))
+
+(def-sdk-fn get-skill
+  "``` javascript
+  CxEngage.entities.getSkill({
+    skillId: {{uuid}}
+  });
+  ```
+  Retrieves single Skill given parameter skillId
+  as a unique key
+
+  Topic: cxengage/entities/get-skill-response
+
+  Possible Errors:
+
+  - [Entities: 11057](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-skill-err)"
+  {:validation ::get-skill-params
+   :topic-key :get-skill-response}
+  [params]
+  (let [{:keys [callback topic skill-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "skill" skill-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-skill-err entity-response)
+                  :callback callback}))))
+
+(s/def ::get-group-params
+  (s/keys :req-un [::specs/group-id]
+          :opt-un []))
+
+(def-sdk-fn get-group
+  "``` javascript
+  CxEngage.entities.getGroup({
+    groupId: {{uuid}}
+  });
+  ```
+  Retrieves single Group given parameter groupId
+  as a unique key
+
+  Topic: cxengage/entities/get-group-response
+
+  Possible Errors:
+
+  - [Entities: 11060](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-group-err)"
+  {:validation ::get-group-params
+   :topic-key :get-group-response}
+  [params]
+  (let [{:keys [callback topic group-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "group" group-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-group-err entity-response)
                   :callback callback}))))
 
 ;;hygen-insert-before-get
@@ -866,7 +958,7 @@
 
   Possible Errors:
 
-  - [Entities:    11044](/cxengage-javascript-sdk.domain.errors.html#failed-to-get-roles-err)"
+  - [Entities: 11044](/cxengage-javascript-sdk.domain.errors.html#failed-to-get-roles-err)"
   {:validation ::get-entities-params
    :topic-key :get-roles-response}
   [params]
@@ -878,6 +970,28 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-roles-err entity-response)
+                  :callback callback}))))
+
+(def-sdk-fn get-platform-roles
+  "``` javascript
+  CxEngage.entities.getPlatformRoles();
+  ```
+  Retrieves available platform roles predefined for current logged
+
+  Possible Errors:
+
+  - [Entities: 11063](/cxengage-javascript-sdk.domain.errors.html#failed-to-get-platform-roles-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-platform-roles-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-platform-roles-request))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-platform-roles-err entity-response)
                   :callback callback}))))
 
 ;;--------------------------------------------------------------------------- ;;
@@ -1000,7 +1114,7 @@
 
 (s/def ::create-data-access-report-params
   (s/keys :req-un [::specs/name ::specs/active ::specs/report-type]
-            :opt-un [::specs/callback ::specs/description ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name]))
+          :opt-un [::specs/callback ::specs/description ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name]))
 
 (def-sdk-fn create-data-access-report
   "``` javascript
@@ -1035,7 +1149,115 @@
                   :error (e/failed-to-create-data-access-report-err entity-response)
                   :callback callback}))))
 
+(s/def ::create-skill-params
+  (s/keys :req-un [::specs/name ::specs/active]
+          :opt-un [::specs/callback ::specs/description ::specs/has-proficiency]))
+
+(def-sdk-fn create-skill
+  "``` javascript
+  CxEngage.entities.createSkill({
+    name: {{string}},
+    description: {{string}}, (optional)
+    active: {{boolean}},
+    hasProficiency: {{boolean}} (optional)
+  });
+  ```
+  Creates new single Skill by calling rest/create-skill-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-skill-response
+
+  Possible Errors:
+
+  - [Entities: 11058](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-skill-err)"
+  {:validation ::create-skill-params
+   :topic-key :create-skill-response}
+  [params]
+  (let [{:keys [name description active has-proficiency callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-skill-request name description active has-proficiency))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-skill-err entity-response)
+                  :callback callback}))))
+
+(s/def ::create-group-params
+  (s/keys :req-un [::specs/name ::specs/active]
+            :opt-un [::specs/callback ::specs/description]))
+
+(def-sdk-fn create-group
+  "``` javascript
+  CxEngage.entities.createGroup({
+    name: {{string}},
+    description: {{string}}, (optional)
+    active: {{boolean}}
+  });
+  ```
+  Creates new single Group by calling rest/create-group-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-group-response
+
+  Possible Errors:
+
+  - [Entities: 11061](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-group-err)"
+  {:validation ::create-group-params
+   :topic-key :create-group-response}
+  [params]
+  (let [{:keys [name description active callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-group-request name description active))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-group-err entity-response)
+                  :callback callback}))))
+
 ;;hygen-insert-before-create
+
+(s/def ::create-user-params
+  (s/keys :req-un [::specs/email ::specs/role-id ::specs/status]
+          :opt-un [::specs/callback ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id ::specs/extensions ::specs/first-name ::specs/last-name ::specs/capacity-rule-id]))
+
+(def-sdk-fn create-user
+  "``` javascript
+  CxEngage.entities.createUser({
+    email: {{string}} (required),
+    roleId: {{uuid}} (required),
+    defaultIdentityProvider: {{uuid}} (optional),
+    noPassword: {{boolean}} (optional),
+    status: {{string}} (required),
+    workStationId: {{string}} (optional),
+    externalId: {{string}} (optional),
+    extensions: {{object}} (optional),
+    firstName: {{string}} (optional),
+    lastName: {{string}} (optional),
+    capacityRuleId: {{uuid}} (optional)
+  });
+  ```
+  Creates new single User by calling rest/create-user-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-user-response
+
+  Possible Errors:
+
+  - [Entities: 11065](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-user-err)"
+  {:validation ::create-user-params
+   :topic-key :create-user-response}
+  [params]
+  (let [{:keys [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-user-request email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-user-err entity-response)
+                  :callback callback}))))
 
 (s/def ::create-role-params
   (s/keys :req-un [::specs/name ::specs/description]
@@ -1072,30 +1294,48 @@
 ;; PUT Entity Functions
 ;; -------------------------------------------------------------------------- ;;
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.updateUser({
-;;   resourceId: {{uuid}},
-;;   updateBody: {{object}}
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::update-user-params
-  (s/keys :req-un [::specs/update-body ::specs/resource-id]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [::specs/user-id]
+          :opt-un [::specs/callback ::specs/email ::specs/role-id ::specs/default-identity-provider ::specs/no-password ::specs/status ::specs/work-station-id ::specs/external-id ::specs/extensions ::specs/first-name ::specs/last-name ::specs/capacity-rule-id]))
 
 (def-sdk-fn update-user
-  ""
+  "``` javascript
+  CxEngage.entities.updateUser({
+    userId: {{uuid}} (required),
+    email: {{string}} (required),
+    roleId: {{uuid}} (required),
+    defaultIdentityProvider: {{uuid}} (optional),
+    noPassword: {{boolean}} (optional),
+    status: {{string}} (required),
+    workStationId: {{string}} (optional),
+    externalId: {{string}} (optional),
+    extensions: {{object}} (optional),
+    firstName: {{string}} (optional),
+    lastName: {{string}} (optional),
+    capacityRuleId: {{uuid}} (optional),
+    updateBody: {{object}} (optional),
+  });
+  ```
+  Updates new single User by calling rest/update-user-response
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-user-response
+
+  Possible Errors:
+
+  - [Entities: 11066](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-user-err)"
   {:validation ::update-user-params
    :topic-key :update-user-response}
   [params]
-  (let [{:keys [callback topic update-body resource-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :put "user" resource-id update-body))]
+  (let [{:keys [callback topic update-body user-id]} params
+        user-body (or update-body (dissoc params :callback :topic :update-body))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :put "user" user-id user-body))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
                   :callback callback})
       (p/publish {:topics topic
-                  :error (e/failed-to-update-user-err update-body resource-id entity-response)
+                  :error (e/failed-to-update-user-err entity-response)
                   :callback callback}))))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -1432,6 +1672,75 @@
                   :error (e/failed-to-update-data-access-report-err entity-response)
                   :callback callback}))))
 
+(s/def ::update-skill-params
+  (s/keys :req-un [::specs/skill-id]
+          :opt-un [::specs/callback ::specs/name ::specs/active ::specs/description ::specs/has-proficiency]))
+
+(def-sdk-fn update-skill
+  "``` javascript
+  CxEngage.entities.updateSkill({
+    skillId: {{uuid}},
+    name: {{string}}, (optional)
+    description: {{string}}, (optional)
+    active: {{boolean}}, (optional)
+    hasProficiency: {{boolean}} (optional)
+  });
+  ```
+  Updates a single Skill by calling rest/update-skill-request
+  with the new data and skillId as the unique key.
+
+  Topic: cxengage/entities/update-skill-response
+
+  Possible Errors:
+
+  - [Entities: 11059](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-skill-err)"
+  {:validation ::update-skill-params
+   :topic-key :update-skill-response}
+  [params]
+  (let [{:keys [skill-id name description active has-proficiency callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-skill-request skill-id name description active has-proficiency))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-skill-err entity-response)
+                  :callback callback}))))
+
+(s/def ::update-group-params
+  (s/keys :req-un [::specs/group-id]
+          :opt-un [::specs/callback ::specs/name ::specs/active ::specs/description]))
+
+(def-sdk-fn update-group
+  "``` javascript
+  CxEngage.entities.updateGroup({
+    groupId: {{uuid}},
+    name: {{string}}, (optional)
+    description: {{string}}, (optional)
+    active: {{boolean}} (optional)
+  });
+  ```
+  Updates a single Group by calling rest/update-group-request
+  with the new data and groupId as the unique key.
+
+  Topic: cxengage/entities/update-group-response
+
+  Possible Errors:
+
+  - [Entities: 11062](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-group-err)"
+  {:validation ::update-group-params
+   :topic-key :update-group-response}
+  [params]
+  (let [{:keys [group-id name description active callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-group-request group-id name description active))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-group-err entity-response)
+                  :callback callback}))))
+
 ;;hygen-insert-before-update
 
 (s/def ::update-role-params
@@ -1551,7 +1860,9 @@
                                        :get-lists get-lists
                                        :get-list-types get-list-types
                                        :get-skills get-skills
+                                       :get-skill get-skill
                                        :get-groups get-groups
+                                       :get-group get-group
                                        :get-email-types get-email-types
                                        :get-email-templates get-email-templates
                                        :get-artifacts get-artifacts
@@ -1559,6 +1870,7 @@
                                        :get-custom-metrics get-custom-metrics
                                        :get-custom-metric get-custom-metric
                                        :get-roles get-roles
+                                       :get-platform-roles get-platform-roles
                                        :get-integrations get-integrations
                                        :get-capacity-rules get-capacity-rules
                                        :get-reasons get-reasons
@@ -1575,8 +1887,10 @@
                                        :create-outbound-identifier-list create-outbound-identifier-list
                                        :create-role create-role
                                        :create-data-access-report create-data-access-report
+                                       :create-skill create-skill
+                                       :create-group create-group
+                                       :create-user create-user
                                       ;;hygen-insert-above-create
-                                       :update-user update-user
                                        :update-list update-list
                                        :update-list-item update-list-item
                                        :upload-list upload-list
@@ -1591,6 +1905,9 @@
                                        :update-custom-metric update-custom-metric
                                        :update-role update-role
                                        :update-data-access-report update-data-access-report
+                                       :update-skill update-skill
+                                       :update-group update-group
+                                       :update-user update-user
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template

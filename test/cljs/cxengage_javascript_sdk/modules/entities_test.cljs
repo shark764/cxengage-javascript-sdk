@@ -237,5 +237,4 @@
                                 (is (= pubsub-expected-response (ih/kebabify response)))
                                 (set! api/api-request old)
                                 (done)))
-                 (ent/update-user {:resource-id "76818798-9075-43d5-a00c-9b8ccff7b1df"
-                                   :update-body {:first-name "asdfasdf"}}))))))
+                 (ent/update-user {:user-id "76818798-9075-43d5-a00c-9b8ccff7b1df" :update-body {:first-name "asdfasdf"}}))))))

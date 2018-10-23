@@ -52,7 +52,6 @@
                  :get-user-response "cxengage/entities/get-user-response"
                  :get-users-response "cxengage/entities/get-users-response"
                  :get-dashboards-response "cxengage/entities/get-dashboards-response"
-                 :update-user-response "cxengage/entities/update-user-response"
                  :get-branding-response "cxengage/entities/get-branding-response"
                  :get-protected-branding-response "cxengage/entities/get-protected-branding-response"
                  :get-list-response "cxengage/entities/get-list-response"
@@ -67,7 +66,13 @@
                  :download-list-response "cxengage/entities/download-list-response"
                  :upload-list-response "cxengage/entities/upload-list-response"
                  :get-groups-response "cxengage/entities/get-groups-response"
+                 :get-group-response "cxengage/entities/get-group-response"
+                 :create-group-response "cxengage/entities/create-group-response"
+                 :update-group-response "cxengage/entities/update-group-response"
                  :get-skills-response "cxengage/entities/get-skills-response"
+                 :get-skill-response "cxengage/entities/get-skill-response"
+                 :create-skill-response "cxengage/entities/create-skill-response"
+                 :update-skill-response "cxengage/entities/update-skill-response"
                  :get-email-types-response "cxengage/entities/get-email-types-response"
                  :get-email-templates-response "cxengage/entities/get-email-templates-response"
                  :get-flows-response "cxengage/entities/get-flows-response"
@@ -92,6 +97,7 @@
                  :get-custom-metric-response "cxengage/entities/get-custom-metric-response"
                  :update-custom-metric-response "cxengage/entities/update-custom-metric-response"
                  :get-roles-response "cxengage/entities/get-roles-response"
+                 :get-platform-roles-response "cxengage/entities/get-platform-roles-response"
                  :get-integrations-response "cxengage/entities/get-integrations-response"
                  :get-capacity-rules-response "cxengage/entities/get-capacity-rules-response"
                  :get-reasons-response "cxengage/entities/get-reasons-response"
@@ -104,6 +110,8 @@
                  :get-data-access-report-response "cxengage/entities/get-data-access-report-response"
                  :create-data-access-report-response "cxengage/entities/create-data-access-report-response"
                  :update-data-access-report-response "cxengage/entities/update-data-access-report-response"
+                 :create-user-response "cxengage/entities/create-user-response"
+                 :update-user-response "cxengage/entities/update-user-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting

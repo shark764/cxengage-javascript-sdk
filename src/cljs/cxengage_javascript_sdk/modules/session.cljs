@@ -135,7 +135,7 @@
                           :response (select-keys user-config [:active-extension :extensions])})
               (if (nil? active-extension)
                 (let [extension (first (state/get-all-extensions))
-                      resp (a/<! (rest/update-user-request {:activeExtension extension}))
+                      resp (a/<! (rest/update-user-request (state/get-active-user-id) {:activeExtension extension}))
                       status (:status resp)]
                   (if-not (= status 200)
                     (p/publish {:topics topic
@@ -316,7 +316,7 @@
                 ;; active extension, but it didn't match the one they passed for the
                 ;; session they're starting. Update their user prior to changing
                 ;; state, so they go ready with the correct extension.
-                (let [resp (a/<! (rest/update-user-request {:activeExtension new-extension}))
+                (let [resp (a/<! (rest/update-user-request (state/get-active-user-id) {:activeExtension new-extension}))
                       {:keys [status api-response]} resp]
                   (if-not (= status 200)
                     (p/publish {:topics topic
