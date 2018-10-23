@@ -1219,14 +1219,15 @@
 ;;hygen-insert-before-create
 
 (s/def ::create-user-params
-  (s/keys :req-un [::specs/email ::specs/role-id ::specs/status]
-          :opt-un [::specs/callback ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id ::specs/extensions ::specs/first-name ::specs/last-name ::specs/capacity-rule-id]))
+  (s/keys :req-un [::specs/email ::specs/role-id ::specs/platform-role-id]
+          :opt-un [::specs/callback ::specs/status ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id ::specs/extensions ::specs/first-name ::specs/last-name ::specs/capacity-rule-id]))
 
 (def-sdk-fn create-user
   "``` javascript
   CxEngage.entities.createUser({
     email: {{string}} (required),
     roleId: {{uuid}} (required),
+    platformRoleId: {{uuid}} (required),
     defaultIdentityProvider: {{uuid}} (optional),
     noPassword: {{boolean}} (optional),
     status: {{string}} (required),
@@ -1296,14 +1297,15 @@
 
 (s/def ::update-user-params
   (s/keys :req-un [::specs/user-id]
-          :opt-un [::specs/callback ::specs/email ::specs/role-id ::specs/default-identity-provider ::specs/no-password ::specs/status ::specs/work-station-id ::specs/external-id ::specs/extensions ::specs/first-name ::specs/last-name ::specs/capacity-rule-id]))
+          :opt-un [::specs/callback ::specs/role-id ::specs/platform-role-id ::specs/status ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id ::specs/extensions ::specs/first-name ::specs/last-name ::specs/capacity-rule-id]))
 
 (def-sdk-fn update-user
   "``` javascript
-  CxEngage.entities.updateUser({
+  CxEngage.entities.createUser({
     userId: {{uuid}} (required),
     email: {{string}} (required),
     roleId: {{uuid}} (required),
+    platformRoleId: {{uuid}} (required),
     defaultIdentityProvider: {{uuid}} (optional),
     noPassword: {{boolean}} (optional),
     status: {{string}} (required),
@@ -1313,7 +1315,7 @@
     firstName: {{string}} (optional),
     lastName: {{string}} (optional),
     capacityRuleId: {{uuid}} (optional),
-    updateBody: {{object}} (optional),
+    updateBody: {{object}} (optional)
   });
   ```
   Updates new single User by calling rest/update-user-response
@@ -1707,6 +1709,104 @@
                   :error (e/failed-to-update-skill-err entity-response)
                   :callback callback}))))
 
+(s/def ::add-skill-member-params
+  (s/keys :req-un [::specs/skill-id ::specs/user-id ::specs/proficiency]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn add-skill-member
+  "``` javascript
+  CxEngage.entities.addSkillMember({
+    skillId: {{uuid}},
+    userId: {{uuid}},
+    proficiency: {{integer}}
+  });
+  ```
+  Adds a single user member to skill by calling rest/add-skill-member-request
+  with skillId and userId as the unique keys and the proficiency.
+
+  Topic: cxengage/entities/add-skill-member-response
+
+  Possible Errors:
+
+  - [Entities: 11066](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-add-skill-member-err)"
+  {:validation ::add-skill-member-params
+   :topic-key :add-skill-member-response}
+  [params]
+  (let [{:keys [callback topic skill-id user-id proficiency]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/add-skill-member-request skill-id user-id proficiency))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-add-skill-member-err entity-response)
+                  :callback callback}))))
+
+(s/def ::remove-skill-member-params
+  (s/keys :req-un [::specs/skill-id ::specs/user-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn remove-skill-member
+  "``` javascript
+  CxEngage.entities.removeSkillMember({
+    skillId: {{uuid}},
+    userId: {{uuid}}
+  });
+  ```
+  Removes a single user member from skill by calling rest/remove-skill-member-request
+  with skillId and userId as the unique keys.
+
+  Topic: cxengage/entities/remove-skill-member-response
+
+  Possible Errors:
+
+  - [Entities: 11067](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-remove-skill-member-err)"
+  {:validation ::remove-skill-member-params
+   :topic-key :remove-skill-member-response}
+  [params]
+  (let [{:keys [callback topic skill-id user-id]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/remove-skill-member-request skill-id user-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-remove-skill-member-err entity-response)
+                  :callback callback}))))
+
+(s/def ::update-skill-member-params
+  (s/keys :req-un [::specs/skill-id ::specs/user-id ::specs/proficiency]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn update-skill-member
+  "``` javascript
+  CxEngage.entities.updateSkillMember({
+    skillId: {{uuid}},
+    userId: {{uuid}},
+    proficiency: {{integer}}
+  });
+  ```
+  Updates a single user member from skill by calling rest/update-skill-member-request
+  with skillId and userId as the unique keys and the proficiency.
+
+  Topic: cxengage/entities/update-skill-member-response
+
+  Possible Errors:
+
+  - [Entities: 11068](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-skill-member-err)"
+  {:validation ::update-skill-member-params
+   :topic-key :update-skill-member-response}
+  [params]
+  (let [{:keys [callback topic skill-id user-id proficiency]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/update-skill-member-request skill-id user-id proficiency))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-skill-member-err entity-response)
+                  :callback callback}))))
+
 (s/def ::update-group-params
   (s/keys :req-un [::specs/group-id]
           :opt-un [::specs/callback ::specs/name ::specs/active ::specs/description]))
@@ -1739,6 +1839,70 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-update-group-err entity-response)
+                  :callback callback}))))
+
+(s/def ::add-group-member-params
+  (s/keys :req-un [::specs/group-id ::specs/user-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn add-group-member
+  "``` javascript
+  CxEngage.entities.addGroupMember({
+    groupId: {{uuid}},
+    userId: {{uuid}}
+  });
+  ```
+  Adds a single user member to group by calling rest/add-group-member-request
+  with groupId and userId as the unique keys.
+
+  Topic: cxengage/entities/add-group-member-response
+
+  Possible Errors:
+
+  - [Entities: 11069](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-add-group-member-err)"
+  {:validation ::add-group-member-params
+   :topic-key :add-group-member-response}
+  [params]
+  (let [{:keys [callback topic group-id user-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/add-group-member-request group-id user-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-add-group-member-err entity-response)
+                  :callback callback}))))
+
+(s/def ::remove-group-member-params
+  (s/keys :req-un [::specs/group-id ::specs/user-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn remove-group-member
+  "``` javascript
+  CxEngage.entities.removeGroupMember({
+    groupId: {{uuid}},
+    userId: {{uuid}}
+  });
+  ```
+  Removes a single user member from group by calling rest/remove-group-member-request
+  with groupId and userId as the unique keys.
+
+  Topic: cxengage/entities/remove-group-member-response
+
+  Possible Errors:
+
+  - [Entities: 11070](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-remove-group-member-err)"
+  {:validation ::remove-group-member-params
+   :topic-key :remove-group-member-response}
+  [params]
+  (let [{:keys [callback topic group-id user-id]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/remove-group-member-request group-id user-id))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-remove-group-member-err entity-response)
                   :callback callback}))))
 
 ;;hygen-insert-before-update
@@ -1906,7 +2070,12 @@
                                        :update-role update-role
                                        :update-data-access-report update-data-access-report
                                        :update-skill update-skill
+                                       :add-skill-member add-skill-member
+                                       :remove-skill-member remove-skill-member
+                                       :update-skill-member update-skill-member
                                        :update-group update-group
+                                       :add-group-member add-group-member
+                                       :remove-group-member remove-group-member
                                        :update-user update-user
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
