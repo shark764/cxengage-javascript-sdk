@@ -284,7 +284,7 @@
                            :script script}})))
 
 (defn handle-generic [message]
-  nil)
+  (log :warn "Couldn't handle message: " message))
 
 (defn handle-resource-added [message]
   (p/publish {:topics (topics/get-topic :resource-added-received)
@@ -356,6 +356,10 @@
   (p/publish {:topics (topics/get-topic :silent-monitor-end)
               :response message}))
 
+(defn handle-customer-connected [message]
+  (p/publish {:topics (topics/get-topic :customer-connected)
+              :response message}))
+
 (defn msg-router [message]
   (let [handling-fn (case (:sdk-msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
@@ -388,6 +392,7 @@
                       :INTERACTIONS/SHOW_BANNER handle-show-banner
                       :INTERACTIONS/SILENT_MONITOR_START handle-silent-monitor-start
                       :INTERACTIONS/SILENT_MONITOR_END handle-silent-monitor-end
+                      :INTERACTIONS/CUSTOMER_CONNECTED handle-customer-connected
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
@@ -440,6 +445,7 @@
                                        "show-banner" :INTERACTIONS/SHOW_BANNER
                                        "silent-monitor-start" :INTERACTIONS/SILENT_MONITOR_START
                                        "silent-monitor-end" :INTERACTIONS/SILENT_MONITOR_END
+                                       "customer-connected" :INTERACTIONS/CUSTOMER_CONNECTED
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:sdk-msg-type inferred-notification-type} message))))
 
