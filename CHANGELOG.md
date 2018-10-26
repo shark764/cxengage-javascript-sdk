@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.23.2] - 2018-10-26
+### Added
+- Function to get any entity based on a vector path you pass in
+
+### Changed
+- Updated get-skill and get-skills to use this new function
+- Updated get-skill to do 2 api calls to include basic list members 
+
 ## [8.23.1] - 2018-10-25
 ### Added
 - Adding function to get all platform roles predefined.

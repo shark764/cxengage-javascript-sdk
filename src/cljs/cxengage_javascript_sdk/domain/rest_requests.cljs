@@ -187,14 +187,6 @@
                               {:tenant-id tenant-id})}]
     (api/api-request groups-request)))
 
-(defn get-skills-request []
-  (let [tenant-id (state/get-active-tenant-id)
-        skills-request {:method :get
-                        :url (iu/api-url
-                              "tenants/:tenant-id/skills"
-                              {:tenant-id tenant-id})}]
-    (api/api-request skills-request)))
-
 (defn get-platform-roles-request []
   (let [platform-roles-request {:method :get
                                 :url (iu/api-url "roles")}]
@@ -452,6 +444,11 @@
                               :url get-url}
                        entity-body (assoc :body entity-body))]
      (api/api-request get-request))))
+
+(defn get-crud-entity-request [entity-map]
+   (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-map))
+         get-request {:method :get :url url}]
+    (api/api-request get-request)))
 
 (defn send-flow-action-request [interaction-id action-id body]
   (let [tenant-id (state/get-active-tenant-id)
