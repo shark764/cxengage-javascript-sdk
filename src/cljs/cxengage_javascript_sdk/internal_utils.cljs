@@ -96,6 +96,11 @@
        (log-message :warn "Params provided:" (js/JSON.stringify (clj->js params)))
        nil))))
 
+(defn construct-api-url [params]
+  (reduce-kv (fn [result index value]
+              (str result (str value (if-not (= (dec (count params)) index) "/"))))
+            (str (state/get-base-api-url)) params))
+
 (defn get-now
   []
   (let [offset (state/get-time-offset)

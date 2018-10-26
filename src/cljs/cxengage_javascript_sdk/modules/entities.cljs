@@ -425,7 +425,7 @@
    :topic-key :get-skills-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as skills-response} (a/<! (rest/get-skills-request))]
+        {:keys [status api-response] :as skills-response} (a/<! (rest/get-crud-entity-request ["skills"]))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -794,14 +794,15 @@
    :topic-key :get-skill-response}
   [params]
   (let [{:keys [callback topic skill-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "skill" skill-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-skill-err entity-response)
-                  :callback callback}))))
+        skills-response (a/<! (rest/get-crud-entity-request ["skills" skill-id]))
+        skills-users-response (a/<! (rest/get-crud-entity-request ["skills" skill-id "users"]))
+        status-is-200 (and (= (:status skills-response) 200)(= (:status skills-users-response) 200))
+        response (update-in (:api-response skills-response) [:result :members] [(get-in skills-users-response [:api-response :result])])]
+    (p/publish
+      {:topics topic
+       :response response
+       :error (if (false? status-is-200) (e/failed-to-get-skill-err response))
+       :callback callback})))
 
 (s/def ::get-group-params
   (s/keys :req-un [::specs/group-id]
