@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.23.1] - 2018-10-25
+### Added
+- Adding function to get all platform roles predefined.
+- Adding missing functions for Data Access Control.
+- Missing functions to add members to Skill and Group lists.
+
+### Changed
+- Hygen templates to be consistent with documentation of functions.
+
 ## [8.23.0] - 2018-10-23
 ### Added
 * CXV1-15495 - Handling new signal from flow that tell us if a customer has picked up the call on an outbound voice interaction
@@ -13,8 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CXV1-15516 - Adding new SDK Functions for Skills Page (Create, Update Get All, Get).
 - CXV1-15517 - Adding new SDK Functions for Groups Page (Create, Update Get All, Get).
 - CXV1-15503 - Adding new SDK Functions for Users Page (Create, Update Get All, Get).
-- Adding function to get all platform roles predefined.
-- Adding missing functions for Data Access Control.
 
 ### Changed
 - Changed function to get a list of historical report folders.

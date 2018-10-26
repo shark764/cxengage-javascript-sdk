@@ -195,6 +195,10 @@
                               {:tenant-id tenant-id})}]
     (api/api-request skills-request)))
 
+(defn get-platform-roles-request []
+  (let [platform-roles-request {:method :get
+                                :url (iu/api-url "roles")}]
+    (api/api-request platform-roles-request)))
 
 (defn get-artifact-by-id-request [artifact-id interaction-id tenant-id]
   (let [tenant-id (or tenant-id (state/get-active-tenant-id))
@@ -716,7 +720,8 @@
   (let [tenant-id (state/get-active-tenant-id)
         update-data-access-report-request (cond-> {:method :put
                                                    :url (iu/api-url "tenants/:tenant-id/data-access-report-groups/:data-access-report-id/data-access-reports"
-                                                            {:tenant-id tenant-id :data-access-report-id data-access-report-id})}
+                                                            {:tenant-id tenant-id
+                                                             :data-access-report-id data-access-report-id})}
                                             (not (nil? name))             (assoc-in [:body :name] name)
                                             (not (nil? description))      (assoc-in [:body :description] description)
                                             (not (nil? active))           (assoc-in [:body :active] active)
@@ -752,6 +757,40 @@
                                (not (nil? has-proficiency)) (assoc-in [:body :has-proficiency] has-proficiency))]
     (api/api-request update-skill-request)))
 
+(defn add-skill-member-request [skill-id user-id proficiency]
+  (let [tenant-id (state/get-active-tenant-id)
+        add-skill-member-request {:method :post
+                                  :url (iu/api-url "tenants/:tenant-id/skills/:skill-id/members/:user-id"
+                                        {:tenant-id tenant-id
+                                         :skill-id skill-id
+                                         :user-id user-id})
+                                  :body {:skill skill-id
+                                         :user user-id
+                                         :proficiency proficiency}}]
+    (api/api-request add-skill-member-request)))
+
+(defn remove-skill-member-request [skill-id user-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        remove-skill-member-request {:method :delete
+                                     :preserve-casing? true
+                                     :url (iu/api-url "tenants/:tenant-id/skills/:skill-id/members/:user-id"
+                                           {:tenant-id tenant-id
+                                            :skill-id skill-id
+                                            :user-id user-id})}]
+    (api/api-request remove-skill-member-request)))
+
+(defn update-skill-member-request [skill-id user-id proficiency]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-skill-member-request {:method :put
+                                     :url (iu/api-url "tenants/:tenant-id/skills/:skill-id/members/:user-id"
+                                           {:tenant-id tenant-id
+                                            :skill-id skill-id
+                                            :user-id user-id})
+                                     :body {:skill skill-id
+                                            :user user-id
+                                            :proficiency proficiency}}]
+    (api/api-request update-skill-member-request)))
+
 (defn create-group-request [name description active]
   (let [tenant-id (state/get-active-tenant-id)
         create-group-request (cond-> {:method :post
@@ -771,6 +810,27 @@
                                (not (nil? description))     (assoc-in [:body :description] description)
                                (not (nil? active))          (assoc-in [:body :active] active))]
     (api/api-request update-group-request)))
+
+(defn add-group-member-request [group-id user-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        add-group-member-request {:method :post
+                                  :url (iu/api-url "tenants/:tenant-id/groups/:group-id/members/:user-id"
+                                        {:tenant-id tenant-id
+                                         :group-id group-id
+                                         :user-id user-id})
+                                  :body {:group group-id
+                                         :user user-id}}]
+    (api/api-request add-group-member-request)))
+
+(defn remove-group-member-request [group-id user-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        remove-group-member-request {:method :delete
+                                     :preserve-casing? true
+                                     :url (iu/api-url "tenants/:tenant-id/groups/:group-id/members/:user-id"
+                                           {:tenant-id tenant-id
+                                            :group-id group-id
+                                            :user-id user-id})}]
+    (api/api-request remove-group-member-request)))
 
 (defn create-user-request [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id]
   (let [tenant-id (state/get-active-tenant-id)
