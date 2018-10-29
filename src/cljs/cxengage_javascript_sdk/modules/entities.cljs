@@ -797,7 +797,8 @@
         skills-response (a/<! (rest/get-crud-entity-request ["skills" skill-id]))
         skills-users-response (a/<! (rest/get-crud-entity-request ["skills" skill-id "users"]))
         status-is-200 (and (= (:status skills-response) 200)(= (:status skills-users-response) 200))
-        response (update-in (:api-response skills-response) [:result :members] [(get-in skills-users-response [:api-response :result])])]
+        users-ids (mapv #(:user-id %) (into [] (get-in skills-users-response [:api-response :result])))
+        response (assoc-in (:api-response skills-response) [:result :users] users-ids)]
     (p/publish
       {:topics topic
        :response response
@@ -826,14 +827,16 @@
    :topic-key :get-group-response}
   [params]
   (let [{:keys [callback topic group-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "group" group-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-group-err entity-response)
-                  :callback callback}))))
+        groups-response (a/<! (rest/get-crud-entity-request ["groups" group-id]))
+        groups-users-response (a/<! (rest/get-crud-entity-request ["groups" group-id "users"]))
+        status-is-200 (and (= (:status groups-response) 200)(= (:status groups-users-response) 200))
+        users-ids (mapv #(:member-id %) (into [] (get-in groups-users-response [:api-response :result])))
+        response (assoc-in (:api-response groups-response) [:result :users] users-ids)]
+    (p/publish
+      {:topics topic
+       :response response
+       :error (if (false? status-is-200) (e/failed-to-get-group-err response))
+       :callback callback})))
 
 ;;hygen-insert-before-get
 
