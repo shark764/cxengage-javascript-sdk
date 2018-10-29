@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.23.3] - 2018-10-29
+### Changed
+- getSkill and getGroup now return entitys members as an array of uuids
+
 ## [8.23.2] - 2018-10-26
 ### Added
 - Function to get any entity based on a vector path you pass in
