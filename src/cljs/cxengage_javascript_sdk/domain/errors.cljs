@@ -386,12 +386,15 @@
    :level "error"
    :message "Attempted to accept a work offer that is already expired."})
 
-(defn failed-to-acknowledge-flow-action-err [interaction-id data]
+(defn failed-to-acknowledge-flow-action-err [interaction-id data message]
   {:code 4002
    :context :interaction
    :data {:interaction-id interaction-id
-          :api-response data}
-   :level "interaction-fatal"
+          :api-response data
+          :flow-message message}
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to acknowledge flow action."})
 
 (defn failed-to-end-interaction-err [interaction-id data]
@@ -399,7 +402,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "interaction-fatal"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to end interaction."})
 
 (defn failed-to-accept-interaction-err [interaction-id data]
@@ -407,7 +412,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "interaction-fatal"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to accept interaction."})
 
 (defn failed-to-focus-interaction-err [interaction-id data]
@@ -415,7 +422,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to focus interaction."})
 
 (defn failed-to-unfocus-interaction-err [interaction-id data]
@@ -423,7 +432,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to unfocus interaction."})
 
 (defn failed-to-assign-contact-to-interaction-err [interaction-id data]
@@ -431,7 +442,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to assign specified contact to interaction."})
 
 (defn failed-to-unassign-contact-from-interaction-err [interaction-id data]
@@ -439,7 +452,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to unassign specified contact to interaction."})
 
 (defn failed-to-enable-wrapup-err [interaction-id data]
@@ -447,7 +462,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to enable wrapup."})
 
 (defn failed-to-disable-wrapup-err [interaction-id data]
@@ -455,7 +472,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to disable wrapup."})
 
 (defn failed-to-end-wrapup-err [interaction-id data]
@@ -463,7 +482,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to end wrapup."})
 
 (defn failed-to-deselect-disposition-err [interaction-id data]
@@ -471,15 +492,19 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
-   :message "Failde to deselect disposition code."})
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
+   :message "Failed to deselect disposition code."})
 
 (defn failed-to-select-disposition-err [interaction-id data]
   {:code 4013
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "error"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to select disposition code."})
 
 (defn failed-to-get-interaction-note-err [interaction-id data]
@@ -529,7 +554,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level "interaction-fatal"
+   :level (if (= 404 (:status data))
+            "interaction-fatal"
+            "error")
    :message "Failed to send custom interrupt."})
 
 (defn invalid-disposition-provided-err [interaction-id data]
