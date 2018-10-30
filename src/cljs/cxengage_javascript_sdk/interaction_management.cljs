@@ -408,7 +408,7 @@
                     {:keys [api-response status]} ack-response]
                 (if (not= status 200)
                   (do (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
-                                  :error (e/failed-to-acknowledge-flow-action-err interaction-id ack-response)})
+                                  :error (e/failed-to-acknowledge-flow-action-err interaction-id ack-response message)})
                       (log :error "Failed to acknowledge flow action"))
                   (p/publish {:topics (topics/get-topic :flow-action-acknowledged)
                               :response {:interaction-id interaction-id}})))))))
