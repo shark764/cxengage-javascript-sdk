@@ -1551,6 +1551,78 @@
                   :error (e/failed-to-delete-outbound-identifier-err entity-response)
                   :callback callback}))))
 
+(s/def ::dissociate-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn dissociate
+  "``` javascript
+  CxEngage.entities.dissociate({
+    originEntity: {
+      name: {{string}}, (required)
+      id: {{string}}, (required)
+    },
+    destinationEntity: {
+      name: {{string}}, (required)
+      id: {{string}}, (required)
+    }
+  });
+  ```
+  Dissociates item from the entity requested. For example  , remove a user from a group or skill.
+
+  Topic: cxengage/entities/dissociate-response
+
+  Possible Errors:
+
+  - [Entities: 11064](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-dissociate-err)"
+  {:validation ::dissociate-params
+   :topic-key :dissociate-response}
+  [params]
+  (let [{:keys [callback topic origin-entity destination-entity]} params
+        {:keys [api-response status] :as response} (a/<! (rest/dissociate-request origin-entity destination-entity))]
+   (p/publish {:topics topic
+               :response api-response
+               :error (if (false? (= status 200)) (e/failed-to-dissociate-err response))
+               :callback callback})))
+
+(s/def ::associate-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn associate
+  "``` javascript
+  CxEngage.entities.associate({
+    originEntity: {
+      name: {{string}}, (required)
+      id: {{string}}, (required)
+    },
+    destinationEntity: {
+      name: {{string}}, (required)
+      id: {{string}}, (required)
+    }
+  });
+  ```
+  Associates item from the entity requested. For example  , add a user to a group or skill.
+
+  Topic: cxengage/entities/associate-response
+
+  Possible Errors:
+
+  - [Entities: 11066](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-associate-err)"
+  {:validation ::associate-params
+   :topic-key :associate-response}
+  [params]
+  (let [{:keys [callback topic origin-entity destination-entity]} params
+        {:keys [api-response status] :as response} (a/<! (rest/associate-request origin-entity destination-entity))
+        {:keys [member-id member-type]} (:result api-response)
+        response-body (if (and (string? member-type) (string? member-id) (= member-type "user"))
+                          (assoc-in api-response [:result :user-id] member-id)
+                          api-response)]
+   (p/publish {:topics topic
+               :response response-body
+               :error (if (false? (= status 200)) (e/failed-to-associate-err response))
+               :callback callback})))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.addOutboundIdentifierListMember({
 ;;   outboundIdentifierListId: {{uuid}}
@@ -1713,75 +1785,6 @@
                   :error (e/failed-to-update-skill-err entity-response)
                   :callback callback}))))
 
-(s/def ::add-skill-member-params
-  (s/keys :req-un [::specs/skill-id ::specs/user-id ::specs/proficiency]
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn add-skill-member
-  "``` javascript
-  CxEngage.entities.addSkillMember({
-    skillId: {{uuid}},
-    userId: {{uuid}},
-    proficiency: {{integer}}
-  });
-  ```
-  Adds a single user member to skill by calling rest/add-skill-member-request
-  with skillId and userId as the unique keys and the proficiency.
-
-  Topic: cxengage/entities/add-skill-member-response
-
-  Possible Errors:
-
-  - [Entities: 11066](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-add-skill-member-err)"
-  {:validation ::add-skill-member-params
-   :topic-key :add-skill-member-response}
-  [params]
-  (let [{:keys [callback topic skill-id user-id proficiency]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/add-skill-member-request skill-id user-id proficiency))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-add-skill-member-err entity-response)
-                  :callback callback}))))
-
-(s/def ::remove-skill-member-params
-  (s/keys :req-un [::specs/skill-id ::specs/user-id]
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn remove-skill-member
-  "``` javascript
-  CxEngage.entities.removeSkillMember({
-    skillId: {{uuid}},
-    userId: {{uuid}}
-  });
-  ```
-  Removes a single user member from skill by calling rest/remove-skill-member-request
-  with skillId and userId as the unique keys.
-
-  Topic: cxengage/entities/remove-skill-member-response
-
-  Possible Errors:
-
-  - [Entities: 11067](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-remove-skill-member-err)"
-  {:validation ::remove-skill-member-params
-   :topic-key :remove-skill-member-response}
-  [params]
-  (let [{:keys [callback topic skill-id user-id]} params
-        {:keys [api-response status] :as entity-response} (a/<! (rest/remove-skill-member-request skill-id user-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-remove-skill-member-err entity-response)
-                  :callback callback}))))
-
-(s/def ::update-skill-member-params
-  (s/keys :req-un [::specs/skill-id ::specs/user-id ::specs/proficiency]
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn update-skill-member
   "``` javascript
   CxEngage.entities.updateSkillMember({
@@ -1843,70 +1846,6 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-update-group-err entity-response)
-                  :callback callback}))))
-
-(s/def ::add-group-member-params
-  (s/keys :req-un [::specs/group-id ::specs/user-id]
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn add-group-member
-  "``` javascript
-  CxEngage.entities.addGroupMember({
-    groupId: {{uuid}},
-    userId: {{uuid}}
-  });
-  ```
-  Adds a single user member to group by calling rest/add-group-member-request
-  with groupId and userId as the unique keys.
-
-  Topic: cxengage/entities/add-group-member-response
-
-  Possible Errors:
-
-  - [Entities: 11069](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-add-group-member-err)"
-  {:validation ::add-group-member-params
-   :topic-key :add-group-member-response}
-  [params]
-  (let [{:keys [callback topic group-id user-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/add-group-member-request group-id user-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-add-group-member-err entity-response)
-                  :callback callback}))))
-
-(s/def ::remove-group-member-params
-  (s/keys :req-un [::specs/group-id ::specs/user-id]
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn remove-group-member
-  "``` javascript
-  CxEngage.entities.removeGroupMember({
-    groupId: {{uuid}},
-    userId: {{uuid}}
-  });
-  ```
-  Removes a single user member from group by calling rest/remove-group-member-request
-  with groupId and userId as the unique keys.
-
-  Topic: cxengage/entities/remove-group-member-response
-
-  Possible Errors:
-
-  - [Entities: 11070](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-remove-group-member-err)"
-  {:validation ::remove-group-member-params
-   :topic-key :remove-group-member-response}
-  [params]
-  (let [{:keys [callback topic group-id user-id]} params
-        {:keys [api-response status] :as entity-response} (a/<! (rest/remove-group-member-request group-id user-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-remove-group-member-err entity-response)
                   :callback callback}))))
 
 ;;hygen-insert-before-update
@@ -2081,9 +2020,11 @@
                                        :add-group-member add-group-member
                                        :remove-group-member remove-group-member
                                        :update-user update-user
+                                       :associate associate
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template
+                                       :dissociate dissociate
                                       ;;hygen-insert-above-delete
                                        :download-list download-list}}
 

@@ -4,6 +4,7 @@
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.api-utils :as api]
+            [clojure.string :as string]
             [ajax.core :as ajax]
             [cljs.core.async :as a]))
 
@@ -754,39 +755,24 @@
                                (not (nil? has-proficiency)) (assoc-in [:body :has-proficiency] has-proficiency))]
     (api/api-request update-skill-request)))
 
-(defn add-skill-member-request [skill-id user-id proficiency]
+(defn dissociate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)
-        add-skill-member-request {:method :post
-                                  :url (iu/api-url "tenants/:tenant-id/skills/:skill-id/members/:user-id"
-                                        {:tenant-id tenant-id
-                                         :skill-id skill-id
-                                         :user-id user-id})
-                                  :body {:skill skill-id
-                                         :user user-id
-                                         :proficiency proficiency}}]
-    (api/api-request add-skill-member-request)))
+        request-data {:method :delete
+                      :preserve-casing? true
+                      :url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] [(:name origin-entity) (:id origin-entity) (:name destination-entity) (:id destination-entity)]))}]                     
+    (api/api-request request-data)))
 
-(defn remove-skill-member-request [skill-id user-id]
+(defn associate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)
-        remove-skill-member-request {:method :delete
-                                     :preserve-casing? true
-                                     :url (iu/api-url "tenants/:tenant-id/skills/:skill-id/members/:user-id"
-                                           {:tenant-id tenant-id
-                                            :skill-id skill-id
-                                            :user-id user-id})}]
-    (api/api-request remove-skill-member-request)))
+        url (iu/construct-api-url (into ["tenants" tenant-id] [(:name origin-entity) (:id origin-entity) (:name destination-entity)]))
 
-(defn update-skill-member-request [skill-id user-id proficiency]
-  (let [tenant-id (state/get-active-tenant-id)
-        update-skill-member-request {:method :put
-                                     :url (iu/api-url "tenants/:tenant-id/skills/:skill-id/members/:user-id"
-                                           {:tenant-id tenant-id
-                                            :skill-id skill-id
-                                            :user-id user-id})
-                                     :body {:skill skill-id
-                                            :user user-id
-                                            :proficiency proficiency}}]
-    (api/api-request update-skill-member-request)))
+        body {:tenant-id tenant-id}
+        body (assoc body (keyword (str (string/join "" (drop-last (:name origin-entity))) "-id")) (:id origin-entity))
+        body (assoc body (keyword (str (string/join "" (drop-last (:name destination-entity))) "-id")) (:id destination-entity))
+        request-data {:method :post
+                      :url url
+                      :body body}]
+    (api/api-request request-data)))
 
 (defn create-group-request [name description active]
   (let [tenant-id (state/get-active-tenant-id)
@@ -807,27 +793,6 @@
                                (not (nil? description))     (assoc-in [:body :description] description)
                                (not (nil? active))          (assoc-in [:body :active] active))]
     (api/api-request update-group-request)))
-
-(defn add-group-member-request [group-id user-id]
-  (let [tenant-id (state/get-active-tenant-id)
-        add-group-member-request {:method :post
-                                  :url (iu/api-url "tenants/:tenant-id/groups/:group-id/members/:user-id"
-                                        {:tenant-id tenant-id
-                                         :group-id group-id
-                                         :user-id user-id})
-                                  :body {:group group-id
-                                         :user user-id}}]
-    (api/api-request add-group-member-request)))
-
-(defn remove-group-member-request [group-id user-id]
-  (let [tenant-id (state/get-active-tenant-id)
-        remove-group-member-request {:method :delete
-                                     :preserve-casing? true
-                                     :url (iu/api-url "tenants/:tenant-id/groups/:group-id/members/:user-id"
-                                           {:tenant-id tenant-id
-                                            :group-id group-id
-                                            :user-id user-id})}]
-    (api/api-request remove-group-member-request)))
 
 (defn create-user-request [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id]
   (let [tenant-id (state/get-active-tenant-id)
