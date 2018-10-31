@@ -1677,7 +1677,15 @@
    :level "error"
    :message "Failed to get all platform roles predefined."})
 
-(defn failed-to-dissociate-err [data]
+(defn failed-to-dissociate-err
+  "**Error Code:** 11064
+   Message: Failed to dissociate entity.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 11064
    :context :entities
    :data {:api-response data}
@@ -1699,7 +1707,15 @@
    :level "error"
    :message "Failed to create user."})
 
-(defn failed-to-associate-err [data]
+(defn failed-to-associate-err
+  "**Error Code:** 11066
+   Message: Failed to associate entity.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 11066
    :context :entities
    :data {:api-response data}

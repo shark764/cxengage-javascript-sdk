@@ -3,6 +3,7 @@
                    [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]])
   (:require [cljs.spec.alpha :as s]
             [cljs.core.async :as a]
+            [clojure.set :refer [rename-keys]]
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
@@ -686,8 +687,14 @@
   (let [{:keys [callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "custom-metric"))]
     (if (= status 200)
+      ; We set value for updated and updated-by if entity hasn't been updated yet
+      ; since those values are not set by default like in other entities.
+      ; JIRA Reference: https://liveops.atlassian.net/browse/CXV1-15814
       (p/publish {:topics topic
-                  :response api-response
+                  :response {:result (map #(cond-> %
+                                             (nil? (:updated %))    (assoc :updated (:created %))
+                                             (nil? (:updated-by %)) (assoc :updated-by (:created-by %)))
+                                       (:result api-response))}
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-custom-metrics-err entity-response)
@@ -715,8 +722,14 @@
   (let [{:keys [callback topic custom-metric-id]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "custom-metric" custom-metric-id))]
     (if (= status 200)
+      ; We set value for updated and updated-by if entity hasn't been updated yet
+      ; since those values are not set by default like in other entities.
+      ; JIRA Reference: https://liveops.atlassian.net/browse/CXV1-15814
       (p/publish {:topics topic
-                  :response api-response
+                  :response {:result (#(cond-> %
+                                         (nil? (:updated %))    (assoc :updated (:created %))
+                                         (nil? (:updated-by %)) (assoc :updated-by (:created-by %)))
+                                       (:result api-response))}
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-custom-metric-err entity-response)
@@ -761,7 +774,7 @@
    :topic-key :get-data-access-reports-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "data-access-report"))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["data-access-reports"]))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -792,14 +805,13 @@
    :topic-key :get-data-access-report-response}
   [params]
   (let [{:keys [callback topic data-access-report-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-data-access-report-request data-access-report-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-data-access-report-err entity-response)
-                  :callback callback}))))
+        data-access-reports-response (a/<! (rest/get-crud-entity-request ["data-access-reports" data-access-report-id]))
+        status-is-200 (= (:status data-access-reports-response) 200)
+        response (:api-response (update-in data-access-reports-response [:api-response :result] rename-keys {:members :users}))]
+    (p/publish {:topics topic
+                :response response
+                :error (if (false? status-is-200) (e/failed-to-get-data-access-report-err response))
+                :callback callback})))
 
 (s/def ::get-data-access-member-params
   (s/keys :req-un [::specs/data-access-member-id]
@@ -1245,7 +1257,7 @@
 
 (s/def ::create-data-access-report-params
   (s/keys :req-un [::specs/name ::specs/active ::specs/report-type]
-          :opt-un [::specs/callback ::specs/description ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name]))
+          :opt-un [::specs/callback ::specs/description ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/users]))
 
 (def-sdk-fn create-data-access-report
   "``` javascript
@@ -1257,6 +1269,7 @@
     realtimeReportType: {{string}}, (optional)
     realtimeReportName: {{string}}, (optional)
     historicalCatalogName: {{string}}, (optional)
+    users: {{array}} (optional)
   });
   ```
   Creates new single Data Access Report by calling rest/create-data-access-report-request
@@ -1270,11 +1283,12 @@
   {:validation ::create-data-access-report-params
    :topic-key :create-data-access-report-response}
   [params]
-  (let [{:keys [name description active report-type realtime-report-type realtime-report-name historical-catalog-name callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-data-access-report-request name description active report-type realtime-report-type realtime-report-name historical-catalog-name))]
+  (let [{:keys [name description active report-type realtime-report-type realtime-report-name historical-catalog-name users callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-data-access-report-request name description active report-type realtime-report-type realtime-report-name historical-catalog-name users))
+        response (update-in api-response [:result] rename-keys {:members :users})]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response api-response
+                  :response response
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-create-data-access-report-err entity-response)
@@ -1840,7 +1854,7 @@
 
 (s/def ::update-data-access-report-params
     (s/keys :req-un [::specs/data-access-report-id]
-            :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/report-type ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/member-ids]))
+            :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/report-type ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/users]))
 
 (def-sdk-fn update-data-access-report
   "``` javascript
@@ -1853,7 +1867,7 @@
     realtimeReportType: {{string}}, (optional)
     realtimeReportName: {{string}}, (optional)
     historicalCatalogName: {{string}}, (optional)
-    memberIds: {{array}}, (optional)
+    users: {{array}} (optional)
   });
   ```
   Updates a single Data Access Report by calling rest/update-data-access-report-request
@@ -1867,11 +1881,12 @@
   {:validation ::update-data-access-report-params
    :topic-key :update-data-access-report-response}
   [params]
-  (let [{:keys [data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name member-ids callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-data-access-report-request data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name member-ids))]
+  (let [{:keys [data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name users callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-data-access-report-request data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name users))
+        response (update-in api-response [:result] rename-keys {:members :users})]
     (if (= status 200)
       (p/publish {:topics topic
-                  :response api-response
+                  :response response
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-update-data-access-report-err entity-response)
@@ -1910,35 +1925,6 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-update-skill-err entity-response)
-                  :callback callback}))))
-
-(def-sdk-fn update-skill-member
-  "``` javascript
-  CxEngage.entities.updateSkillMember({
-    skillId: {{uuid}},
-    userId: {{uuid}},
-    proficiency: {{integer}}
-  });
-  ```
-  Updates a single user member from skill by calling rest/update-skill-member-request
-  with skillId and userId as the unique keys and the proficiency.
-
-  Topic: cxengage/entities/update-skill-member-response
-
-  Possible Errors:
-
-  - [Entities: 11068](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-skill-member-err)"
-  {:validation ::update-skill-member-params
-   :topic-key :update-skill-member-response}
-  [params]
-  (let [{:keys [callback topic skill-id user-id proficiency]} params
-        {:keys [api-response status] :as entity-response} (a/<! (rest/update-skill-member-request skill-id user-id proficiency))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-skill-member-err entity-response)
                   :callback callback}))))
 
 (s/def ::update-group-params
@@ -2138,18 +2124,11 @@
                                        :update-outbound-identifier-list update-outbound-identifier-list
                                        :add-outbound-identifier-list-member add-outbound-identifier-list-member
                                        :remove-outbound-identifier-list-member remove-outbound-identifier-list-member
-                                       :add-role-list-member add-role-list-member
-                                       :remove-role-list-member remove-role-list-member
                                        :update-custom-metric update-custom-metric
                                        :update-role update-role
                                        :update-data-access-report update-data-access-report
                                        :update-skill update-skill
-                                       :add-skill-member add-skill-member
-                                       :remove-skill-member remove-skill-member
-                                       :update-skill-member update-skill-member
                                        :update-group update-group
-                                       :add-group-member add-group-member
-                                       :remove-group-member remove-group-member
                                        :update-user update-user
                                        :associate associate
                                       ;;hygen-insert-above-update
