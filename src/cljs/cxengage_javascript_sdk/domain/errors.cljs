@@ -1677,6 +1677,13 @@
    :level "error"
    :message "Failed to get all platform roles predefined."})
 
+(defn failed-to-dissociate-err [data]
+  {:code 11064
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to dissociate entity."})
+
 (defn failed-to-create-user-err
   "**Error Code:** 11065
    Message: Failed to create user.
@@ -1692,80 +1699,12 @@
    :level "error"
    :message "Failed to create user."})
 
-(defn failed-to-add-skill-member-err
-  "**Error Code:** 11066
-   Message: Failed to add member to list.
-
-   This error is usually due to an unexpected status code returned from the API.
-   Validate that the values passed into the sdk function were correct.
-
-   **Solution:** Check your browsers dev tools console for additional error information"
-  [data]
+(defn failed-to-associate-err [data]
   {:code 11066
    :context :entities
    :data {:api-response data}
    :level "error"
-   :message "Failed to add member to list."})
-
-(defn failed-to-remove-skill-member-err
-  "**Error Code:** 11067
-   Message: Failed to remove member from list.
-
-   This error is usually due to an unexpected status code returned from the API.
-   Validate that the values passed into the sdk function were correct.
-
-   **Solution:** Check your browsers dev tools console for additional error information"
-  [data]
-  {:code 11067
-   :context :entities
-   :data {:api-response data}
-   :level "error"
-   :message "Failed to remove member from list."})
-
-(defn failed-to-update-skill-member-err
-  "**Error Code:** 11068
-   Message: Failed to update member from list.
-
-   This error is usually due to an unexpected status code returned from the API.
-   Validate that the values passed into the sdk function were correct.
-
-   **Solution:** Check your browsers dev tools console for additional error information"
-  [data]
-  {:code 11068
-   :context :entities
-   :data {:api-response data}
-   :level "error"
-   :message "Failed to update member from list."})
-
-(defn failed-to-add-group-member-err
-  "**Error Code:** 11069
-   Message: Failed to add member to list.
-
-   This error is usually due to an unexpected status code returned from the API.
-   Validate that the values passed into the sdk function were correct.
-
-   **Solution:** Check your browsers dev tools console for additional error information"
-  [data]
-  {:code 11069
-   :context :entities
-   :data {:api-response data}
-   :level "error"
-   :message "Failed to add member to list."})
-
-(defn failed-to-remove-group-member-err
-  "**Error Code:** 11070
-   Message: Failed to remove member from list.
-
-   This error is usually due to an unexpected status code returned from the API.
-   Validate that the values passed into the sdk function were correct.
-
-   **Solution:** Check your browsers dev tools console for additional error information"
-  [data]
-  {:code 11070
-   :context :entities
-   :data {:api-response data}
-   :level "error"
-   :message "Failed to remove member from list."})
+   :message "Failed to associate entity."})
 
 ;;hygen-insert-before-11000s
 
