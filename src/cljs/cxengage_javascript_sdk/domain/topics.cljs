@@ -82,6 +82,7 @@
                  :get-artifacts-response "cxengage/entities/get-artifacts-response"
                  :get-artifact-response "cxengage/entities/get-artifact-response"
                  :get-outbound-identifiers-response "cxengage/entities/get-outbound-identifiers-response"
+                 :get-user-outbound-identifier-lists-response "cxengage/entities/get-user-outbound-identifier-lists-response"
                  :update-outbound-identifier-response "cxengage/entities/update-outbound-identifier-response"
                  :create-outbound-identifier-response "cxengage/entities/create-outbound-identifier-response"
                  :delete-outbound-identifier-response "cxengage/entities/delete-outbound-identifier-response"

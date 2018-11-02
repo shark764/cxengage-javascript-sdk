@@ -683,7 +683,7 @@
         create-outbound-identifier-request (cond-> {:method :post
                                                     :url (iu/api-url "tenants/:tenant-id/outbound-identifier-lists"
                                                                     {:tenant-id tenant-id})}
-                                            active                   (assoc-in [:body :active] active)
+                                            (not (nil? active))      (assoc-in [:body :active] active)
                                             name                     (assoc-in [:body :name] name)
                                             (not (nil? description)) (assoc-in [:body :description] description))]
     (api/api-request create-outbound-identifier-request)))

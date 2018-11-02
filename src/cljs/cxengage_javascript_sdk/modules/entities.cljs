@@ -642,6 +642,35 @@
                   :error (e/failed-to-get-outbound-identifier-lists-err entity-response)
                   :callback callback}))))
 
+(s/def ::get-user-outbound-identifier-lists-params
+  (s/keys :req-un []
+          :opt-un [::specs/user-id]))
+
+(def-sdk-fn get-user-outbound-identifier-lists
+  "``` javascript
+  CxEngage.entities.getUserOutboundIdentifierLists(
+    userId: {{uuid}}, (Optional, defaults to current user)
+  );
+  ```
+  Retrieves the outbound identifier lists configured for currently logged in user
+
+  Possible Errors:
+
+  - [Entities: 11068](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-user-outbound-identifier-lists-err)"
+  {:validation ::get-user-outbound-identifier-lists-params
+   :topic-key :get-user-outbound-identifier-lists-response}
+  [params]
+  (let [{:keys [user-id callback topic]} params
+         user-id (if user-id user-id (state/get-active-user-id))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["users" user-id "outbound-identifier-lists"]))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-user-outbound-identifier-lists-err entity-response)
+                  :callback callback}))))
+
 (def-sdk-fn get-custom-metrics
   "``` javascript
   CxEngage.entities.getCustomMetrics();
@@ -1986,6 +2015,7 @@
                                        :get-outbound-identifiers get-outbound-identifiers
                                        :get-outbound-identifier-list get-outbound-identifier-list
                                        :get-outbound-identifier-lists get-outbound-identifier-lists
+                                       :get-user-outbound-identifier-lists get-user-outbound-identifier-lists
                                        :get-flows get-flows
                                        :get-transfer-list get-transfer-list
                                        :get-dashboards get-dashboards

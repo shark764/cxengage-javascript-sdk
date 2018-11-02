@@ -385,24 +385,26 @@
 ;; CxEngage.interactions.voice.dial({
 ;;   phoneNumber: "{{number}}"
 ;;   popUri: "{{string}}" (Optional, used for salesforce screen pop)
+;;   outboundAni: "{{string}}" (Optional)-- click to call
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
 (s/def ::dial-params
   (s/keys :req-un [::specs/phone-number]
-          :opt-un [::specs/pop-uri ::specs/callback]))
-
+          :opt-un [::specs/pop-uri ::specs/outbound-ani ::specs/callback]))
 (def-sdk-fn dial
   ""
   {:validation ::dial-params
    :topic-key :dial-send-acknowledged}
   [params]
-  (let [{:keys [topic phone-number pop-uri callback]} params
+  (let [{:keys [topic phone-number outbound-ani pop-uri callback]} params
         resource-id (state/get-active-user-id)
         session-id (state/get-session-id)
         outbound-integration-type (state/get-outbound-integration-type)
         dial-body {:channel-type "voice"
-                          :contact-point "click to call"
+                          :contact-point (if outbound-ani 
+                                             outbound-ani
+                                             "click to call")
                           :customer phone-number
                           :direction "agent-initiated"
                           :interaction (merge {:resource-id resource-id

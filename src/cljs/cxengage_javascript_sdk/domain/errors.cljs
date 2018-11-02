@@ -1721,6 +1721,20 @@
    :level "error"
    :message "Failed to get data access member."})
 
+(defn failed-to-get-user-outbound-identifier-lists-err [data]
+  "**Error Code:** 11068
+    Message: Failed to get the user's outbound identifiers list.
+
+    This error is usually due to an unexpected status code returned from the API.
+    Validate that the values passed into the sdk function were correct.
+
+    **Solution:** Check your browsers dev tools console for additional error information"
+  {:code 11068
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get user's outbound identifier lists."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
