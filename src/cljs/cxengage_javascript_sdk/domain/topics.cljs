@@ -70,6 +70,7 @@
                  :create-group-response "cxengage/entities/create-group-response"
                  :update-group-response "cxengage/entities/update-group-response"
                  :get-skills-response "cxengage/entities/get-skills-response"
+                 :get-entity-response "cxengage/entities/get-entity-response"
                  :get-skill-response "cxengage/entities/get-skill-response"
                  :create-skill-response "cxengage/entities/create-skill-response"
                  :update-skill-response "cxengage/entities/update-skill-response"
