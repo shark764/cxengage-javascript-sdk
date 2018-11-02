@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.25.0] - 2018-11-2
+### Added
+- Added function to get Data Access User details
+
 ## [8.24.0] - 2018-10-31
 ### Added
 - associate and dissociate functions to add or remove list type items between entities in a more generic fashion
@@ -24,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated get-skill and get-skills to use this new function
-- Updated get-skill to do 2 api calls to include basic list members 
+- Updated get-skill to do 2 api calls to include basic list members
 
 ## [8.23.1] - 2018-10-25
 ### Added

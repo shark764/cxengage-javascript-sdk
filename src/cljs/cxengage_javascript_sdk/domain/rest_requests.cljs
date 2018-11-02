@@ -759,7 +759,7 @@
   (let [tenant-id (state/get-active-tenant-id)
         request-data {:method :delete
                       :preserve-casing? true
-                      :url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] [(:name origin-entity) (:id origin-entity) (:name destination-entity) (:id destination-entity)]))}]                     
+                      :url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] [(:name origin-entity) (:id origin-entity) (:name destination-entity) (:id destination-entity)]))}]
     (api/api-request request-data)))
 
 (defn associate-request [origin-entity destination-entity]

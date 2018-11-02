@@ -772,6 +772,35 @@
                   :error (e/failed-to-get-data-access-report-err entity-response)
                   :callback callback}))))
 
+(s/def ::get-data-access-member-params
+  (s/keys :req-un [::specs/data-access-member-id]
+          :opt-un []))
+
+(def-sdk-fn get-data-access-member
+  "``` javascript
+  CxEngage.entities.getDataAccessMember({
+    dataAccessMemberId: {{uuid}}
+  });
+  ```
+  Retrieves single Data Access Member given parameter dataAccessMemberId
+  as a unique key
+
+  Topic: cxengage/entities/get-data-access-member-response
+
+  Possible Errors:
+
+  - [Entities: 11067](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-data-access-member-err)"
+  {:validation ::get-data-access-member-params
+   :topic-key :get-data-access-member-response}
+  [params]
+  (let [{:keys [callback topic data-access-member-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["data-access-member" data-access-member-id]))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error (if-not (= status 200)
+                           (e/failed-to-get-data-access-member-err entity-response))
+                  :callback callback})))
+
 (s/def ::get-skill-params
   (s/keys :req-un [::specs/skill-id]
           :opt-un []))
@@ -1986,6 +2015,7 @@
                                        :get-historical-report-folders get-historical-report-folders
                                        :get-data-access-reports get-data-access-reports
                                        :get-data-access-report get-data-access-report
+                                       :get-data-access-member get-data-access-member
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item

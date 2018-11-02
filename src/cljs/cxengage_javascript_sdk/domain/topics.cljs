@@ -112,6 +112,7 @@
                  :get-data-access-report-response "cxengage/entities/get-data-access-report-response"
                  :create-data-access-report-response "cxengage/entities/create-data-access-report-response"
                  :update-data-access-report-response "cxengage/entities/update-data-access-report-response"
+                 :get-data-access-member-response "cxengage/entities/get-data-access-member-response"
                  :create-user-response "cxengage/entities/create-user-response"
                  :update-user-response "cxengage/entities/update-user-response"
                 ;;hygen-insert-above-CRUD-topics
