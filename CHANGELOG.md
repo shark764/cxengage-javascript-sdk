@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.27.0] - 2018-11-2
+### Added
+- Added function to get sub entities from api easily
+
 ## [8.26.0] - 2018-11-2
 ### Added
 - CXV1-12476 - getUserOutboundIdentifierLists function

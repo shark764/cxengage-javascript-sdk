@@ -1056,6 +1056,53 @@
                   :error (e/failed-to-get-platform-roles-err entity-response)
                   :callback callback}))))
 
+(s/def ::get-entity-params
+  (s/or
+    :entity-name (s/keys :req-un [::specs/entity-name]
+                         :opt-un [::specs/callback ::specs/entity-id ::specs/sub-entity-name])
+    :path (s/keys :req-un [::specs/path]
+                   :opt-un [::specs/callback])))
+
+(def-sdk-fn get-entity
+  "A generic method of retrieving an entity. The first way to call the function allows you to explicitly
+  pass an entity name,  or its name and it's id along with an optional sub entity name.
+  ``` javascript
+  CxEngage.entities.getEntity({
+    entityName: {{string}} (required)
+    entityId: {{uuid}} (optional)
+    subEntityName: {{string}} (optional)
+  });
+  ```
+  Advanced users/consumers of the sdk/api can pass in an object with path as the key and an ordered array of the variables 
+  required to construct the api endpoint
+  ``` javascript
+  CxEngage.entities.getEntity({
+    path: {{array}} (required) Example Array ['groups', '0000-0000-0000-0000', 'outboundIdentifierLists']
+  });
+  ```
+  Retrieves an entity from the api matching the required parameters
+
+  Topic: cxengage/entities/get-entity-response
+
+  - [Api Documentation](https://api-docs.cxengage.net/Rest/Default.htm#Introduction/Intro.htm)
+
+  Possible Errors:
+
+  - [Entities: 11068](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-entity-err)"
+  {:validation ::get-entity-params
+   :topic-key :get-entity-response}
+  [params]
+  (let [{:keys [callback topic entity-name entity-id sub-entity-name path]} params]
+     (let [{:keys [status api-response]} (a/<! (rest/get-crud-entity-request (if path
+                                                                              (into [] path)
+                                                                              [entity-name entity-id sub-entity-name])))
+           status-is-200 (= status 200)]
+          (p/publish
+            {:topics topic
+             :response api-response
+             :error (if (false? status-is-200) (e/failed-to-get-entity-err api-response))
+             :callback callback}))))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -2046,6 +2093,7 @@
                                        :get-data-access-reports get-data-access-reports
                                        :get-data-access-report get-data-access-report
                                        :get-data-access-member get-data-access-member
+                                       :get-entity get-entity
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item

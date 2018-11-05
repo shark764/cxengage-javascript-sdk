@@ -1706,13 +1706,12 @@
    :level "error"
    :message "Failed to associate entity."})
 
+
 (defn failed-to-get-data-access-member-err
   "**Error Code:** 11067
    Message: Failed to get data access member.
-
    This error is usually due to an unexpected status code returned from the API.
    Validate that the value passed into the sdk function was correct.
-
    **Solution:** Check your browsers dev tools console for additional error information"
   [data]
   {:code 11067
@@ -1721,7 +1720,8 @@
    :level "error"
    :message "Failed to get data access member."})
 
-(defn failed-to-get-user-outbound-identifier-lists-err [data]
+
+(defn failed-to-get-user-outbound-identifier-lists-err
   "**Error Code:** 11068
     Message: Failed to get the user's outbound identifiers list.
 
@@ -1729,11 +1729,29 @@
     Validate that the values passed into the sdk function were correct.
 
     **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
   {:code 11068
    :context :entities
    :data {:api-response data}
    :level "error"
+
    :message "Failed to get user's outbound identifier lists."})
+
+(defn failed-to-get-entity-err
+  "**Error Code:** 11068
+   Message: Failed to get entity.
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11069
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get entity."})
+
+
+
 
 ;;hygen-insert-before-11000s
 
