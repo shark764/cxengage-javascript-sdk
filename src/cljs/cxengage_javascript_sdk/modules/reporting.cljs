@@ -42,9 +42,10 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.addStatSubscription({
 ;;   statistic: "{{string}}",
-;;   resourceId: "{{uuid}}",
-;;   queueId: "{{queueId}}",
-;;   triggerBatch: "{{boolean}}" (default true)
+;;   resourceId: "{{uuid}}", [Optional]
+;;   queueId: "{{uuid}}", [Optional]
+;;   statId: "{{uuid}}", [Optional]
+;;   triggerBatch: "{{boolean}}" [Optional, default true]
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
@@ -80,6 +81,55 @@
                       :preserve-casing? true})
           (p/publish {:topics batch-topic
                       :error (e/reporting-batch-request-failed-err batch-body batch-response)}))))))
+
+(s/def ::bulk-stat-params
+  (s/keys :req-un [::specs/queries]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn bulk-add-stat-subscription
+  "Adds multiple statisitics to the polling batch requests and automatically initiates a batch request
+   when the stats have been added.
+   
+   Returns the list the ids for the stats that were added (in the same order they were passed in)
+   
+   ``` javascript
+   CxEngage.reporting.bulkAddStatSubscription({
+     queries: {{array of stat objects}}
+   });
+   ```
+  
+   Stat Objects:
+   ``` javascript
+   {statistic: {{stat-name}},
+    queueId: {{uuid}}, <Optional>
+    resourceId: {{uuid}}, <Optional>
+    statId: {{uuid}} <Optional>}
+   ```
+   
+   Possible errors:
+   - [Reporting: 12000](/cxengage-javascript-sdk.domain.errors.html#var-reporting-batch-request-failed-err) (on cxengage/reporting/batch-response topic)"
+  {:validation ::bulk-stat-params
+   :topic-key :bulk-add-stat}
+  [params]
+  (let [{:keys [queries topic callback]} params
+         stat-id-list (reduce #(let [stat-bundle (dissoc %2 :stat-id)
+                                     stat-id (or (:stat-id %2) (str (uuid/make-random-uuid)))]
+                                  (swap! stat-subscriptions assoc-in [:statistics stat-id] stat-bundle)
+                                  (conj %1 stat-id))
+                              []
+                              queries)]
+    (p/publish {:topics topic
+                :response {:statIds stat-id-list}
+                :callback callback
+                :preserve-casing? true})
+    (let [batch-body (:statistics @stat-subscriptions)
+          {:keys [api-response status] :as batch-response} (a/<! (rest/batch-request batch-body))
+          {:keys [results]} api-response
+          batch-topic (topics/get-topic :batch-response)]
+      (p/publish {:topics batch-topic
+                  :response results
+                  :error (when (not= status 200) (e/reporting-batch-request-failed-err batch-body batch-response))
+                  :preserve-casing? true}))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.reporting.triggerBatch();
@@ -125,6 +175,32 @@
   (let [{:keys [stat-id topic callback]} params
         new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
     (swap! stat-subscriptions assoc :statistics new-stats)
+    (p/publish {:topics topic
+                :response new-stats
+                :callback callback
+                :preserve-casing? true})))
+
+(s/def ::bulk-remove-statistics-params
+  (s/keys :req-un [::specs/stat-ids]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn bulk-remove-stat-subscription
+  "Removed multiple statistics from the polling batch requests.
+   
+   Returns all of the stats that are being polled on after the removal.
+   
+   ``` javascript
+   CxEngage.reporting.bulkRemoveStatSubscription({
+     statIds: {{array of statId}}
+   });
+   ```"
+  {:validation ::bulk-remove-statistics-params
+   :topic-key :bulk-remove-stat}
+  [params]
+  (let [{:keys [stat-ids topic callback]} params]
+    (doseq [stat-id stat-ids]
+      (let [new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
+        (swap! stat-subscriptions assoc :statistics new-stats)))
     (p/publish {:topics topic
                 :response new-stats
                 :callback callback
@@ -200,13 +276,9 @@
 ;;  resourceId: {{uuid}} [Optional]}
 ;; -------------------------------------------------------------------------- ;;
 
-(s/def ::bulk-stat-query-params
-  (s/keys :req-un [::specs/queries]
-          :opt-un [::specs/callback]))
-
 (def-sdk-fn bulk-stat-query
   ""
-  {:validation ::bulk-stat-query-params
+  {:validation ::bulk-stat-params
    :topic-key :get-bulk-stat-query-response
    :preserve-casing? true}
   [params]
@@ -334,7 +406,9 @@
   (start [this]
     (let [module-name :reporting]
       (ih/register {:api {module-name {:add-stat-subscription add-stat-subscription
+                                       :bulk-add-stat-subscription bulk-add-stat-subscription
                                        :remove-stat-subscription remove-stat-subscription
+                                       :bulk-remove-stat-subscription bulk-remove-stat-subscription
                                        :trigger-batch trigger-batch
                                        :get-capacity get-capacity
                                        :stat-query stat-query

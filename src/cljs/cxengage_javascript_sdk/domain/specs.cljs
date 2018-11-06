@@ -122,12 +122,13 @@
 (s/def ::shared boolean?)
 (s/def ::silent-monitoring boolean?)
 (s/def ::stat-id (s/or ::uuid string?))
+(s/def ::stat-ids (s/coll-of ::stat-id))
 (s/def ::state string?)
 (s/def ::statistic string?)
 (s/def ::stats map?)
 (s/def ::stat-query
   (s/keys :req-un [::statistic]
-          :opt-un [::queue-id ::resource-id]))
+          :opt-un [::queue-id ::resource-id ::stat-id]))
 (s/def ::subject string?)
 (s/def ::subscription-id ::uuid)
 (s/def ::sub-type string?)
