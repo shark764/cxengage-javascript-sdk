@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.28.0] - 2018-11-06
+### Added
+- Added function to get message templates
+
+### Fixed
+- create group function now sends owner id
+- create skill function can handle nil or false has-proficiency
+
 ## [8.27.0] - 2018-11-2
 ### Added
 - Added function to get sub entities from api easily

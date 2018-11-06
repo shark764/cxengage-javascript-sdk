@@ -1750,6 +1750,19 @@
    :level "error"
    :message "Failed to get entity."})
 
+(defn failed-to-get-message-templates-err
+  "**Error Code:** 11068
+   Message: Failed to get message templates.
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11070
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get message templates."})
+
 
 
 

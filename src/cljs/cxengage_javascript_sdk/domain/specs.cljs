@@ -66,7 +66,7 @@
 (s/def ::member-ids (s/coll-of ::uuid))
 (s/def ::contact-point string?)
 (s/def ::crm string?)
-(s/def ::description string?)
+(s/def ::description (s/or ::description nil? ::description string?))
 (s/def ::digit #{"0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "*" "#"})
 (s/def ::direction #{"inbound" "outbound" "agent-initiated"})
 (s/def ::dismissed boolean?)

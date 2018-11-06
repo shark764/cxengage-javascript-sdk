@@ -1034,6 +1034,28 @@
                   :error (e/failed-to-get-roles-err entity-response)
                   :callback callback}))))
 
+(def-sdk-fn get-message-templates
+  "``` javascript
+  CxEngage.entities.getMessageTemplates();
+  ```
+  Retrieves available message templates for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11070](/cxengage-javascript-sdk.domain.errors.html#failed-to-get-message-templates-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-message-templates-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "message-template"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-message-templates-err entity-response)
+                  :callback callback}))))
+
 (def-sdk-fn get-platform-roles
   "``` javascript
   CxEngage.entities.getPlatformRoles();
@@ -2094,6 +2116,7 @@
                                        :get-data-access-report get-data-access-report
                                        :get-data-access-member get-data-access-member
                                        :get-entity get-entity
+                                       :get-message-templates get-message-templates
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item

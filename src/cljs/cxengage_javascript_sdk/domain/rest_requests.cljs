@@ -741,7 +741,8 @@
                                (not (nil? name))            (assoc-in [:body :name] name)
                                (not (nil? description))     (assoc-in [:body :description] description)
                                (not (nil? active))          (assoc-in [:body :active] active)
-                               (not (nil? has-proficiency)) (assoc-in [:body :has-proficiency] has-proficiency))]
+                               (or  (false? has-proficiency) 
+                                    (nil? has-proficiency)) (assoc-in [:body :has-proficiency] false))]
     (api/api-request create-skill-request)))
 
 (defn update-skill-request [skill-id name description active has-proficiency]
@@ -781,7 +782,8 @@
                                                        {:tenant-id tenant-id})}
                                (not (nil? name))            (assoc-in [:body :name] name)
                                (not (nil? description))     (assoc-in [:body :description] description)
-                               (not (nil? active))          (assoc-in [:body :active] active))]
+                               (not (nil? active))          (assoc-in [:body :active] active)
+                               (nil? owner)                 (assoc-in [:body :owner] (state/get-active-user-id)))]
     (api/api-request create-group-request)))
 
 (defn update-group-request [group-id name description active]
