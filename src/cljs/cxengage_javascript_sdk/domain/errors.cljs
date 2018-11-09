@@ -392,10 +392,8 @@
    :data {:interaction-id interaction-id
           :api-response data
           :flow-message message}
-   :level (if (= 404 (:status data))
-            "interaction-fatal"
-            "error")
-   :message "Failed to acknowledge flow action."})
+   :level "error"
+   :message "Failed to acknowledge action."})
 
 (defn failed-to-end-interaction-err [interaction-id data]
   {:code 4003
@@ -422,9 +420,7 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level (if (= 404 (:status data))
-            "interaction-fatal"
-            "error")
+   :level "error"
    :message "Failed to focus interaction."})
 
 (defn failed-to-unfocus-interaction-err [interaction-id data]
@@ -432,9 +428,7 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level (if (= 404 (:status data))
-            "interaction-fatal"
-            "error")
+   :level "error"
    :message "Failed to unfocus interaction."})
 
 (defn failed-to-assign-contact-to-interaction-err [interaction-id data]
@@ -442,9 +436,7 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level (if (= 404 (:status data))
-            "interaction-fatal"
-            "error")
+   :level "error"
    :message "Failed to assign specified contact to interaction."})
 
 (defn failed-to-unassign-contact-from-interaction-err [interaction-id data]
@@ -452,9 +444,7 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level (if (= 404 (:status data))
-            "interaction-fatal"
-            "error")
+   :level "error"
    :message "Failed to unassign specified contact to interaction."})
 
 (defn failed-to-enable-wrapup-err [interaction-id data]
@@ -462,9 +452,7 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level (if (= 404 (:status data))
-            "interaction-fatal"
-            "error")
+   :level "error"
    :message "Failed to enable wrapup."})
 
 (defn failed-to-disable-wrapup-err [interaction-id data]
@@ -472,9 +460,7 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level (if (= 404 (:status data))
-            "interaction-fatal"
-            "error")
+   :level "error"
    :message "Failed to disable wrapup."})
 
 (defn failed-to-end-wrapup-err [interaction-id data]
