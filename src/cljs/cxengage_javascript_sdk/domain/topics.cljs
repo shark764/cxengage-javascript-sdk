@@ -116,6 +116,7 @@
                  :get-data-access-member-response "cxengage/entities/get-data-access-member-response"
                  :create-user-response "cxengage/entities/create-user-response"
                  :update-user-response "cxengage/entities/update-user-response"
+                 :update-platform-user-response "cxengage/entities/update-platform-user-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting

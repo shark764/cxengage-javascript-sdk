@@ -1765,7 +1765,20 @@
    :level "error"
    :message "Failed to get message templates."})
 
+(defn failed-to-update-platform-user-err
+  "**Error Code:** 11071
+   Message: Failed to update platform user.
 
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11071
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update platform user."})
 
 
 ;;hygen-insert-before-11000s

@@ -1440,6 +1440,44 @@
 ;; PUT Entity Functions
 ;; -------------------------------------------------------------------------- ;;
 
+(s/def ::update-platform-user-params
+  (s/keys :req-un [::specs/user-id ::specs/update-body]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn update-platform-user
+  "``` javascript
+  CxEngage.entities.updatePlatformUser({
+    userId: {{uuid}} (required),
+    updateBody: {{object}} (required)
+  });
+  ```
+
+  Example updateBody
+  updateBody: {
+    'externalId': {{string}} (optional)
+    'firstName': {{string}} (optional)
+    'lastName': {{string}} (optional)
+    'personalTelephone': {{string}} (optional)
+	}
+
+  Updates a platform user accounts details from the provided updateBody
+
+  Topic: cxengage/entities/update-user-response
+
+  Possible Errors:
+
+  - [Entities: 11071](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-platform-user-err)"
+  {:validation ::update-platform-user-params
+   :topic-key :update-platform-user-response}
+  [params]
+  (let [{:keys [callback topic update-body user-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/platform-crud-entity-request :put "user" user-id update-body))
+        status-is-200 (= status 200)]
+    (p/publish {:topics topic
+                :response api-response
+                :error (if-not status-is-200 (e/failed-to-update-platform-user-err entity-response))
+                :callback callback})))
+
 (s/def ::update-user-params
   (s/keys :req-un [::specs/user-id]
           :opt-un [::specs/callback ::specs/role-id ::specs/platform-role-id ::specs/status ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id ::specs/extensions ::specs/first-name ::specs/last-name ::specs/capacity-rule-id]))
@@ -1476,14 +1514,12 @@
   [params]
   (let [{:keys [callback topic update-body user-id]} params
         user-body (or update-body (dissoc params :callback :topic :update-body))
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :put "user" user-id user-body))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-user-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :put "user" user-id user-body))
+        status-is-200 (= status 200)]
+    (p/publish {:topics topic
+                :response api-response
+                :error (if-not status-is-200 (e/failed-to-update-user-err entity-response))
+                :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.updateList({
@@ -2130,6 +2166,7 @@
                                        :update-skill update-skill
                                        :update-group update-group
                                        :update-user update-user
+                                       :update-platform-user update-platform-user
                                        :associate associate
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
