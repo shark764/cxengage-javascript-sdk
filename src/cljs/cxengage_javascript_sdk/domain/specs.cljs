@@ -89,6 +89,7 @@
 (s/def ::interrupt-type string?)
 (s/def ::interrupt-body map?)
 (s/def ::items (s/coll-of map?))
+(s/def ::update-body (s/coll-of map?))
 (s/def ::item-value map?)
 (s/def ::layout-id ::uuid)
 (s/def ::level #{"debug" "info" "warn" "error" "fatal"})

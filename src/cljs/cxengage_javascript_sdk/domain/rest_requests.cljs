@@ -446,6 +446,15 @@
                        entity-body (assoc :body entity-body))]
      (api/api-request get-request))))
 
+(defn platform-crud-entity-request
+  ([method entity-type entity-id entity-body]
+   (let [url (iu/api-url
+              (str entity-type "s/" entity-id))
+         request (cond-> {:method method
+                          :url url}
+                  entity-body (assoc :body entity-body))]
+    (api/api-request request))))
+
 (defn get-crud-entity-request [entity-map]
    (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-map))
          get-request {:method :get :url url}]

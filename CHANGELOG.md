@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.31.0] - 2018-11-10
+### Added
+- Function to update platform user details
+### Changed
+- boot dev enviroments > save creds in localstorage and option to skip tenant selection
+
 ## [8.30.1] - 2018-11-09
 ### Changed
 - CXV1-15438 - "Interaction ending" 4xxx error codes now return "interaction-fatal" error when their requests 404

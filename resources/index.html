@@ -11,12 +11,12 @@
   <script src="js/moment.js" type="text/javascript"></script>
 
   <div id="login-screen" style="display: block;">
-    <!-- <input type="text" id="username" name="username" value="sstiles@serenova.com"> -->
-    <input type="text" id="username" name="username" value="mjones@liveopscloud.com">
+    <input type="text" id="username" name="username">
     <br><br>
-    <input type="password" id="password" name="password" value="password1!">
+    <input type="password" id="password" name="password">
     <br><br>
     <button id="loginBtn" onclick="login()">Log In </button>
+    <button id="loginBtnDefault" onclick="loginDefault()">Log In | Default Tenant </button>
   </div>
 
   <div id="tenant-select-screen" style="display: none;">
@@ -582,11 +582,28 @@
     var unmuteCall = function() {
       CxEngage.interactions.voice.unmute({interactionId:state.voiceInteractionId,targetResourceId:state.currentUserId});
     };
-    var login = function() {
-      var username = $('#username').val();
-      var password = $('#password').val();
-      CxEngage.authentication.login({username:username,password:password});
+    const getSavedCreds = () => ({ username: localStorage.getItem('username'), password: localStorage.getItem('password') })   
+    const login = () => {
+      const {username, password} = getSavedCreds();
+      CxEngage.authentication.login({username,password});
     };
+    const loginDefault = () => {
+      const {username, password} = getSavedCreds();
+      CxEngage.authentication.login({username,password}, (err,topic,response) => {
+        const { tenantId } = response.tenants.filter(tenant => tenant.tenantId === response.defaultTenant)[0];
+        CxEngage.session.setActiveTenant({ tenantId }, (err, topic, response) => {
+          if (err) {
+            console.warn('ERROR WITH TENANT SELECTION', err);
+          } else {
+            console.log('Logged into default tenant.');
+          }
+        });
+      });
+    }
+    $('#username').keyup(({target: {value}}) => localStorage.setItem('username', value));
+    $('#password').keyup(({target: {value}}) => localStorage.setItem('password', value));
+    $('#username').val(getSavedCreds().username);
+    $('#password').val(getSavedCreds().password);
   </script>
 </body>
 </html>
