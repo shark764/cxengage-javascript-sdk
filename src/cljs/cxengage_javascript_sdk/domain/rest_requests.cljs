@@ -702,7 +702,7 @@
         create-data-access-report-request (cond-> {:method :post
                                                    :url (iu/api-url "tenants/:tenant-id/data-access-reports"
                                                             {:tenant-id tenant-id})
-                                                   :body    {:users (or users [])}}
+                                                   :body    {:members (or users [])}}
                                             (not (nil? name))             (assoc-in [:body :name] name)
                                             (not (nil? description))      (assoc-in [:body :description] description)
                                             (not (nil? active))           (assoc-in [:body :active] active)
