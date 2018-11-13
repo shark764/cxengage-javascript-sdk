@@ -1137,6 +1137,52 @@
              :error (if (false? status-is-200) (e/failed-to-get-entity-err api-response))
              :callback callback}))))
 
+(s/def ::get-platform-user-params
+  (s/keys :req-un [::specs/user-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-platform-user
+  "``` javascript
+  CxEngage.entities.getPlatformUser(
+    userId: {{uuid}} (required)
+  );
+  ```
+  Retrieves specified platform user details
+
+  Possible Errors:
+
+  - [Entities: 11072](/cxengage-javascript-sdk.domain.errors.html#failed-to-get-platform-user-err)"
+  {:validation ::get-platform-user-params
+   :topic-key :get-platform-user-response}
+  [params]
+  (let [{:keys [callback topic user-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-platform-user-request user-id))
+        error (if-not (= status 200) (e/failed-to-get-platform-user-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
+(def-sdk-fn get-identity-providers
+  "``` javascript
+  CxEngage.entities.getIdentityProviders();
+  ```
+  Retrieves tenants configured single sign on identity providers
+
+  Possible Errors:
+
+  - [Entities: 11073](/cxengage-javascript-sdk.domain.errors.html#failed-to-get-identity-providers-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-identity-providers-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["identity-providers"]))
+        error (if-not (= status 200) (e/failed-to-get-identity-providers-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -2139,6 +2185,8 @@
                                        :get-data-access-member get-data-access-member
                                        :get-entity get-entity
                                        :get-message-templates get-message-templates
+                                       :get-platform-user get-platform-user
+                                       :get-identity-providers get-identity-providers
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
