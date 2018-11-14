@@ -1780,6 +1780,36 @@
    :level "error"
    :message "Failed to update platform user."})
 
+(defn failed-to-get-platform-user-err
+  "**Error Code:** 11072
+   Message: Failed to get platform user.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11072
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get platform user."})
+
+(defn failed-to-get-identity-providers-err
+  "**Error Code:** 11073
+   Message: Failed to get identity providers.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11073
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get identity providers."})
+
 
 ;;hygen-insert-before-11000s
 

@@ -193,6 +193,10 @@
                                 :url (iu/api-url "roles")}]
     (api/api-request platform-roles-request)))
 
+(defn get-platform-user-request [user-id]
+ (api/api-request {:method :get 
+                   :url (iu/construct-api-url ["users" user-id])}))
+
 (defn get-artifact-by-id-request [artifact-id interaction-id tenant-id]
   (let [tenant-id (or tenant-id (state/get-active-tenant-id))
         artifact-request {:method :get
