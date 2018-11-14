@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.32.1] - 2018-11-14
+### Fixed
+- CXV1-15957 - Has-Proficiency value was not handled when was true on creating Skills.
+
 ## [8.32.0] - 2018-11-13
 ### Added
 - Functions to getPlatformUser and getIdentityProvders
