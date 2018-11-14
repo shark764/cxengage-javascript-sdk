@@ -746,8 +746,7 @@
                                (not (nil? name))            (assoc-in [:body :name] name)
                                (not (nil? description))     (assoc-in [:body :description] description)
                                (not (nil? active))          (assoc-in [:body :active] active)
-                               (or  (false? has-proficiency) 
-                                    (nil? has-proficiency)) (assoc-in [:body :has-proficiency] false))]
+                               (not (nil? has-proficiency)) (assoc-in [:body :has-proficiency] has-proficiency))]
     (api/api-request create-skill-request)))
 
 (defn update-skill-request [skill-id name description active has-proficiency]
