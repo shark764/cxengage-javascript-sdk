@@ -32,7 +32,7 @@
 (s/def ::group-id id/valid-uuid?)
 (s/def ::user-id id/valid-uuid?)
 (s/def ::role-id id/valid-uuid?)
-(s/def ::entity-id id/valid-uuid)
+(s/def ::entity-id id/valid-uuid?)
 (s/def ::entity-name string?)
 (s/def ::sub-entity-name string?)
 (s/def ::platform-role-id id/valid-uuid?)
@@ -118,6 +118,7 @@
 (s/def ::reason-list-id ::uuid)
 (s/def ::reason-info
   (s/keys :req-un [::reason ::reason-id ::reason-list-id]))
+(s/def ::realtime-report-id ::uuid)
 (s/def ::resource-id ::uuid)
 (s/def ::script-id ::uuid)
 (s/def ::shared boolean?)
