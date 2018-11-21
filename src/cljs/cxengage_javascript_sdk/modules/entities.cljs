@@ -1107,7 +1107,7 @@
     subEntityName: {{string}} (optional)
   });
   ```
-  Advanced users/consumers of the sdk/api can pass in an object with path as the key and an ordered array of the variables 
+  Advanced users/consumers of the sdk/api can pass in an object with path as the key and an ordered array of the variables
   required to construct the api endpoint
   ``` javascript
   CxEngage.entities.getEntity({
@@ -1303,7 +1303,7 @@
 
 (s/def ::create-data-access-report-params
   (s/keys :req-un [::specs/name ::specs/active ::specs/report-type]
-          :opt-un [::specs/callback ::specs/description ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/users]))
+          :opt-un [::specs/callback ::specs/description ::specs/realtime-report-id ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/users]))
 
 (def-sdk-fn create-data-access-report
   "``` javascript
@@ -1311,6 +1311,7 @@
     name: {{string}},
     description: {{string}}, (optional)
     active: {{boolean}},
+    realtimeReportId: {{uuid}}, (optional)
     reportType: {{string}},
     realtimeReportType: {{string}}, (optional)
     realtimeReportName: {{string}}, (optional)
@@ -1329,8 +1330,8 @@
   {:validation ::create-data-access-report-params
    :topic-key :create-data-access-report-response}
   [params]
-  (let [{:keys [name description active report-type realtime-report-type realtime-report-name historical-catalog-name users callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-data-access-report-request name description active report-type realtime-report-type realtime-report-name historical-catalog-name users))
+  (let [{:keys [name description active realtime-report-id report-type realtime-report-type realtime-report-name historical-catalog-name users callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-data-access-report-request name description active realtime-report-id report-type realtime-report-type realtime-report-name historical-catalog-name users))
         response (update-in api-response [:result] rename-keys {:members :users})]
     (if (= status 200)
       (p/publish {:topics topic
@@ -1936,7 +1937,7 @@
 
 (s/def ::update-data-access-report-params
     (s/keys :req-un [::specs/data-access-report-id]
-            :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/report-type ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/users]))
+            :opt-un [::specs/callback ::specs/name ::specs/realtime-report-id ::specs/description ::specs/active ::specs/report-type ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/users]))
 
 (def-sdk-fn update-data-access-report
   "``` javascript
@@ -1945,6 +1946,7 @@
     name: {{string}}, (optional)
     description: {{string}}, (optional)
     active: {{boolean}}, (optional)
+    realtimeReportId: {{uuid}}, (optional)
     reportType: {{string}}, (optional)
     realtimeReportType: {{string}}, (optional)
     realtimeReportName: {{string}}, (optional)
@@ -1963,8 +1965,8 @@
   {:validation ::update-data-access-report-params
    :topic-key :update-data-access-report-response}
   [params]
-  (let [{:keys [data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name users callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-data-access-report-request data-access-report-id name description active report-type realtime-report-type realtime-report-name historical-catalog-name users))
+  (let [{:keys [data-access-report-id name realtime-report-id description active report-type realtime-report-type realtime-report-name historical-catalog-name users callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-data-access-report-request data-access-report-id name description active realtime-report-id report-type realtime-report-type realtime-report-name historical-catalog-name users))
         response (update-in api-response [:result] rename-keys {:members :users})]
     (if (= status 200)
       (p/publish {:topics topic
