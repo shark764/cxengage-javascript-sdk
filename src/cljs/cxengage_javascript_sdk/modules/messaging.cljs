@@ -243,20 +243,22 @@
 ;;   phoneNumber: "+18005555555",
 ;;   message: "The message you want to send"
 ;;   popUri: "{{string}}" (Optional, used for salesforce screen pop)
+;;   outboundAni: "{{string}}" (Optional)-- outbound
+;;   flowId: "{{string}}" (Optional)
 ;; });
 ;; ----------------------------------------------------------------;;
 
 (s/def ::click-to-sms-params
   (s/keys :req-un [::specs/phone-number
                    ::specs/message]
-          :opt-on [::specs/pop-uri ::specs/callback]))
+          :opt-on [::specs/pop-uri ::specs/callback ::specs/outbound-ani ::specs/flow-id]))
 
 (def-sdk-fn click-to-sms
   ""
   {:validation ::click-to-sms-params
    :topic-key :initialize-outbound-sms-response}
   [params]
-  (let [{:keys [phone-number message pop-uri topic callback]} params
+  (let [{:keys [phone-number message pop-uri topic callback outbound-ani flow-id]} params
         phone-number (iu/normalize-phone-number phone-number)
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
@@ -271,7 +273,9 @@
         sms-body {:id interaction-id
                   :source "messaging"
                   :customer phone-number
-                  :contact-point "outbound"
+                  :contact-point (if outbound-ani 
+                                    outbound-ani
+                                    "outbound")
                   :channel-type "sms"
                   :direction "agent-initiated"
                   :metadata metadata
@@ -281,6 +285,9 @@
                                       (if pop-uri
                                         {:pop-uri pop-uri}
                                         {}))}
+          sms-body (merge sms-body (if flow-id
+                                      {:flow-id flow-id}
+                                      {}))
         sms-response (a/<! (rest/create-interaction-request sms-body))
         {:keys [api-response status]} sms-response]
     (if (= status 200)
