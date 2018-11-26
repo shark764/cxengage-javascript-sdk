@@ -1412,7 +1412,7 @@
 
 (s/def ::create-user-params
   (s/keys :req-un [::specs/email ::specs/role-id ::specs/platform-role-id]
-          :opt-un [::specs/callback ::specs/status ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id ::specs/extensions ::specs/first-name ::specs/last-name ::specs/capacity-rule-id]))
+          :opt-un [::specs/first-name ::specs/last-name ::specs/callback ::specs/status ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id]))
 
 (def-sdk-fn create-user
   "``` javascript
@@ -1443,14 +1443,14 @@
    :topic-key :create-user-response}
   [params]
   (let [{:keys [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-user-request email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-user-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-user-request email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))
+        response (update-in api-response [:result] rename-keys {:user-id :id})
+        error (if-not (= status 200) (e/failed-to-create-user-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error error
+                :callback callback})))
+
 
 (s/def ::create-role-params
   (s/keys :req-un [::specs/name ::specs/description]
@@ -1562,10 +1562,11 @@
   (let [{:keys [callback topic update-body user-id]} params
         user-body (or update-body (dissoc params :callback :topic :update-body))
         {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :put "user" user-id user-body))
-        status-is-200 (= status 200)]
+        response (update-in api-response [:result] rename-keys {:user-id :id})
+        error (if-not (= status 200) (e/failed-to-update-user-err api-response))]
     (p/publish {:topics topic
-                :response api-response
-                :error (if-not status-is-200 (e/failed-to-update-user-err entity-response))
+                :response response
+                :error error
                 :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
