@@ -733,10 +733,13 @@
             script-response (a/<! (rest/send-flow-action-request interaction-id action-id script-body))
             {:keys [status api-response]} script-response
             {:keys [result]} api-response]
-        (if (= status 200)
-          (p/publish {:topics topic
-                      :response interaction-id
-                      :callback callback})
+        (if (or (= status 200) (= status 400))
+          (do
+            (when (= status 400)
+              (log :warn "Send script returned 400. Treating as success since the script no longer exists."))
+            (p/publish {:topics topic
+                        :response interaction-id
+                        :callback callback}))
           (p/publish {:topics topic
                       :error (e/failed-to-send-interaction-script-response-err interaction-id script-response)
                       :callback callback}))))))
