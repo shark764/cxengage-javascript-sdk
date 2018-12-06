@@ -1685,7 +1685,7 @@
    :topic-key :update-list-item-response}
   [params]
   (let [{:keys [callback list-id topic list-item-key item-value]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-item-request list-id list-item-key item-value))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-item-request list-id (js/encodeURIComponent list-item-key) item-value))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -2101,7 +2101,7 @@
    :topic-key :delete-list-item-response}
   [params]
   (let [{:keys [list-id list-item-key callback topic]} params
-        {:keys [api-response status] :as list-items-response} (a/<! (rest/delete-list-item-request list-id list-item-key))]
+        {:keys [api-response status] :as list-items-response} (a/<! (rest/delete-list-item-request list-id (js/encodeURIComponent list-item-key)))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
