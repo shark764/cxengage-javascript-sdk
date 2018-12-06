@@ -34,10 +34,10 @@
    :level "error"
    :message "Incorrect number of arguments provided to SDK initialization. Verify your values against the SDK documentation."})
 
-(defn required-module-failed-to-start-err []
+(defn required-module-failed-to-start-err [module]
   {:code 1002
    :context :general
-   :data {}
+   :data {:module module}
    :level "session-fatal"
    :message "A required SDK module failed to start, unable to initialize the SDK."})
 
