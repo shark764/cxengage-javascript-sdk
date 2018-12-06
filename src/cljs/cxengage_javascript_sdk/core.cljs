@@ -33,7 +33,7 @@
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]
             [cxengage-javascript-sdk.modules.testing :as testing]))
 
-(def *SDK-VERSION* "8.34.1")
+(def *SDK-VERSION* "8.34.2")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -104,7 +104,8 @@
   [m]
   (let [{:keys [status module-name]} m]
     (if (= status :failure)
-      (log :error (clj->js (e/required-module-failed-to-start-err)))
+      (pu/publish {:topics "cxengage/errors/error/failed-to-start-module-error"
+                   :error (e/required-module-failed-to-start-err (name module-name))})
       (do (log :debug (str "<----- Started " (name module-name) " module! ----->"))
           (state/set-module-enabled! (name module-name))))))
 
