@@ -63,6 +63,7 @@
                  :update-list-response "cxengage/entities/update-list-response"
                  :update-list-item-response "cxengage/entities/update-list-item-response"
                  :delete-list-item-response "cxengage/entities/delete-list-item-response"
+                 :update-users-capacity-rule-response "cxengage/entities/update-users-capacity-rule-response"
                  :download-list-response "cxengage/entities/download-list-response"
                  :upload-list-response "cxengage/entities/upload-list-response"
                  :get-groups-response "cxengage/entities/get-groups-response"

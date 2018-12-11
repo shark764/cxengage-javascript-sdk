@@ -54,14 +54,16 @@
    :topic-key :get-user-response}
   [params]
   (let [{:keys [callback topic resource-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "user" resource-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-user-err resource-id entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-platform-user-request resource-id))
+        response (rename-keys (select-keys (:result api-response) [:has-password :role-id]) {:role-id :platform-role-id})
+        {:keys [status api-response] :as entity-response2} (a/<! (rest/crud-entity-request :get "user" resource-id))
+        response {:result (merge (get-in entity-response2 [:api-response :result]) response)}
+        error (if-not (and (= 200 (:status entity-response)) (= 200 (:status entity-response2))) (e/failed-to-get-user-err resource-id entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error error
+                :callback callback})))
+
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getUsers();
@@ -1848,6 +1850,42 @@
                :error (if (false? (= status 200)) (e/failed-to-associate-err response))
                :callback callback})))
 
+(s/def ::update-users-capacity-rule-params
+  (s/keys :req-un [::specs/user-id ::specs/capacity-rule-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn update-users-capacity-rule
+  "``` javascript
+  CxEngage.entities.updateUsersCapacityRule({
+    userId: {{string}}, (required)
+    capacityRuleId: {{string or null}}, (required)
+  });
+  ```
+  Updates the users effective capacity rule.
+
+  Topic: cxengage/entities/update-users-capacity-rule-response
+
+  Possible Errors:
+
+  - [Entities: 11074](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-users-capacity-rule-err)"
+  {:validation ::update-users-capacity-rule-params
+   :topic-key :update-users-capacity-rule-response}
+  [params]
+  (let [{:keys [callback topic user-id capacity-rule-id]} params
+        effective-capacity-rule (get-in (a/<! (rest/crud-entity-request :get "user" user-id)) [:api-response :result :effective-capacity-rule :id])
+        deleted (and effective-capacity-rule (a/<! (rest/delete-users-capacity-request user-id effective-capacity-rule)))
+        deletedResponse (:api-response deleted)
+        deletedStatus (:status deleted)
+        updated (and (not= capacity-rule-id nil) (a/<! (rest/update-users-capacity-request user-id capacity-rule-id)))
+        updatedResponse (:api-response updated)
+        updatedStatus (:status updated)
+        response (if (not= capacity-rule-id nil) updatedResponse deletedResponse)
+        error (if (not= capacity-rule-id nil) (if (not= updatedStatus 200) (e/failed-to-update-users-capacity-rule-err response)) (if (not= deletedStatus 200) (e/failed-to-update-users-capacity-rule-err response)))]
+   (p/publish {:topics topic
+               :response response
+               :error error
+               :callback callback})))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.addOutboundIdentifierListMember({
 ;;   outboundIdentifierListId: {{uuid}}
@@ -2219,6 +2257,7 @@
                                        :update-user update-user
                                        :update-platform-user update-platform-user
                                        :associate associate
+                                       :update-users-capacity-rule update-users-capacity-rule
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template

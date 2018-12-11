@@ -771,6 +771,19 @@
                       :url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] [(:name origin-entity) (:id origin-entity) (:name destination-entity) (:id destination-entity)]))}]
     (api/api-request request-data)))
 
+(defn update-users-capacity-request [user-id id]
+  (let [tenant-id (state/get-active-tenant-id)
+        update {:method :post
+                :url (iu/construct-api-url (into ["tenants" tenant-id] ["users" user-id "capacity-rules"]))
+                :body {:capacity-rule-id id}}]
+    (api/api-request update)))
+
+(defn delete-users-capacity-request [user-id effective-capacity-rule]
+  (let [tenant-id (state/get-active-tenant-id)
+        delete {:method :delete
+                :url (iu/construct-api-url (into ["tenants" tenant-id] ["users" user-id "capacity-rules" effective-capacity-rule]))}]
+    (api/api-request delete)))
+
 (defn associate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)
         url (iu/construct-api-url (into ["tenants" tenant-id] [(:name origin-entity) (:id origin-entity) (:name destination-entity)]))

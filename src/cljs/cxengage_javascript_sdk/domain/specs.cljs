@@ -37,7 +37,7 @@
 (s/def ::sub-entity-name string?)
 (s/def ::platform-role-id id/valid-uuid?)
 (s/def ::default-identity-provider (s/or :default-identity-provider id/valid-uuid? :default-identity-provider nil?))
-(s/def ::capacity-rule-id id/valid-uuid?)
+(s/def ::capacity-rule-id (s/or :capacity-rule-id id/valid-uuid? :capacity-rule-id nil?))
 (s/def ::extensions map?)
 (s/def ::email string?)
 (s/def ::no-password (s/or :no-password boolean? :no-password nil?))
