@@ -764,6 +764,14 @@
                                (not (nil? has-proficiency)) (assoc-in [:body :has-proficiency] has-proficiency))]
     (api/api-request update-skill-request)))
 
+(defn update-user-skill-member-request [user-id skill-id proficiency]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-user-skill-member-request {:method :put
+                                          :url (iu/api-url "tenants/:tenant-id/users/:user-id/skills/:skill-id"
+                                                           {:tenant-id tenant-id :user-id user-id :skill-id skill-id})
+                                          :body {:proficiency proficiency}}]
+    (api/api-request update-user-skill-member-request)))
+
 (defn dissociate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)
         request-data {:method :delete

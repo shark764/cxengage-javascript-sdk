@@ -1811,7 +1811,7 @@
    :message "Failed to get identity providers."})
 
 (defn failed-to-update-users-capacity-rule-err
-  "**Error Code:** 11073
+  "**Error Code:** 11074
    Message: Failed to update users capacity rule.
 
    This error is usually due to an unexpected status code returned from the API.
@@ -1824,6 +1824,21 @@
    :data {:api-response data}
    :level "error"
    :message "Failed to update users capacity rule."})
+
+(defn failed-to-update-user-skill-member-err
+  "**Error Code:** 11075
+   Message: Failed to update skill's proficiency of user.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11075
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update skill's proficiency of user."})
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

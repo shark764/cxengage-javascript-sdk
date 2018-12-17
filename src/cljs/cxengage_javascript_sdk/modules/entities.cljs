@@ -57,7 +57,7 @@
         {:keys [status api-response] :as entity-response} (a/<! (rest/get-platform-user-request resource-id))
         response (rename-keys (select-keys (:result api-response) [:has-password :role-id]) {:role-id :platform-role-id})
         {:keys [status api-response] :as entity-response2} (a/<! (rest/crud-entity-request :get "user" resource-id))
-        response {:result (merge (get-in entity-response2 [:api-response :result]) response)}
+        response {:result (merge (get-in entity-response2 [:api-response :result]) response {:skills-with-proficiency (get-in entity-response2 [:api-response :result :skills])})}
         error (if-not (and (= 200 (:status entity-response)) (= 200 (:status entity-response2))) (e/failed-to-get-user-err resource-id entity-response))]
     (p/publish {:topics topic
                 :response response
@@ -2117,6 +2117,37 @@
                   :error (e/failed-to-update-role-err entity-response)
                   :callback callback}))))
 
+(s/def ::update-user-skill-member-params
+  (s/keys :req-un [::specs/user-id ::specs/skill-id ::specs/proficiency]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn update-user-skill-member
+  "``` javascript
+  CxEngage.entities.updateUserSkillMember({
+    userId: {{uuid}},
+    skillId: {{uuid}},
+    proficiency: {{integer}}
+  });
+  ```
+  Updates proficiency for a skill of an especific user, by calling rest/update-user-skill-member-request
+  with the new data and skillId as the unique key.
+
+  Topic: cxengage/entities/update-user-skill-member-response
+
+  Possible Errors:
+
+  - [Entities: 11075](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-user-skill-member-err)"
+  {:validation ::update-user-skill-member-params
+   :topic-key :update-user-skill-member-response}
+  [params]
+  (let [{:keys [user-id skill-id proficiency callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-user-skill-member-request user-id skill-id proficiency))
+        error (if-not (= status 200) (e/failed-to-update-user-skill-member-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 
 ;;--------------------------------------------------------------------------- ;;
 ;; DELETE Entity Functions
@@ -2256,6 +2287,7 @@
                                        :update-group update-group
                                        :update-user update-user
                                        :update-platform-user update-platform-user
+                                       :update-user-skill-member update-user-skill-member
                                        :associate associate
                                        :update-users-capacity-rule update-users-capacity-rule
                                       ;;hygen-insert-above-update
