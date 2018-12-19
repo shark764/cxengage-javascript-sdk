@@ -23,7 +23,8 @@
   {:status 200
    :api-response {:result {:first-name "Asdf"
                            :last-name "Asdfferson"
-                           :state "notready"}}})
+                           :state "notready"
+                           :skills-with-proficiency nil}}})
 
 (deftest get-user--happy-test
   (testing "get single user function success"
