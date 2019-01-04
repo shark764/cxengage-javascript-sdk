@@ -1839,6 +1839,20 @@
    :data {:api-response data}
    :level "error"
    :message "Failed to update skill's proficiency of user."})
+
+(defn failed-to-get-platform-user-email-err
+  "**Error Code:** 11076
+  Failed to get user details searching by email address.
+
+    The email address specified as parameter does not exist within the platform. Validate the values passed to the SDK to make sure they are correct.
+
+    **Solution:** Check your browsers dev tools console for additional info."
+  [data]
+  {:code 11076
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get user details searching by email address."})
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

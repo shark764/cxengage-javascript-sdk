@@ -64,6 +64,36 @@
                 :error error
                 :callback callback})))
 
+(s/def ::get-platform-user-email-params
+  (s/keys :req-un [::specs/email]
+          :opt-un [::specs/callback]))
+                
+(def-sdk-fn get-platform-user-email
+  "``` javascript
+  CxEngage.entities.getPlatformUserEmail({
+    email: {{email}}
+  });
+  ```
+  Retrieves single User given email parameter
+
+  Topic: cxengage/entities/get-platform-user-email-response
+
+  Possible Errors:
+
+  - [Entities: 11076](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-platform-user-email-err)"
+  {:validation ::get-platform-user-email-params
+   :topic-key :get-platform-user-email-response}
+  [params]
+  (let [{:keys [callback topic email]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-platform-user-email-request email))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-platform-user-email-err entity-response)
+                  :callback callback}))))
+
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getUsers();
@@ -2258,6 +2288,7 @@
                                        :get-entity get-entity
                                        :get-message-templates get-message-templates
                                        :get-platform-user get-platform-user
+                                       :get-platform-user-email get-platform-user-email
                                        :get-identity-providers get-identity-providers
                                       ;;hygen-insert-above-get
                                        :create-list create-list

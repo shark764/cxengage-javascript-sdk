@@ -119,6 +119,7 @@
                  :update-user-response "cxengage/entities/update-user-response"
                  :update-platform-user-response "cxengage/entities/update-platform-user-response"
                  :get-platform-user-response "cxengage/entities/get-platform-user-response"
+                 :get-platform-user-email-response "cxengage/entities/get-platform-user-email-response"
                  :get-identity-providers-response "cxengage/entities/get-identity-providers-response"
                  :update-user-skill-member-response "cxengage/entities/update-user-skill-member-response"
                 ;;hygen-insert-above-CRUD-topics
