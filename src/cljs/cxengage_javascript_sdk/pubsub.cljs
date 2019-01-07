@@ -11,7 +11,8 @@
             [cxengage-javascript-sdk.domain.topics :as topics]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs-uuid-utils.core :as uuid]
-            [cxengage-javascript-sdk.domain.errors :as error]))
+            [cxengage-javascript-sdk.domain.errors :as error]
+            [cxengage-javascript-sdk.state :as state]))
 
 (def sdk-subscriptions (atom {}))
 
@@ -140,8 +141,8 @@
 
         ; relevant-subscribers is a list of maps: 1 map per topic (keys=subscription ids, values=callbacks)
         relevant-subscribers (filter (complement nil?) (map get-subscribers-by-topic topic-permutations))]
-    ; Ignoring logs-saved topic when it errors
-    (when (and error (not= topics (topics/get-topic :logs-saved)))
+    ; Ignoring logs-saved topic when it errors, when there's no active user or its session has expired
+    (when (and error (not= topics (topics/get-topic :logs-saved)) (state/get-active-user-id) (state/get-active-tenant-id))
       (save-logs (ih/kebabify error)))
     (when (not-empty relevant-subscribers)
       ; Iterate through each map (representing each topic-permutation)
