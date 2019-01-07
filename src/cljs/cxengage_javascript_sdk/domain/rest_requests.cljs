@@ -197,6 +197,12 @@
  (api/api-request {:method :get
                    :url (iu/construct-api-url ["users" user-id])}))
 
+(defn get-platform-user-email-request [email]
+  (let [platform-user-email-request {:method :get 
+                                     :url (iu/api-url "users?email=:email"
+                                            {:email email})}]
+    (api/api-request platform-user-email-request)))
+
 (defn get-artifact-by-id-request [artifact-id interaction-id tenant-id]
   (let [tenant-id (or tenant-id (state/get-active-tenant-id))
         artifact-request {:method :get

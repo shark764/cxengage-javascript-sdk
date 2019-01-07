@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.37.0] - 2019-01-04
+### Added
+- CXV1-16327 - function to retrieve user information using email, to check if it exists anywhere on the platform.
+
 ## [8.36.0] - 2018-12-17
 ### Added
 - CXV1-15959 - New function to update skills proficiency of users.
