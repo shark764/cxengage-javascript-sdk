@@ -117,7 +117,8 @@
                            (= (:provider (state/get-active-extension)) "twilio"))
                   (go-loop [t (a/timeout 1000)
                             attempts 1]
-                    (if (= attempts 5)
+                    ;; Wait 35 seconds for Twilio to be in an incoming state after the accept, to account for network latencies, etc.
+                    (if (= attempts 35)
                       (p/publish {:topics topic
                                   :error (e/failed-to-find-twilio-connection-object interaction-id)
                                   :callback callback})

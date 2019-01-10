@@ -63,22 +63,27 @@
       ;; returning to the queue; consequently,
       ;; the newer session can delete dead messages in this queue as per
       ;; the second use case above.
-      (if (nil? session-id)
+      (cond
+        (nil? session-id)
         (do
           (log :warn "No session ID present. Removing:" (clj->js parsed-body))
           (delete-message-fn receipt-handle)
           nil)
-        (if (nil? current-session-id)
-          (do (log :error "Our session hasn't started yet. Ignoring message:" (clj->js parsed-body))
-              nil)
-          (do (when (nil? current-session-id)
-                nil)
-              (when (iu/uuid-came-before? session-id current-session-id)
-                (delete-message-fn receipt-handle)
-                nil)
-              (when (= (state/get-session-id) session-id)
-                (delete-message-fn receipt-handle)
-                body)))))))
+        (nil? current-session-id)
+        (do (log :warn "Our session hasn't started yet. Ignoring message:" (clj->js parsed-body))
+            nil)
+        (iu/uuid-came-before? session-id current-session-id)
+        (do (delete-message-fn receipt-handle)
+            nil)
+        (= (state/get-session-id) session-id)
+        (do (delete-message-fn receipt-handle)
+            body)
+        :else
+        (do (p/publish {:topics (topics/get-topic :failed-to-delete-sqs-message)
+                        :error (e/failed-to-process-sqs-message {:message (first messages)
+                                                                 :current-session-id current-session-id
+                                                                 :session-id session-id})})
+            nil)))))
 
 (defn- delete-message*
   [sqs {:keys [queue-url]} receipt-handle]
@@ -110,86 +115,100 @@
                            :status :success
                            :module-name "sqs"})
     ;; Start the loop to poll SQS, initially with the first SQS Queue object + url that we instantiated
-    (go-loop [sqs-queue original-sqs-queue
-              sqs-queue-url original-sqs-queue-url
-              sqs-needs-refresh-time original-sqs-needs-refresh-time]
-      (if (> (.getTime (js/Date.)) sqs-needs-refresh-time)
-        ;; 3/4 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
-        (do (log :debug "Refreshing SQS integration")
-            (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
-                  user-config (:result api-response)]
-              (if (not= status 200)
-                (p/publish {:topics (topics/get-topic :failed-to-refresh-sqs-integration)
-                            :error (e/failed-to-refresh-sqs-integration-err api-response)})
-                (do
-                  (state/set-config! user-config)
-                  (let [sqs-integration (state/get-integration-by-type "sqs")]
-                    (if-not sqs-integration
-                      (p/publish {:topics (topics/get-topic :failed-to-refresh-sqs-integration)
-                                  :error (e/failed-to-refresh-sqs-integration-err api-response)})
-                      (let [{:keys [access-key secret-key session-token ttl]} (:credentials sqs-integration)
-                            {:keys [url]} (:queue sqs-integration)
-                            new-sqs-queue-url url
-                            new-region "us-east-1" ;; TODO: get from integration
-                            new-most-of-ttl (-> ttl
-                                                (* 1000)
-                                                (* 0.75))
-                            new-sqs-needs-refresh-time (+ (.getTime (js/Date.)) new-most-of-ttl)
-                            new-options (clj->js {:accessKeyId access-key
-                                                  :secretAccessKey secret-key
-                                                  :sessionToken session-token
-                                                  :region "us-east-1" ;;TODO: get from integration
-                                                  :params {:QueueUrl new-sqs-queue-url}})
-                            new-sqs-queue (AWS.SQS. new-options)
-                            response< (receive-message* new-sqs-queue new-sqs-queue-url)
-                            value (a/<! response<)]
-                        (cond
-                          (contains? value :error)
-                          (do
-                            (p/publish {:topics (topics/get-topic :failed-to-receive-sqs-message)
-                                        :error (e/failed-to-receive-sqs-message (:error value))})
-                            (a/<! (a/timeout 2000))
-                            (recur new-sqs-queue
-                                   new-sqs-queue-url
-                                   new-sqs-needs-refresh-time))
-                          (= value :shutdown)
-                          (do (log :info "Shutting down SQS")
-                              (state/remove-enabled-module! "sqs")
-                              (p/publish {:topics (topics/get-topic :sqs-shut-down)
-                                          :response nil})
-                              nil)
-                          :else
-                           (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
-                             (when-let [msg (js/JSON.parse message)]
-                               (on-received msg))
-                             (recur new-sqs-queue
-                                    new-sqs-queue-url
-                                    new-sqs-needs-refresh-time))))))))))
-        ;; It is still less than 1/2 of the TTL for the previously instantiated SQS Queue object, continue using the same one
-        (let [response< (receive-message* sqs-queue sqs-queue-url)
-              value (a/<! response<)]
-          (cond
-            (contains? value :error)
-            (do
-              (p/publish {:topics (topics/get-topic :failed-to-receive-sqs-message)
-                          :error (e/failed-to-receive-sqs-message (:error value))})
-              (a/<! (a/timeout 2000))
-              (recur sqs-queue
-                     sqs-queue-url
-                     sqs-needs-refresh-time))
-            (= value :shutdown)
-            (do (log :info "Shutting down SQS")
-                (state/remove-enabled-module! "sqs")
-                (p/publish {:topics (topics/get-topic :sqs-shut-down)
-                            :response nil})
-                nil)
-            :else
-            (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
-              (when-let [msg (js/JSON.parse message)]
-                (on-received msg))
-              (recur sqs-queue
-                     sqs-queue-url
-                     sqs-needs-refresh-time))))))))
+    (go
+      (loop [restart-count 0]
+        (let [result
+              (try
+                (loop [sqs-queue original-sqs-queue
+                      sqs-queue-url original-sqs-queue-url
+                      sqs-needs-refresh-time original-sqs-needs-refresh-time]
+                  (if (> (.getTime (js/Date.)) sqs-needs-refresh-time)
+                    ;; 3/4 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
+                    (do (log :debug "Refreshing SQS integration")
+                        (let [{:keys [status api-response]} (a/<! (rest/get-config-request))
+                              user-config (:result api-response)]
+                          (if (not= status 200)
+                            (p/publish {:topics (topics/get-topic :failed-to-refresh-sqs-integration)
+                                        :error (e/failed-to-refresh-sqs-integration-err api-response)})
+                            (do
+                              (state/set-config! user-config)
+                              (let [sqs-integration (state/get-integration-by-type "sqs")]
+                                (if-not sqs-integration
+                                  (p/publish {:topics (topics/get-topic :failed-to-refresh-sqs-integration)
+                                              :error (e/failed-to-refresh-sqs-integration-err api-response)})
+                                  (let [{:keys [access-key secret-key session-token ttl]} (:credentials sqs-integration)
+                                        {:keys [url]} (:queue sqs-integration)
+                                        new-sqs-queue-url url
+                                        new-region "us-east-1" ;; TODO: get from integration
+                                        new-most-of-ttl (-> ttl
+                                                            (* 1000)
+                                                            (* 0.75))
+                                        new-sqs-needs-refresh-time (+ (.getTime (js/Date.)) new-most-of-ttl)
+                                        new-options (clj->js {:accessKeyId access-key
+                                                              :secretAccessKey secret-key
+                                                              :sessionToken session-token
+                                                              :region "us-east-1" ;;TODO: get from integration
+                                                              :params {:QueueUrl new-sqs-queue-url}})
+                                        new-sqs-queue (AWS.SQS. new-options)
+                                        response< (receive-message* new-sqs-queue new-sqs-queue-url)
+                                        value (a/<! response<)]
+                                    (cond
+                                      (contains? value :error)
+                                      (do
+                                        (p/publish {:topics (topics/get-topic :failed-to-receive-sqs-message)
+                                                    :error (e/failed-to-receive-sqs-message (:error value))})
+                                        (a/<! (a/timeout 2000))
+                                        (recur new-sqs-queue
+                                               new-sqs-queue-url
+                                               new-sqs-needs-refresh-time))
+                                      (= value :shutdown)
+                                      (do (log :info "Shutting down SQS")
+                                          (state/remove-enabled-module! "sqs")
+                                          (p/publish {:topics (topics/get-topic :sqs-shut-down)
+                                                      :response nil})
+                                          :shutdown)
+                                      :else
+                                      (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
+                                        (when-let [msg (js/JSON.parse message)]
+                                          (on-received msg))
+                                        (recur new-sqs-queue
+                                               new-sqs-queue-url
+                                               new-sqs-needs-refresh-time))))))))))
+                    ;; It is still less than 1/2 of the TTL for the previously instantiated SQS Queue object, continue using the same one
+                    (let [response< (receive-message* sqs-queue sqs-queue-url)
+                          value (a/<! response<)]
+                      (cond
+                        (contains? value :error)
+                        (do
+                          (p/publish {:topics (topics/get-topic :failed-to-receive-sqs-message)
+                                      :error (e/failed-to-receive-sqs-message (:error value))})
+                          (a/<! (a/timeout 2000))
+                          (recur sqs-queue
+                                 sqs-queue-url
+                                 sqs-needs-refresh-time))
+                        (= value :shutdown)
+                        (do (log :info "Shutting down SQS")
+                            (state/remove-enabled-module! "sqs")
+                            (p/publish {:topics (topics/get-topic :sqs-shut-down)
+                                        :response nil})
+                            :shutdown)
+                        :else
+                        (let [message (process-message* value (partial delete-message* sqs-queue sqs-queue-url))]
+                          (when-let [msg (js/JSON.parse message)]
+                            (on-received msg))
+                          (recur sqs-queue
+                                 sqs-queue-url
+                                 sqs-needs-refresh-time))))))
+                (catch js/Error e
+                  (js/console.error e)
+                  (p/publish {:topics (topics/get-topic :sqs-uncaught-exception)
+                              :error (e/sqs-uncaught-exception {:message (aget e "message")
+                                                                :stack (aget e "stack")})})))]
+      (p/publish {:topics (topics/get-topic :sqs-loop-ended)
+                  :error (e/sqs-loop-ended restart-count)})
+      (when (not= :shutdown result)
+        (a/<! (a/timeout (* 1000 restart-count)))
+        (recur (inc restart-count))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK SQS Module

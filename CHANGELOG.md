@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.38.1] - 2019-01-18
+### Changed
+- CXV1-16791 mqtt-connection-lost-err is now a "warn" instead of "error"
+- CXV1-16778 - Improved SQS error handling. Added more logging.
+- Bumped up time to wait for Twilio to be in an accepting state on interaction accept to 35 seconds (was 5)
+
 ## [8.38.0] - 2019-01-16
 ### Added
 - CXV1-16502 - Create and Update functions for Presence Reasons

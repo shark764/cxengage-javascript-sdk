@@ -603,6 +603,28 @@
    :level "warn"
    :log-level "error"
    :message "Failed to receive sqs message. Will retry in 2 seconds."})
+  
+(defn sqs-uncaught-exception [error]
+  {:code 5003
+   :context :sqs
+   :data {:error error}
+   :level "error"
+   :message "An uncaught exception was thrown. You may need to refresh the browser if you are not able to perform any actions or receive any work."})
+
+(defn sqs-loop-ended [restart-count]
+  {:code 5004
+   :context :sqs
+   :data {:restart-count restart-count}
+   :level "warn"
+   :log-level "error"
+   :message "Exited the SQS loop. This is likely because the session ended, but could indicate an unintended exit from the loop."})
+
+(defn failed-to-process-sqs-message [sqs-info]
+  {:code 5005
+   :context :sqs
+   :data sqs-info
+   :level "error"
+   :message "Failed to process message. You may need to refresh the browser if you are not able to perform any actions or receive any work."})
 
 (defn failed-to-retrieve-messaging-history-err [interaction-id data]
   {:code 6000
@@ -905,7 +927,8 @@
   {:code 9001
    :context :mqtt
    :data data
-   :level "error"
+   :level "warn"
+   :log-level "error"
    :message "The connection to MQTT has been lost."})
 
 (defn failed-to-create-email-reply-artifact-err [interaction-id artifact-body data]
