@@ -54,11 +54,9 @@
    :topic-key :get-user-response}
   [params]
   (let [{:keys [callback topic resource-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-platform-user-request resource-id))
-        response (rename-keys (select-keys (:result api-response) [:has-password :role-id]) {:role-id :platform-role-id})
-        {:keys [status api-response] :as entity-response2} (a/<! (rest/crud-entity-request :get "user" resource-id))
-        response {:result (merge (get-in entity-response2 [:api-response :result]) response {:skills-with-proficiency (get-in entity-response2 [:api-response :result :skills])})}
-        error (if-not (and (= 200 (:status entity-response)) (= 200 (:status entity-response2))) (e/failed-to-get-user-err resource-id entity-response))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "user" resource-id))
+        response {:result (merge (get-in entity-response [:api-response :result]) {:skills-with-proficiency (get-in entity-response [:api-response :result :skills])})}
+        error (if-not (= 200 (:status entity-response)) (e/failed-to-get-user-err resource-id entity-response))]
     (p/publish {:topics topic
                 :response response
                 :error error
