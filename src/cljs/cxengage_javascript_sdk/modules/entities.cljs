@@ -1440,6 +1440,42 @@
 
 ;;hygen-insert-before-create
 
+(s/def ::create-reason-params
+  (s/keys :req-un [ ::specs/name ::specs/active ::specs/shared]
+          :opt-un [ ::specs/callback ::specs/description ::specs/external-id]))
+
+(def-sdk-fn create-reason
+  "``` javascript
+  CxEngage.entities.createReason({
+       name: {{string}} (required),
+       description: {{string}} (optional),
+       externalId: {{string}} (optional),
+       active: {{boolean}} (required),
+       shared: {{boolean}} (required),
+  });
+  ```
+  Calls rest/create-reason-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-reason-response
+
+  Possible Errors:
+
+  - [Entities: 11078](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-reason-err)"
+  {:validation ::create-reason-params
+   :topic-key :create-reason-response}
+  [params]
+  (let [{:keys [name description external-id active shared callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-reason-request name description external-id active shared))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-reason-err entity-response)
+                  :callback callback}))))
+
+
 (s/def ::create-user-params
   (s/keys :req-un [::specs/email ::specs/role-id ::specs/platform-role-id]
           :opt-un [::specs/first-name ::specs/last-name ::specs/callback ::specs/status ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id]))
@@ -2114,6 +2150,43 @@
 
 ;;hygen-insert-before-update
 
+(s/def ::update-reason-params
+  (s/keys :req-un [::specs/reason-id]
+          :opt-un [::specs/name ::specs/active ::specs/shared ::specs/callback ::specs/description ::specs/external-id]))
+
+(def-sdk-fn update-reason
+  "``` javascript
+  CxEngage.entities.updateReason({
+       reasonId: {{uuid}} (required),
+       name: {{string}} (optional),
+       description: {{string}} (optional),
+       externalId: {{string}} (optional),
+       active: {{boolean}} (optional),
+       shared: {{boolean}} (optional),
+      });
+  ```
+  Calls rest/update-reason-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-reason-response
+
+  Possible Errors:
+
+  - [Entities: 11077](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-reason-err)"
+  {:validation ::update-reason-params
+   :topic-key :update-reason-response}
+  [params]
+  (let [{:keys [reason-id name description external-id active shared callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-reason-request reason-id name description external-id active shared))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-reason-err entity-response)
+                  :callback callback}))))
+
+
 (s/def ::update-role-params
   (s/keys :req-un [::specs/role-id]
           :opt-un [::specs/callback ::specs/name ::specs/description ::specs/permissions]))
@@ -2299,6 +2372,7 @@
                                        :create-skill create-skill
                                        :create-group create-group
                                        :create-user create-user
+                                       :create-reason create-reason
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
@@ -2319,6 +2393,7 @@
                                        :update-user-skill-member update-user-skill-member
                                        :associate associate
                                        :update-users-capacity-rule update-users-capacity-rule
+                                       :update-reason update-reason
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template

@@ -778,6 +778,30 @@
                                           :body {:proficiency proficiency}}]
     (api/api-request update-user-skill-member-request)))
 
+(defn update-reason-request [reason-id name description external-id active shared]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-reason-request (cond-> {:method :put
+                                       :url (iu/api-url "tenants/:tenant-id/reasons/:reason-id"
+                                                        {:tenant-id tenant-id :reason-id reason-id})}
+                                (not (nil? name))            (assoc-in [:body :name] name)
+                                (not (nil? description))     (assoc-in [:body :description] description)
+                                (not (nil? external-id))     (assoc-in [:body :external-id] external-id)
+                                (not (nil? active))          (assoc-in [:body :active] active)
+                                (not (nil? shared))          (assoc-in [:body :shared] shared))]
+    (api/api-request update-reason-request)))
+  
+(defn create-reason-request [name description external-id active shared]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-reason-request (cond-> {:method :post
+                                       :url (iu/api-url "tenants/:tenant-id/reasons"
+                                                        {:tenant-id tenant-id})}
+                                (not (nil? name))            (assoc-in [:body :name] name)
+                                (not (nil? description))     (assoc-in [:body :description] description)
+                                (not (nil? external-id))     (assoc-in [:body :external-id] external-id)
+                                (not (nil? active))          (assoc-in [:body :active] active)
+                                (not (nil? shared))          (assoc-in [:body :shared] shared))]
+    (api/api-request create-reason-request)))
+
 (defn dissociate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)
         request-data {:method :delete

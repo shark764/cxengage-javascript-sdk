@@ -1853,6 +1853,35 @@
     :data {:api-response data}
     :level "error"
     :message "Failed to get user details searching by email address."})
+  
+(defn failed-to-update-reason-err
+  "**Error Code:** 11077
+   Message: Failed to update reason.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11077
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update reason."})
+
+(defn failed-to-create-reason-err
+  "**Error Code:** 11078
+   Message: Failed to create reason.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11078
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create reason."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

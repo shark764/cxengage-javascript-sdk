@@ -122,6 +122,8 @@
                  :get-platform-user-email-response "cxengage/entities/get-platform-user-email-response"
                  :get-identity-providers-response "cxengage/entities/get-identity-providers-response"
                  :update-user-skill-member-response "cxengage/entities/update-user-skill-member-response"
+                 :update-reason-response "cxengage/entities/update-reason-response"
+                 :create-reason-response "cxengage/entities/create-reason-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
