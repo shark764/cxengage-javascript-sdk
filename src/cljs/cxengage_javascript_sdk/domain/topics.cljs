@@ -251,6 +251,8 @@
                  :failed-to-refresh-sqs-integration "cxengage/errors/fatal/failed-to-refresh-sqs-integration"
                  :failed-to-delete-sqs-message "cxengage/errors/warn/failed-to-delete-sqs-message"
                  :failed-to-receive-sqs-message "cxengage/errors/warn/failed-to-receive-sqs-message"
+                 :sqs-uncaught-exception "cxengage/errors/error/sqs-uncaught-exception"
+                 :sqs-loop-ended "cxengage/errors/warn/sqs-loop-ended"
                  :mqtt-failed-to-connect "cxengage/errors/fatal/mqtt-failed-to-connect"
                  :mqtt-lost-connection "cxengage/errors/error/mqtt-lost-connection"
                  :failed-to-retrieve-messaging-history "cxengage/errors/error/failed-to-retrieve-messaging-history"
