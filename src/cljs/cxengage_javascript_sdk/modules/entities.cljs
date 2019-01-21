@@ -1663,29 +1663,35 @@
                   :error (e/failed-to-update-list-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.updateOutboundIdentifier({
-;;   id: {{uuid}}
-;;   name: {{string}} (optional)
-;;   active: {{boolean}} (optional)
-;;   value: {{string}} (optional)
-;;   flowId: {{string}} (optional)
-;;   channelType: {{string}} (optional)
-;;   description: {{string}} (optional)
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::update-outbound-identifier-params
   (s/keys :req-un [::specs/outbound-identifier-id]
           :opt-un [::specs/callback ::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type ::specs/description]))
 
 (def-sdk-fn update-outbound-identifier
-  ""
+  "``` javascript
+  CxEngage.entities.updateOutboundIdentifier({
+    id: {{uuid}}
+    name: {{string}} (optional)
+    active: {{boolean}} (optional)
+    value: {{string}} (optional)
+    flowId: {{string}} (optional)
+    channelType: {{string}} (optional)
+    description: {{string}} (optional)
+  });
+  ```
+  Updates single Outbound Identifier by calling rest/update-outbound-identifier-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-outbound-identifier-response
+
+  Possible Errors:
+
+  - [Entities: 11032](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-outbound-identifier-err)"
   {:validation ::update-outbound-identifier-params
    :topic-key :update-outbound-identifier-response}
   [params]
-  (let [{:keys [callback outbound-identifier-id topic name active value flowId channel-type description]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-outbound-identifier-request outbound-identifier-id name active value flowId channel-type description))]
+  (let [{:keys [callback outbound-identifier-id topic name active value flow-id channel-type description]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-outbound-identifier-request outbound-identifier-id name active value flow-id channel-type description))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response (assoc api-response :result (add-key-to-items (get api-response :result)))
