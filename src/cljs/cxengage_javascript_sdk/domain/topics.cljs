@@ -100,6 +100,7 @@
                  :get-custom-metric-response "cxengage/entities/get-custom-metric-response"
                  :update-custom-metric-response "cxengage/entities/update-custom-metric-response"
                  :get-roles-response "cxengage/entities/get-roles-response"
+                 :get-role-response "cxengage/entities/get-role-response"
                  :get-message-templates-response "cxengage/entities/get-message-templates-response"
                  :get-platform-roles-response "cxengage/entities/get-platform-roles-response"
                  :get-integrations-response "cxengage/entities/get-integrations-response"

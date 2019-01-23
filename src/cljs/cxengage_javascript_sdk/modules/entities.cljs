@@ -938,6 +938,35 @@
        :error (if (false? status-is-200) (e/failed-to-get-group-err response))
        :callback callback})))
 
+(s/def ::get-role-params
+  (s/keys :req-un [::specs/role-id]
+          :opt-un []))
+
+(def-sdk-fn get-role
+  "``` javascript
+  CxEngage.entities.getRole({
+    roleId: {{uuid}}
+  });
+  ```
+  Retrieves single Role given parameter roleId
+  as a unique key
+
+  Topic: cxengage/entities/get-role-response
+
+  Possible Errors:
+
+  - [Entities: 11079](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-role-err)"
+  {:validation ::get-role-params
+   :topic-key :get-role-response}
+  [params]
+  (let [{:keys [callback topic role-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["roles" role-id]))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error (if-not (= status 200)
+                           (e/failed-to-get-role-err entity-response))
+                  :callback callback})))
+
 ;;hygen-insert-before-get
 
 (def-sdk-fn get-permissions
@@ -1519,8 +1548,8 @@
 
 
 (s/def ::create-role-params
-  (s/keys :req-un [::specs/name ::specs/description]
-          :opt-un [::specs/callback]))
+  (s/keys :req-un [::specs/name]
+          :opt-un [::specs/description ::specs/permissions ::specs/callback]))
 
 (def-sdk-fn create-role
   "``` javascript
@@ -2352,6 +2381,7 @@
                                        :get-custom-metrics get-custom-metrics
                                        :get-custom-metric get-custom-metric
                                        :get-roles get-roles
+                                       :get-role get-role
                                        :get-platform-roles get-platform-roles
                                        :get-integrations get-integrations
                                        :get-capacity-rules get-capacity-rules

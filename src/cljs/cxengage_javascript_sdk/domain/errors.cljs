@@ -1905,6 +1905,21 @@
    :level "error"
    :message "Failed to create reason."})
 
+(defn failed-to-get-role-err
+  "**Error Code:** 11079
+   Message: Failed to get role.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11079
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get role."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
