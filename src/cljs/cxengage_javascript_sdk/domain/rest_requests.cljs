@@ -882,7 +882,7 @@
                                                       {:tenant-id tenant-id})
                                      :body            {:permissions (or permissions [])}}
                              name                      (assoc-in [:body :name] name)
-                             description               (assoc-in [:body :description] description))]
+                             (not (nil? description))  (assoc-in [:body :description] description))]
     (api/api-request create-role-request)))
 
 (defn update-role-request [role-id name description permissions]

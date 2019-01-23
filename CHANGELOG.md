@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.39.0] - 2019-01-23
+### Added
+- CXV1-16834 - Added new getRole function to retrieve single role data
+### Fixed
+- CXV1-16833 - Description is optional on creating new role.
+
 ## [8.38.2] - 2019-01-21
 ### Fixed
 - CXV1-16704 - FlowId value is being updated correctly for Outbound Identifiers.
