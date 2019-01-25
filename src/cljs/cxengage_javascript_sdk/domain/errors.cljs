@@ -1920,6 +1920,64 @@
    :level "error"
    :message "Failed to get role."})
 
+(defn failed-to-create-reason-list-err
+  "**Error Code:** 11080
+   Message: Failed to create reason list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   Validate that the values passed into the SDK function were correct.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11080
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create reason list."})
+
+(defn failed-to-update-reason-list-err
+ "**Error Code:** 11081
+  Message: Failed to update reason list.
+
+  This error is usually due to an unexpected status code returned from the API.
+
+  **Solution:** Check network tab for additional error information."
+ [data]
+ {:code 11081
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update reason list."})
+
+(defn failed-to-get-reason-err
+  "**Error Code:** 11082
+  Message: Failed to get a reason.
+
+  This error is usually due to an unexpected status code returned from the API.
+
+  **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11082
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get a Reason."})
+
+(defn failed-to-get-reason-list-err
+  "**Error Code:** 11083
+    Message: Failed to get a Reason List.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11083
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get a Reason."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

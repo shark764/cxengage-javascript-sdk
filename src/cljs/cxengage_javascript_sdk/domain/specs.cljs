@@ -114,8 +114,14 @@
 (s/def ::script-reporting boolean?)
 (s/def ::skill-id ::uuid)
 (s/def ::reason string?)
-(s/def ::reason-id ::uuid)
-(s/def ::reason-list-id ::uuid)
+(s/def ::reason-id id/valid-uuid?) 
+(s/def ::reason-obj (s/keys :req-un [::reason-id ::sort-order ::hierarchy])) 
+;;TODO: add the proper spec for Reason List Reasons, not allowing empty objects
+(s/def ::reasons (s/or
+                  :empty (s/and vector? empty?)
+                  :reason-obj (s/coll-of ::reason-obj)))
+(s/def ::is-default boolean?)
+(s/def ::reason-list-id id/valid-uuid?)
 (s/def ::reason-info
   (s/keys :req-un [::reason ::reason-id ::reason-list-id]))
 (s/def ::realtime-report-id ::uuid)
