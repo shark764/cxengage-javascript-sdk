@@ -104,23 +104,41 @@
 ;; Get Queue Tests
 ;; -------------------------------------------------------------------------- ;;
 
+(def successful-get-whole-queue-response
+  {:result {
+            :name "mock queue",
+            :description "mock queue description",
+            :active true,
+            :versions [
+                        {:name "v1",:description "first version"},
+                        {:name "v2",:description "second version"}]}})
+
 (def successful-get-queue-response
   {:status 200
-   :api-response {:result {:name "asdf queue"
-                           :description "asdf queue"
-                           :active true}}})
+    :api-response {
+                    :result {
+                              :name "mock queue",
+                              :description "mock queue description",
+                              :active true}}})
+
+(def successful-get-queue-versions-response
+  {:status 200
+    :api-response {
+                    :result [
+                              {:name "v1",:description "first version"},
+                              {:name "v2",:description "second version"}]}})
 
 (deftest get-queue--happy-test
   (testing "get single queue function success"
     (async done
            (reset! p/sdk-subscriptions {})
            (go (let [old api/api-request
-                     resp-chan (a/promise-chan)
-                     pubsub-expected-response (get-in successful-get-queue-response [:api-response])]
-                 (a/>! resp-chan successful-get-queue-response)
+                     pubsub-expected-response successful-get-whole-queue-response]
                  (reset! st/sdk-state test-state)
-                 (set! api/api-request (fn [_]
-                                          resp-chan))
+                 (set! api/api-request (fn [request]
+                                          (cond
+                                           (= (:url request) "tenants/f5b660ef-9d64-47c9-9905-2f27a74bc14c/queues/76818798-9075-43d5-a00c-9b8ccff7b1df") (go successful-get-queue-response)
+                                           (= (:url request) "tenants/f5b660ef-9d64-47c9-9905-2f27a74bc14c/queues/76818798-9075-43d5-a00c-9b8ccff7b1df/versions") (go successful-get-queue-versions-response))))
                  (p/subscribe "cxengage/entities/get-queue-response"
                               (fn [error topic response]
                                 (is (= pubsub-expected-response (ih/kebabify response)))

@@ -125,30 +125,38 @@
                   :error (e/failed-to-get-users-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getQueue({
-;;   queueId: {{uuid}}
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::get-queue-params
   (s/keys :req-un [::specs/queue-id]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn get-queue
-  ""
+  "``` javascript
+  CxEngage.entities.getQueue({
+    queueId: {{uuid}}
+  });
+  ```
+  Retrieves single queue given parameter queueId
+  as a unique key
+
+  Topic: cxengage/entities/get-queue-response
+
+  Possible Errors:
+
+  - [Entities: 11002](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-queue-err)"
   {:validation ::get-queue-params
    :topic-key :get-queue-response}
   [params]
   (let [{:keys [callback topic queue-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "queue" queue-id))]
-    (if (= status 200)
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["queues" queue-id]))
+        {:keys [status api-response] :as entity-response2} (a/<! (rest/get-crud-entity-request ["queues" queue-id "versions"]))
+        versions {:versions (get-in entity-response2 [:api-response :result])}
+        response {:result (merge (get-in entity-response [:api-response :result]) versions)}
+        error (if-not (and (= 200 (:status entity-response)) (= 200 (:status entity-response2))) (e/failed-to-get-queue-err queue-id entity-response))]
       (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-queue-err queue-id entity-response)
-                  :callback callback}))))
+                :response response
+                :error error
+                :callback callback})))
+
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getQueues();
