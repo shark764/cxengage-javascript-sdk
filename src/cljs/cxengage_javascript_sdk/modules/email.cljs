@@ -258,20 +258,22 @@
 
 (s/def ::start-outbound-email-params
   (s/keys :req-un [::specs/address]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/outbound-ani ::specs/callback]))
 
 (def-sdk-fn start-outbound-email
   ""
   {:validation ::start-outbound-email-params
    :topic-key :start-outbound-email}
   [params]
-  (let [{:keys [address callback topic]} params
+  (let [{:keys [address callback topic outbound-ani]} params
         resource-id (state/get-active-user-id)
         interaction-id (str (id/make-random-squuid))
         session-id (state/get-session-id)
         interaction-body {:source "email"
                           :customer address
-                          :contact-point "outbound-email"
+                          :contact-point (if outbound-ani 
+                                             outbound-ani
+                                             "outbound-email")
                           :channel-type "email"
                           :direction "agent-initiated"
                           :interaction {:resource-id resource-id
