@@ -101,6 +101,8 @@
                  :update-custom-metric-response "cxengage/entities/update-custom-metric-response"
                  :get-roles-response "cxengage/entities/get-roles-response"
                  :get-role-response "cxengage/entities/get-role-response"
+                 :get-reason-response "cxengage/entities/get-reason-response"
+                 :get-reason-list-response "cxengage/entities/get-reason-list-response"
                  :get-message-templates-response "cxengage/entities/get-message-templates-response"
                  :get-platform-roles-response "cxengage/entities/get-platform-roles-response"
                  :get-integrations-response "cxengage/entities/get-integrations-response"
@@ -124,7 +126,9 @@
                  :get-identity-providers-response "cxengage/entities/get-identity-providers-response"
                  :update-user-skill-member-response "cxengage/entities/update-user-skill-member-response"
                  :update-reason-response "cxengage/entities/update-reason-response"
+                 :update-reason-list-response "cxengage/entities/update-reason-list-response"
                  :create-reason-response "cxengage/entities/create-reason-response"
+                 :create-reason-list-response "cxengage/entities/create-reason-list-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting

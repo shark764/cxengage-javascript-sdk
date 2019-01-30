@@ -802,6 +802,34 @@
                                 (not (nil? shared))          (assoc-in [:body :shared] shared))]
     (api/api-request create-reason-request)))
 
+(defn create-reason-list-request [name description external-id active shared reasons is-default]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-reason-list-request (cond-> {:method :post
+                                            :url (iu/api-url "tenants/:tenant-id/reason-lists"
+                                                        {:tenant-id tenant-id})}
+                                    (not (nil? name))            (assoc-in [:body :name] name)
+                                    (not (nil? description))     (assoc-in [:body :description] description)
+                                    (not (nil? external-id))     (assoc-in [:body :external-id] external-id)
+                                    (not (nil? active))          (assoc-in [:body :active] active)
+                                    (not (nil? shared))          (assoc-in [:body :shared] shared)
+                                    (not (nil? reasons))         (assoc-in [:body :reasons] reasons)
+                                    (not (nil? is-default))      (assoc-in [:body :is-default] is-default))]
+    (api/api-request create-reason-list-request)))
+
+(defn update-reason-list-request [reason-list-id name description external-id active shared reasons is-default]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-reason-list-request (cond-> {:method :put
+                                             :url (iu/api-url "tenants/:tenant-id/reason-lists/:reason-list-id"
+                                                              {:tenant-id tenant-id :reason-list-id reason-list-id})}
+                                    (not (nil? name))            (assoc-in [:body :name] name)
+                                    (not (nil? description))     (assoc-in [:body :description] description)
+                                    (not (nil? external-id))     (assoc-in [:body :external-id] external-id)
+                                    (not (nil? active))          (assoc-in [:body :active] active)
+                                    (not (nil? shared))          (assoc-in [:body :shared] shared)
+                                    (not (nil? reasons))         (assoc-in [:body :reasons] reasons)
+                                    (not (nil? is-default))      (assoc-in [:body :is-default] is-default))]
+    (api/api-request update-reason-list-request)))
+
 (defn dissociate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)
         request-data {:method :delete

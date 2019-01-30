@@ -153,9 +153,9 @@
         response {:result (merge (get-in entity-response [:api-response :result]) versions)}
         error (if-not (and (= 200 (:status entity-response)) (= 200 (:status entity-response2))) (e/failed-to-get-queue-err queue-id entity-response))]
       (p/publish {:topics topic
-                :response response
-                :error error
-                :callback callback})))
+                  :response response
+                  :error error
+                  :callback callback})))
 
 
 ;; -------------------------------------------------------------------------- ;;
@@ -975,6 +975,65 @@
                            (e/failed-to-get-role-err entity-response))
                   :callback callback})))
 
+(s/def ::get-reason-params
+  (s/keys :req-un [::specs/reason-id]
+          :opt-un []))
+
+(def-sdk-fn get-reason
+  "``` javascript
+  CxEngage.entities.getReason({
+    reasonId: {{uuid}}
+  });
+  ```
+  Retrieves single Reason given parameter reasonId
+  as a unique key
+
+  Topic: cxengage/entities/get-reason-response
+
+  Possible Errors:
+
+  - [Entities: 11082](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-reason-err)"
+  {:validation ::get-reason-params
+    :topic-key :get-reason-response}
+  [params]
+  (let [{:keys [callback topic reason-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["reasons" reason-id]))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error (if-not (= status 200)
+                            (e/failed-to-get-reason-err entity-response))
+                  :callback callback})))
+
+
+(s/def ::get-reason-list-params
+  (s/keys :req-un [::specs/reason-list-id]
+          :opt-un []))
+
+(def-sdk-fn get-reason-list
+  "``` javascript
+  CxEngage.entities.getReasonList({
+    reasonListId: {{uuid}}
+  });
+  ```
+  Retrieves single Reason List given parameter reasonListId
+  as a unique key
+
+  Topic: cxengage/entities/get-reason-list-response
+
+  Possible Errors:
+
+  - [Entities: 11083](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-reason-list-err)"
+  {:validation ::get-reason-list-params
+    :topic-key :get-reason-list-response}
+  [params]
+  (let [{:keys [callback topic reason-list-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["reason-lists" reason-list-id]))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error (if-not (= status 200)
+                            (e/failed-to-get-reason-list-err entity-response))
+                  :callback callback})))
+
 ;;hygen-insert-before-get
 
 (def-sdk-fn get-permissions
@@ -1476,6 +1535,44 @@
                   :callback callback}))))
 
 ;;hygen-insert-before-create
+
+(s/def ::create-reason-list-params
+  (s/keys :req-un [ ::specs/name ::specs/active ::specs/shared]
+          :opt-un [ ::specs/callback ::specs/description ::specs/external-id ::specs/reasons ::specs/is-default]))
+
+(def-sdk-fn create-reason-list
+  "``` javascript
+  CxEngage.entities.createReasonList({
+    name: {{string}} (required),
+    description: {{string}} (optional),
+    externalId: {{string}} (optional),
+    active: {{boolean}} (required),
+    shared: {{boolean}} (required),
+    reasons: {{object}} (optional),
+    isDefault: {{boolean}} (optional),
+  });
+  ```
+  Calls rest/create-reason-list-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-reason-list-response
+
+  Possible Errors:
+
+  - [Entities: 11080](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-reason-list-err)"
+  {:validation ::create-reason-list-params
+   :topic-key :create-reason-list-response}
+  [params]
+  (let [{:keys [name description external-id active shared reasons is-default callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-reason-list-request name description external-id active shared reasons is-default))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-create-reason-list-err entity-response)
+                  :callback callback}))))
+
 
 (s/def ::create-reason-params
   (s/keys :req-un [ ::specs/name ::specs/active ::specs/shared]
@@ -2229,6 +2326,44 @@
                   :error (e/failed-to-update-reason-err entity-response)
                   :callback callback}))))
 
+(s/def ::update-reason-list-params
+  (s/keys :req-un [::specs/reason-list-id]
+          :opt-un [::specs/name ::specs/active ::specs/shared ::specs/callback ::specs/description ::specs/external-id ::specs/reasons ::specs/is-default]))
+
+(def-sdk-fn update-reason-list
+  "``` javascript
+  CxEngage.entities.updateReasonList({
+        reasonListId: {{uuid}} (required),
+        name: {{string}} (optional),
+        description: {{string}} (optional),
+        externalId: {{string}} (optional),
+        active: {{boolean}} (optional),
+        shared: {{boolean}} (optional),
+        reasons: {{object}} (optional),
+        isDefault: {{boolean}} (optional),
+      });
+  ```
+  Calls rest/update-reason-list-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-reason-list-response
+
+  Possible Errors:
+
+  - [Entities: 11081](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-reason-list-err)"
+  {:validation ::update-reason-list-params
+    :topic-key :update-reason-list-response}
+  [params]
+  (let [{:keys [reason-list-id name description external-id active shared reasons is-default callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-reason-list-request reason-list-id name description external-id active shared reasons is-default))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-update-reason-list-err entity-response)
+                  :callback callback}))))
+
 
 (s/def ::update-role-params
   (s/keys :req-un [::specs/role-id]
@@ -2394,7 +2529,9 @@
                                        :get-integrations get-integrations
                                        :get-capacity-rules get-capacity-rules
                                        :get-reasons get-reasons
+                                       :get-reason get-reason
                                        :get-reason-lists get-reason-lists
+                                       :get-reason-list get-reason-list
                                        :get-permissions get-permissions
                                        :get-historical-report-folders get-historical-report-folders
                                        :get-data-access-reports get-data-access-reports
@@ -2417,6 +2554,7 @@
                                        :create-group create-group
                                        :create-user create-user
                                        :create-reason create-reason
+                                       :create-reason-list create-reason-list
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
@@ -2438,6 +2576,7 @@
                                        :associate associate
                                        :update-users-capacity-rule update-users-capacity-rule
                                        :update-reason update-reason
+                                       :update-reason-list update-reason-list
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template
