@@ -65,7 +65,7 @@
 (s/def ::get-platform-user-email-params
   (s/keys :req-un [::specs/email]
           :opt-un [::specs/callback]))
-                
+
 (def-sdk-fn get-platform-user-email
   "``` javascript
   CxEngage.entities.getPlatformUserEmail({

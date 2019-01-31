@@ -21,6 +21,7 @@
             [cxengage-javascript-sdk.modules.twilio :as twilio]
             [cxengage-javascript-sdk.modules.logging :as logging]
             [cxengage-javascript-sdk.modules.session :as session]
+            [cxengage-javascript-sdk.modules.api :as api]
             [cxengage-javascript-sdk.modules.entities :as entities]
             [cxengage-javascript-sdk.modules.contacts :as contacts]
             [cxengage-javascript-sdk.interaction-management :as int]
@@ -33,7 +34,7 @@
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]
             [cxengage-javascript-sdk.modules.testing :as testing]))
 
-(def *SDK-VERSION* "8.42.0")
+(def *SDK-VERSION* "8.43.0")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -61,12 +62,13 @@
   (let [authentication (authentication/map->AuthenticationModule.)
         session (session/map->SessionModule.)
         interaction (interaction/map->InteractionModule.)
+        api (api/map->ApiModule.)
         entities (entities/map->EntitiesModule.)
         contacts (contacts/map->ContactsModule.)
         logging (logging/map->LoggingModule.)
         reporting (reporting/map->ReportingModule.)
         testing (testing/map->TestingModule.)]
-    (doseq [module [authentication session interaction entities contacts logging reporting testing]]
+    (doseq [module [authentication session interaction api entities contacts logging reporting testing]]
       (start-internal-module module))))
 
 (defn start-crm-module

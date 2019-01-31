@@ -45,6 +45,10 @@
                  :list-layouts "cxengage/contacts/list-layouts-response"
 
                  ;; CRUD-topics
+                 :create-response "cxengage/api/create-response"
+                 :read-response "cxengage/api/read-response"
+                 :update-response "cxengage/api/update-response"
+                 :delete-response "cxengage/api/delete-response"
                  :get-queue-response "cxengage/entities/get-queue-response"
                  :get-queues-response "cxengage/entities/get-queues-response"
                  :get-transfer-list-response "cxengage/entities/get-transfer-list-response"

@@ -198,7 +198,7 @@
                    :url (iu/construct-api-url ["users" user-id])}))
 
 (defn get-platform-user-email-request [email]
-  (let [platform-user-email-request {:method :get 
+  (let [platform-user-email-request {:method :get
                                      :url (iu/api-url "users?email=:email"
                                             {:email email})}]
     (api/api-request platform-user-email-request)))
@@ -469,6 +469,21 @@
    (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-map))
          get-request {:method :get :url url}]
     (api/api-request get-request)))
+
+(defn crud-url [entity-vector]
+    (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-vector)))
+
+(defn api-create-request [entity-vector body]
+    (api/api-request {:method :post :url (crud-url entity-vector) :body body}))
+
+(defn api-read-request [entity-vector]
+    (api/api-request {:method :get :url (crud-url entity-vector)}))
+
+(defn api-update-request [entity-vector body]
+    (api/api-request {:method :put :url (crud-url entity-vector) :body body}))
+
+(defn api-delete-request [entity-vector]
+    (api/api-request {:method :delete :url (crud-url entity-vector)}))
 
 (defn send-flow-action-request [interaction-id action-id body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -789,7 +804,7 @@
                                 (not (nil? active))          (assoc-in [:body :active] active)
                                 (not (nil? shared))          (assoc-in [:body :shared] shared))]
     (api/api-request update-reason-request)))
-  
+
 (defn create-reason-request [name description external-id active shared]
   (let [tenant-id (state/get-active-tenant-id)
         create-reason-request (cond-> {:method :post

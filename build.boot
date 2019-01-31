@@ -101,7 +101,7 @@
                                           :print-input-delimiter true
                                           :language-out :ecmascript5
                                           :verbose true
-                                          :source-map (when gen-source-maps 
+                                          :source-map (when gen-source-maps
                                                             "release/main.js.map")}})
   (comp (cljs)))
 
@@ -125,6 +125,7 @@
                            'cxengage-javascript-sdk.modules.contacts
                            'cxengage-javascript-sdk.modules.email
                            'cxengage-javascript-sdk.modules.interaction
+                           'cxengage-javascript-sdk.modules.api
                            'cxengage-javascript-sdk.modules.entities
                            'cxengage-javascript-sdk.modules.messaging
                            'cxengage-javascript-sdk.modules.reporting

@@ -603,7 +603,7 @@
    :level "warn"
    :log-level "error"
    :message "Failed to receive sqs message. Will retry in 2 seconds."})
-  
+
 (defn sqs-uncaught-exception [error]
   {:code 5003
    :context :sqs
@@ -1876,7 +1876,7 @@
     :data {:api-response data}
     :level "error"
     :message "Failed to get user details searching by email address."})
-  
+
 (defn failed-to-update-reason-err
   "**Error Code:** 11077
    Message: Failed to update reason.
@@ -1977,6 +1977,66 @@
     :data {:api-response data}
     :level "error"
     :message "Failed to get a Reason."})
+
+(defn failed-to-create-err
+  "**Error Code:** 11084
+   Message: Failed to create api endpoint / entity.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11084
+   :context :api
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create api endpoint."})
+
+(defn failed-to-read-err
+  "**Error Code:** 11085
+   Message: Failed to read api endpoint / entity.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11085
+   :context :api
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to read api endpoint."})
+
+(defn failed-to-update-err
+  "**Error Code:** 11086
+   Message: Failed to update api endpoint / entity.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11086
+   :context :api
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update api endpoint."})
+
+(defn failed-to-delete-err
+  "**Error Code:** 11087
+   Message: Failed to delete api endpoint / entity.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11087
+   :context :api
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to delete api endpoint."})
 
 ;;hygen-insert-before-11000s
 
