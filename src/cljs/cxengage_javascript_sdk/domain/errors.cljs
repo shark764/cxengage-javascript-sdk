@@ -776,7 +776,7 @@
    :context :voice
    :data {:interaction-id interaction-id
           :api-response data}
-   :level "error"
+   :level "interaction-error"
    :message "Failed to place customer on hold."})
 
 (defn failed-to-stop-recording-err [interaction-id resource-id data]
@@ -793,7 +793,7 @@
    :context :voice
    :data {:interaction-id interaction-id
           :api-response data}
-   :level "error"
+   :level "interaction-error"
    :message "Failed to resume customer from hold."})
 
 (defn failed-to-remove-resource-err [interaction-id target-resource-id resource-id data]
