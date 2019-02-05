@@ -4,13 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.44.0] - 2019-02-06
+### Added
+- CXV1-16890, CXV1-16891 - New functions to create/retrieve/update single flow data along with its published versions and drafts.
+
 ## [8.43.0] - 2019-02-05
 ### Added
 - CXV1-16762 - Added a new listener for the flow signal: "customer-hold-error" 
 
 ## [8.42.1] - 2019-01-29
-### fixed
-- CXV1-15920 - fixed outbound ANI parameter to start outbound email function when the client use outbound identifier and added flow-id
+### Fixed
+- CXV1-15920 - Fixed outbound ANI parameter to start outbound email function when the client use outbound identifier and added flow-id
 
 ## [8.42.0] - 2019-01-29
 ### Added
