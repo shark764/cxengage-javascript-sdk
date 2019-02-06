@@ -240,6 +240,8 @@
                  :get-monitored-interaction-response "cxengage/interactions/voice/get-monitored-interaction-response"
                  :set-monitored-interaction-response "cxengage/interactions/voice/set-monitored-interaction-response"
                  :customer-connected "cxengage/interactions/voice/customer-connected"
+                 :customer-hold-error "cxengage/interactions/voice/customer-hold-error"
+                 :customer-resume-error "cxengage/interactions/voice/customer-resume-error"
 
                  ;; Twilio Topics
                  :twilio-device-ready "cxengage/twilio/device-ready"

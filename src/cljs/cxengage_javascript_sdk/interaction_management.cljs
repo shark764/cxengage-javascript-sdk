@@ -360,6 +360,16 @@
   (p/publish {:topics (topics/get-topic :customer-connected)
               :response message}))
 
+(defn handle-customer-hold-error [message]
+  (let [{:keys [interaction-id]} message]
+    (p/publish {:topics (topics/get-topic :customer-hold-error)
+                :error (e/failed-to-place-customer-on-hold-err interaction-id message)})))
+
+(defn handle-customer-resume-error [message]
+  (let [{:keys [interaction-id]} message]
+    (p/publish {:topics (topics/get-topic :customer-resume-error)
+                :error (e/failed-to-resume-customer-err interaction-id message)})))
+    
 (defn msg-router [message]
   (let [handling-fn (case (:sdk-msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
@@ -393,6 +403,8 @@
                       :INTERACTIONS/SILENT_MONITOR_START handle-silent-monitor-start
                       :INTERACTIONS/SILENT_MONITOR_END handle-silent-monitor-end
                       :INTERACTIONS/CUSTOMER_CONNECTED handle-customer-connected
+                      :INTERACTIONS/CUSTOMER_HOLD_ERROR handle-customer-hold-error
+                      :INTERACTIONS/CUSTOMER_RESUME_ERROR handle-customer-resume-error
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
@@ -446,6 +458,8 @@
                                        "silent-monitor-start" :INTERACTIONS/SILENT_MONITOR_START
                                        "silent-monitor-end" :INTERACTIONS/SILENT_MONITOR_END
                                        "customer-connected" :INTERACTIONS/CUSTOMER_CONNECTED
+                                       "customer-hold-error" :INTERACTIONS/CUSTOMER_HOLD_ERROR
+                                       "customer-resume-error" :INTERACTONS/CUSTOMER_RESUME_ERRRO
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:sdk-msg-type inferred-notification-type} message))))
 
