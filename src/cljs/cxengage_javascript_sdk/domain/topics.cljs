@@ -247,6 +247,8 @@
                  :dial-send-acknowledged "cxengage/interactions/voice/dial-send-acknowledged"
                  :send-digits-acknowledged "cxengage/interactions/voice/send-digits-acknowledged"
                  :transfer-connected "cxengage/interactions/voice/transfer-connected"
+                 :transfer-started "cxengage/interactions/voice/transfer-started"
+                 :transfer-cancelled "cxengage/interactions/voice/transfer-cancelled"
                  :resource-hold-acknowledged "cxengage/interactions/voice/resource-hold-acknowledged"
                  :resource-resume-acknowledged "cxengage/interactions/voice/resource-resume-acknowledged"
                  :resume-all-acknowledged "cxengage/interactions/voice/resume-all-acknowledged"
