@@ -151,6 +151,16 @@
     (p/publish {:topics (topics/get-topic :custom-fields-received)
                 :response custom-field-details})))
 
+(defn handle-interaction-update-transfer-menu [message]
+  (let [{:keys [interaction-id notification-type]} message
+        interaction-update-transfer-menu-details {:transfer-lists-from-flow (get-in message [:extra-params :flow-assigned-transfer-lists])
+                                                  :interaction-id interaction-id
+                                                  :notification-type notification-type}]
+    (when (state/find-interaction-location interaction-id)
+      (state/add-interaction-interaction-update-transfer-menu-details! interaction-update-transfer-menu-details interaction-id notification-type))
+    (p/publish {:topics (topics/get-topic :interaction-update-transfer-menu)
+                :response interaction-update-transfer-menu-details})))
+
 (defn handle-disposition-codes [message]
   (let [{:keys [interaction-id]} message
         disposition-code-details (:disposition-codes message)
@@ -378,6 +388,7 @@
                       :INTERACTIONS/WORK_INITIATED_RECEIVED handle-work-initiated
                       :INTERACTIONS/WORK_ENDED_RECEIVED handle-work-ended
                       :INTERACTIONS/CUSTOM_FIELDS_RECEIVED handle-custom-fields
+                      :INTERACTIONS/INTERACTION_UPDATE_TRANSFER_MENU handle-interaction-update-transfer-menu
                       :INTERACTIONS/DISPOSITION_CODES_RECEIVED handle-disposition-codes
                       :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED handle-interaction-heartbeat
                       :INTERACTIONS/WRAP_UP_RECEIVED handle-wrapup
@@ -438,6 +449,7 @@
                                        "work-accepted" :INTERACTIONS/WORK_ACCEPTED_RECEIVED
                                        "disposition-codes" :INTERACTIONS/DISPOSITION_CODES_RECEIVED
                                        "custom-fields" :INTERACTIONS/CUSTOM_FIELDS_RECEIVED
+                                       "interaction-update-transfer-menu" :INTERACTIONS/INTERACTION_UPDATE_TRANSFER_MENU
                                        "wrapup" :INTERACTIONS/WRAP_UP_RECEIVED
                                        "wrapup-start" :INTERACTIONS/WRAP_UP_STARTED
                                        "interaction-timeout" :INTERACTIONS/INTERACTION_TIMEOUT_RECEIVED
