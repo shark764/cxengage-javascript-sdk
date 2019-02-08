@@ -830,6 +830,49 @@
                                     (not (nil? is-default))      (assoc-in [:body :is-default] is-default))]
     (api/api-request update-reason-list-request)))
 
+(defn create-flow-request [flow-type name active description]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-flow-request (cond-> {:method :post
+                                     :url (iu/api-url "tenants/:tenant-id/flows"
+                                                       {:tenant-id tenant-id})
+                                     :body {:active (or active false)}}
+                                    (not (nil? flow-type))    (assoc-in [:body :type] flow-type)
+                                    (not (nil? name))         (assoc-in [:body :name] name)
+                                    (not (nil? description))  (assoc-in [:body :description] description))]
+    (api/api-request create-flow-request)))
+
+(defn update-flow-request [flow-id flow-type name active-version active description]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-flow-request (cond-> {:method :put
+                                     :url (iu/api-url "tenants/:tenant-id/flows/:flow-id"
+                                                       {:tenant-id tenant-id :flow-id flow-id})}
+                                    (not (nil? flow-type))      (assoc-in [:body :type] flow-type)
+                                    (not (nil? name))           (assoc-in [:body :name] name)
+                                    (not (nil? active-version)) (assoc-in [:body :active-version] active-version)
+                                    (not (nil? description))    (assoc-in [:body :description] description)
+                                    (not (nil? active))         (assoc-in [:body :active] active))]
+    (api/api-request update-flow-request)))
+
+(defn create-flow-draft-request [flow-id name flow metadata description]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-flow-draft-request (cond-> {:method :post
+                                           :url (iu/api-url "tenants/:tenant-id/flows/:flow-id/drafts"
+                                                  {:tenant-id tenant-id :flow-id flow-id})
+                                           :body  {:flow (or flow "[]")}}
+                                          (not (nil? name))         (assoc-in [:body :name] name)
+                                          (not (nil? metadata))     (assoc-in [:body :metadata] metadata)
+                                          (not (nil? description))  (assoc-in [:body :description] description))]
+    (api/api-request create-flow-draft-request)))
+
+(defn remove-flow-draft-request [flow-id draft-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        remove-flow-draft-request {:method :delete
+                                   :preserve-casing? true
+                                   :url (iu/api-url
+                                         "tenants/:tenant-id/flows/:flow-id/drafts/:draft-id"
+                                         {:tenant-id tenant-id :flow-id flow-id :draft-id draft-id})}]
+    (api/api-request remove-flow-draft-request)))
+
 (defn dissociate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)
         request-data {:method :delete

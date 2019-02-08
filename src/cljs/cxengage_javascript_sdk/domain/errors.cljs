@@ -1388,7 +1388,14 @@
    :level "error"
    :message "Failed to update custom metric."})
 
-(defn failed-to-get-flows-err [data]
+(defn failed-to-get-flows-err
+  "**Error Code:** 11043
+   Message: Failed to get flows.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
   {:code 11043
    :context :entities
    :data {:api-response data}
@@ -1937,14 +1944,14 @@
    :message "Failed to create reason list."})
 
 (defn failed-to-update-reason-list-err
- "**Error Code:** 11081
-  Message: Failed to update reason list.
+  "**Error Code:** 11081
+   Message: Failed to update reason list.
 
-  This error is usually due to an unexpected status code returned from the API.
+   This error is usually due to an unexpected status code returned from the API.
 
-  **Solution:** Check network tab for additional error information."
- [data]
- {:code 11081
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11081
    :context :entities
    :data {:api-response data}
    :level "error"
@@ -1959,10 +1966,10 @@
   **Solution:** Check network tab for additional error information."
   [data]
   {:code 11082
-    :context :entities
-    :data {:api-response data}
-    :level "error"
-    :message "Failed to get a Reason."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get a Reason."})
 
 (defn failed-to-get-reason-list-err
   "**Error Code:** 11083
@@ -1973,10 +1980,84 @@
     **Solution:** Check network tab for additional error information."
   [data]
   {:code 11083
-    :context :entities
-    :data {:api-response data}
-    :level "error"
-    :message "Failed to get a Reason."})
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get a Reason."})
+
+(defn failed-to-get-flow-err
+  "**Error Code:** 11084
+    Message: Failed to get a Flow.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11084
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get a Flow."})
+
+(defn failed-to-create-flow-err
+  "**Error Code:** 11085
+   Message: Failed to create/copy flow with draft.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   Validate that the values passed into the SDK function were correct.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11085
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create/copy flow with draft."})
+
+(defn failed-to-create-flow-draft-err
+  "**Error Code:** 11086
+   Message: Failed to create draft for flow.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   Validate that the values passed into the SDK function were correct.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11086
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create draft for flow."})
+
+(defn failed-to-update-flow-err
+  "**Error Code:** 11087
+   Message: Failed to update flow.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11087
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update flow."})
+
+(defn failed-to-remove-flow-draft-err
+  "**Error Code:** 11088
+   Message: Failed to remove draft from flow.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11088
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to remove draft from flow."})
 
 ;;hygen-insert-before-11000s
 

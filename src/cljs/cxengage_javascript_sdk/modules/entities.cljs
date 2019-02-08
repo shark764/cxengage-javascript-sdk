@@ -240,24 +240,38 @@
                   :error (e/failed-to-get-outbound-identifiers-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getFlows();
-;; -------------------------------------------------------------------------- ;;
+(s/def ::get-flows-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback ::specs/include-notations]))
 
 (def-sdk-fn get-flows
-  ""
-  {:validation ::get-entities-params
+  "``` javascript
+  CxEngage.entities.getFlows({
+    includeNotations: {{boolean}} (optional)
+  });
+  ```
+  Retrieves available Flows configured for current logged in tenant.
+  Receives include-notations param to add flows that don't belong to current tenant.
+  Flows included are notations used in flow designer iframe.
+
+  Topic: cxengage/entities/get-flows-response
+
+  Possible Errors:
+
+  - [Entities: 11043](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-flows-err)"
+  {:validation ::get-flows-params
    :topic-key :get-flows-response}
   [params]
-  (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "flow"))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-flows-err entity-response)
-                  :callback callback}))))
+  (let [{:keys [callback topic include-notations]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "flow"))
+        ; Filtering flows that belong to active tenant, at this point we don't need
+        ; flows for notations used in flow designer iframe
+        response (if (true? include-notations) api-response {:result (into [] (filter #(= (:tenant-id %) (state/get-active-tenant-id)) (:result api-response)))})
+        error (if-not (= status 200) (e/failed-to-get-flows-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error error
+                :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getBranding();
@@ -1034,6 +1048,42 @@
                             (e/failed-to-get-reason-list-err entity-response))
                   :callback callback})))
 
+(s/def ::get-flow-params
+  (s/keys :req-un [::specs/flow-id]
+          :opt-un []))
+
+(def-sdk-fn get-flow
+  "``` javascript
+  CxEngage.entities.getFlow({
+    flowId: {{uuid}}
+  });
+  ```
+  Retrieves single Flow given parameter flowId
+  as a unique key
+
+  Topic: cxengage/entities/get-flow-response
+
+  Possible Errors:
+
+  - [Entities: 11084](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-flow-err)"
+  {:validation ::get-flow-params
+   :topic-key :get-flow-response}
+  [params]
+  (let [{:keys [callback topic flow-id]} params
+        entity-response (a/<! (rest/get-crud-entity-request ["flows" flow-id]))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-flow-err entity-response))
+        flow-versions-response (if (nil? error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "versions"])))
+        error (if-not (= (:status flow-versions-response) 200) (e/failed-to-get-flow-err flow-versions-response) error)
+        flow-drafts-response (if (nil? error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "drafts"])))
+        error (if-not (= (:status flow-drafts-response) 200) (e/failed-to-get-flow-err flow-drafts-response) error)
+        response (-> (:api-response entity-response)
+                   (assoc-in [:result :versions] (get-in flow-versions-response [:api-response :result]))
+                   (assoc-in [:result :drafts] (get-in flow-drafts-response [:api-response :result])))]
+    (p/publish {:topics topic
+                :response response
+                :error error
+                :callback callback})))
+
 ;;hygen-insert-before-get
 
 (def-sdk-fn get-permissions
@@ -1503,7 +1553,7 @@
 
 (s/def ::create-group-params
   (s/keys :req-un [::specs/name ::specs/active]
-            :opt-un [::specs/callback ::specs/description]))
+          :opt-un [::specs/callback ::specs/description]))
 
 (def-sdk-fn create-group
   "``` javascript
@@ -1682,6 +1732,76 @@
                   :error (e/failed-to-create-role-err entity-response)
                   :callback callback}))))
 
+(s/def ::create-flow-params
+  (s/keys :req-un [::specs/flow-type ::specs/name]
+          :opt-un [::specs/callback ::specs/flow ::specs/active ::specs/metadata ::specs/description]))
+
+(def-sdk-fn create-flow
+  "``` javascript
+  CxEngage.entities.createFlow({
+    flowType: {{string}}, (required) (for new/copy of flow)
+    name: {{string}}, (required) (for new/copy of flow)
+    active: {{boolean}}, (optional) (for new/copy of flow)
+    description: {{string}} (optional) (for new/copy of flow)
+    flow: {{string}}, (optional) (for new initial draft)
+    metadata: {{string}}, (optional) (for new initial draft)
+  });
+  ```
+  Creates new single/copy Flow and its Initial Draft by calling rest/create-flow-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-flow-response
+
+  Possible Errors:
+
+  - [Entities: 11085](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-flow-err)"
+  {:validation ::create-flow-params
+   :topic-key :create-flow-response}
+  [params]
+  (let [{:keys [flow-type name flow metadata active description callback topic]} params
+        flow-response (a/<! (rest/create-flow-request flow-type name active description))
+        error (if-not (= (:status flow-response) 200) (e/failed-to-create-flow-err flow-response))
+        flow-id (get-in flow-response [:api-response :result :id])
+        draft-response (if (nil? error) (a/<! (rest/create-flow-draft-request flow-id "Initial Draft" flow metadata nil)))
+        error (if-not (= (:status draft-response) 200) (e/failed-to-create-flow-err draft-response) error)
+        response (assoc-in (:api-response flow-response) [:result :drafts] (conj [] (get-in draft-response [:api-response :result])))]
+      (p/publish {:topics topic
+                  :response response
+                  :error error
+                  :callback callback})))
+
+(s/def ::create-flow-draft-params
+  (s/keys :req-un [::specs/flow-id ::specs/name]
+          :opt-un [::specs/callback ::specs/flow ::specs/metadata ::specs/description]))
+
+(def-sdk-fn create-flow-draft
+  "``` javascript
+  CxEngage.entities.createFlowDraft({
+    flowId: {{uuid}}, (required)
+    name: {{string}}, (required)
+    flow: {{string}}, (required)
+    metadata: {{string}}, (optional)
+    description: {{string}} (optional)
+  });
+  ```
+  Creates new single Flow Draft by calling rest/create-flow-draft-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-flow-draft-response
+
+  Possible Errors:
+
+  - [Entities: 11086](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-flow-draft-err)"
+  {:validation ::create-flow-draft-params
+   :topic-key :create-flow-draft-response}
+  [params]
+  (let [{:keys [flow-id name flow metadata description callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-flow-draft-request flow-id name flow metadata description))
+        error (if-not (= status 200) (e/failed-to-create-flow-draft-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
 
 ;;--------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
@@ -2427,6 +2547,39 @@
                 :error error
                 :callback callback})))
 
+(s/def ::update-flow-params
+  (s/keys :req-un [::specs/flow-id]
+          :opt-un [::specs/callback ::specs/flow-type ::specs/name ::specs/active-version ::specs/active ::specs/description]))
+
+(def-sdk-fn update-flow
+  "``` javascript
+  CxEngage.entities.updateFlow({
+    flowId: {{uuid}}, (required)
+    flowType: {{string}}, (optional)
+    name: {{string}}, (optional)
+    activeVersion: {{uuid}}, (optional)
+    active: {{boolean}}, (optional)
+    description: {{string}} (optional)
+  });
+  ```
+  Updates new single Flow by calling rest/update-flow-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-flow-response
+
+  Possible Errors:
+
+  - [Entities: 11087](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-flow-err)"
+  {:validation ::update-flow-params
+   :topic-key :update-flow-response}
+  [params]
+  (let [{:keys [flow-id flow-type name active-version active description callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-flow-request flow-id flow-type name active-version active description))
+        error (if-not (= status 200) (e/failed-to-update-flow-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
 
 ;;--------------------------------------------------------------------------- ;;
 ;; DELETE Entity Functions
@@ -2485,6 +2638,36 @@
                   :error (e/failed-to-delete-email-template-err list-items-response)
                   :callback callback}))))
 
+(s/def ::remove-flow-draft-params
+  (s/keys :req-un [::specs/flow-id ::specs/draft-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn remove-flow-draft
+  "``` javascript
+  CxEngage.entities.removeFlowDraft({
+    flowId: {{uuid}}, (required)
+    draftId: {{uuid}} (required)
+  });
+  ```
+  Removes single Flow Draft by calling rest/remove-flow-draft-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/remove-flow-draft-response
+
+  Possible Errors:
+
+  - [Entities: 11088](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-remove-flow-draft-err)"
+  {:validation ::remove-flow-draft-params
+   :topic-key :remove-flow-draft-response}
+  [params]
+  (let [{:keys [callback topic flow-id draft-id]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/remove-flow-draft-request flow-id draft-id))
+        error (if-not (= status 200) (e/failed-to-remove-flow-draft-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 ;;hygen-insert-before-delete
 
 ;; -------------------------------------------------------------------------- ;;
@@ -2505,6 +2688,7 @@
                                        :get-outbound-identifier-lists get-outbound-identifier-lists
                                        :get-user-outbound-identifier-lists get-user-outbound-identifier-lists
                                        :get-flows get-flows
+                                       :get-flow get-flow
                                        :get-transfer-list get-transfer-list
                                        :get-dashboards get-dashboards
                                        :get-branding get-branding
@@ -2555,6 +2739,10 @@
                                        :create-user create-user
                                        :create-reason create-reason
                                        :create-reason-list create-reason-list
+                                       :create-flow create-flow
+                                       :update-flow update-flow
+                                       :create-flow-draft create-flow-draft
+                                       :remove-flow-draft remove-flow-draft
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
