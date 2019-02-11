@@ -184,6 +184,10 @@
   (let [interaction-location (find-interaction-location interaction-id)]
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :custom-field-details] custom-field-details)))
 
+(defn add-interaction-interaction-update-transfer-menu-details! [interaction-transfer-menu-details interaction-id notification-type]
+  (let [interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :notification-type :interaction-transfer-menu-details] notification-type interaction-transfer-menu-details)))
+
 (defn get-interaction-wrapup-details [interaction-id]
   (let [interaction-location (find-interaction-location interaction-id)]
     (get-state-value [:interactions interaction-location interaction-id :wrapup-details])))
