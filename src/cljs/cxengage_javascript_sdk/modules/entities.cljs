@@ -1086,6 +1086,59 @@
 
 ;;hygen-insert-before-get
 
+(s/def ::get-disposition-params
+  (s/keys :req-un [ ::specs/disposition-id]
+          :opt-un []))
+
+(def-sdk-fn get-disposition
+  "``` javascript
+  CxEngage.entities.getDisposition({
+       disposition-id: {{uuid}} (required),
+  });
+  ```
+  Calls rest/get-disposition-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/get-disposition-response
+
+  Possible Errors:
+
+  - [Entities: 11090](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-disposition-err)"
+  {:validation ::get-disposition-params
+   :topic-key :get-disposition-response}
+  [params]
+  (let [{:keys [callback topic disposition-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request  ["dispositions" disposition-id]))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-disposition-err entity-response) error)]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
+
+(def-sdk-fn get-dispositions
+  "``` javascript
+  CxEngage.entities.getDispositions();
+  ```
+  Retrieves available Dispositions configured for current logged in tenant
+
+  Topic: cxengage/entities/get-dispositions-response
+
+  Possible Errors:
+
+  - [Entities: 11089](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-dispositions-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-dispositions-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as dispositions-response} (a/<! (rest/get-crud-entity-request ["dispositions"]))
+        error (if-not (= (:status dispositions-response) 200) (e/failed-to-get-dispositions-err dispositions-response) error)]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
+
 (def-sdk-fn get-permissions
   "``` javascript
   CxEngage.entities.getPermissions();
@@ -1585,6 +1638,40 @@
                   :callback callback}))))
 
 ;;hygen-insert-before-create
+
+(s/def ::create-disposition-params
+  (s/keys :req-un [ ::specs/name ::specs/active ::specs/shared]
+          :opt-un [ ::specs/callback ::specs/description ::specs/external-id]))
+
+(def-sdk-fn create-disposition
+  "``` javascript
+  CxEngage.entities.createDisposition({
+     name: {{string}} (required),
+     description: {{string}} (optional),
+     externalId: {{string}} (optional),
+     active: {{boolean}} (required),
+     shared: {{boolean}} (required),
+  });
+  ```
+  Calls rest/create-disposition-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-disposition-response
+
+  Possible Errors:
+
+  - [Entities: 11091](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-disposition-err)"
+  {:validation ::create-disposition-params
+   :topic-key :create-disposition-response}
+  [params]
+  (let [{:keys [name description external-id active shared callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-disposition-request name description external-id active shared))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response) error)]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 
 (s/def ::create-reason-list-params
   (s/keys :req-un [ ::specs/name ::specs/active ::specs/shared]
@@ -2410,6 +2497,40 @@
 
 ;;hygen-insert-before-update
 
+(s/def ::update-disposition-params
+  (s/keys :req-un [ ::specs/disposition-id ::specs/name ::specs/active ::specs/shared]
+          :opt-un [ ::specs/callback ::specs/description ::specs/external-id]))
+
+(def-sdk-fn update-disposition
+  "``` javascript
+  CxEngage.entities.updateDisposition({
+    dispositionId: {{uuid}} (required),
+    name: {{string}} (required),
+    description: {{string}} (optional),
+    externalId: {{string}} (optional),
+    active: {{boolean}} (required),
+    shared: {{boolean}} (required),
+  });
+  ```
+  Calls rest/update-disposition-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-disposition-response
+
+  Possible Errors:
+
+  - [Entities: 11092](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-disposition-err)"
+  {:validation ::update-disposition-params
+   :topic-key :update-disposition-response}
+  [params]
+  (let [{:keys [disposition-id name description external-id active shared callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-disposition-request disposition-id name description external-id active shared))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response) error)]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 (s/def ::update-reason-params
   (s/keys :req-un [::specs/reason-id]
           :opt-un [::specs/name ::specs/active ::specs/shared ::specs/callback ::specs/description ::specs/external-id]))
@@ -2726,6 +2847,8 @@
                                        :get-platform-user get-platform-user
                                        :get-platform-user-email get-platform-user-email
                                        :get-identity-providers get-identity-providers
+                                       :get-dispositions get-dispositions
+                                       :get-disposition get-disposition
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
@@ -2743,6 +2866,7 @@
                                        :update-flow update-flow
                                        :create-flow-draft create-flow-draft
                                        :remove-flow-draft remove-flow-draft
+                                       :create-disposition create-disposition
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
@@ -2765,6 +2889,7 @@
                                        :update-users-capacity-rule update-users-capacity-rule
                                        :update-reason update-reason
                                        :update-reason-list update-reason-list
+                                       :update-disposition update-disposition
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template
