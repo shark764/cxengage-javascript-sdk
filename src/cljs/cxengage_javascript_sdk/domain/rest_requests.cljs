@@ -872,6 +872,29 @@
                                          "tenants/:tenant-id/flows/:flow-id/drafts/:draft-id"
                                          {:tenant-id tenant-id :flow-id flow-id :draft-id draft-id})}]
     (api/api-request remove-flow-draft-request)))
+(defn create-disposition-request [name description external-id active shared]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-disposition-request (cond-> {:method :post
+                                            :url (iu/api-url "tenants/:tenant-id/dispositions"
+                                                        {:tenant-id tenant-id})}
+                                    (not (nil? name))            (assoc-in [:body :name] name)
+                                    (not (nil? description))     (assoc-in [:body :description] description)
+                                    (not (nil? external-id))     (assoc-in [:body :external-id] external-id)
+                                    (not (nil? active))          (assoc-in [:body :active] active)
+                                    (not (nil? shared))          (assoc-in [:body :shared] shared))]
+    (api/api-request create-disposition-request)))
+
+(defn update-disposition-request [disposition-id name description external-id active shared]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-disposition-request (cond-> {:method :put
+                                            :url (iu/api-url "tenants/:tenant-id/dispositions/:disposition-id"
+                                                              {:tenant-id tenant-id :disposition-id disposition-id})}
+                                    (not (nil? name))            (assoc-in [:body :name] name)
+                                    (not (nil? description))     (assoc-in [:body :description] description)
+                                    (not (nil? external-id))     (assoc-in [:body :external-id] external-id)
+                                    (not (nil? active))          (assoc-in [:body :active] active)
+                                    (not (nil? shared))          (assoc-in [:body :shared] shared))]
+    (api/api-request update-disposition-request)))
 
 (defn dissociate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)

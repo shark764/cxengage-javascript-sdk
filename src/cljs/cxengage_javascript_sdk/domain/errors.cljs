@@ -2059,6 +2059,62 @@
    :level "error"
    :message "Failed to remove draft from flow."})
 
+(defn failed-to-get-dispositions-err
+  "**Error Code:** 11089
+   Message: Failed to get dispositions.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11089
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get dispositions."})
+
+(defn failed-to-get-disposition-err
+  "**Error Code:** 11090
+   Message: Failed to get disposition.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11090
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get disposition."})
+
+(defn failed-to-create-disposition-err
+  "**Error Code:** 11091
+   Message: Failed to create disposition.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11091
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create disposition."})
+
+(defn failed-to-update-disposition-err
+  "**Error Code:** 11092
+   Message: Failed to update disposition.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11092
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update disposition."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

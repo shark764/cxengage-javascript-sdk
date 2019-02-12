@@ -134,6 +134,10 @@
                  :update-reason-list-response "cxengage/entities/update-reason-list-response"
                  :create-reason-response "cxengage/entities/create-reason-response"
                  :create-reason-list-response "cxengage/entities/create-reason-list-response"
+                 :get-dispositions-response "cxengage/entities/get-dispositions-response"
+                 :get-disposition-response "cxengage/entities/get-disposition-response"
+                 :create-disposition-response "cxengage/entities/create-disposition-response"
+                 :update-disposition-response "cxengage/entities/update-disposition-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
