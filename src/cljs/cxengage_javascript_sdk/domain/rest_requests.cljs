@@ -359,6 +359,21 @@
                                        {:tenant-id tenant-id})}]
     (api/api-request list-attributes-request)))
 
+(defn create-custom-metric-request [name description custom-metrics-type active sla-abandon-type sla-threshold sla-abandon-threshold]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-custom-metric-request (cond-> {:method :post
+                                              :url (iu/api-url "tenants/:tenant-id/custom-metrics"
+                                                     {:tenant-id tenant-id})
+                                              :body {:custom-metrics-type (or custom-metrics-type "SLA")
+                                                     :active (or active true)}}
+                                            (not (nil? name))                               (assoc-in [:body :name] name)
+                                            (not (nil? description))                        (assoc-in [:body :description] description)
+                                            (not (nil? sla-abandon-type))                   (assoc-in [:body :sla-abandon-type] sla-abandon-type)
+                                            (not (nil? sla-threshold))                      (assoc-in [:body :sla-threshold] sla-threshold)
+                                            (= sla-abandon-type "ignored-abandoned-calls")  (assoc-in [:body :sla-abandon-threshold] sla-abandon-threshold)
+                                            (= sla-abandon-type "count-against-sla")        (assoc-in [:body :sla-abandon-threshold] nil))]
+    (api/api-request create-custom-metric-request)))
+
 (defn update-custom-metric-request [description custom-metrics-type custom-metric-id active sla-abandon-type sla-threshold name sla-abandon-threshold]
   (let [tenant-id (state/get-active-tenant-id)
         update-custom-metric-request (cond-> {:method :put

@@ -104,6 +104,7 @@
                  :get-custom-metrics-response "cxengage/entities/get-custom-metrics-response"
                  :get-custom-metric-response "cxengage/entities/get-custom-metric-response"
                  :update-custom-metric-response "cxengage/entities/update-custom-metric-response"
+                 :create-custom-metric-response "cxengage/entities/create-custom-metric-response"
                  :get-roles-response "cxengage/entities/get-roles-response"
                  :get-role-response "cxengage/entities/get-role-response"
                  :get-reason-response "cxengage/entities/get-reason-response"
