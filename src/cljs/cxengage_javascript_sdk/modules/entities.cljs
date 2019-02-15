@@ -737,20 +737,19 @@
    :topic-key :get-custom-metrics-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "custom-metric"))]
-    (if (= status 200)
-      ; We set value for updated and updated-by if entity hasn't been updated yet
-      ; since those values are not set by default like in other entities.
-      ; JIRA Reference: https://liveops.atlassian.net/browse/CXV1-15814
-      (p/publish {:topics topic
-                  :response {:result (map #(cond-> %
-                                             (nil? (:updated %))    (assoc :updated (:created %))
-                                             (nil? (:updated-by %)) (assoc :updated-by (:created-by %)))
-                                       (:result api-response))}
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-custom-metrics-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["custom-metrics"]))
+       ; We set value for updated and updated-by if entity hasn't been updated yet
+       ; since those values are not set by default like in other entities.
+       ; JIRA Reference: https://liveops.atlassian.net/browse/CXV1-15814
+        response {:result (map #(cond-> %
+                                   (nil? (:updated %))    (assoc :updated (:created %))
+                                   (nil? (:updated-by %)) (assoc :updated-by (:created-by %)))
+                             (:result api-response))}
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-custom-metrics-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error error
+                :callback callback})))
 
 (s/def ::get-custom-metric-params
   (s/keys :req-un [::specs/custom-metric-id]
@@ -772,20 +771,19 @@
    :topic-key :get-custom-metric-response}
   [params]
   (let [{:keys [callback topic custom-metric-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :get "custom-metric" custom-metric-id))]
-    (if (= status 200)
-      ; We set value for updated and updated-by if entity hasn't been updated yet
-      ; since those values are not set by default like in other entities.
-      ; JIRA Reference: https://liveops.atlassian.net/browse/CXV1-15814
-      (p/publish {:topics topic
-                  :response {:result (#(cond-> %
-                                         (nil? (:updated %))    (assoc :updated (:created %))
-                                         (nil? (:updated-by %)) (assoc :updated-by (:created-by %)))
-                                       (:result api-response))}
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-custom-metric-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request  ["custom-metrics" custom-metric-id]))
+       ; We set value for updated and updated-by if entity hasn't been updated yet
+       ; since those values are not set by default like in other entities.
+       ; JIRA Reference: https://liveops.atlassian.net/browse/CXV1-15814
+        response {:result (#(cond-> %
+                               (nil? (:updated %))    (assoc :updated (:created %))
+                               (nil? (:updated-by %)) (assoc :updated-by (:created-by %)))
+                            (:result api-response))}
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-custom-metric-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error error
+                :callback callback})))
 
 (def-sdk-fn get-historical-report-folders
   "``` javascript
@@ -1163,7 +1161,7 @@
   [params]
   (let [{:keys [callback topic disposition-id]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request  ["dispositions" disposition-id]))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-get-disposition-err entity-response) error)]
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-disposition-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error error
@@ -1186,7 +1184,7 @@
   [params]
   (let [{:keys [callback topic]} params
         {:keys [status api-response] :as dispositions-response} (a/<! (rest/get-crud-entity-request ["dispositions"]))
-        error (if-not (= (:status dispositions-response) 200) (e/failed-to-get-dispositions-err dispositions-response) error)]
+        error (if-not (= (:status dispositions-response) 200) (e/failed-to-get-dispositions-err dispositions-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error error
@@ -1722,7 +1720,7 @@
   [params]
   (let [{:keys [callback topic name description value flow-id channel-type interaction-field active]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-dispatch-mapping-request name description value flow-id channel-type interaction-field active))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-create-dispatch-mappings-err entity-response))]
+        error (if-not (= (:status entity-response) 200) (e/failed-to-create-dispatch-mapping-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error error
@@ -1756,7 +1754,7 @@
   [params]
   (let [{:keys [name description external-id active shared callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-disposition-request name description external-id active shared))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response) error)]
+        error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error error
@@ -1975,6 +1973,39 @@
   (let [{:keys [flow-id name flow metadata description callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-flow-draft-request flow-id name flow metadata description))
         error (if-not (= status 200) (e/failed-to-create-flow-draft-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
+(s/def ::create-custom-metric-params
+  (s/keys :req-un [::specs/sla-threshold ::specs/sla-abandon-type ::specs/active ::specs/name]
+          :opt-un [::specs/callback ::specs/sla-abandon-threshold ::specs/custom-metrics-type ::specs/description]))
+
+(def-sdk-fn create-custom-metric
+  "``` javascript
+  CxEngage.entities.createCustomMetric({
+    slaThreshold: {{integer}}, (required)
+    slaAbandonType: {{string}}, (required)
+    active: {{boolean}}, (required)
+    name: {{string}}, (required)
+    slaAbandonThreshold: {{integer}}, (optional)
+    customMetricsType: {{string}}, (optional)
+    description: {{string}}, (optional)
+  });
+  ```
+  Creates a single Custom Metric by calling rest/create-custom-metric-request
+  with the provided data for current tenant.
+
+  Possible Errors:
+
+  - [Entities: 11097](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-custom-metric-err)"
+  {:validation ::create-custom-metric-params
+   :topic-key :create-custom-metric-response}
+  [params]
+  (let [{:keys [name description custom-metrics-type active sla-abandon-type sla-threshold sla-abandon-threshold callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-custom-metric-request name description custom-metrics-type active sla-abandon-type sla-threshold sla-abandon-threshold))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-create-custom-metric-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error error
@@ -2466,14 +2497,12 @@
    :topic-key :update-custom-metric-response}
   [params]
   (let [{:keys [custom-metric-id sla-abandon-type active name custom-metrics-type sla-threshold sla-abandon-threshold description callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metric-id active sla-abandon-type sla-threshold name sla-abandon-threshold))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-custom-metric-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metric-id active sla-abandon-type sla-threshold name sla-abandon-threshold))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-update-custom-metric-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
 
 (s/def ::update-data-access-report-params
     (s/keys :req-un [::specs/data-access-report-id]
@@ -2996,6 +3025,7 @@
                                        :remove-flow-draft remove-flow-draft
                                        :create-disposition create-disposition
                                        :create-dispatch-mapping create-dispatch-mapping
+                                       :create-custom-metric create-custom-metric
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item

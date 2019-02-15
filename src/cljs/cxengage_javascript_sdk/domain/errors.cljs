@@ -2171,6 +2171,21 @@
    :level "error"
    :message "Failed to update dispatch mapping."})
 
+(defn failed-to-create-custom-metric-err
+  "**Error Code:** 11097
+   Message: Failed to create custom metric.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function are correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11097
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create custom metric."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
