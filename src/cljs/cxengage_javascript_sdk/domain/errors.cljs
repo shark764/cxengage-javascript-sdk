@@ -2115,6 +2115,62 @@
    :level "error"
    :message "Failed to update disposition."})
 
+(defn failed-to-get-dispatch-mappings-err
+  "**Error Code:** 11093
+   Message: Failed to get dispatch mappings.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11093
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get dispatch mappings."})
+
+(defn failed-to-get-dispatch-mapping-err
+  "**Error Code:** 11094
+   Message: Failed to get dispatch mapping.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11094
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get dispatch mapping."})
+
+(defn failed-to-create-dispatch-mapping-err
+  "**Error Code:** 11095
+   Message: Failed to create dispatch mapping.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11095
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create dispatch mapping."})
+
+(defn failed-to-update-dispatch-mapping-err
+  "**Error Code:** 11096
+   Message: Failed to update dispatch mapping.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11096
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update dispatch mapping."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
