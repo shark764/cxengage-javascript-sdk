@@ -138,6 +138,10 @@
                  :get-disposition-response "cxengage/entities/get-disposition-response"
                  :create-disposition-response "cxengage/entities/create-disposition-response"
                  :update-disposition-response "cxengage/entities/update-disposition-response"
+                 :get-dispatch-mappings-response "cxengage/entities/get-dispatch-mappings-response"
+                 :get-dispatch-mapping-response "cxengage/entities/get-dispatch-mapping-response"
+                 :create-dispatch-mapping-response "cxengage/entities/create-dispatch-mapping-response"
+                 :update-dispatch-mapping-response "cxengage/entities/update-dispatch-mapping-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting

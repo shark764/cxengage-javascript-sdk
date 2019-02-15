@@ -789,7 +789,35 @@
                                 (not (nil? active))          (assoc-in [:body :active] active)
                                 (not (nil? shared))          (assoc-in [:body :shared] shared))]
     (api/api-request update-reason-request)))
+
+(defn create-dispatch-mapping-request [name description value flow-id channel-type interaction-field active]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-dispatch-mapping-request (cond-> {:method :post
+                                                 :url (iu/api-url "tenants/:tenant-id/dispatch-mappings"
+                                                                  {:tenant-id tenant-id})}
+                                          (not (nil? name))                 (assoc-in [:body :name] name)
+                                          (not (nil? description))          (assoc-in [:body :description] description)
+                                          (not (nil? value))                (assoc-in [:body :value] value)
+                                          (not (nil? flow-id))              (assoc-in [:body :flow-id] flow-id)
+                                          (not (nil? channel-type))         (assoc-in [:body :channel-type] channel-type)
+                                          (not (nil? interaction-field))    (assoc-in [:body :interaction-field] interaction-field)
+                                          (not (nil? active))               (assoc-in [:body :active] active))]
+    (api/api-request create-dispatch-mapping-request)))
   
+(defn update-dispatch-mapping-request [dispatch-mapping-id name description value flow-id interaction-field channel-type active]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-dispatch-mapping-request (cond-> {:method :put
+                                                 :url (iu/api-url "tenants/:tenant-id/dispatch-mappings/:dispatch-mapping-id"
+                                                                  {:tenant-id tenant-id :dispatch-mapping-id dispatch-mapping-id})}
+                                          (not (nil? name))                 (assoc-in [:body :name] name)
+                                          (not (nil? description))          (assoc-in [:body :description] description)
+                                          (not (nil? value))                (assoc-in [:body :value] value)
+                                          (not (nil? flow-id))              (assoc-in [:body :flow-id] flow-id)
+                                          (not (nil? channel-type))         (assoc-in [:body :channel-type] channel-type)
+                                          (not (nil? interaction-field))    (assoc-in [:body :interaction-field] interaction-field)
+                                          (not (nil? active))               (assoc-in [:body :active] active))]
+    (api/api-request update-dispatch-mapping-request)))
+
 (defn create-reason-request [name description external-id active shared]
   (let [tenant-id (state/get-active-tenant-id)
         create-reason-request (cond-> {:method :post

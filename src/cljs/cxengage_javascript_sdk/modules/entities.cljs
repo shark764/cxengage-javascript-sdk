@@ -1086,6 +1086,60 @@
 
 ;;hygen-insert-before-get
 
+(s/def ::get-dispatch-mapping-params
+  (s/keys :req-un [ ::specs/dispatch-mapping-id]
+          :opt-un [ ::specs/callback]))
+
+(def-sdk-fn get-dispatch-mapping
+  "``` javascript
+  CxEngage.entities.getDispatchMapping({
+    dispatchMappingId: {{uuid}} (required),
+  });
+  ```
+  Calls rest/get-dispatch-mapping-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/get-dispatch-mapping-response
+
+  Possible Errors:
+
+  - [Entities: 11094](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-dispatch-mapping-err)"
+  {:validation ::get-dispatch-mapping-params
+   :topic-key :get-dispatch-mapping-response}
+  [params]
+  (let [{:keys [callback topic dispatch-mapping-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["dispatch-mappings" dispatch-mapping-id]))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-dispatch-mappings-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
+
+(def-sdk-fn get-dispatch-mappings
+  "``` javascript
+  CxEngage.entities.getDispatchMappings();
+  ```
+  Calls rest/get-dispatch-mappings-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/get-dispatch-mappings-response
+
+  Possible Errors:
+
+  - [Entities: 11093](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-dispatch-mappings-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-dispatch-mappings-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as dispatch-mappings-response} (a/<! (rest/get-crud-entity-request ["dispatch-mappings"]))
+        error (if-not (= (:status dispatch-mappings-response) 200) (e/failed-to-get-dispatch-mappings-err dispatch-mappings-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
+
 (s/def ::get-disposition-params
   (s/keys :req-un [ ::specs/disposition-id]
           :opt-un []))
@@ -1638,6 +1692,42 @@
                   :callback callback}))))
 
 ;;hygen-insert-before-create
+
+(s/def ::create-dispatch-mapping-params
+  (s/keys :req-un [ ::specs/name ::specs/value ::specs/flow-id ::specs/channel-type ::specs/interaction-field ::specs/active]
+          :opt-un [ ::specs/callback ::specs/description]))
+
+(def-sdk-fn create-dispatch-mapping
+  "``` javascript
+  CxEngage.entities.createDispatchMapping({
+    name: {{string}} (required),
+    description: {{string}} (optional),
+    value: {{string}} (required),
+    flowId: {{uuid}} (required),
+    channelType: {{string}} (required),
+    interactionField: {{string}} (required),
+    active: {{boolean}} (required),
+  });
+  ```
+  Calls rest/create-dispatch-mapping-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-dispatch-mapping-response
+
+  Possible Errors:
+
+  - [Entities: 11095](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-dispatch-mapping-err)"
+  {:validation ::create-dispatch-mapping-params
+   :topic-key :create-dispatch-mapping-response}
+  [params]
+  (let [{:keys [callback topic name description value flow-id channel-type interaction-field active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-dispatch-mapping-request name description value flow-id channel-type interaction-field active))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-create-dispatch-mappings-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 
 (s/def ::create-disposition-params
   (s/keys :req-un [ ::specs/name ::specs/active ::specs/shared]
@@ -2497,6 +2587,42 @@
 
 ;;hygen-insert-before-update
 
+(s/def ::update-dispatch-mapping-params
+  (s/keys :req-un [ ::specs/dispatch-mapping-id]
+          :opt-un [ ::specs/callback ::specs/name ::specs/description ::specs/value ::specs/flow-id ::specs/interaction-field ::specs/channel-type ::specs/active]))
+
+(def-sdk-fn update-dispatch-mapping
+  "``` javascript
+  CxEngage.entities.updateDispatchMapping({
+    dispatchMappingId: {{uuid}} (required),
+    name: {{string}} (optional),
+    description: {{string}} (optional),
+    value: {{string}} (optional),
+    flowId: {{uuid}} (optional),
+    interactionField: {{string}} (optional),
+    channelType: {{string}} (optional),
+    active: {{boolean}} (optional),
+  });
+  ```
+  Calls rest/update-dispatch-mapping-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-dispatch-mapping-response
+
+  Possible Errors:
+
+  - [Entities: 11096](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-dispatch-mapping-err)"
+  {:validation ::update-dispatch-mapping-params
+    :topic-key :update-dispatch-mapping-response}
+  [params]
+  (let [{:keys [dispatch-mapping-id name description value flow-id interaction-field channel-type active callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-dispatch-mapping-request dispatch-mapping-id name description value flow-id interaction-field channel-type active))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-update-dispatch-mapping-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 (s/def ::update-disposition-params
   (s/keys :req-un [ ::specs/disposition-id ::specs/name ::specs/active ::specs/shared]
           :opt-un [ ::specs/callback ::specs/description ::specs/external-id]))
@@ -2525,7 +2651,7 @@
   [params]
   (let [{:keys [disposition-id name description external-id active shared callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-disposition-request disposition-id name description external-id active shared))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response) error)]
+        error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error error
@@ -2849,6 +2975,8 @@
                                        :get-identity-providers get-identity-providers
                                        :get-dispositions get-dispositions
                                        :get-disposition get-disposition
+                                       :get-dispatch-mappings get-dispatch-mappings
+                                       :get-dispatch-mapping get-dispatch-mapping
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
@@ -2867,6 +2995,7 @@
                                        :create-flow-draft create-flow-draft
                                        :remove-flow-draft remove-flow-draft
                                        :create-disposition create-disposition
+                                       :create-dispatch-mapping create-dispatch-mapping
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
@@ -2890,6 +3019,7 @@
                                        :update-reason update-reason
                                        :update-reason-list update-reason-list
                                        :update-disposition update-disposition
+                                       :update-dispatch-mapping update-dispatch-mapping
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template
