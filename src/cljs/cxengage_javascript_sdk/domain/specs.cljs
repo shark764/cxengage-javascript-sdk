@@ -63,7 +63,7 @@
               :empty (s/and vector? empty?)
               :recipient (s/coll-of ::recipient)))
 (s/def ::blast-sqs-output boolean?)
-(s/def ::body string?)
+(s/def ::body (s/or :body map? :body string?))
 (s/def ::callback (s/or :callback fn? :callback nil?))
 (s/def ::cc (s/or
              :empty (s/and vector? empty?)
@@ -122,8 +122,8 @@
 (s/def ::script-reporting boolean?)
 (s/def ::skill-id ::uuid)
 (s/def ::reason string?)
-(s/def ::reason-id id/valid-uuid?) 
-(s/def ::reason-obj (s/keys :req-un [::reason-id ::sort-order ::hierarchy])) 
+(s/def ::reason-id id/valid-uuid?)
+(s/def ::reason-obj (s/keys :req-un [::reason-id ::sort-order ::hierarchy]))
 ;;TODO: add the proper spec for Reason List Reasons, not allowing empty objects
 (s/def ::reasons (s/or
                   :empty (s/and vector? empty?)
@@ -153,6 +153,7 @@
 (s/def ::to (s/coll-of ::recipient))
 (s/def ::token string?)
 (s/def ::topic string?)
+(s/def ::custom-topic string?)
 (s/def ::target-resource-id ::uuid)
 (s/def ::transfer-extension (s/keys :req-un [::type ::value]))
 (s/def ::transfer-type #{"cold" "warm"})
