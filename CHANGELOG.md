@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.50.0] - 2019-02-05
+### Added
+- CXV1-16762 - Added a new listener for the flow signal: "transfer-started" and "transfer-cancelled" 
+
 ## [8.49.0] - 2019-05-18
 ### Added
 - Generic CRUD create read update and delete api entity requests

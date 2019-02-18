@@ -280,6 +280,18 @@
                 :response {:interaction-id interaction-id
                            :resource-id resource-id}})))
 
+(defn handle-transfer-started [message]
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (topics/get-topic :transfer-started)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
+
+(defn handle-transfer-cancelled [message]
+  (let [{:keys [interaction-id resource-id]} message]
+    (p/publish {:topics (topics/get-topic :transfer-cancelled)
+                :response {:interaction-id interaction-id
+                           :resource-id resource-id}})))
+
 (defn handle-script-received [message]
   (let [{:keys [interaction-id sub-id action-id resource-id script]} message
         interaction-location (state/find-interaction-location interaction-id)]
@@ -379,6 +391,8 @@
   (let [{:keys [interaction-id]} message]
     (p/publish {:topics (topics/get-topic :customer-resume-error)
                 :error (e/failed-to-resume-customer-err interaction-id message)})))
+
+
     
 (defn msg-router [message]
   (let [handling-fn (case (:sdk-msg-type message)
@@ -402,6 +416,8 @@
                       :INTERACTIONS/RECORDING_START_RECEIVED handle-recording-start
                       :INTERACTIONS/RECORDING_STOP_RECEIVED handle-recording-stop
                       :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED handle-transfer-connected
+                      :INTERACTIONS/TRANSFER_STARTED handle-transfer-started
+                      :INTERACTIONS/TRANSFER_CANCELLED handle-transfer-cancelled
                       :INTERACTIONS/SCRIPT_RECEIVED handle-script-received
                       :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
                       :SESSION/START_SESSION_RESPONSE handle-session-start
@@ -465,6 +481,8 @@
                                        "resource-hold" :INTERACTIONS/RESOURCE_HOLD
                                        "resource-resume" :INTERACTIONS/RESOURCE_RESUME
                                        "transfer-connected" :INTERACTIONS/TRANSFER_CONNECTED_RECEIVED
+                                       "transfer-started" :INTERACTIONS/TRANSFER_STARTED
+                                       "transfer-cancelled" :INTERACTIONS/TRANSFER_CANCELLED
                                        "update-call-controls" :INTERACTIONS/UPDATE_CALL_CONTROLS
                                        "show-banner" :INTERACTIONS/SHOW_BANNER
                                        "silent-monitor-start" :INTERACTIONS/SILENT_MONITOR_START
