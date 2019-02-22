@@ -93,7 +93,7 @@
 (s/def ::id (s/or :id number? :id string?))
 (s/def ::idp-id ::uuid)
 (s/def ::interaction-id ::uuid)
-(s/def ::interaction-field #{"customer" "contact-point" "integration" "direction"})
+(s/def ::interaction-field #{"customer" "contact-point" "source" "direction"})
 (s/def ::interrupt-type string?)
 (s/def ::interrupt-body map?)
 (s/def ::items (s/coll-of map?))
