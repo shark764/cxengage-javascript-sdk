@@ -1693,7 +1693,7 @@
 
 (s/def ::create-dispatch-mapping-params
   (s/keys :req-un [ ::specs/name ::specs/value ::specs/flow-id ::specs/channel-type ::specs/interaction-field ::specs/active]
-          :opt-un [ ::specs/callback ::specs/description]))
+          :opt-un [ ::specs/callback ::specs/description ::specs/version]))
 
 (def-sdk-fn create-dispatch-mapping
   "``` javascript
@@ -1702,6 +1702,7 @@
     description: {{string}} (optional),
     value: {{string}} (required),
     flowId: {{uuid}} (required),
+    version: {{uuid}} (optional),
     channelType: {{string}} (required),
     interactionField: {{string}} (required),
     active: {{boolean}} (required),
@@ -1718,8 +1719,8 @@
   {:validation ::create-dispatch-mapping-params
    :topic-key :create-dispatch-mapping-response}
   [params]
-  (let [{:keys [callback topic name description value flow-id channel-type interaction-field active]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-dispatch-mapping-request name description value flow-id channel-type interaction-field active))
+  (let [{:keys [callback topic name description value flow-id version channel-type interaction-field active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-dispatch-mapping-request name description value flow-id version channel-type interaction-field active))
         error (if-not (= (:status entity-response) 200) (e/failed-to-create-dispatch-mapping-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -2618,7 +2619,7 @@
 
 (s/def ::update-dispatch-mapping-params
   (s/keys :req-un [ ::specs/dispatch-mapping-id]
-          :opt-un [ ::specs/callback ::specs/name ::specs/description ::specs/value ::specs/flow-id ::specs/interaction-field ::specs/channel-type ::specs/active]))
+          :opt-un [ ::specs/callback ::specs/name ::specs/description ::specs/value ::specs/flow-id ::specs/version ::specs/interaction-field ::specs/channel-type ::specs/active]))
 
 (def-sdk-fn update-dispatch-mapping
   "``` javascript
@@ -2628,6 +2629,7 @@
     description: {{string}} (optional),
     value: {{string}} (optional),
     flowId: {{uuid}} (optional),
+    version: {{uuid}} (optional),
     interactionField: {{string}} (optional),
     channelType: {{string}} (optional),
     active: {{boolean}} (optional),
@@ -2644,8 +2646,8 @@
   {:validation ::update-dispatch-mapping-params
     :topic-key :update-dispatch-mapping-response}
   [params]
-  (let [{:keys [dispatch-mapping-id name description value flow-id interaction-field channel-type active callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-dispatch-mapping-request dispatch-mapping-id name description value flow-id interaction-field channel-type active))
+  (let [{:keys [dispatch-mapping-id name description value flow-id version interaction-field channel-type active callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-dispatch-mapping-request dispatch-mapping-id name description value flow-id version interaction-field channel-type active))
         error (if-not (= (:status entity-response) 200) (e/failed-to-update-dispatch-mapping-err entity-response))]
     (p/publish {:topics topic
                 :response api-response

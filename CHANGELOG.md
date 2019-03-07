@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.50.2] - 2019-03-07
+### Changed
+- CXV1-16902 - Added Flow Version for Create and Update Dispatch mappings
+
 ## [8.50.1] - 2019-02-05
 ### Fixed
 - Specs for Dispatch mapping's Integration should use 'source' instead of 'integration'
