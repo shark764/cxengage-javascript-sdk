@@ -1,11 +1,5 @@
 # CxEngage Javascript SDK
 
-<img src="https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif" width="700">
-
-## Overview
-
-FIXME: Write a paragraph about the library/project and highlight its goals.
-
 ## Development
 
 To run the project:
