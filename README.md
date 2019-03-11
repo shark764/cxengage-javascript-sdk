@@ -1,5 +1,12 @@
 # CxEngage Javascript SDK
 
+## new versions of jdk issues
+unix machine temp solution , set this env variable
+export BOOT_JVM_OPTIONS='--add-modules java.xml.bind'
+
+windows would require a different solution
+https://github.com/boot-clj/boot/wiki/JVM-Options
+
 ## Development
 
 To run the project:
