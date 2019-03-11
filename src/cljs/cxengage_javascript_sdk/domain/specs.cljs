@@ -53,6 +53,7 @@
 (s/def ::flow-type #{"customer" "resource" "reusable"})
 (s/def ::metadata string?)
 (s/def ::active-version ::uuid)
+(s/def ::version (s/or :version id/valid-uuid? :version nil?))
 (s/def ::exclude-notations boolean?)
 (s/def ::artifact-id ::uuid)
 (s/def ::assign-type #{"contact" "relatedTo"})

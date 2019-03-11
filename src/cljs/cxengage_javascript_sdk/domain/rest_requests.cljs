@@ -829,7 +829,7 @@
                                           (not (nil? description))          (assoc-in [:body :description] description)
                                           (not (nil? value))                (assoc-in [:body :value] value)
                                           (not (nil? flow-id))              (assoc-in [:body :flow-id] flow-id)
-                                          (not (nil? version))              (assoc-in [:body :version] version)
+                                          version                           (assoc-in [:body :version] version)
                                           (not (nil? channel-type))         (assoc-in [:body :channel-type] channel-type)
                                           (not (nil? interaction-field))    (assoc-in [:body :interaction-field] interaction-field)
                                           (not (nil? active))               (assoc-in [:body :active] active))]
@@ -844,7 +844,7 @@
                                           (not (nil? description))          (assoc-in [:body :description] description)
                                           (not (nil? value))                (assoc-in [:body :value] value)
                                           (not (nil? flow-id))              (assoc-in [:body :flow-id] flow-id)
-                                          (not (nil? version))              (assoc-in [:body :version] version)
+                                          version                           (assoc-in [:body :version] version)
                                           (not (nil? channel-type))         (assoc-in [:body :channel-type] channel-type)
                                           (not (nil? interaction-field))    (assoc-in [:body :interaction-field] interaction-field)
                                           (not (nil? active))               (assoc-in [:body :active] active))]
