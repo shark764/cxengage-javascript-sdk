@@ -392,31 +392,31 @@
 
 (s/def ::dial-params
   (s/keys :req-un [::specs/phone-number]
-          :opt-un [::specs/pop-uri ::specs/outbound-ani ::specs/flow-id ::specs/callback]))
+          :opt-un [::specs/pop-uri ::specs/outbound-ani ::specs/flow-id ::specs/outbound-identifier-id ::specs/outbound-identifier-list-id ::specs/callback]))
 (def-sdk-fn dial
   ""
   {:validation ::dial-params
    :topic-key :dial-send-acknowledged}
   [params]
-  (let [{:keys [topic phone-number outbound-ani pop-uri flow-id callback]} params
+  (let [{:keys [topic phone-number outbound-ani pop-uri flow-id outbound-identifier-id outbound-identifier-list-id callback]} params
         resource-id (state/get-active-user-id)
         session-id (state/get-session-id)
         outbound-integration-type (state/get-outbound-integration-type)
-        dial-body {:channel-type "voice"
-                          :contact-point (if outbound-ani 
-                                             outbound-ani
-                                             "click to call")
-                          :customer phone-number
-                          :direction "agent-initiated"
-                          :interaction (merge {:resource-id resource-id
-                                               :session-id session-id}
-                                              (if pop-uri
-                                                {:pop-uri pop-uri}
-                                                {}))
-                          :metadata {}
-                          :source outbound-integration-type}
+        dial-body { :channel-type "voice"
+                    :contact-point (if outbound-ani 
+                                       outbound-ani
+                                       "click to call")
+                    :customer phone-number
+                    :direction "agent-initiated"
+                    :interaction {:resource-id resource-id
+                                  :session-id session-id
+                                  :pop-uri pop-uri
+                                  :outbound-identifier-id outbound-identifier-id
+                                  :outbound-identifier-list-id outbound-identifier-list-id}
+                    :metadata {}
+                    :source outbound-integration-type}
         dial-body (merge dial-body (if flow-id 
-                                       {:flow-id flow-id}
+                                       {:flow-id flow-id}                          
                                        {}))]
     (let [dial-response (a/<! (rest/create-interaction-request dial-body))
           {:keys [api-response status]} dial-response]

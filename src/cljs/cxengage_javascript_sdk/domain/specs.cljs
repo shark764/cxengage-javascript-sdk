@@ -16,6 +16,7 @@
 (s/def ::answers map?)
 (s/def ::artifact-file-id ::uuid)
 (s/def ::outbound-identifier-id id/valid-uuid?)
+(s/def ::outbound-identifier-list-id id/valid-uuid?)
 (s/def ::custom-metric-id id/valid-uuid?)
 (s/def ::sla-threshold number?)
 (s/def ::custom-metrics-type #{"SLA"})

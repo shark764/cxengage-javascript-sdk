@@ -258,14 +258,14 @@
 
 (s/def ::start-outbound-email-params
   (s/keys :req-un [::specs/address]
-          :opt-un [::specs/outbound-ani ::specs/flow-id ::specs/callback]))
+          :opt-un [::specs/outbound-ani ::specs/flow-id ::specs/outbound-identifier-id ::specs/outbound-identifier-list-id ::specs/callback]))
 
 (def-sdk-fn start-outbound-email
   ""
   {:validation ::start-outbound-email-params
    :topic-key :start-outbound-email}
   [params]
-  (let [{:keys [address callback topic outbound-ani flow-id]} params
+  (let [{:keys [address callback topic outbound-ani flow-id outbound-identifier-id outbound-identifier-list-id]} params
         resource-id (state/get-active-user-id)
         interaction-id (str (id/make-random-squuid))
         session-id (state/get-session-id)
@@ -277,7 +277,9 @@
                           :channel-type "email"
                           :direction "agent-initiated"
                           :interaction {:resource-id resource-id
-                                        :session-id session-id}
+                                        :session-id session-id
+                                        :outbound-identifier-id outbound-identifier-id
+                                        :outbound-identifier-list-id outbound-identifier-list-id}
                           :metadata {}
                           :id interaction-id}
         interaction-body (merge interaction-body (if flow-id

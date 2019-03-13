@@ -251,14 +251,14 @@
 (s/def ::click-to-sms-params
   (s/keys :req-un [::specs/phone-number
                    ::specs/message]
-          :opt-on [::specs/pop-uri ::specs/callback ::specs/outbound-ani ::specs/flow-id]))
+          :opt-on [::specs/pop-uri ::specs/callback ::specs/outbound-ani ::specs/flow-id ::specs/outbound-identifier-id ::specs/outbound-identifier-list-id]))
 
 (def-sdk-fn click-to-sms
   ""
   {:validation ::click-to-sms-params
    :topic-key :initialize-outbound-sms-response}
   [params]
-  (let [{:keys [phone-number message pop-uri topic callback outbound-ani flow-id]} params
+  (let [{:keys [phone-number message pop-uri topic callback outbound-ani flow-id outbound-identifier-id outbound-identifier-list-id]} params
         phone-number (iu/normalize-phone-number phone-number)
         tenant-id (state/get-active-tenant-id)
         resource-id (state/get-active-user-id)
@@ -274,19 +274,19 @@
                   :source "messaging"
                   :customer phone-number
                   :contact-point (if outbound-ani 
-                                    outbound-ani
-                                    "outbound")
+                                     outbound-ani
+                                     "outbound")
                   :channel-type "sms"
                   :direction "agent-initiated"
                   :metadata metadata
-                  :interaction (merge {:message message
-                                       :resource-id resource-id
-                                       :session-id session-id}
-                                      (if pop-uri
-                                        {:pop-uri pop-uri}
-                                        {}))}
-          sms-body (merge sms-body (if flow-id
-                                      {:flow-id flow-id}
+                  :interaction {:message message
+                                :resource-id resource-id
+                                :session-id session-id
+                                :pop-uri pop-uri
+                                :outbound-identifier-id outbound-identifier-id
+                                :outbound-identifier-list-id outbound-identifier-list-id}}
+          sms-body (merge sms-body (if flow-id 
+                                      {:flow-id flow-id} 
                                       {}))
         sms-response (a/<! (rest/create-interaction-request sms-body))
         {:keys [api-response status]} sms-response]
