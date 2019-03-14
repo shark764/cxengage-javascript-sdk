@@ -6,7 +6,8 @@
             [cxengage-javascript-sdk.domain.api-utils :as api]
             [clojure.string :as string]
             [ajax.core :as ajax]
-            [cljs.core.async :as a]))
+            [cljs.core.async :as a]
+            [cljs-uuid-utils.core :as id]))
 
 (defn file-api-request [request-map]
   (let [response-channel (a/promise-chan)
@@ -824,30 +825,30 @@
   (let [tenant-id (state/get-active-tenant-id)
         create-dispatch-mapping-request (cond-> {:method :post
                                                  :url (iu/api-url "tenants/:tenant-id/dispatch-mappings"
-                                                                  {:tenant-id tenant-id})}
-                                          (not (nil? name))                 (assoc-in [:body :name] name)
-                                          (not (nil? description))          (assoc-in [:body :description] description)
-                                          (not (nil? value))                (assoc-in [:body :value] value)
-                                          (not (nil? flow-id))              (assoc-in [:body :flow-id] flow-id)
-                                          version                           (assoc-in [:body :version] version)
-                                          (not (nil? channel-type))         (assoc-in [:body :channel-type] channel-type)
-                                          (not (nil? interaction-field))    (assoc-in [:body :interaction-field] interaction-field)
-                                          (not (nil? active))               (assoc-in [:body :active] active))]
+                                                                  {:tenant-id tenant-id})
+                                                 :body {:version (or version nil)}}
+                                          (not (nil? name))                             (assoc-in [:body :name] name)
+                                          (not (nil? description))                      (assoc-in [:body :description] description)
+                                          (not (nil? value))                            (assoc-in [:body :value] value)
+                                          (not (nil? flow-id))                          (assoc-in [:body :flow-id] flow-id)
+                                          (not (nil? channel-type))                     (assoc-in [:body :channel-type] channel-type)
+                                          (not (nil? interaction-field))                (assoc-in [:body :interaction-field] interaction-field)
+                                          (not (nil? active))                           (assoc-in [:body :active] active))]
     (api/api-request create-dispatch-mapping-request)))
   
 (defn update-dispatch-mapping-request [dispatch-mapping-id name description value flow-id version interaction-field channel-type active]
   (let [tenant-id (state/get-active-tenant-id)
         update-dispatch-mapping-request (cond-> {:method :put
                                                  :url (iu/api-url "tenants/:tenant-id/dispatch-mappings/:dispatch-mapping-id"
-                                                                  {:tenant-id tenant-id :dispatch-mapping-id dispatch-mapping-id})}
-                                          (not (nil? name))                 (assoc-in [:body :name] name)
-                                          (not (nil? description))          (assoc-in [:body :description] description)
-                                          (not (nil? value))                (assoc-in [:body :value] value)
-                                          (not (nil? flow-id))              (assoc-in [:body :flow-id] flow-id)
-                                          version                           (assoc-in [:body :version] version)
-                                          (not (nil? channel-type))         (assoc-in [:body :channel-type] channel-type)
-                                          (not (nil? interaction-field))    (assoc-in [:body :interaction-field] interaction-field)
-                                          (not (nil? active))               (assoc-in [:body :active] active))]
+                                                                  {:tenant-id tenant-id :dispatch-mapping-id dispatch-mapping-id})
+                                                 :body {:version (or version nil)}}
+                                          (not (nil? name))                             (assoc-in [:body :name] name)
+                                          (not (nil? description))                      (assoc-in [:body :description] description)
+                                          (not (nil? value))                            (assoc-in [:body :value] value)
+                                          (not (nil? flow-id))                          (assoc-in [:body :flow-id] flow-id)
+                                          (not (nil? channel-type))                     (assoc-in [:body :channel-type] channel-type)
+                                          (not (nil? interaction-field))                (assoc-in [:body :interaction-field] interaction-field)
+                                          (not (nil? active))                           (assoc-in [:body :active] active))]
     (api/api-request update-dispatch-mapping-request)))
 
 (defn create-reason-request [name description external-id active shared]
