@@ -785,6 +785,58 @@
                 :error error
                 :callback callback})))
 
+(def-sdk-fn get-slas
+  "``` javascript
+  CxEngage.entities.getSlas();
+  ```
+  Retrieves available SLA configured for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11103](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-slas-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-slas-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["slas"]))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-slas-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
+(s/def ::get-sla-params
+  (s/keys :req-un [::specs/sla-id]
+          :opt-un []))
+
+(def-sdk-fn get-sla
+  "``` javascript
+  CxEngage.entities.getSla({
+    slaId: {{uuid}}
+  });
+  ```
+  Retrieves single SLA given parameter slaId
+  as a unique key
+
+  Possible Errors:
+
+  - [Entities: 11104](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-sla-err)"
+  {:validation ::get-sla-params
+   :topic-key :get-sla-response}
+  [params]
+  (let [{:keys [callback topic sla-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request  ["slas" sla-id]))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-sla-err entity-response))
+        sla-versions-response (if (nil? error) (a/<! (rest/get-crud-entity-request ["slas" sla-id "versions"])))
+        versions-error (if-not (= (:status sla-versions-response) 200) (e/failed-to-get-sla-err sla-versions-response))
+        response (-> (:api-response entity-response)
+                   (assoc-in [:result :versions] (get-in sla-versions-response [:api-response :result])))
+        response-error (or error versions-error nil)]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
+
 (def-sdk-fn get-historical-report-folders
   "``` javascript
   CxEngage.entities.getHistoricalReportFolders();
@@ -1079,8 +1131,8 @@
                    (assoc-in [:result :drafts] (get-in flow-drafts-response [:api-response :result])))
         response-error (or error flow-versions-error flow-drafts-error nil)]
     (p/publish {:topics topic
-                :response response-error
-                :error error
+                :response response
+                :error response-error
                 :callback callback})))
 
 ;;hygen-insert-before-get
@@ -1469,89 +1521,94 @@
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.createList({
-;;   listTypeId: {{uuid}},
-;;   name: {{string}},
-;;   shared: {{boolean}},
-;;   active: {{boolean}}
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::create-list-params
   (s/keys :req-un [::specs/list-type-id ::specs/name ::specs/shared ::specs/active]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-list
-  ""
+  "``` javascript
+  CxEngage.entities.createList({
+    listTypeId: {{uuid}},
+    name: {{string}},
+    shared: {{boolean}},
+    active: {{boolean}}
+  });
+  ```
+  Create new generic list for current tenant
+
+  Possible Errors:
+
+  - [Entities: 11012](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-list-err)"
   {:validation ::create-list-params
    :topic-key :create-list-response}
   [params]
   (let [{:keys [list-type-id name shared active callback topic]} params
-        {:keys [api-response status] :as entity-response} (a/<! (rest/create-list-request list-type-id name shared [] active))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-list-err entity-response)
-                  :callback callback}))))
+        {:keys [api-response status] :as entity-response} (a/<! (rest/create-list-request list-type-id name shared [] active))
+        response (assoc api-response :result (add-key-to-items (get api-response :result)))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-list-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.createListItem({
-;;   listId: {{uuid}},
-;;   itemValue: {{object}}
-;; });
-;; -------------------------------------------------------------------------- ;;
 
 (s/def ::create-list-item-params
   (s/keys :req-un [::specs/list-id ::specs/item-value]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-list-item
-  ""
+  "``` javascript
+  CxEngage.entities.createListItem({
+    listId: {{uuid}},
+    itemValue: {{object}}
+  });
+  ```
+  Create new generic list item for current tenant
+
+  Possible Errors:
+
+  - [Entities: 11013](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-list-item-err)"
   {:validation ::create-list-item-params
    :topic-key :create-list-item-response}
   [params]
   (let [{:keys [list-id item-value callback topic]} params
         {:keys [api-response status] :as entity-response} (a/<! (rest/create-list-item-request list-id item-value))
-        created-list-item api-response]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response created-list-item
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-list-item-err entity-response)
-                  :callback callback}))))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-list-item-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.createEmailTemplate({
-;;   emailTypeId: {{uuid}},
-;;   active: {{boolean}},
-;;   shared: {{boolean}},
-;;   subject: {{string}},
-;;   body: {{string}}
-;; });
-;; -------------------------------------------------------------------------- ;;
 
 (s/def ::create-email-template-params
   (s/keys :req-un [::specs/email-type-id ::specs/active ::specs/shared ::specs/body ::specs/subject]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn create-email-template
-  ""
+  "``` javascript
+  CxEngage.entities.createEmailTemplate({
+    emailTypeId: {{uuid}},
+    active: {{boolean}},
+    shared: {{boolean}},
+    subject: {{string}},
+    body: {{string}}
+  });
+  ```
+  Create new email template for current tenant
+
+  Possible Errors:
+
+  - [Entities: 11034](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-email-template-err)"
   {:validation ::create-email-template-params
    :topic-key :create-email-template-response}
   [params]
   (let [{:keys [email-type-id active shared body subject callback topic]} params
-        {:keys [api-response status] :as entity-response} (a/<! (rest/create-email-template-request email-type-id active shared body subject))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-email-template-err entity-response)
-                  :callback callback}))))
+        {:keys [api-response status] :as entity-response} (a/<! (rest/create-email-template-request email-type-id active shared body subject))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-email-template-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::create-outbound-identifier-list-params
   (s/keys :req-un [::specs/active ::specs/name]
@@ -1574,14 +1631,12 @@
    :topic-key :create-outbound-identifier-list-response}
   [params]
   (let [{:keys [active name description callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-outbound-identifier-list-request active name description))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-outbound-identifier-list-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-outbound-identifier-list-request active name description))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-outbound-identifier-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::create-data-access-report-params
   (s/keys :req-un [::specs/name ::specs/active ::specs/report-type]
@@ -1614,14 +1669,12 @@
   [params]
   (let [{:keys [name description active realtime-report-id report-type realtime-report-type realtime-report-name historical-catalog-name users callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-data-access-report-request name description active realtime-report-id report-type realtime-report-type realtime-report-name historical-catalog-name users))
-        response (update-in api-response [:result] rename-keys {:members :users})]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-data-access-report-err entity-response)
-                  :callback callback}))))
+        response (update-in api-response [:result] rename-keys {:members :users})
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-data-access-report-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
 
 (s/def ::create-skill-params
   (s/keys :req-un [::specs/name ::specs/active]
@@ -1648,14 +1701,12 @@
    :topic-key :create-skill-response}
   [params]
   (let [{:keys [name description active has-proficiency callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-skill-request name description active has-proficiency))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-skill-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-skill-request name description active has-proficiency))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-skill-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::create-group-params
   (s/keys :req-un [::specs/name ::specs/active]
@@ -1681,14 +1732,12 @@
    :topic-key :create-group-response}
   [params]
   (let [{:keys [name description active callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-group-request name description active))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-group-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-group-request name description active))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-group-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 ;;hygen-insert-before-create
 
@@ -1722,12 +1771,11 @@
   [params]
   (let [{:keys [callback topic name description value flow-id version channel-type interaction-field active]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-dispatch-mapping-request name description value flow-id version channel-type interaction-field active))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-create-dispatch-mapping-err entity-response))]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-dispatch-mapping-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
-                :error error
+                :error response-error
                 :callback callback})))
-
 
 (s/def ::create-disposition-params
   (s/keys :req-un [ ::specs/name ::specs/active ::specs/shared]
@@ -1756,10 +1804,10 @@
   [params]
   (let [{:keys [name description external-id active shared callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-disposition-request name description external-id active shared))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response))]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
-                :error error
+                :error response-error
                 :callback callback})))
 
 
@@ -1791,14 +1839,12 @@
    :topic-key :create-reason-list-response}
   [params]
   (let [{:keys [name description external-id active shared reasons is-default callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-reason-list-request name description external-id active shared reasons is-default))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-reason-list-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-reason-list-request name description external-id active shared reasons is-default))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-reason-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 
 (s/def ::create-reason-params
@@ -1827,14 +1873,12 @@
    :topic-key :create-reason-response}
   [params]
   (let [{:keys [name description external-id active shared callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-reason-request name description external-id active shared))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-reason-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-reason-request name description external-id active shared))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-reason-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 
 (s/def ::create-user-params
@@ -1872,10 +1916,10 @@
   (let [{:keys [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-user-request email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))
         response (update-in api-response [:result] rename-keys {:user-id :id})
-        error (if-not (= status 200) (e/failed-to-create-user-err entity-response))]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-user-err entity-response))]
     (p/publish {:topics topic
                 :response response
-                :error error
+                :error response-error
                 :callback callback})))
 
 
@@ -1900,14 +1944,12 @@
    :topic-key :create-role-response}
   [params]
   (let [{:keys [active name description permissions callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-role-request name description permissions))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-role-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-role-request name description permissions))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-role-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::create-flow-params
   (s/keys :req-un [::specs/flow-type ::specs/name]
@@ -1975,43 +2017,92 @@
   [params]
   (let [{:keys [flow-id name flow metadata description callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-flow-draft-request flow-id name flow metadata description))
-        error (if-not (= status 200) (e/failed-to-create-flow-draft-err entity-response))]
+        response-error (if-not (= status 200) (e/failed-to-create-flow-draft-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
-                :error error
+                :error response-error
                 :callback callback})))
 
-(s/def ::create-custom-metric-params
-  (s/keys :req-un [::specs/sla-threshold ::specs/sla-abandon-type ::specs/active ::specs/name]
-          :opt-un [::specs/callback ::specs/sla-abandon-threshold ::specs/custom-metrics-type ::specs/description]))
 
-(def-sdk-fn create-custom-metric
+(s/def ::create-sla-params
+  (s/keys :req-un [::specs/name ::specs/shared]
+          :opt-un [::specs/callback ::specs/active ::specs/description ::specs/active-sla ::specs/version-name ::specs/version-description ::specs/sla-threshold ::specs/abandon-type ::specs/abandon-threshold]))
+
+(def-sdk-fn create-sla
   "``` javascript
-  CxEngage.entities.createCustomMetric({
-    slaThreshold: {{integer}}, (required)
-    slaAbandonType: {{string}}, (required)
-    active: {{boolean}}, (required)
+  CxEngage.entities.createSla({
     name: {{string}}, (required)
-    slaAbandonThreshold: {{integer}}, (optional)
-    customMetricsType: {{string}}, (optional)
     description: {{string}}, (optional)
+    active: {{boolean}}, (optional)
+    shared: {{boolean}}, (required)
+    activeSla: {{object}} (optional)
   });
   ```
-  Creates a single Custom Metric by calling rest/create-custom-metric-request
+
+  Example activeSla
+  activeSla: {
+    'versionName': {{string}} (optional)
+    'versionDescription': {{string}} (optional)
+    'slaThreshold': {{integer}} (optional)
+    'abandonType': {{string}} (optional)
+    'abandonThreshold': {{integer}} (optional)
+	}
+  Creates a single SLA by calling rest/create-sla-request
   with the provided data for current tenant.
+  Optionally, it can create an active sla version by sending activeSla.
 
   Possible Errors:
 
-  - [Entities: 11097](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-custom-metric-err)"
-  {:validation ::create-custom-metric-params
-   :topic-key :create-custom-metric-response}
+  - [Entities: 11097](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-sla-err)"
+  {:validation ::create-sla-params
+   :topic-key :create-sla-response}
   [params]
-  (let [{:keys [name description custom-metrics-type active sla-abandon-type sla-threshold sla-abandon-threshold callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-custom-metric-request name description custom-metrics-type active sla-abandon-type sla-threshold sla-abandon-threshold))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-create-custom-metric-err entity-response))]
+  (let [{:keys [name description active shared active-sla version-name version-description sla-threshold abandon-type abandon-threshold callback topic]} params
+        active-sla (if-not (nil? version-name)
+                     (or active-sla (assoc {} :version-name version-name :description version-description :sla-threshold sla-threshold :abandon-type abandon-type)))
+        active-sla (if-not (nil? active-sla) (merge active-sla (cond 
+                                                                 (= abandon-type "ignore-abandons") {:abandon-threshold abandon-threshold}
+                                                                 (= abandon-type "count-against-sla") {:abandon-threshold 0}
+                                                                 :default {})))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-sla-request name description active shared active-sla))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-sla-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
-                :error error
+                :error response-error
+                :callback callback})))
+
+(s/def ::create-sla-version-params
+  (s/keys :req-un [::specs/sla-id ::specs/version-name ::specs/sla-threshold ::specs/abandon-type]
+          :opt-un [::specs/callback ::specs/abandon-threshold ::specs/description]))
+
+(def-sdk-fn create-sla-version
+  "``` javascript
+  CxEngage.entities.createSlaVersion({
+    slaId: {{uuid}}, (required)
+    versionName: {{string}} (required)
+    description: {{string}} (optional)
+    slaThreshold: {{integer}} (required)
+    abandonType: {{string}} (required)
+    abandonThreshold: {{integer}} (optional)
+  });
+  ```
+  Creates new single SLA version by calling rest/create-sla-version-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-sla-version-response
+
+  Possible Errors:
+
+  - [Entities: 11102](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-sla-version-err)"
+  {:validation ::create-sla-version-params
+   :topic-key :create-sla-version-response}
+  [params]
+  (let [{:keys [sla-id version-name sla-threshold abandon-type abandon-threshold description callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-sla-version-request sla-id version-name sla-threshold abandon-type abandon-threshold description))
+        response-error (if-not (= status 200) (e/failed-to-create-sla-version-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
                 :callback callback})))
 
 ;;--------------------------------------------------------------------------- ;;
@@ -2050,10 +2141,10 @@
   [params]
   (let [{:keys [callback topic update-body user-id]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/platform-crud-entity-request :put "user" user-id update-body))
-        status-is-200 (= status 200)]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-platform-user-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
-                :error (if-not status-is-200 (e/failed-to-update-platform-user-err entity-response))
+                :error response-error
                 :callback callback})))
 
 (s/def ::update-user-params
@@ -2094,10 +2185,10 @@
         user-body (or update-body (dissoc params :callback :topic :update-body))
         {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entity-request :put "user" user-id user-body))
         response (update-in api-response [:result] rename-keys {:user-id :id})
-        error (if-not (= status 200) (e/failed-to-update-user-err api-response))]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-user-err entity-response))]
     (p/publish {:topics topic
                 :response response
-                :error error
+                :error response-error
                 :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
@@ -2119,14 +2210,13 @@
    :topic-key :update-list-response}
   [params]
   (let [{:keys [callback list-id topic name shared active]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-request list-id name shared active))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-list-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-request list-id name shared active))
+        response (assoc api-response :result (add-key-to-items (get api-response :result)))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-list-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
 
 (s/def ::update-outbound-identifier-params
   (s/keys :req-un [::specs/outbound-identifier-id]
@@ -2156,80 +2246,90 @@
    :topic-key :update-outbound-identifier-response}
   [params]
   (let [{:keys [callback outbound-identifier-id topic name active value flow-id channel-type description]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-outbound-identifier-request outbound-identifier-id name active value flow-id channel-type description))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-outbound-identifier-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-outbound-identifier-request outbound-identifier-id name active value flow-id channel-type description))
+        response (assoc api-response :result (add-key-to-items (get api-response :result)))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-outbound-identifier-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.createOutboundIdentifier({
-;;   name: {{string}}
-;;   active: {{boolean}}
-;;   value: {{string}}
-;;   flowId: {{string}}
-;;   channelType: {{string}}
-;;   description: {{string}} (optional)
-;; });
-;; -------------------------------------------------------------------------- ;;
 
 (s/def ::create-outbound-identifier-params
   (s/keys :req-un [::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type]
           :opt-un [::specs/description]))
 
 (def-sdk-fn create-outbound-identifier
-  ""
+  "``` javascript
+  CxEngage.entities.createOutboundIdentifier({
+    name: {{string}} (optional)
+    active: {{boolean}} (optional)
+    value: {{string}} (optional)
+    flowId: {{string}} (optional)
+    channelType: {{string}} (optional)
+    description: {{string}} (optional)
+  });
+  ```
+  Creates single Outbound Identifier by calling rest/create-outbound-identifier-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-outbound-identifier-response
+
+  Possible Errors:
+
+  - [Entities: 11030](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-outbound-identifier-err)"
   {:validation ::create-outbound-identifier-params
    :topic-key :create-outbound-identifier-response}
   [params]
   (let [{:keys [callback topic name active value flow-id channel-type description]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-outbound-identifier-request name active value flow-id channel-type description))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response (assoc api-response :result (add-key-to-items (get api-response :result)))
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-create-outbound-identifier-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-outbound-identifier-request name active value flow-id channel-type description))
+        response (assoc api-response :result (add-key-to-items (get api-response :result)))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-outbound-identifier-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.updateListItem({
-;;   listId: {{uuid}},
-;;   listItemKey: {{string}}
-;;   itemValue: {{object}}
-;; });
-;;
-;; NOTE: Within the individual item object assigned to the itemValue property,
-;; if you make a change to the item property that is serving as the key for
-;; the item (ie: the first field in that list), then you will get an error.
-;; Due to messiness of executing 2 API calls in a single SDK method,
-;; the temporary workaround () for this is to:
-;; 1) Delete the item using CxEngage.entities.deleteItem()
-;; 2) In the callback for the deleteItem() method, create a new item using
-;; the item object you want to create
-;; -------------------------------------------------------------------------- ;;
 
 (s/def ::update-list-item-params
   (s/keys :req-un [::specs/list-id ::specs/list-item-key ::specs/item-value]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn update-list-item
-  ""
+  "``` javascript
+  CxEngage.entities.updateListItem({
+    listId: {{uuid}},
+    listItemKey: {{string}}
+    itemValue: {{object}}
+  });
+  ```
+  Updates single Generic List by calling rest/update-list-item-request
+  with the provided data for current tenant.
+
+  NOTE: Within the individual item object assigned to the itemValue property,
+  if you make a change to the item property that is serving as the key for
+  the item (ie: the first field in that list), then you will get an error.
+  Due to messiness of executing 2 API calls in a single SDK method,
+  the temporary workaround () for this is to:
+  1) Delete the item using CxEngage.entities.deleteItem()
+  2) In the callback for the deleteItem() method, create a new item using
+  the item object you want to create
+
+  Topic: cxengage/entities/update-list-item-response
+
+  Possible Errors:
+
+  - [Entities: 11015](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-list-item-err)"
   {:validation ::update-list-item-params
    :topic-key :update-list-item-response}
   [params]
   (let [{:keys [callback list-id topic list-item-key item-value]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-item-request list-id (js/encodeURIComponent list-item-key) item-value))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-list-item-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-list-item-request list-id (js/encodeURIComponent list-item-key) item-value))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-list-item-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.updateEmailTemplate({
@@ -2251,14 +2351,12 @@
    :topic-key :update-email-template-response}
   [params]
   (let [{:keys [email-type-id active shared body subject callback topic]} params
-        {:keys [api-response status] :as entity-response} (a/<! (rest/update-email-template-request email-type-id active shared body subject))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-email-template-err entity-response)
-                  :callback callback}))))
+        {:keys [api-response status] :as entity-response} (a/<! (rest/update-email-template-request email-type-id active shared body subject))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-email-template-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.updateOutboundIdentifierList({
@@ -2279,14 +2377,12 @@
    :topic-key :update-outbound-identifier-list-response}
   [params]
   (let [{:keys [outbound-identifier-list-id active name description callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-outbound-identifier-list-request outbound-identifier-list-id active name description))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-outbound-identifier-list-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-outbound-identifier-list-request outbound-identifier-list-id active name description))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-outbound-identifier-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.deleteOutboundIdentifier({
@@ -2304,14 +2400,12 @@
    :topic-key :delete-outbound-identifier-response}
   [params]
   (let [{:keys [callback outbound-identifier-id topic]} params
-        {:keys [api-response status] :as entity-response} (a/<! (rest/delete-outbound-identifier-request outbound-identifier-id))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-delete-outbound-identifier-err entity-response)
-                  :callback callback}))))
+        {:keys [api-response status] :as entity-response} (a/<! (rest/delete-outbound-identifier-request outbound-identifier-id))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-delete-outbound-identifier-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::dissociate-params
   (s/keys :req-un []
@@ -2507,6 +2601,38 @@
                 :error error
                 :callback callback})))
 
+(s/def ::update-sla-params
+    (s/keys :req-un [::specs/sla-id]
+            :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/shared ::specs/active-version]))
+
+(def-sdk-fn update-sla
+  "``` javascript
+  CxEngage.entities.updateSla({
+    slaId: {{uuid}},
+    name: {{string}}, (optional)
+    active: {{boolean}}, (optional)
+    shared: {{boolean}}, (optional)
+    description: {{string}}, (optional)
+    activeVersion: {{uuid}} (optional),
+  });
+  ```
+  Updates a single SLA by calling rest/update-sla-request
+  with the new data and slaId as the unique key.
+
+  Possible Errors:
+
+  - [Entities: 11105](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-sla-err)"
+  {:validation ::update-sla-params
+   :topic-key :update-sla-response}
+  [params]
+  (let [{:keys [sla-id name description active shared active-version callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-sla-request sla-id name description active shared active-version))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-sla-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
 (s/def ::update-data-access-report-params
     (s/keys :req-un [::specs/data-access-report-id]
             :opt-un [::specs/callback ::specs/name ::specs/realtime-report-id ::specs/description ::specs/active ::specs/report-type ::specs/realtime-report-type ::specs/realtime-report-name ::specs/historical-catalog-name ::specs/users]))
@@ -2539,14 +2665,12 @@
   [params]
   (let [{:keys [data-access-report-id name realtime-report-id description active report-type realtime-report-type realtime-report-name historical-catalog-name users callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-data-access-report-request data-access-report-id name description active realtime-report-id report-type realtime-report-type realtime-report-name historical-catalog-name users))
-        response (update-in api-response [:result] rename-keys {:members :users})]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-data-access-report-err entity-response)
-                  :callback callback}))))
+        response (update-in api-response [:result] rename-keys {:members :users})
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-data-access-report-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
 
 (s/def ::update-skill-params
   (s/keys :req-un [::specs/skill-id]
@@ -2574,14 +2698,12 @@
    :topic-key :update-skill-response}
   [params]
   (let [{:keys [skill-id name description active has-proficiency callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-skill-request skill-id name description active has-proficiency))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-skill-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-skill-request skill-id name description active has-proficiency))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-skill-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::update-group-params
   (s/keys :req-un [::specs/group-id]
@@ -2608,14 +2730,12 @@
    :topic-key :update-group-response}
   [params]
   (let [{:keys [group-id name description active callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-group-request group-id name description active))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-group-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-group-request group-id name description active))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-group-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 ;;hygen-insert-before-update
 
@@ -2650,10 +2770,10 @@
   [params]
   (let [{:keys [dispatch-mapping-id name description value flow-id version interaction-field channel-type active callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-dispatch-mapping-request dispatch-mapping-id name description value flow-id version interaction-field channel-type active))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-update-dispatch-mapping-err entity-response))]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-dispatch-mapping-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
-                :error error
+                :error response-error
                 :callback callback})))
 
 (s/def ::update-disposition-params
@@ -2684,10 +2804,10 @@
   [params]
   (let [{:keys [disposition-id name description external-id active shared callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-disposition-request disposition-id name description external-id active shared))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response))]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
-                :error error
+                :error response-error
                 :callback callback})))
 
 (s/def ::update-reason-params
@@ -2717,14 +2837,12 @@
    :topic-key :update-reason-response}
   [params]
   (let [{:keys [reason-id name description external-id active shared callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-reason-request reason-id name description external-id active shared))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-reason-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-reason-request reason-id name description external-id active shared))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-reason-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::update-reason-list-params
   (s/keys :req-un [::specs/reason-list-id]
@@ -2755,14 +2873,12 @@
     :topic-key :update-reason-list-response}
   [params]
   (let [{:keys [reason-list-id name description external-id active shared reasons is-default callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-reason-list-request reason-list-id name description external-id active shared reasons is-default))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-reason-list-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-reason-list-request reason-list-id name description external-id active shared reasons is-default))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-reason-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 
 (s/def ::update-role-params
@@ -2787,14 +2903,12 @@
    :topic-key :update-role-response}
   [params]
   (let [{:keys [role-id name description permissions callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-role-request role-id name description permissions))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-update-role-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-role-request role-id name description permissions))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-role-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::update-user-skill-member-params
   (s/keys :req-un [::specs/user-id ::specs/skill-id ::specs/proficiency]
@@ -2855,10 +2969,10 @@
   [params]
   (let [{:keys [flow-id flow-type name active-version active description callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-flow-request flow-id flow-type name active-version active description))
-        error (if-not (= status 200) (e/failed-to-update-flow-err entity-response))]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-flow-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
-                :error error
+                :error response-error
                 :callback callback})))
 
 ;;--------------------------------------------------------------------------- ;;
@@ -2987,6 +3101,8 @@
                                        :get-artifact get-artifact
                                        :get-custom-metrics get-custom-metrics
                                        :get-custom-metric get-custom-metric
+                                       :get-slas get-slas
+                                       :get-sla get-sla
                                        :get-roles get-roles
                                        :get-role get-role
                                        :get-platform-roles get-platform-roles
@@ -3027,7 +3143,8 @@
                                        :create-flow-draft create-flow-draft
                                        :create-disposition create-disposition
                                        :create-dispatch-mapping create-dispatch-mapping
-                                       :create-custom-metric create-custom-metric
+                                       :create-sla create-sla
+                                       :create-sla-version create-sla-version
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
@@ -3039,6 +3156,7 @@
                                        :add-outbound-identifier-list-member add-outbound-identifier-list-member
                                        :remove-outbound-identifier-list-member remove-outbound-identifier-list-member
                                        :update-custom-metric update-custom-metric
+                                       :update-sla update-sla
                                        :update-role update-role
                                        :update-data-access-report update-data-access-report
                                        :update-skill update-skill

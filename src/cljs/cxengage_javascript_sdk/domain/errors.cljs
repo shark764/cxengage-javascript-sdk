@@ -2171,9 +2171,9 @@
    :level "error"
    :message "Failed to update dispatch mapping."})
 
-(defn failed-to-create-custom-metric-err
+(defn failed-to-create-sla-err
   "**Error Code:** 11097
-   Message: Failed to create custom metric.
+   Message: Failed to create SLA.
 
    This error is usually due to an unexpected status code returned from the API.
    Validate that the values passed into the sdk function are correct.
@@ -2184,7 +2184,7 @@
    :context :entities
    :data {:api-response data}
    :level "error"
-   :message "Failed to create custom metric."})
+   :message "Failed to create SLA."})
 
 (defn failed-to-create-err
   "**Error Code:** 11098
@@ -2245,6 +2245,66 @@
    :data {:api-response data}
    :level "error"
    :message "Failed to delete api endpoint."})
+
+(defn failed-to-create-sla-version-err
+  "**Error Code:** 11102
+   Message: Failed to create version for SLA.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   Validate that the values passed into the SDK function were correct.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11102
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create version for SLA."})
+
+(defn failed-to-get-slas-err
+  "**Error Code:** 11103
+   Message: Failed to get SLA list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11103
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get SLA list."})
+
+(defn failed-to-get-sla-err
+  "**Error Code:** 11104
+   Message: Failed to get SLA.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function is correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11104
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get SLA."})
+
+(defn failed-to-update-sla-err
+  "**Error Code:** 11105
+   Message: Failed to update SLA.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function are correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11105
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update SLA."})
 
 ;;hygen-insert-before-11000s
 

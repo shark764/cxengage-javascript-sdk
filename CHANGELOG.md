@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.52.0] - 2019-04-02
+### Added
+- CXV1-16853 - New function for creating multiple SLA.
+### Changed
+- CXV1-15886 - All Custom Metrics functions were changed to SLA to match new APIs.
+
 ## [8.51.2] - 2019-03-28
 ### Fixed
 - CXV1-17412 - Creating flow now is retrieving correct error in case API call fails.

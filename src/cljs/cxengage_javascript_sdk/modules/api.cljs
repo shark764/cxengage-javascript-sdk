@@ -64,7 +64,7 @@
 
   Possible Errors:
 
-  - [Api: 11099](/cxengage-javascript-sdk.domain.errors.html#var-failed-read-err)"
+  - [Api: 11099](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-read-err)"
   {:validation ::read-params
     :topic-key :read-response}
   [params]

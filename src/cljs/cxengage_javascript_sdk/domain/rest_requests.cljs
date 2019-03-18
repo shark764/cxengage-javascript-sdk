@@ -390,6 +390,43 @@
                                             (= sla-abandon-type "count-against-sla")        (assoc-in [:body :sla-abandon-threshold] nil))]
     (api/api-request update-custom-metric-request)))
 
+(defn create-sla-request [name description active shared active-sla]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-sla-request (cond-> {:method :post
+                                            :url (iu/api-url "tenants/:tenant-id/slas"
+                                                   {:tenant-id tenant-id})
+                                            :body {:active (if (nil? active-sla) false active)
+                                                   :shared (or shared false)}}
+                                   (not (nil? name))        (assoc-in [:body :name] name)
+                                   (not (nil? description)) (assoc-in [:body :description] description)
+                                   (not (nil? active-sla))  (assoc-in [:body :active-sla] active-sla))]
+    (api/api-request create-sla-request)))
+
+(defn update-sla-request [sla-id name description active shared active-version]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-sla-request (cond-> {:method :put
+                                            :url (iu/api-url "tenants/:tenant-id/slas/:sla-id"
+                                                   {:tenant-id tenant-id :sla-id sla-id})
+                                            :body {:active (or active false)}}
+                                   (not (nil? name))            (assoc-in [:body :name] name)
+                                   (not (nil? description))     (assoc-in [:body :description] description)
+                                   (not (nil? shared))          (assoc-in [:body :shared] shared)
+                                   (not (nil? active-version))  (assoc-in [:body :active-version] active-version))]
+    (api/api-request update-sla-request)))
+
+(defn create-sla-version-request [sla-id version-name sla-threshold abandon-type abandon-threshold description]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-sla-version-request (cond-> {:method :post
+                                            :url (iu/api-url "tenants/:tenant-id/slas/:sla-id/versions"
+                                                  {:tenant-id tenant-id :sla-id sla-id})}
+                                         (not (nil? version-name))            (assoc-in [:body :version-name] version-name)
+                                         (not (nil? description))             (assoc-in [:body :description] description)
+                                         (not (nil? abandon-type))            (assoc-in [:body :abandon-type] abandon-type)
+                                         (not (nil? sla-threshold))           (assoc-in [:body :sla-threshold] sla-threshold)
+                                         (= abandon-type "ignore-abandons")   (assoc-in [:body :abandon-threshold] abandon-threshold)
+                                         (= abandon-type "count-against-sla") (assoc-in [:body :abandon-threshold] 0))]
+    (api/api-request create-sla-version-request)))
+
 (defn get-layout-request [layout-id]
   (let [tenant-id (state/get-active-tenant-id)
         get-layout-request {:method :get
