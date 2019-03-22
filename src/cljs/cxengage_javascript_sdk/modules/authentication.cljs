@@ -82,12 +82,14 @@
   [params]
   (let [{:keys [callback topic username password ttl token]} params]
     (if token
-      (let [resp (a/<! (rest/login-request))
-              {:keys [status api-response]} resp]
-          (if (not (= status 200))
+      (let [_ (state/set-token! token)
+            login-response (a/<! (rest/login-request))
+            {:keys [status api-response]} login-response
+            error (if-not (= status 200) (e/login-failed-login-request-err login-response))]
+          (if-not (= status 200)
             (p/publish {:topics topic
                         :callback callback
-                        :error (e/login-failed-login-request-err resp)})
+                        :error error})
             (let [user-identity (:result api-response)
                   tenants (:tenants user-identity)]
               (state/set-user-identity! user-identity)
