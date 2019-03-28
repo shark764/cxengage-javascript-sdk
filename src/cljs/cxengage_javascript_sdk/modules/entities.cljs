@@ -1057,7 +1057,7 @@
   });
   ```
   Retrieves single Flow given parameter flowId
-  as a unique key
+  as a unique key.
 
   Topic: cxengage/entities/get-flow-response
 
@@ -1071,14 +1071,15 @@
         entity-response (a/<! (rest/get-crud-entity-request ["flows" flow-id]))
         error (if-not (= (:status entity-response) 200) (e/failed-to-get-flow-err entity-response))
         flow-versions-response (if (nil? error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "versions"])))
-        error (if-not (= (:status flow-versions-response) 200) (e/failed-to-get-flow-err flow-versions-response) error)
-        flow-drafts-response (if (nil? error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "drafts"])))
-        error (if-not (= (:status flow-drafts-response) 200) (e/failed-to-get-flow-err flow-drafts-response) error)
+        flow-versions-error (if-not (= (:status flow-versions-response) 200) (e/failed-to-get-flow-err flow-versions-response))
+        flow-drafts-response (if (nil? flow-versions-error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "drafts"])))
+        flow-drafts-error (if-not (= (:status flow-drafts-response) 200) (e/failed-to-get-flow-err flow-drafts-response))
         response (-> (:api-response entity-response)
                    (assoc-in [:result :versions] (get-in flow-versions-response [:api-response :result]))
-                   (assoc-in [:result :drafts] (get-in flow-drafts-response [:api-response :result])))]
+                   (assoc-in [:result :drafts] (get-in flow-drafts-response [:api-response :result])))
+        response-error (or error flow-versions-error flow-drafts-error nil)]
     (p/publish {:topics topic
-                :response response
+                :response response-error
                 :error error
                 :callback callback})))
 
@@ -1939,11 +1940,12 @@
         error (if-not (= (:status flow-response) 200) (e/failed-to-create-flow-err flow-response))
         flow-id (get-in flow-response [:api-response :result :id])
         draft-response (if (nil? error) (a/<! (rest/create-flow-draft-request flow-id "Initial Draft" flow metadata nil)))
-        error (if-not (= (:status draft-response) 200) (e/failed-to-create-flow-err draft-response) error)
-        response (assoc-in (:api-response flow-response) [:result :drafts] (conj [] (get-in draft-response [:api-response :result])))]
+        draft-error (if-not (= (:status draft-response) 200) (e/failed-to-create-flow-err draft-response))
+        response (assoc-in (:api-response flow-response) [:result :drafts] (conj [] (get-in draft-response [:api-response :result])))
+        response-error (or error draft-error nil)]
       (p/publish {:topics topic
                   :response response
-                  :error error
+                  :error response-error
                   :callback callback})))
 
 (s/def ::create-flow-draft-params
@@ -3022,9 +3024,7 @@
                                        :create-reason create-reason
                                        :create-reason-list create-reason-list
                                        :create-flow create-flow
-                                       :update-flow update-flow
                                        :create-flow-draft create-flow-draft
-                                       :remove-flow-draft remove-flow-draft
                                        :create-disposition create-disposition
                                        :create-dispatch-mapping create-dispatch-mapping
                                        :create-custom-metric create-custom-metric
@@ -3050,11 +3050,13 @@
                                        :update-users-capacity-rule update-users-capacity-rule
                                        :update-reason update-reason
                                        :update-reason-list update-reason-list
+                                       :update-flow update-flow
                                        :update-disposition update-disposition
                                        :update-dispatch-mapping update-dispatch-mapping
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template
+                                       :remove-flow-draft remove-flow-draft
                                        :dissociate dissociate
                                       ;;hygen-insert-above-delete
                                        :download-list download-list}}

@@ -2187,7 +2187,7 @@
    :message "Failed to create custom metric."})
 
 (defn failed-to-create-err
-  "**Error Code:** 11084
+  "**Error Code:** 11098
    Message: Failed to create api endpoint / entity.
 
    This error is usually due to an unexpected status code returned from the API.
@@ -2195,14 +2195,14 @@
 
    **Solution:** Check your browsers dev tools console for additional error information"
   [data]
-  {:code 11084
+  {:code 11098
    :context :api
    :data {:api-response data}
    :level "error"
    :message "Failed to create api endpoint."})
 
 (defn failed-to-read-err
-  "**Error Code:** 11085
+  "**Error Code:** 11099
    Message: Failed to read api endpoint / entity.
 
    This error is usually due to an unexpected status code returned from the API.
@@ -2210,14 +2210,14 @@
 
    **Solution:** Check your browsers dev tools console for additional error information"
   [data]
-  {:code 11085
+  {:code 11099
    :context :api
    :data {:api-response data}
    :level "error"
    :message "Failed to read api endpoint."})
 
 (defn failed-to-update-err
-  "**Error Code:** 11086
+  "**Error Code:** 11100
    Message: Failed to update api endpoint / entity.
 
    This error is usually due to an unexpected status code returned from the API.
@@ -2225,14 +2225,14 @@
 
    **Solution:** Check your browsers dev tools console for additional error information"
   [data]
-  {:code 11086
+  {:code 11100
    :context :api
    :data {:api-response data}
    :level "error"
    :message "Failed to update api endpoint."})
 
 (defn failed-to-delete-err
-  "**Error Code:** 11087
+  "**Error Code:** 11101
    Message: Failed to delete api endpoint / entity.
 
    This error is usually due to an unexpected status code returned from the API.
@@ -2240,7 +2240,7 @@
 
    **Solution:** Check your browsers dev tools console for additional error information"
   [data]
-  {:code 11087
+  {:code 11101
    :context :api
    :data {:api-response data}
    :level "error"

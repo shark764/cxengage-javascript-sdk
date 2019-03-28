@@ -31,7 +31,7 @@
 
   Possible Errors:
 
-  - [Api: 11084](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-err)"
+  - [Api: 11098](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-err)"
   {:validation ::create-params
    :topic-key :create-response}
   [params]
@@ -64,7 +64,7 @@
 
   Possible Errors:
 
-  - [Api: 11085](/cxengage-javascript-sdk.domain.errors.html#var-failed-read-err)"
+  - [Api: 11099](/cxengage-javascript-sdk.domain.errors.html#var-failed-read-err)"
   {:validation ::read-params
     :topic-key :read-response}
   [params]
@@ -96,7 +96,7 @@
 
   Possible Errors:
 
-  - [Api: 11086](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-err)"
+  - [Api: 11100](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-err)"
   {:validation ::update-params
     :topic-key :update-response}
   [params]
@@ -126,7 +126,7 @@
 
   Possible Errors:
 
-  - [Api: 11087](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-delete-err)"
+  - [Api: 11101](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-delete-err)"
   {:validation ::delete-params
     :topic-key :delete-response}
   [params]
