@@ -406,10 +406,10 @@
   (let [tenant-id (state/get-active-tenant-id)
         update-sla-request (cond-> {:method :put
                                             :url (iu/api-url "tenants/:tenant-id/slas/:sla-id"
-                                                   {:tenant-id tenant-id :sla-id sla-id})
-                                            :body {:active (or active false)}}
+                                                   {:tenant-id tenant-id :sla-id sla-id})}
                                    (not (nil? name))            (assoc-in [:body :name] name)
                                    (not (nil? description))     (assoc-in [:body :description] description)
+                                   (not (nil? active))          (assoc-in [:body :active] active)
                                    (not (nil? shared))          (assoc-in [:body :shared] shared)
                                    (not (nil? active-version))  (assoc-in [:body :active-version] active-version))]
     (api/api-request update-sla-request)))
