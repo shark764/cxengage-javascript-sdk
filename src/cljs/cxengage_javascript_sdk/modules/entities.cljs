@@ -2098,8 +2098,15 @@
    :topic-key :create-sla-version-response}
   [params]
   (let [{:keys [sla-id version-name sla-threshold abandon-type abandon-threshold description callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-sla-version-request sla-id version-name sla-threshold abandon-type abandon-threshold description))
-        response-error (if-not (= status 200) (e/failed-to-create-sla-version-err entity-response))]
+        sla-versions-response (a/<! (rest/get-crud-entity-request ["slas" sla-id "versions"]))
+        sla-versions-error (if-not (= (:status sla-versions-response) 200) (e/failed-to-get-sla-err sla-versions-response))
+        new-version-response (if (nil? sla-versions-error) (a/<! (rest/create-sla-version-request sla-id version-name sla-threshold abandon-type abandon-threshold description)))
+        new-version-error (if-not (= (:status new-version-response) 200) (e/failed-to-create-sla-version-err new-version-response))
+        version-id (get-in new-version-response [:api-response :result :version-id])
+        sla-default-version-response (if (and (nil? new-version-error) (= (count (get-in sla-versions-response [:api-response :result])) 0)) (a/<! (rest/update-sla-request sla-id nil nil false nil version-id)))
+        sla-default-version-error (if (and (not (nil? sla-default-version-response)) (not= (:status sla-default-version-response) 200)) (e/failed-to-update-sla-err sla-default-version-response))
+        api-response (or (:api-response sla-default-version-response) (:api-response new-version-response))
+        response-error (or sla-versions-error new-version-error sla-default-version-error nil)]
     (p/publish {:topics topic
                 :response api-response
                 :error response-error
