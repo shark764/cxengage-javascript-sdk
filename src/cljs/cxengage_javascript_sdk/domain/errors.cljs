@@ -2306,6 +2306,21 @@
    :level "error"
    :message "Failed to update SLA."})
 
+(defn failed-to-get-tenant-err
+  "**Error Code:** 11106
+   Message: Failed to get tenant information.
+     
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+     
+   **Solution:** Check your browsers dev tools console for additional error information"
+   [data]
+   {:code 11106
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get tenant information"})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

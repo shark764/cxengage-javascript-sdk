@@ -1039,6 +1039,32 @@
                            (e/failed-to-get-role-err entity-response))
                   :callback callback})))
 
+(s/def ::get-tenant-params
+  (s/keys :req-un [::specs/tenant-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-tenant
+  "``` javascript
+  CxEngage.entities.getTenant({
+  });
+  ```
+  Retrieves single Tenant information given parameter tenantId
+  as a unique key
+  Topic: cxengage/entities/get-tenant-response
+  Possible Errors:
+  - [Entities: 11106](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-tenant-err)"
+
+  {:validation ::get-tenant-params
+   :topic-key :get-tenant-response}
+  [params]
+  (let [{:keys [callback topic tenant-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-tenant-request tenant-id))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-tenant-err entity-response))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error response-error
+                  :callback callback})))
+
 (s/def ::get-reason-params
   (s/keys :req-un [::specs/reason-id]
           :opt-un []))
@@ -1925,14 +1951,16 @@
 
 (s/def ::create-role-params
   (s/keys :req-un [::specs/name]
-          :opt-un [::specs/description ::specs/permissions ::specs/callback]))
+          :opt-un [::specs/description ::specs/permissions ::specs/active ::specs/shared ::specs/callback]))
 
 (def-sdk-fn create-role
   "``` javascript
   CxEngage.entities.createRole({
     name: {{string}},
     description: {{string}},
-    permissions: {{array}}
+    permissions: {{array}},
+    active: {{boolean}},
+    shared: {{boolean}}
   });
   ```
   Create Role for current logged in tenant
@@ -1943,8 +1971,8 @@
   {:validation ::create-role-params
    :topic-key :create-role-response}
   [params]
-  (let [{:keys [active name description permissions callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-role-request name description permissions))
+  (let [{:keys [name description permissions active shared callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-role-request name description permissions active shared))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-role-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -2888,7 +2916,7 @@
 
 (s/def ::update-role-params
   (s/keys :req-un [::specs/role-id]
-          :opt-un [::specs/callback ::specs/name ::specs/description ::specs/permissions]))
+          :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/shared ::specs/permissions]))
 
 (def-sdk-fn update-role
   "``` javascript
@@ -2897,6 +2925,8 @@
     name: {{string}},
     description: {{string}},
     permissions: {{array}}
+    active: {{boolean}} (optional),
+    shared: {{boolean}} (optional),
   });
   ```
   Updates specified Role
@@ -2907,8 +2937,8 @@
   {:validation ::update-role-params
    :topic-key :update-role-response}
   [params]
-  (let [{:keys [role-id name description permissions callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-role-request role-id name description permissions))
+  (let [{:keys [role-id name description permissions active shared callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-role-request role-id name description permissions active shared))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-role-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -3110,6 +3140,7 @@
                                        :get-sla get-sla
                                        :get-roles get-roles
                                        :get-role get-role
+                                       :get-tenant get-tenant
                                        :get-platform-roles get-platform-roles
                                        :get-integrations get-integrations
                                        :get-capacity-rules get-capacity-rules

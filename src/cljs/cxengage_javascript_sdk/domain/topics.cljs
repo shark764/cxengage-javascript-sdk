@@ -116,6 +116,7 @@
                  :create-sla-version-response "cxengage/entities/create-sla-version-response"
                  :get-roles-response "cxengage/entities/get-roles-response"
                  :get-role-response "cxengage/entities/get-role-response"
+                 :get-tenant-response "cxengage/entities/get-tenant-response"
                  :get-reason-response "cxengage/entities/get-reason-response"
                  :get-reason-list-response "cxengage/entities/get-reason-list-response"
                  :get-message-templates-response "cxengage/entities/get-message-templates-response"

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.53.0] - 2019-04-17
+### Added
+- CXV1-15588 - Add Role Inheritance || New shared and active fields added to roles body || New method to get one single tenant information
+
 ## [8.52.3] - 2019-04-23
 ### Changed
 - CXV1-17978 - Creating a new SLA version makes it the new active one.

@@ -1067,17 +1067,19 @@
                                     (not (nil? capacity-rule-id))           (assoc-in [:body :capacity-rule-id] capacity-rule-id))]
     (api/api-request create-user-request)))
 
-(defn create-role-request [name description permissions]
+(defn create-role-request [name description permissions active shared]
   (let [tenant-id (state/get-active-tenant-id)
         create-role-request (cond-> {:method :post
                                      :url (iu/api-url "tenants/:tenant-id/roles"
                                                       {:tenant-id tenant-id})
                                      :body            {:permissions (or permissions [])}}
                              name                      (assoc-in [:body :name] name)
-                             (not (nil? description))  (assoc-in [:body :description] description))]
+                             (not (nil? description))  (assoc-in [:body :description] description)
+                             (not (nil? active))       (assoc-in [:body :active] active)
+                             (not (nil? shared))       (assoc-in [:body :shared] shared))]
     (api/api-request create-role-request)))
 
-(defn update-role-request [role-id name description permissions]
+(defn update-role-request [role-id name description permissions active shared]
   (let [tenant-id (state/get-active-tenant-id)
         update-role-request (cond-> {:method :put
                                      :url (iu/api-url "tenants/:tenant-id/roles/:role-id"
@@ -1085,7 +1087,9 @@
                                                        :role-id role-id})}
                              (not (nil? permissions))  (assoc-in [:body :permissions]  permissions)
                              (not (nil? name))         (assoc-in [:body :name] name)
-                             (not (nil? description))  (assoc-in [:body :description] description))]
+                             (not (nil? description))  (assoc-in [:body :description] description)
+                             (not (nil? active))       (assoc-in [:body :active] active)
+                             (not (nil? shared))       (assoc-in [:body :shared] shared))]
     (api/api-request update-role-request)))
 
 (defn update-list-item-request [list-item-id list-item-key item-value]
