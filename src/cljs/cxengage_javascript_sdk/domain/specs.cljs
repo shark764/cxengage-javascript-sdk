@@ -174,3 +174,4 @@
 (s/def ::visibility boolean?)
 (s/def ::width number?)
 (s/def ::wrapup string?)
+(s/def ::enable-indicator boolean?)

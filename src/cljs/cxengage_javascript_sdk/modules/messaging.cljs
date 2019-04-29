@@ -101,6 +101,17 @@
                 :response true
                 :callback callback})))
 
+(defn- send-action-impl
+  [payload topic action-topic callback]
+  (let [msg (Paho.MQTT.Message. payload)
+        pubsub-topic (topics/get-topic action-topic)]
+    (set! (.-destinationName msg) topic)
+    (set! (.-qos msg) 1)
+    (.send (state/get-mqtt-client) msg)
+    (p/publish {:topics pubsub-topic
+                :response true
+                :callback callback})))
+
 (defn- on-connect []
   (log :debug "Mqtt client connected"))
 
@@ -161,16 +172,17 @@
     (unsubscribe topic)))
 
 (defn- gen-payload [message]
-  (let [{:keys [message resource-id tenant-id interaction-id]} message
+  (let [{:keys [message action-type resource-id tenant-id interaction-id]} message
         uid (str (id/make-random-uuid))
+        message-body (if action-type action-type message)
         metadata {:name "Agent"
                   :first-name "Agent"
                   :last-name "Agent"
-                  :type "agent"}
-        body {:text message}]
+                  :type (if action-type action-type "agent")}
+        body {:text message-body}]
     {:id uid
      :tenant-id tenant-id
-     :type "message"
+     :type (if action-type action-type "message")
      :to interaction-id
      :from resource-id
      :metadata metadata
@@ -207,6 +219,63 @@
                     (format-payload))
         mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
     (send-message-impl payload mqtt-topic callback)))
+
+(s/def ::set-typing-indicator-params
+  (s/keys :req-un [::specs/interaction-id ::specs/enable-indicator]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn set-typing-indicator
+  "``` javascript
+  CxEngage.interactions.messaging.setTypingIndicator({
+    interactionId: {{uuid}}, (required)
+    enableIndicator: {{boolean}}, (required)
+  });
+  ```
+  Sends a **typing on** or **typing off** sender action.
+
+  Topic: cxengage/interactions/messaging/set-typing-indicator"
+  {:validation ::set-typing-indicator-params
+   :topic-key :set-typing-indicator}
+  [params]
+  (let [{:keys [interaction-id topic enable-indicator callback]} params
+        action-type (if enable-indicator "typing_on" "typing_off") 
+        tenant-id (state/get-active-tenant-id)
+        payload (-> {:resource-id (state/get-active-user-id)
+                     :tenant-id tenant-id
+                     :interaction-id interaction-id
+                     :action-type action-type}
+                    (gen-payload)
+                    (format-payload))
+        
+        mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
+    (send-action-impl payload mqtt-topic :set-typing-indicator callback)))
+
+(s/def ::send-read-indicator-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn send-read-indicator
+   "``` javascript
+  CxEngage.interactions.messaging.sendReadIndicator({
+    interactionId: {{uuid}}, (required)
+  });
+  ```
+  Sends a **mark seen** sender action.
+
+  Topic: cxengage/interactions/messaging/send-read-indicator"
+  {:validation ::send-read-indicator-params
+   :topic-key :send-read-indicator}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        tenant-id (state/get-active-tenant-id)
+        payload (-> {:resource-id (state/get-active-user-id)
+                     :tenant-id tenant-id
+                     :interaction-id interaction-id
+                     :action-type "mark_seen"}
+                    (gen-payload)
+                    (format-payload))
+        mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
+    (send-action-impl payload mqtt-topic :send-read-indicator callback)))
 
 ;; ----------------------------------------------------------------;;
 ;; CxEngage.interactions.messaging.sendOutboundSms({
@@ -366,7 +435,9 @@
               (ih/register {:api {:interactions {:messaging {:send-message send-message
                                                              :get-transcripts get-transcripts
                                                              :initialize-outbound-sms click-to-sms
-                                                             :send-outbound-sms send-sms-by-interrupt}}}
+                                                             :send-outbound-sms send-sms-by-interrupt
+                                                             :send-read-indicator send-read-indicator
+                                                             :set-typing-indicator set-typing-indicator}}}
                             :module-name module-name})
               (ih/send-core-message {:type :module-registration-status
                                      :status :success
