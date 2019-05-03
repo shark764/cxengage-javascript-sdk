@@ -166,6 +166,7 @@
 (s/def ::transfer-extension (s/keys :req-un [::type ::value]))
 (s/def ::transfer-type #{"cold" "warm"})
 (s/def ::transfer-list-id ::uuid)
+(s/def ::endpoints vector?)
 (s/def ::trigger-batch boolean?)
 (s/def ::ttl number?)
 (s/def ::username string?)
