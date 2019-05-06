@@ -178,7 +178,7 @@
         metadata {:name "Agent"
                   :first-name "Agent"
                   :last-name "Agent"
-                  :type (if action-type action-type "agent")}
+                  :type "agent"}
         body {:text message-body}]
     {:id uid
      :tenant-id tenant-id
