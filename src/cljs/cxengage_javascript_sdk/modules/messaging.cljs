@@ -250,21 +250,21 @@
         mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
     (send-action-impl payload mqtt-topic :set-typing-indicator callback)))
 
-(s/def ::send-read-indicator-params
+(s/def ::mark-as-seen-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
-(def-sdk-fn send-read-indicator
+(def-sdk-fn mark-as-seen
    "``` javascript
-  CxEngage.interactions.messaging.sendReadIndicator({
+  CxEngage.interactions.messaging.markAsSeen({
     interactionId: {{uuid}}, (required)
   });
   ```
   Sends a **mark seen** sender action.
 
-  Topic: cxengage/interactions/messaging/send-read-indicator"
-  {:validation ::send-read-indicator-params
-   :topic-key :send-read-indicator}
+  Topic: cxengage/interactions/messaging/mark-as-seen"
+  {:validation ::mark-as-seen-params
+   :topic-key :mark-as-seen}
   [params]
   (let [{:keys [interaction-id topic callback]} params
         tenant-id (state/get-active-tenant-id)
@@ -275,7 +275,7 @@
                     (gen-payload)
                     (format-payload))
         mqtt-topic (str (name (state/get-env)) "/tenants/" tenant-id "/channels/" interaction-id)]
-    (send-action-impl payload mqtt-topic :send-read-indicator callback)))
+    (send-action-impl payload mqtt-topic :mark-as-seen callback)))
 
 ;; ----------------------------------------------------------------;;
 ;; CxEngage.interactions.messaging.sendOutboundSms({
@@ -436,7 +436,7 @@
                                                              :get-transcripts get-transcripts
                                                              :initialize-outbound-sms click-to-sms
                                                              :send-outbound-sms send-sms-by-interrupt
-                                                             :send-read-indicator send-read-indicator
+                                                             :mark-as-seen mark-as-seen
                                                              :set-typing-indicator set-typing-indicator}}}
                             :module-name module-name})
               (ih/send-core-message {:type :module-registration-status

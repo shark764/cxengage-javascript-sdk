@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [8.54.2] - 2019-05-06
 ### Added
 - CXV1-18151 - Add unit tests for typing and read indicators.
+### Changed
+- CXV1-16547 - change function names for read indicator.
 
 ## [8.54.1] - 2019-05-06
 ### Changed

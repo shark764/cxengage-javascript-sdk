@@ -281,7 +281,7 @@
                  :initialize-outbound-sms-response "cxengage/interactions/messaging/initialize-outbound-sms-response"
                  :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
                  :set-typing-indicator "cxengage/interactions/messaging/set-typing-indicator"
-                 :send-read-indicator "cxengage/interactions/messaging/send-read-indicator"
+                 :mark-as-seen "cxengage/interactions/messaging/mark-as-seen"
 
                  ;; Errors
                  :failed-to-refresh-sqs-integration "cxengage/errors/fatal/failed-to-refresh-sqs-integration"
