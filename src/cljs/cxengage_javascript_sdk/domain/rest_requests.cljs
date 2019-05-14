@@ -1232,3 +1232,30 @@
                               {:resource-id resource-id})
                         :body {:default-tenant tenant-id}}]
     (api/api-request tenant-request)))
+
+;;--------------------------------------------------------------------------- ;;
+;; Transfer Lists
+;;--------------------------------------------------------------------------- ;;
+
+(defn create-transfer-list-request [name description active endpoints]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-transfer-list-request (cond-> {:method :post
+                                              :url (iu/api-url "tenants/:tenant-id/transfer-lists"
+                                                               {:tenant-id tenant-id})}
+                                          (not (nil? name))                             (assoc-in [:body :name] name)
+                                          (not (nil? description))                      (assoc-in [:body :description] description)
+                                          (not (nil? active))                           (assoc-in [:body :active] active)
+                                          (not (nil? endpoints))                        (assoc-in [:body :endpoints] endpoints))]                                     
+    (api/api-request create-transfer-list-request)))
+
+(defn update-transfer-list-request [transfer-list-id name description active endpoints]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-transfer-list-request (cond-> {:method :put
+                                              :url (iu/api-url "tenants/:tenant-id/transfer-lists/:transfer-list-id"
+                                                               {:tenant-id tenant-id 
+                                                               :transfer-list-id transfer-list-id})}
+                                          (not (nil? name))                             (assoc-in [:body :name] name)
+                                          (not (nil? description))                      (assoc-in [:body :description] description)
+                                          (not (nil? active))                           (assoc-in [:body :active] active)
+                                          (not (nil? endpoints))                        (assoc-in [:body :endpoints] endpoints))]                                     
+    (api/api-request update-transfer-list-request)))

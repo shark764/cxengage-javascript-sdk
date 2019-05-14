@@ -2321,6 +2321,34 @@
     :level "error"
     :message "Failed to get tenant information"})
 
+(defn failed-to-create-transfer-list-err
+  "**Error Code:** 11107
+   Message: Failed to create transfer list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11107
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create transfer list."})
+
+(defn failed-to-update-transfer-list-err
+  "**Error Code:** 11108
+   Message: Failed to update transfer list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11108
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update transfer list."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

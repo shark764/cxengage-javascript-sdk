@@ -2138,6 +2138,38 @@
                 :error response-error
                 :callback callback})))
 
+(s/def ::create-transfer-list-params
+  (s/keys :req-un [ ::specs/name ::specs/active ::specs/endpoints]
+          :opt-un [ ::specs/callback ::specs/description]))
+
+(def-sdk-fn create-transfer-list
+  "``` javascript
+  CxEngage.entities.createTransferList({
+    name: {{string}} (required),
+    description: {{string}} (optional),
+    active: {{boolean}} (required),
+    endpoints: {{array}} (required)
+  });
+  ```
+  Calls rest/create-transfer-list-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-transfer-list-response
+
+  Possible Errors:
+
+  - [Entities: 11107](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-transfer-list-err)"
+  {:validation ::create-transfer-list-params
+   :topic-key :create-transfer-list-response}
+  [params]
+  (let [{:keys [callback topic name description active endpoints]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-transfer-list-request name description active endpoints))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-transfer-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -2287,6 +2319,37 @@
                 :error response-error
                 :callback callback})))
 
+(s/def ::update-transfer-list-params
+  (s/keys :req-un [ ::specs/transfer-list-id]
+          :opt-un [ ::specs/callback ::specs/name ::specs/active ::specs/description ::specs/endpoints]))
+
+(def-sdk-fn update-transfer-list
+  "``` javascript
+  CxEngage.entities.updateTransferList({
+    transferListId: {{uuid}} (required)
+    name: {{string}} (optional),
+    description: {{string}} (optional),
+    active: {{boolean}} (optional),
+    endpoints: {{array}} (optional)
+  });
+  ```
+  Calls rest/update-transfer-list-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-transfer-list-response
+  Possible Errors:
+
+  - [Entities: 11108](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-transfer-list-err)"
+  {:validation ::update-transfer-list-params
+   :topic-key :update-transfer-list-response}
+  [params]
+  (let [{:keys [callback transfer-list-id topic name description active endpoints]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-transfer-list-request transfer-list-id name description active endpoints))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-transfer-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (s/def ::create-outbound-identifier-params
   (s/keys :req-un [::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type]
@@ -3111,14 +3174,12 @@
                                        :get-user get-user
                                        :get-queues get-queues
                                        :get-queue get-queue
-                                       :get-transfer-lists get-transfer-lists
                                        :get-outbound-identifiers get-outbound-identifiers
                                        :get-outbound-identifier-list get-outbound-identifier-list
                                        :get-outbound-identifier-lists get-outbound-identifier-lists
                                        :get-user-outbound-identifier-lists get-user-outbound-identifier-lists
                                        :get-flows get-flows
                                        :get-flow get-flow
-                                       :get-transfer-list get-transfer-list
                                        :get-dashboards get-dashboards
                                        :get-branding get-branding
                                        :get-protected-branding get-protected-branding
@@ -3181,6 +3242,10 @@
                                        :create-dispatch-mapping create-dispatch-mapping
                                        :create-sla create-sla
                                        :create-sla-version create-sla-version
+                                       :get-transfer-lists get-transfer-lists
+                                       :get-transfer-list get-transfer-list
+                                       :create-transfer-list create-transfer-list
+                                       :update-transfer-list update-transfer-list
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item

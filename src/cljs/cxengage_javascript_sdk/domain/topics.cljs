@@ -51,8 +51,6 @@
                  :delete-response "cxengage/api/delete-response"
                  :get-queue-response "cxengage/entities/get-queue-response"
                  :get-queues-response "cxengage/entities/get-queues-response"
-                 :get-transfer-list-response "cxengage/entities/get-transfer-list-response"
-                 :get-transfer-lists-response "cxengage/entities/get-transfer-lists-response"
                  :get-user-response "cxengage/entities/get-user-response"
                  :get-users-response "cxengage/entities/get-users-response"
                  :get-dashboards-response "cxengage/entities/get-dashboards-response"
@@ -153,6 +151,10 @@
                  :get-dispatch-mapping-response "cxengage/entities/get-dispatch-mapping-response"
                  :create-dispatch-mapping-response "cxengage/entities/create-dispatch-mapping-response"
                  :update-dispatch-mapping-response "cxengage/entities/update-dispatch-mapping-response"
+                 :get-transfer-lists-response "cxengage/entities/get-transfer-lists-response"
+                 :get-transfer-list-response "cxengage/entities/get-transfer-list-response"
+                 :create-transfer-list-response "cxengage/entities/create-transfer-list-response"
+                 :update-transfer-list-response "cxengage/entities/update-transfer-list-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
