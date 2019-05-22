@@ -3,12 +3,12 @@
             [cljs-uuid-utils.core :as id]))
 
 (s/def ::uuid id/valid-uuid?)
-(s/def ::name string?)
+(s/def ::name (s/or :name string? :name nil?))
 (s/def ::address string?)
 (s/def ::active boolean?)
 (s/def ::active-tab map?)
 (s/def ::recipient
-  (s/keys :req-un [::address ::name]))
+  (s/keys :req-un [::address] :opt-un[::name]))
 (s/def ::type #{"pstn" "sip"})
 (s/def ::crm-module #{:salesforce-classic :salesforce-lightning :zendesk :none})
 (s/def ::value string?)
