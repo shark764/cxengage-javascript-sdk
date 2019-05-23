@@ -132,7 +132,7 @@
 (defn publish
   "Publishes a value (or error) to a specific topic, optionally calling the callback provided and optionally leaving the casing of the response unaltered."
   [publish-details]
-  (let [{:keys [topics response error callback preserve-casing?]} (js->clj publish-details :keywordize-keys true)
+  (let [{:keys [topics response error callback preserve-casing?]} (ih/extract-params publish-details true)
         error (ih/camelify error)
         response (if preserve-casing?
                       (clj->js response)
