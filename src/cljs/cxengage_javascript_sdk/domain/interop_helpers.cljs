@@ -1,5 +1,6 @@
 (ns cxengage-javascript-sdk.domain.interop-helpers
-  (:require [camel-snake-kebab.core :as camel]
+  (:require [clojure.walk :as w]
+            [camel-snake-kebab.core :as camel]
             [camel-snake-kebab.extras :refer [transform-keys]]))
 
 (defn register [module-details]
@@ -66,6 +67,18 @@
 (defn cognito-auth-ready? []
   (aget js/window "AWSCognito" "CognitoIdentityServiceProvider" "CognitoAuth"))
 
+;; converting from a JS Object to a CLJS map and keywordizing each property name from the JS Object when the property name does not contain
+;; anything on it that could be understood as a fully qualified keyword, being that the property name somehting like "a/b". 
+(defn keywordize-keys [m]
+  (->> m
+    (#(js->clj % :keywordize-keys true))
+    (w/postwalk (fn [item]
+      ;; In here we could've used the qualified-keyword? function to check if it's a keyword with a namespace but it is not implemented yet on the clojurescript's version 
+      ;; we're using :(
+      (if (and (keyword? item) (namespace item) (name item))
+          (str (namespace item) "/" (name item))
+          item)))))
+
 (defn camelify [m]
   (->> m
        (transform-keys camel/->camelCase)
@@ -81,5 +94,5 @@
   (extract-params params false))
  ([params preserve-casing?]
   (if preserve-casing?
-    (js->clj params :keywordize-keys true)
+    (keywordize-keys params)
     (kebabify (js->clj params :keywordize-keys true)))))
