@@ -1079,8 +1079,8 @@
                              (not (nil? shared))       (assoc-in [:body :shared] shared))]
     (api/api-request create-role-request)))
 
-(defn update-role-request [role-id name description permissions active shared]
-  (let [tenant-id (state/get-active-tenant-id)
+(defn update-role-request [role-id name description permissions active shared tenant-id]
+  (let [tenant-id (or tenant-id (state/get-active-tenant-id))
         update-role-request (cond-> {:method :put
                                      :url (iu/api-url "tenants/:tenant-id/roles/:role-id"
                                                       {:tenant-id tenant-id

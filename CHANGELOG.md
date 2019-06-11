@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.54.6] - 2019-06-11
+### Fixed
+- CXV1-18608 - Platform admins users are unable to add permissions to a shared role when in a child tenant on config-ui 2.
+
 ## [8.54.5] - 2019-05-23
 ### Fixed
 - CXV1-17952 - Contact Attribute Allows saving the name with a / but we can not save to it.
