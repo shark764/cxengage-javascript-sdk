@@ -2979,7 +2979,7 @@
 
 (s/def ::update-role-params
   (s/keys :req-un [::specs/role-id]
-          :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/shared ::specs/permissions]))
+          :opt-un [::specs/callback ::specs/name ::specs/description ::specs/active ::specs/shared ::specs/permissions ::specs/tenant-id]))
 
 (def-sdk-fn update-role
   "``` javascript
@@ -2990,6 +2990,7 @@
     permissions: {{array}}
     active: {{boolean}} (optional),
     shared: {{boolean}} (optional),
+    tenantId: {{uuid}} (optional)
   });
   ```
   Updates specified Role
@@ -3000,8 +3001,8 @@
   {:validation ::update-role-params
    :topic-key :update-role-response}
   [params]
-  (let [{:keys [role-id name description permissions active shared callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-role-request role-id name description permissions active shared))
+  (let [{:keys [role-id name description permissions active shared tenant-id callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-role-request role-id name description permissions active shared tenant-id))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-role-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
