@@ -1046,20 +1046,21 @@
 (def-sdk-fn get-tenant
   "``` javascript
   CxEngage.entities.getTenant({
+    tenantId: {{uuid}}
   });
   ```
   Retrieves single Tenant information given parameter tenantId
   as a unique key
   Topic: cxengage/entities/get-tenant-response
   Possible Errors:
-  - [Entities: 11106](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-tenant-err)"
+  - [Entities: 11106](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-tenant-data-err)"
 
   {:validation ::get-tenant-params
    :topic-key :get-tenant-response}
   [params]
   (let [{:keys [callback topic tenant-id]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/get-tenant-request tenant-id))
-        response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-tenant-err entity-response))]
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-tenant-data-err entity-response))]
       (p/publish {:topics topic
                   :response api-response
                   :error response-error
@@ -1375,14 +1376,111 @@
    :topic-key :get-integrations-response}
   [params]
   (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "integration"))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-integrations-err entity-response)
-                  :callback callback}))))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["integrations"]))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-integrations-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+(s/def ::get-integration-params
+  (s/keys :req-un [::specs/integration-id]
+          :opt-un []))
+
+(def-sdk-fn get-integration
+  "``` javascript
+  CxEngage.entities.getIntegration({
+    integrationId: {{uuid}} (required),
+  });
+  ```
+  Retrieves a single Integration by calling rest/get-integration-request
+  with integrationId as the unique key.
+
+  Topic: cxengage/entities/get-integration-response
+
+  Possible Errors:
+
+  - [Entities: 11109](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-integration-err)"
+  {:validation ::get-integration-params
+    :topic-key :get-integration-response}
+  [params]
+  (let [{:keys [callback topic integration-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["integrations" integration-id]))
+        integration-error (if-not (= (:status entity-response) 200) (e/failed-to-get-integration-err entity-response))
+        integration-type (get-in entity-response [:api-response :result :type])
+        listeners-response (if (and
+                                  (nil? integration-error)
+                                  (or (= integration-type "email")
+                                      (= integration-type "facebook")
+                                      (= integration-type "salesforce")))
+                               (a/<! (rest/get-crud-entity-request ["integrations" integration-id "listeners"])))
+        listeners-error (if (and (not (nil? listeners-response)) (not (= (:status listeners-response) 200)))
+                          (e/failed-to-get-integration-listeners-err listeners-response))
+        response (if (and (nil? listeners-error) (not (nil? listeners-response)))
+                    (-> (:api-response entity-response)
+                      (assoc-in [:result :listeners] (get-in listeners-response [:api-response :result])))
+                    api-response)
+        response-error (or integration-error listeners-error nil)]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
+
+(s/def ::get-integration-listeners-params
+  (s/keys :req-un [::specs/integration-id]
+          :opt-un []))
+
+(def-sdk-fn get-integration-listeners
+  "``` javascript
+  CxEngage.entities.getIntegrationListeners({
+    integrationId: {{uuid}} (required),
+  });
+  ```
+  Retrieves available Listeners for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11112](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-integration-listeners-err)"
+  {:validation ::get-entities-params
+    :topic-key :get-integration-listeners-response}
+  [params]
+  (let [{:keys [callback topic integration-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["integrations" integration-id "listeners"]))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-integration-listeners-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+(s/def ::get-integration-listener-params
+  (s/keys :req-un [::specs/integration-id ::specs/listener-id]
+          :opt-un []))
+
+(def-sdk-fn get-integration-listener
+  "``` javascript
+  CxEngage.entities.getIntegrationListener({
+    integrationId: {{uuid}} (required),
+    listenerId: {{uuid}} (required)
+  });
+  ```
+  Updates a single Listener by calling rest/get-integration-listener-request
+  with listenerId as the unique key.
+
+  Topic: cxengage/entities/get-integration-listener-response
+
+  Possible Errors:
+
+  - [Entities: 11113](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-integration-listener-err)"
+  {:validation ::get-integration-listener-params
+    :topic-key :get-integration-listener-response}
+  [params]
+  (let [{:keys [callback topic integration-id listener-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["integrations" integration-id "listeners" listener-id]))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-integration-listener-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (def-sdk-fn get-roles
   "``` javascript
@@ -2170,6 +2268,71 @@
                 :error response-error
                 :callback callback})))
 
+(s/def ::create-integration-params
+  (s/keys :req-un [::specs/name ::specs/active ::specs/integration-type]
+          :opt-un [::specs/callback ::specs/description ::specs/properties]))
+
+(def-sdk-fn create-integration
+  "``` javascript
+  CxEngage.entities.createIntegration({
+    name: {{string}} (required),
+    description: {{string}} (optional),
+    active: {{boolean}} (required),
+    integrationType: {{string}} (required),
+    properties: {{object}} (optional)
+  });
+  ```
+  Calls rest/create-integration-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-integration-response
+
+  Possible Errors:
+
+  - [Entities: 11110](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-integration-err)"
+  {:validation ::create-integration-params
+    :topic-key :create-integration-response}
+  [params]
+  (let [{:keys [name description active integration-type properties callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-integration-request name description active integration-type properties))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-integration-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+(s/def ::create-integration-listener-params
+  (s/keys :req-un [::specs/integration-id ::specs/name]
+          :opt-un [::specs/callback ::specs/active ::specs/properties]))
+
+(def-sdk-fn create-integration-listener
+  "``` javascript
+  CxEngage.entities.createIntegrationListener({
+    integrationId: {{uuid}}, (required)
+    name: {{string}} (required),
+    active: {{boolean}} (optional),
+    properties: {{object}} (optional)
+  });
+  ```
+  Creates new single Integration Listener by calling rest/create-integration-listener-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-integration-listener-response
+
+  Possible Errors:
+
+  - [Entities: 11114](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-integration-listener-err)"
+  {:validation ::create-integration-listener-params
+    :topic-key :create-integration-listener-response}
+  [params]
+  (let [{:keys [integration-id name active properties callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-integration-listener-request integration-id name active properties))
+        response-error (if-not (= status 200) (e/failed-to-create-integration-listener-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -2346,6 +2509,71 @@
   (let [{:keys [callback transfer-list-id topic name description active endpoints]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-transfer-list-request transfer-list-id name description active endpoints))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-transfer-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+(s/def ::update-integration-params
+  (s/keys :req-un [::specs/integration-id]
+          :opt-un [::specs/callback ::specs/name ::specs/active ::specs/description ::specs/properties]))
+
+(def-sdk-fn update-integration
+  "``` javascript
+  CxEngage.entities.updateIntegration({
+    integrationId: {{uuid}} (required)
+    name: {{string}} (optional),
+    description: {{string}} (optional),
+    active: {{boolean}} (optional),
+    properties: {{object}} (optional)
+  });
+  ```
+  Calls rest/update-integration-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-integration-response
+  Possible Errors:
+
+  - [Entities: 11111](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-integration-err)"
+  {:validation ::update-integration-params
+    :topic-key :update-integration-response}
+  [params]
+  (let [{:keys [integration-id name description active properties callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-integration-request integration-id name description active properties))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-integration-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+(s/def ::update-integration-listener-params
+  (s/keys :req-un [::specs/integration-id ::specs/listener-id]
+          :opt-un [::specs/callback ::specs/name ::specs/active ::specs/properties]))
+
+(def-sdk-fn update-integration-listener
+  "``` javascript
+  CxEngage.entities.updateIntegrationListener({
+    integrationId: {{uuid}} (required),
+    listenerId: {{uuid}} (required)
+    name: {{string}} (optional),
+    active: {{boolean}} (optional),
+    properties: {{object}} (optional)
+  });
+  ```
+  Creates new single Integration Listener by calling rest/update-integration-listener-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-integration-listener-response
+
+  Possible Errors:
+
+  - [Entities: 11115](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-integration-listener-err)"
+  {:validation ::update-integration-listener-params
+    :topic-key :update-integration-listener-response}
+  [params]
+  (let [{:keys [integration-id listener-id name active properties callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-integration-listener-request integration-id listener-id name active properties))
+        response-error (if-not (= status 200) (e/failed-to-update-integration-listener-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error response-error
@@ -3205,6 +3433,9 @@
                                        :get-tenant get-tenant
                                        :get-platform-roles get-platform-roles
                                        :get-integrations get-integrations
+                                       :get-integration get-integration
+                                       :get-integration-listeners get-integration-listeners
+                                       :get-integration-listener get-integration-listener
                                        :get-capacity-rules get-capacity-rules
                                        :get-reasons get-reasons
                                        :get-reason get-reason
@@ -3243,6 +3474,8 @@
                                        :create-dispatch-mapping create-dispatch-mapping
                                        :create-sla create-sla
                                        :create-sla-version create-sla-version
+                                       :create-integration create-integration
+                                       :create-integration-listener create-integration-listener
                                        :get-transfer-lists get-transfer-lists
                                        :get-transfer-list get-transfer-list
                                        :create-transfer-list create-transfer-list
@@ -3273,6 +3506,8 @@
                                        :update-flow update-flow
                                        :update-disposition update-disposition
                                        :update-dispatch-mapping update-dispatch-mapping
+                                       :update-integration update-integration
+                                       :update-integration-listener update-integration-listener
                                       ;;hygen-insert-above-update
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template

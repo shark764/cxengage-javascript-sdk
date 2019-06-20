@@ -1,6 +1,6 @@
 {
   "name": "cxengage-javascript-sdk",
-  "version": "8.54.6",
+  "version": "8.55.0",
   "description": "https://media.giphy.com/media/rV2YEYBkARvWw/giphy.gif",
   "main": "release/main.js",
   "repository": {
@@ -11,6 +11,6 @@
     "registry": "http://nexus.cxengagelabs.net/content/repositories/npm-internal/"
   },
   "dependencies": {
-    "serenova-js-utils": "^1.6.6"
+    "serenova-js-utils": "^1.6.11"
   }
 }

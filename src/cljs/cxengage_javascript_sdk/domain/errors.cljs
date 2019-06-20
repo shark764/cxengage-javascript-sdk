@@ -2306,7 +2306,7 @@
    :level "error"
    :message "Failed to update SLA."})
 
-(defn failed-to-get-tenant-err
+(defn failed-to-get-tenant-data-err
   "**Error Code:** 11106
    Message: Failed to get tenant information.
      
@@ -2348,6 +2348,106 @@
    :data {:api-response data}
    :level "error"
    :message "Failed to update transfer list."})
+
+(defn failed-to-get-integration-err
+  "**Error Code:** 11109
+  Message: Failed to get integration information.
+    
+  This error is usually due to an unexpected status code returned from the API.
+  Validate that the value passed into the sdk function was correct.
+    
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11109
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get integration information"})
+
+(defn failed-to-create-integration-err
+  "**Error Code:** 11110
+    Message: Failed to create integration.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11110
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to create integration."})
+
+(defn failed-to-update-integration-err
+  "**Error Code:** 11111
+    Message: Failed to update integration.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11111
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to update integration."})
+
+(defn failed-to-get-integration-listeners-err
+  "**Error Code:** 11112
+    Message: Failed to get listeners list.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11112
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get listeners list."})
+
+(defn failed-to-get-integration-listener-err
+  "**Error Code:** 11113
+  Message: Failed to get listener information.
+    
+  This error is usually due to an unexpected status code returned from the API.
+  Validate that the value passed into the sdk function was correct.
+    
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11113
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get listener information"})
+
+(defn failed-to-create-integration-listener-err
+  "**Error Code:** 11114
+    Message: Failed to create listener.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11114
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to create listener."})
+
+(defn failed-to-update-integration-listener-err
+  "**Error Code:** 11115
+    Message: Failed to update listener.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11115
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to update listener."})
 
 ;;hygen-insert-before-11000s
 

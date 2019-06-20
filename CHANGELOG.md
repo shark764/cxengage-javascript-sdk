@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.55.0] - 2019-06-27
+### Added
+- CXV1-18500 - Added new functions to get, create and update Integrations.
+
 ## [8.54.6] - 2019-06-11
 ### Fixed
 - CXV1-18608 - Platform admins users are unable to add permissions to a shared role when in a child tenant on config-ui 2.
@@ -13,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CXV1-17952 - Contact Attribute Allows saving the name with a / but we can not save to it.
 
 ## [8.54.4] - 2019-05-16
-- CXV1-17326 - Hotfix for 1003 error when the name key-value pair does not come on an email or it is null (to, cc and bcc) 
+- CXV1-17326 - Hotfix for 1003 error when the name key-value pair does not come on an email or it is null (to, cc and bcc)
 
 ## [8.54.3] - 2019-05-07
 ### Added
