@@ -114,7 +114,6 @@
                  :create-sla-version-response "cxengage/entities/create-sla-version-response"
                  :get-roles-response "cxengage/entities/get-roles-response"
                  :get-role-response "cxengage/entities/get-role-response"
-                 :get-tenant-response "cxengage/entities/get-tenant-response"
                  :get-reason-response "cxengage/entities/get-reason-response"
                  :get-reason-list-response "cxengage/entities/get-reason-list-response"
                  :get-message-templates-response "cxengage/entities/get-message-templates-response"
@@ -162,6 +161,10 @@
                  :get-transfer-list-response "cxengage/entities/get-transfer-list-response"
                  :create-transfer-list-response "cxengage/entities/create-transfer-list-response"
                  :update-transfer-list-response "cxengage/entities/update-transfer-list-response"
+                 :get-tenant-response "cxengage/entities/get-tenant-response"
+                 :get-tenants-response "cxengage/entities/get-tenants-response"
+                 :create-tenant-response "cxengage/entities/create-tenant-response"
+                 :update-tenant-response "cxengage/entities/update-tenant-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting

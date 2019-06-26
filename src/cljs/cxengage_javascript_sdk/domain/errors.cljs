@@ -2449,6 +2449,49 @@
     :level "error"
     :message "Failed to update listener."})
 
+(defn failed-to-update-tenant-err
+  "**Error Code:** 11116
+  Message: failed to update tenants list.
+  
+  This error is usually due to an  unexpected status code returned  from  the API.
+  
+  **Solution:**  Check network tab for additional error  information."
+  [data]
+  {:code 11116
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "failed to update tenants list."})
+
+(defn failed-to-create-tenant-err
+  "**Error Code:** 11117
+   Message: Failed to create tenants list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11117
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create tenants list."})
+
+(defn failed-to-get-tenants-err
+  "**Error Code:** 11118
+   Message: Failed to get tenants information.
+     
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+     
+   **Solution:** Check your browsers dev tools console for additional error information"
+   [data]
+   {:code 11118
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get tenants information"})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

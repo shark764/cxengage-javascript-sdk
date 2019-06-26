@@ -239,7 +239,7 @@
       (p/publish {:topics topic
                   :error (e/failed-to-get-outbound-identifiers-err entity-response)
                   :callback callback}))))
-
+;;----flows---;
 (s/def ::get-flows-params
   (s/keys :req-un []
           :opt-un [::specs/callback ::specs/include-notations]))
@@ -1039,9 +1039,39 @@
                            (e/failed-to-get-role-err entity-response))
                   :callback callback})))
 
+(s/def ::get-tenants-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-tenants
+  "``` javascript
+  CxEngage.entities.getTenants({
+  });
+  ```
+  Retrieves single Tenant information given parameter tenantId
+  as a unique key
+  Topic: cxengage/entities/get-tenants-response
+  Possible Errors:
+  - [Entities: 11118](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-tenants-err)"
+
+  {:validation ::get-tenants-params
+   :topic-key :get-tenants-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        tenant-id (state/get-active-tenant-id)
+        tenant-response (a/<! (rest/get-tenant-request tenant-id))
+        region-id (get-in tenant-response [:api-response :result :region-id])
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-tenants-request region-id))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-tenants-err entity-response))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error response-error
+                  :callback callback})))
+
+
 (s/def ::get-tenant-params
   (s/keys :req-un [::specs/tenant-id]
-          :opt-un [::specs/callback]))
+          :opt-un []))
 
 (def-sdk-fn get-tenant
   "``` javascript
@@ -1049,22 +1079,26 @@
     tenantId: {{uuid}}
   });
   ```
-  Retrieves single Tenant information given parameter tenantId
+  Retrieves single tenant given parameter tenantId
   as a unique key
-  Topic: cxengage/entities/get-tenant-response
-  Possible Errors:
-  - [Entities: 11106](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-tenant-data-err)"
 
+  Topic: cxengage/entities/get-tenant-response
+
+  Possible Errors:
+
+  - [Entities: 2010](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-tenant-err)"
   {:validation ::get-tenant-params
-   :topic-key :get-tenant-response}
+    :topic-key :get-tenant-response}
   [params]
   (let [{:keys [callback topic tenant-id]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/get-tenant-request tenant-id))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-tenant-data-err entity-response))]
       (p/publish {:topics topic
                   :response api-response
-                  :error response-error
+                  :error (if-not (= status 200)
+                            (e/failed-to-get-tenant-err entity-response))
                   :callback callback})))
+
 
 (s/def ::get-reason-params
   (s/keys :req-un [::specs/reason-id]
@@ -1124,7 +1158,7 @@
                   :error (if-not (= status 200)
                             (e/failed-to-get-reason-list-err entity-response))
                   :callback callback})))
-
+;;;----flow------;;
 (s/def ::get-flow-params
   (s/keys :req-un [::specs/flow-id]
           :opt-un []))
@@ -2334,6 +2368,42 @@
                 :callback callback})))
 
 ;;--------------------------------------------------------------------------- ;;
+;; Create a tenants list
+;;--------------------------------------------------------------------------- ;;
+
+(s/def ::create-tenant-params
+  (s/keys :req-un [ ::specs/name ::specs/active]
+          :opt-un [ ::specs/callback ::specs/description]))
+
+(def-sdk-fn create-tenant
+  "``` javascript
+  CxEngage.entities.createTenant({
+    name: {{string}} (required),
+    description: {{string}} (optional),
+    active: {{boolean}} (required)
+  });
+  ```
+  Calls rest/create-tenant-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-tenant-response
+
+  Possible Errors:
+
+  - [Entities: 11117](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-tenant-err)"
+  {:validation ::create-tenant-params
+   :topic-key :create-tenant-response}
+  [params]
+  (let [{:keys [callback topic name description active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-tenant-request name description active))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-tenant-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+
+;;--------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
 ;; -------------------------------------------------------------------------- ;;
 
@@ -2562,11 +2632,8 @@
   ```
   Creates new single Integration Listener by calling rest/update-integration-listener-request
   with the provided data for current tenant.
-
   Topic: cxengage/entities/update-integration-listener-response
-
   Possible Errors:
-
   - [Entities: 11115](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-integration-listener-err)"
   {:validation ::update-integration-listener-params
     :topic-key :update-integration-listener-response}
@@ -2579,9 +2646,38 @@
                 :error response-error
                 :callback callback})))
 
-(s/def ::create-outbound-identifier-params
-  (s/keys :req-un [::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type]
-          :opt-un [::specs/description]))
+;;----------------------------------------------------------;;
+;;Update a tenant
+;;----------------------------------------------------------;;
+
+(s/def ::update-tenant-params
+  (s/keys :req-un [ ::specs/tenant-id]
+          :opt-un [ ::specs/callback ::specs/name ::specs/active ::specs/description]))
+
+(def-sdk-fn update-tenant
+  "``` javascript
+  CxEngage.entities.updateTenant({
+    tenantId: {{uuid}} (required)
+    name: {{string}} (optional),
+    description: {{string}} (optional),
+    active: {{boolean}} (optional)
+  });
+  ```
+  Calls rest/update-tenant-request
+  with the provided data for current tenant.
+  Topic: cxengage/entities/update-tenant-response
+  Possible Errors:
+  - [Entities: 11116](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-tenant-err)"
+  {:validation ::update-tenant-params
+   :topic-key :update-tenant-response}
+  [params]
+  (let [{:keys [callback tenant-id topic name description active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-tenant-request tenant-id name description active))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-tenant-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 (def-sdk-fn create-outbound-identifier
   "``` javascript
@@ -3430,7 +3526,6 @@
                                        :get-sla get-sla
                                        :get-roles get-roles
                                        :get-role get-role
-                                       :get-tenant get-tenant
                                        :get-platform-roles get-platform-roles
                                        :get-integrations get-integrations
                                        :get-integration get-integration
@@ -3455,6 +3550,8 @@
                                        :get-disposition get-disposition
                                        :get-dispatch-mappings get-dispatch-mappings
                                        :get-dispatch-mapping get-dispatch-mapping
+                                       :get-tenants get-tenants
+                                       :get-tenant get-tenant
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
@@ -3480,6 +3577,8 @@
                                        :get-transfer-list get-transfer-list
                                        :create-transfer-list create-transfer-list
                                        :update-transfer-list update-transfer-list
+                                       :create-tenant create-tenant
+                                       :update-tenant update-tenant
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
