@@ -1418,7 +1418,6 @@
                   :error (e/failed-to-get-capacity-rules-err entity-response)
                   :callback callback}))))
 
-
 (def-sdk-fn get-integrations
   "``` javascript
   CxEngage.entities.getIntegrations();
@@ -1581,6 +1580,30 @@
       (p/publish {:topics topic
                   :error (e/failed-to-get-message-templates-err entity-response)
                   :callback callback}))))
+
+(s/def ::get-message-template-params
+  (s/keys :req-un [::specs/message-template-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-message-template
+  "``` javascript
+  CxEngage.entities.getMessageTemplate();
+  ```
+  Retrieves specific message template data for current logged in tenant
+
+  Possible Errors:
+
+  - [Entities: 11123](/cxengage-javascript-sdk.domain.errors.html#failed-to-get-message-template-err)"
+  {:validation ::get-message-template-params
+   :topic-key :get-message-template-response}
+  [params]
+  (let [{:keys [callback topic message-template-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["message-templates" message-template-id]))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-message-template-err entity-response))]
+        (p/publish {:topics topic
+                    :response api-response
+                    :error response-error
+                    :callback callback})))
 
 (def-sdk-fn get-platform-roles
   "``` javascript
@@ -2495,6 +2518,39 @@
                 :error response-error
                 :callback callback})))
 
+(s/def ::create-message-template-params
+  (s/keys :req-un [ ::specs/name ::specs/channels ::specs/template-text-type ::specs/template ::specs/active]
+          :opt-un [ ::specs/callback ::specs/description]))
+
+(def-sdk-fn create-message-template
+  "``` javascript
+  CxEngage.entities.createMessageTemplate({
+    name: {{string}} (required),
+    description: {{string}} (optional),
+    channels: {{array}} (required),
+    templateTextType: {{string}} (required),
+    template:{{string}} (required),
+    active: {{boolean}} (required),
+  });
+  ```
+  Calls rest/create-message-template-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-message-template-response
+
+  Possible Errors:
+
+  - [Entities: 11124](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-message-template-err)"
+  {:validation ::create-message-template-params
+   :topic-key :create-message-template-response}
+  [params]
+  (let [{:keys [callback topic name description channels template-text-type template active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-message-template-request name description channels template-text-type template active))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-message-template-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 ;;--------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
@@ -2647,12 +2703,12 @@
 
 (s/def ::update-transfer-list-params
   (s/keys :req-un [ ::specs/transfer-list-id]
-          :opt-un [ ::specs/callback ::specs/name ::specs/active ::specs/description ::specs/endpoints]))
+          :opt-un [ ::specs/callback ::specs/name ::specs/description ::specs/active ::specs/endpoints]))
 
 (def-sdk-fn update-transfer-list
   "``` javascript
   CxEngage.entities.updateTransferList({
-    transferListId: {{uuid}} (required)
+    transferListId: {{uuid}} (required),
     name: {{string}} (optional),
     description: {{string}} (optional),
     active: {{boolean}} (optional),
@@ -2696,7 +2752,7 @@
 
   Topic: cxengage/entities/update-integration-response
   Possible Errors:
-
+  
   - [Entities: 11111](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-integration-err)"
   {:validation ::update-integration-params
     :topic-key :update-integration-response}
@@ -2739,6 +2795,40 @@
                 :error response-error
                 :callback callback})))
 
+(s/def ::update-message-template-params
+  (s/keys :req-un [ ::specs/message-template-id]
+          :opt-un [ ::specs/callback ::specs/name ::specs/description ::specs/channels ::specs/template-text-type ::specs/template ::specs/active]))
+
+(def-sdk-fn update-message-template
+  "``` javascript
+  CxEngage.entities.updateMessageTemplate({
+    messageTemplateId: {{uuid}} (required),
+    name: {{string}} (optional),
+    description: {{string}} (optional),
+    channels: {{array}} (optional),
+    templateTextType: {{string}} (optional),
+    template:{{string}} (optional),
+    active: {{boolean}} (optional),
+  });
+  ```
+  Calls rest/update-message-template-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-message-template-response
+  Possible Errors:
+
+  - [Entities: 11125](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-message-template-err)"
+  {:validation ::update-message-template-params
+   :topic-key :update-message-template-response}
+  [params]
+  (let [{:keys [callback message-template-id topic name description channels template-text-type template active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-message-template-request message-template-id name description channels template-text-type template active))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-message-template-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
 ;;----------------------------------------------------------;;
 ;;Update a tenant
 ;;----------------------------------------------------------;;
@@ -2771,6 +2861,9 @@
                 :response api-response
                 :error response-error
                 :callback callback})))
+(s/def ::create-outbound-identifier-params
+  (s/keys :req-un [::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type]
+          :opt-un [::specs/description]))
 
 (def-sdk-fn create-outbound-identifier
   "``` javascript
@@ -3635,7 +3728,6 @@
                                        :get-data-access-report get-data-access-report
                                        :get-data-access-member get-data-access-member
                                        :get-entity get-entity
-                                       :get-message-templates get-message-templates
                                        :get-platform-user get-platform-user
                                        :get-platform-user-email get-platform-user-email
                                        :get-identity-providers get-identity-providers
@@ -3676,6 +3768,10 @@
                                        :update-transfer-list update-transfer-list
                                        :create-tenant create-tenant
                                        :update-tenant update-tenant
+                                       :get-message-templates get-message-templates
+                                       :get-message-template get-message-template
+                                       :create-message-template create-message-template
+                                       :update-message-template update-message-template
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
