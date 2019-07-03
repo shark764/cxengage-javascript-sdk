@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.56.0] - 2019-06-21
+### Added
+-CXV1-18407 - Added tenants call to config-ui 2.
+
 ## [8.55.0] - 2019-06-27
 ### Added
 - CXV1-18500 - Added new functions to get, create and update Integrations.
