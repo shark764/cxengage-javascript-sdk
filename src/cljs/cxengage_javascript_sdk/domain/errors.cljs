@@ -274,6 +274,20 @@
    :level "error"
    :message "Failed to retrieve user's tenant details. The API returned an error."})
 
+(defn failed-to-set-presence-state-err
+  "**Error Code:** 2013
+   Message: Failed to set user presence state. The API returned an error.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 2013
+   :context :session
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to set user presence state. The API returned an error."})
+
 (defn login-failed-token-request-err
   "**Error Code:** 3000
    Message: Login attempt failed. Unable to retrieve token.

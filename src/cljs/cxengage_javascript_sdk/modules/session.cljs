@@ -64,7 +64,7 @@
                                 reason-info (assoc :reason reason
                                                    :reason-id reason-id
                                                    :reason-list-id reason-list-id))
-            resp (a/<! (rest/change-state-request change-state-body))
+            resp (a/<! (rest/change-state-request change-state-body nil))
             {:keys [status api-response]} resp
             new-state-data (:result api-response)]
         (if (= status 200)
@@ -212,13 +212,15 @@
 
 (s/def ::set-direction-spec
   (s/keys :req-un [::specs/direction]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/callback ::specs/agent-id ::specs/session-id]))
 
 (def-sdk-fn set-direction
   "
   ``` javascript
   CxEngage.session.setDirection({
     direction: {{'inbound' / 'outbound' / 'agent-initiated'}}
+    agentId: {{ uuid }} (Optional)
+    sessionId: {{ uuid }} (Optional)
   });
   ```
 
@@ -231,6 +233,9 @@
   Please refer to our [documentation](https://docs.cxengage.net/Help/Content/Skylight/Tutorials/SkylightCRMNavigation.htm?Highlight=direction) for a detailed description of the differences
   between each direction.
 
+  This function will receive agentId and sessionId from Config-UI when changing direction
+  from Agent State Monitoring.
+
   Possible Errors:
 
   - [Session: 2008](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-set-direction-err)
@@ -238,18 +243,66 @@
   {:validation ::set-direction-spec
    :topic-key :set-direction-response}
   [params]
-  (let [{:keys [callback topic direction]} params
-        resp (a/<! (rest/set-direction-request direction))
+  (let [{:keys [callback topic direction agent-id session-id]} params
+        resp (a/<! (rest/set-direction-request direction agent-id session-id))
         {:keys [status api-response]} resp
         direction-details {:direction direction
-                           :session-id (get-in api-response [:result :session-id])}]
-    (if (= status 200)
+                           :session-id (get-in api-response [:result :session-id])}
+        response-error (if-not (= status 200) (e/failed-to-set-direction-err resp))]
       (p/publish {:topics topic
                   :response direction-details
-                  :callback callback})
+                  :error response-error
+                  :callback callback})))
+
+(s/def ::set-presence-state-spec
+  (s/keys :req-un [::specs/session-id ::specs/state]
+          :opt-un [::specs/callback ::specs/agent-id ::specs/reason ::specs/reason-id ::specs/reason-list-id]))
+
+(def-sdk-fn set-presence-state
+  "
+  ``` javascript
+  CxEngage.session.setPresenceState({
+    agentId: {{ uuid }} (Optional),
+    sessionId: {{ uuid }},
+    state: {{'ready' / 'notready' / 'offline'}},
+    reason: {{string}} (Optional),
+    reasonId: {{uuid}} (Optional),
+    reasonListId: {{uuid}} (Optional)
+  });
+  ```
+
+  Used to set an Agent's presence state to one of three available options:
+
+  - ready
+  - notready
+  - offline
+
+  Please refer to our [documentation](https://docs.cxengage.net/Help/Content/Skylight/Tutorials/SkylightCRMNavigation.htm?Highlight=state) for a detailed description of the differences
+  between each presence state.
+  This function will receive agentId and sessionId from Config-UI when changing state
+  from Agent State Monitoring.
+
+  Possible Errors:
+
+  - [Session: 2013](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-set-presence-state-err)
+  "
+  {:validation ::set-presence-state-spec
+   :topic-key :set-presence-state-response}
+  [params]
+  (let [{:keys [callback topic agent-id session-id state reason reason-id reason-list-id]} params
+        change-state-body {:session-id session-id
+                           :state state
+                           :reason reason
+                           :reason-id reason-id
+                           :reason-list-id reason-list-id}
+        resp (a/<! (rest/change-state-request change-state-body agent-id))
+        {:keys [status api-response]} resp
+        state-details (:result api-response)
+        response-error (if-not (= status 200) (e/failed-to-set-presence-state-err resp))]
       (p/publish {:topics topic
-                  :error (e/failed-to-set-direction-err resp)
-                  :callback callback}))))
+                  :response state-details
+                  :error response-error
+                  :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.session.goReady({ extensionValue: "{{uuid/extension}}" });
@@ -258,7 +311,8 @@
 (defn- go-ready* [topic callback]
   (go (let [session-id (state/get-session-id)
             resp (a/<! (rest/change-state-request {:session-id session-id
-                                                   :state "ready"}))
+                                                   :state "ready"}
+                                                  nil))
             {:keys [status api-response]} resp
             new-state-data (:result api-response)]
         (if (= status 200)
@@ -551,6 +605,7 @@
                                        :go-ready go-ready
                                        :go-not-ready go-not-ready
                                        :set-direction set-direction
+                                       :set-presence-state set-presence-state
                                        :get-active-user-id get-active-user-id
                                        :get-active-tenant-id get-active-tenant-id
                                        :get-token get-token

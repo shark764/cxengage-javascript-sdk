@@ -134,13 +134,13 @@
                        (goog/get "height" "800")
                        (js/parseInt)
                        (resize width))))))
+      (ih/publish {:topics topic
+                   :response "true"
+                   :callback callback})
+      (catch js/Object e
         (ih/publish {:topics topic
-                     :response "true"
-                     :callback callback})
-        (catch js/Object e
-          (ih/publish {:topics topic
-                       :error (error/failed-to-set-zendesk-dimensions-err e)
-                       :callback callback})))))
+                     :error (error/failed-to-set-zendesk-dimensions-err e)
+                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.zendesk.assignRelatedTo({
