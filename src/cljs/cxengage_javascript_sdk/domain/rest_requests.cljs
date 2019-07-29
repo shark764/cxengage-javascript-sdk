@@ -696,6 +696,12 @@
                      :url get-url}]
     (api/api-request get-request)))
 
+(defn get-timezones-request []
+  (let [url (iu/api-url "timezones")
+        request {:method "get"
+                 :url url}]
+    (api/api-request request)))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; Lists
 ;;--------------------------------------------------------------------------- ;;

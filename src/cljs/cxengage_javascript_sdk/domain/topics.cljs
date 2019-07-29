@@ -166,6 +166,9 @@
                  :create-tenant-response "cxengage/entities/create-tenant-response"
                  :update-tenant-response "cxengage/entities/update-tenant-response"
                  :get-api-keys-response "cxengage/entities/get-api-keys-response"
+                 :get-business-hours-response "cxengage/entities/get-business-hours-response"
+                 :get-business-hour-response "cxengage/entities/get-business-hour-response"
+                 :get-timezones-response "cxengage/entities/get-timezones-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting

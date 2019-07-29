@@ -2499,7 +2499,6 @@
 
   This error is usually due to an unexpected status code returned from the API.
   Validate that the value passed into the sdk function was correct.
-
   **Solution:** Check your browsers dev tools console for additional error information"
   [data]
   {:code 11119
@@ -2507,7 +2506,47 @@
    :data {api-response data}
    :level "error"
    :message "Failed to get apiKeys information"})
+   
+(defn failed-to-get-business-hours-err
+  "**Error Code:** 11120
+  Message: Failed to get Business Hours information.
+          
+  This error is usually due to an unexpected status code returned from the API.
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11120
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get Business Hours information"})
+           
+(defn failed-to-get-business-hour-err
+  "**Error Code:** 11121
+  Message: Failed to get Business Hour information.
+          
+  This error is usually due to an unexpected status code returned from the API.
+          
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11121
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get Business Hour information"})
 
+(defn failed-to-get-timezones-err
+  "**Error Code:** 11122
+  Message: Failed to get timezones information.
+          
+  This error is usually due to an unexpected status code returned from the API.
+          
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11122
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get timezones information"})
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

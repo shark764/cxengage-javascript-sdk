@@ -1697,6 +1697,77 @@
                 :error error
                 :callback callback})))
 
+(def-sdk-fn get-business-hours
+  "``` javascript
+  CxEngage.entities.getBusinessHours();
+  ```
+  Retrieves Business Hours configuration for current logged in tenant
+  Topic: cxengage/entities/get-business-hours-response
+  Possible Errors:
+  - [Entities: 11120](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-business-hours-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-business-hours-response}
+  [params]
+  (let [{:keys [callback topic]} params
+    {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "business-hour"))]
+    (if (= status 200)
+      (p/publish {:topics topic
+        :response api-response
+        :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-business-hours-err entity-response)
+                  :callback callback}))))
+
+(s/def ::get-business-hour-params
+  (s/keys :req-un [::specs/business-hour-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-business-hour
+  "``` javascript
+  CxEngage.entities.getBusinessHour({
+    businessHourId: {{uuid}}
+  });
+  ```
+  Retrieves single Business Hour rule given parameter businessHourId
+  as a unique key
+
+  Topic: cxengage/entities/get-business-hour-response
+
+  Possible Errors:
+
+  - [Entities: 11121](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-business-hour-err)"
+  {:validation ::get-business-hour-params
+    :topic-key :get-business-hour-response}
+  [params]
+  (let [{:keys [callback topic business-hour-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["business-hours" business-hour-id]))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error (if-not (= status 200)
+                            (e/failed-to-get-business-hour-err entity-response))
+                  :callback callback})))
+
+(def-sdk-fn get-timezones
+  "``` javascript
+  CxEngage.entities.getTimezones();
+  ```
+  Retrieves timezones that CxEngage platform can handle
+  Topic: cxengage/entities/get-timezones-response
+  Possible Errors:
+  - [Entities: 11122](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-timezones)"
+  {:validation ::get-entities-params
+   :topic-key :get-timezones-response}
+  [params]
+  (let [{:keys [callback topic]} params
+    {:keys [status api-response] :as entity-response} (a/<! (rest/get-timezones-request))]
+    (if (= status 200)
+      (p/publish {:topics topic
+        :response api-response
+        :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-timezones-err entity-response)
+                  :callback callback}))))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; POST Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -3575,6 +3646,9 @@
                                        :get-tenants get-tenants
                                        :get-tenant get-tenant
                                        :get-api-keys get-api-keys
+                                       :get-business-hours get-business-hours
+                                       :get-business-hour get-business-hour
+                                       :get-timezones get-timezones
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.58.0] - 2019-07-29
+### Added
+- CXV1-18496 - Added functions to get business hours and timezones
+
 ## [8.57.0] - 2019-07-29
 ## Added
 - CXV1-18680 - Config 2 | API Keys - Main list
