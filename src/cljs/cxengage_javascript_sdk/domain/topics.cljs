@@ -165,6 +165,7 @@
                  :get-tenants-response "cxengage/entities/get-tenants-response"
                  :create-tenant-response "cxengage/entities/create-tenant-response"
                  :update-tenant-response "cxengage/entities/update-tenant-response"
+                 :get-api-keys-response "cxengage/entities/get-api-keys-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting

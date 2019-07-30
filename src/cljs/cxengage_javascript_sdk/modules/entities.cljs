@@ -487,6 +487,28 @@
                   :error (e/failed-to-get-skills-err skills-response)
                   :callback callback}))))
 
+(def-sdk-fn get-api-keys
+  "``` javascript
+  CxEngage.entities.getApikeys();
+  ```
+  Retrieves available Api Keys configured for current logged in tenant
+
+  Topic: cxengage/entities/get-api-keys-response
+
+  Possible Errors:
+
+  - [Entities: 11119](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-api-keys-err)"
+  {:validation ::get-entities-params
+   :topic-key :get-api-keys-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["api-keys"]))]
+    (p/publish {:topics topic
+                  :response api-response
+                  :error (if-not (= status 200)
+                           (e/failed-to-get-api-keys-err entity-response))
+                  :callback callback})))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.downloadList({
 ;;   listId: {{uuid}}
@@ -3552,6 +3574,7 @@
                                        :get-dispatch-mapping get-dispatch-mapping
                                        :get-tenants get-tenants
                                        :get-tenant get-tenant
+                                       :get-api-keys get-api-keys
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item

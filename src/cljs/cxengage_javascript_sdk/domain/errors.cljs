@@ -2492,6 +2492,22 @@
     :level "error"
     :message "Failed to get tenants information"})
 
+(defn failed-to-get-api-keys-err
+  "**Error Code:** 11119
+
+  Message: Failed to get apiKeys information.
+
+  This error is usually due to an unexpected status code returned from the API.
+  Validate that the value passed into the sdk function was correct.
+
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11119
+   :context :entities
+   :data {api-response data}
+   :level "error"
+   :message "Failed to get apiKeys information"})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

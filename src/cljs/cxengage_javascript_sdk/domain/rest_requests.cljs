@@ -1334,3 +1334,4 @@
                                     (not (nil? description))                      (assoc-in [:body :description] description)
                                     (not (nil? active))                           (assoc-in [:body :active] active))]                                     
     (api/api-request update-tenant-request)))
+
