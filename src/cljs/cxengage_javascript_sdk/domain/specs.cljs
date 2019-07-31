@@ -179,3 +179,4 @@
 (s/def ::width number?)
 (s/def ::wrapup string?)
 (s/def ::enable-indicator boolean?)
+(s/def ::business-hour-id id/valid-uuid?)
