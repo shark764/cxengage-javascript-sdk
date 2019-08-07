@@ -1770,7 +1770,7 @@
    :message "Failed to get user's outbound identifier lists."})
 
 (defn failed-to-get-entity-err
-  "**Error Code:** 11068
+  "**Error Code:** 11069
    Message: Failed to get entity.
    This error is usually due to an unexpected status code returned from the API.
    Validate that the values passed into the sdk function were correct.
@@ -1781,19 +1781,6 @@
    :data {:api-response data}
    :level "error"
    :message "Failed to get entity."})
-
-(defn failed-to-get-message-templates-err
-  "**Error Code:** 11068
-   Message: Failed to get message templates.
-   This error is usually due to an unexpected status code returned from the API.
-   Validate that the values passed into the sdk function were correct.
-   **Solution:** Check your browsers dev tools console for additional error information"
-  [data]
-  {:code 11070
-   :context :entities
-   :data {:api-response data}
-   :level "error"
-   :message "Failed to get message templates."})
 
 (defn failed-to-update-platform-user-err
   "**Error Code:** 11071
@@ -2494,9 +2481,7 @@
 
 (defn failed-to-get-api-keys-err
   "**Error Code:** 11119
-
   Message: Failed to get apiKeys information.
-
   This error is usually due to an unexpected status code returned from the API.
   Validate that the value passed into the sdk function was correct.
   **Solution:** Check your browsers dev tools console for additional error information"
@@ -2547,6 +2532,62 @@
     :data {:api-response data}
     :level "error"
     :message "Failed to get timezones information"})
+
+(defn failed-to-get-message-templates-err
+  "**Error Code:** 11070
+   Message: Failed to get message templates.
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the values passed into the sdk function were correct.
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11070
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get message templates."})
+
+(defn failed-to-get-message-template-err
+  "**Error Code:** 11123
+   Message: Failed to get message template.
+
+   This error is usually due to an unexpected status code returned from the API.
+   
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11123
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to get message template."})
+
+(defn failed-to-create-message-template-err
+  "**Error Code:** 11124
+   Message: Failed to create message template.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11124
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create message template."})
+
+(defn failed-to-update-message-template-err
+  "**Error Code:** 11125
+   Message: Failed to update message template.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11125
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update message template."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

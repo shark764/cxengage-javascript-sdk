@@ -180,3 +180,7 @@
 (s/def ::wrapup string?)
 (s/def ::enable-indicator boolean?)
 (s/def ::business-hour-id id/valid-uuid?)
+(s/def ::message-template-id ::uuid)
+(s/def ::channels vector?)
+(s/def ::template-text-type #{"plaintext" "html"})
+(s/def ::template string?)

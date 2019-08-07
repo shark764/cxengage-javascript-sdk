@@ -116,7 +116,6 @@
                  :get-role-response "cxengage/entities/get-role-response"
                  :get-reason-response "cxengage/entities/get-reason-response"
                  :get-reason-list-response "cxengage/entities/get-reason-list-response"
-                 :get-message-templates-response "cxengage/entities/get-message-templates-response"
                  :get-platform-roles-response "cxengage/entities/get-platform-roles-response"
                  :get-integrations-response "cxengage/entities/get-integrations-response"
                  :get-integration-response "cxengage/entities/get-integration-response"
@@ -169,6 +168,10 @@
                  :get-business-hours-response "cxengage/entities/get-business-hours-response"
                  :get-business-hour-response "cxengage/entities/get-business-hour-response"
                  :get-timezones-response "cxengage/entities/get-timezones-response"
+                 :get-message-templates-response "cxengage/entities/get-message-templates-response"
+                 :get-message-template-response "cxengage/entities/get-message-template-response"
+                 :create-message-template-response "cxengage/entities/create-message-template-response"
+                 :update-message-template-response "cxengage/entities/update-message-template-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting

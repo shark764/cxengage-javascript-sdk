@@ -1341,3 +1341,33 @@
                                     (not (nil? active))                           (assoc-in [:body :active] active))]                                     
     (api/api-request update-tenant-request)))
 
+;;--------------------------------------------------------------------------- ;;
+;; Message Templates
+;;--------------------------------------------------------------------------- ;;
+
+(defn create-message-template-request [name description channels template-text-type template active]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-message-template-request (cond-> {:method :post
+                                              :url (iu/api-url "tenants/:tenant-id/message-templates"
+                                                               {:tenant-id tenant-id})}
+                                          name                            (assoc-in [:body :name] name)
+                                          (not (nil? description))        (assoc-in [:body :description] description)
+                                          channels                        (assoc-in [:body :channels] channels)
+                                          template-text-type              (assoc-in [:body :type] template-text-type)
+                                          template                        (assoc-in [:body :template] template)
+                                          active                          (assoc-in [:body :active] active))]
+    (api/api-request create-message-template-request)))
+
+(defn update-message-template-request [message-template-id name description channels template-text-type template active]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-message-template-request (cond-> {:method :put
+                                              :url (iu/api-url "tenants/:tenant-id/message-templates/:message-template-id"
+                                                               {:tenant-id tenant-id 
+                                                               :message-template-id message-template-id})}
+                                          (not (nil? name))                             (assoc-in [:body :name] name)
+                                          (not (nil? description))                      (assoc-in [:body :description] description)
+                                          (not (nil? channels))                         (assoc-in [:body :channels] channels)
+                                          (not (nil? template-text-type))               (assoc-in [:body :type] template-text-type)
+                                          (not (nil? template))                         (assoc-in [:body :template] template)
+                                          (not (nil? active))                           (assoc-in [:body :active] active))]
+    (api/api-request update-message-template-request)))
