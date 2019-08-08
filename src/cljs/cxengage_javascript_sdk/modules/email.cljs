@@ -283,8 +283,8 @@
                           :metadata {}
                           :id interaction-id}
         interaction-body (merge interaction-body (if flow-id
-                            {:flow-id flow-id}
-                            {}))
+                                                  {:flow-id flow-id}
+                                                  {}))
         {:keys [api-response status] :as interaction-response} (a/<! (rest/create-interaction-request interaction-body))]
     (if (= status 200)
       (p/publish {:topics topic

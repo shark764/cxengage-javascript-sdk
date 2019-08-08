@@ -13,11 +13,13 @@
                  ;; Session Topics
                  :active-tenant-set "cxengage/session/set-active-tenant-response"
                  :config-response "cxengage/session/config-details"
+                 :set-presence-state-response "cxengage/session/set-presence-state-response"
                  :presence-state-changed "cxengage/session/state-change-response"
                  :presence-state-change-request-acknowledged "cxengage/session/state-change-request-acknowledged"
                  :presence-heartbeats-response "cxengage/session/heartbeat-response"
                  :session-started "cxengage/session/started"
                  :set-direction-response "cxengage/session/set-direction-response"
+                 :direction-changed "cxengage/session/direction-change-response"
                  :extension-list "cxengage/session/extension-list"
                  :tenant-list "cxengage/session/tenant-list"
                  :session-ended "cxengage/session/ended"

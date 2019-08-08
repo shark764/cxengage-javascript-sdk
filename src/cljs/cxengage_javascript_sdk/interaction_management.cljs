@@ -127,13 +127,17 @@
   (state/set-user-session-state! message)
   (if (not= (:state message) "offline")
     (p/publish {:topics (topics/get-topic :presence-state-changed)
-                :response (select-keys message [:state :available-states :direction :reason :reason-id :reason-list-id])})
+                :response (select-keys message [:state :available-states :direction :reason :reason-id :reason-list-id :supervisor-id :supervisor-name])})
     (p/publish {:topics (topics/get-topic :session-ended)
-                :response true})))
+                :response (select-keys message [:state :supervisor-id :supervisor-name])})))
 
 (defn handle-work-initiated [message]
   (p/publish {:topics (topics/get-topic :work-initiated-received)
               :response message}))
+
+(defn handle-resource-direction-change [message]
+  (p/publish {:topics (topics/get-topic :direction-changed)
+              :response (select-keys message [:state :available-states :direction :supervisor-id :supervisor-name])}))
 
 (defn handle-work-rejected [message]
   (let [{:keys [interaction-id]} message]
@@ -420,6 +424,7 @@
                       :INTERACTIONS/TRANSFER_CANCELLED handle-transfer-cancelled
                       :INTERACTIONS/SCRIPT_RECEIVED handle-script-received
                       :SESSION/CHANGE_STATE_RESPONSE handle-resource-state-change
+                      :SESSION/CHANGE_DIRECTION_RESPONSE handle-resource-direction-change
                       :SESSION/START_SESSION_RESPONSE handle-session-start
                       :INTERACTIONS/RESOURCE_ADDED handle-resource-added
                       :INTERACTIONS/RESOURCE_REMOVED handle-resource-removed
@@ -501,6 +506,7 @@
                        (get-in cljsd-msg [:resource :session-id]))
         inferred-msg (case msg-type
                        "resource-state-change" (merge {:sdk-msg-type :SESSION/CHANGE_STATE_RESPONSE} cljsd-msg)
+                       "resource-direction-change" (merge {:sdk-msg-type :SESSION/CHANGE_DIRECTION_RESPONSE} cljsd-msg)
                        "work-offer" (merge {:sdk-msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
                        "send-script" (merge {:sdk-msg-type :INTERACTIONS/SCRIPT_RECEIVED} cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)

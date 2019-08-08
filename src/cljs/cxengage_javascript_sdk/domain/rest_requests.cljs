@@ -27,10 +27,11 @@
     (ajax/ajax-request request)
     (when-not callback response-channel)))
 
-(defn set-direction-request [direction]
+(defn set-direction-request [direction agent-id session-id]
   (let [tenant-id (state/get-active-tenant-id)
-        resource-id (state/get-active-user-id)
-        session-id (state/get-session-id)
+        initiator-id (state/get-active-user-id)
+        resource-id (or agent-id initiator-id)
+        session-id (or session-id (state/get-session-id))
         direction-request {:method :post
                            :url (iu/api-url
                                  "tenants/:tenant-id/presence/:resource-id/direction"
@@ -38,7 +39,7 @@
                                   :resource-id resource-id})
                            :body {:session-id session-id
                                   :direction direction
-                                  :initiator-id resource-id}}]
+                                  :initiator-id initiator-id}}]
     (api/api-request direction-request)))
 
 (defn get-messaging-interaction-history-request [interaction-id]
@@ -271,8 +272,8 @@
                        :retry-logic :retry-indefinitely}]
     (api/api-request heartbeat-req)))
 
-(defn change-state-request [change-state-body]
-  (let [resource-id (state/get-active-user-id)
+(defn change-state-request [change-state-body agent-id]
+  (let [resource-id (or agent-id (state/get-active-user-id))
         tenant-id (state/get-active-tenant-id)
         change-state-request {:method :post
                               :url (iu/api-url
@@ -1334,7 +1335,7 @@
 (defn update-tenant-request [tenant-id name description active status]
   (let [update-tenant-request (cond->   {:method :put
                                                 :url (iu/api-url "tenants/:tenant-id"
-                                                {:tenant-id tenant-id})}
+                                                      {:tenant-id tenant-id})}
       
                                     (not (nil? name))                             (assoc-in [:body :name] name)
                                     (not (nil? description))                      (assoc-in [:body :description] description)

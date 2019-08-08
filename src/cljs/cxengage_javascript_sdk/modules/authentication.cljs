@@ -38,7 +38,7 @@
       (let [session-id (state/get-session-id)
             change-state-body {:session-id session-id
                                :state "offline"}
-            resp (a/<! (rest/change-state-request change-state-body))
+            resp (a/<! (rest/change-state-request change-state-body nil))
             {:keys [status api-response]} resp
             new-state-data (:result api-response)]
         (if (= status 200)
