@@ -329,11 +329,12 @@
               :response message}))
 
 (defn handle-screen-pop [message]
-  (let [{:keys [pop-type new-window pop-uri]} message]
+  (let [{:keys [pop-type new-window size target-blank pop-uri]} message
+        target (if target-blank "_blank" "skylight-new-window")]
     (when (= pop-type "external-url") 
-      (if (= new-window "true")
-        (js/window.open pop-uri "targetWindow" (:width size) (:height size))
-        (js/window.open pop-uri (:width size) (:height size))))
+      (if new-window
+        (js/window.open pop-uri target (str "width=" (:width size) ",height=" (:height size)))
+        (js/window.open pop-uri target)))
     (p/publish {:topics (topics/get-topic :generic-screen-pop-received)
                 :response message})))
 
