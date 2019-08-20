@@ -1372,3 +1372,34 @@
                                           (not (nil? template))                         (assoc-in [:body :template] template)
                                           (not (nil? active))                           (assoc-in [:body :active] active))]
     (api/api-request update-message-template-request)))
+
+;;--------------------------------------------------------------------------- ;;
+;; Business Hours
+;;--------------------------------------------------------------------------- ;;
+
+(defn create-business-hour-request [name timezone time-minutes active description]
+      (let [tenant-id (state/get-active-tenant-id)
+            create-business-hour-request (cond->  {:method :post
+                                                    :url (iu/api-url "tenants/:tenant-id/business-hours"
+                                                                   {:tenant-id tenant-id})
+                                                    :body (merge {:tenant-id tenant-id
+                                                                  :name name
+                                                                  :active active
+                                                                  :timezone timezone}
+                                                                  time-minutes)}
+                                                   (not (nil? description)) (assoc-in [:body :description] description))]
+            (api/api-request create-business-hour-request)))
+
+(defn update-business-hour-request [business-hours-id name timezone time-minutes active description]
+      (let [tenant-id (state/get-active-tenant-id)
+            update-business-hour-request (cond-> {:method :put
+                                                  :url (iu/api-url "tenants/:tenant-id/business-hours/:business-hours-id"
+                                                            {:tenant-id tenant-id
+                                                            :business-hours-id business-hours-id})
+                                                  :body {:tenant-id tenant-id}}
+                                                  (not (nil? active)) (assoc-in [:body :active] active)
+                                                  (not (nil? timezone)) (assoc-in [:body :timezone] timezone)
+                                                  (not (nil? name)) (assoc-in [:body :name] name)
+                                                  (not (nil? description)) (assoc-in [:body :description] description)
+                                                  (not (nil? time-minutes)) (update :body merge time-minutes))]
+            (api/api-request update-business-hour-request)))
