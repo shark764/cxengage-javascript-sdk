@@ -40,7 +40,7 @@
 ;; -----------------------------------------------------------------------------------------------------------
 
 (def get-contact-happy-path-mock-api-response
-  {:api-response {:result {:id mock-contact-id
+  {:api-response {"result" {:id mock-contact-id
                            :attributes {:name "Ian Bishop"
                                         :mobile "+15554442222"
                                         :age 27}
@@ -51,7 +51,7 @@
    :status 200})
 
 (def get-contact-happy-path-mock-consumer-response
-  (get-in get-contact-happy-path-mock-api-response [:api-response :result]))
+  (get-in get-contact-happy-path-mock-api-response [:api-response "result"]))
 
 (deftest get-contact-test-1
   (testing "Contact module get-contact function -- happy path -- pubsub response mechanism"
@@ -121,7 +121,7 @@
 ;; -----------------------------------------------------------------------------------------------------------
 
 (def get-contacts-happy-path-mock-api-response
-  {:api-response {:result [{:id mock-contact-id
+  {:api-response {"result" [{:id mock-contact-id
                             :attributes {:name "Ian Bishop"
                                          :mobile "+15554442222"
                                          :age 27}
@@ -132,7 +132,7 @@
    :status 200})
 
 (def get-contacts-happy-path-mock-consumer-response
-  (get-in get-contacts-happy-path-mock-api-response [:api-response :result]))
+  (get-in get-contacts-happy-path-mock-api-response [:api-response "result"]))
 
 (deftest get-contacts-test-1
   (testing "Contact module get-contacts function -- happy path -- pubsub response mechanism"
@@ -199,7 +199,7 @@
 ;; -----------------------------------------------------------------------------------------------------------
 
 (def search-contacts-happy-path-mock-api-response
-  {:api-response {:result {:page 1
+  {:api-response {"result" {:page 1
                            :count 1
                            :totalPages 1
                            :results [{:id mock-contact-id
@@ -213,7 +213,7 @@
    :status 200})
 
 (def search-contacts-happy-path-mock-consumer-response
-  (get-in search-contacts-happy-path-mock-api-response [:api-response :result]))
+  (get-in search-contacts-happy-path-mock-api-response [:api-response "result"]))
 
 (deftest search-contacts-test-1
   (testing "Contact module search-contacts function -- happy path -- pubsub response mechanism"
@@ -284,16 +284,16 @@
 ;; -----------------------------------------------------------------------------------------------------------
 
 (def create-contact-happy-path-mock-api-response
-  {:api-response {:result {:id mock-contact-id
+  {:api-response {"result" {:id mock-contact-id
                            :attributes {:name "Serenova"}
                            :created mock-timestamp
                            :createdBy mock-user-id
                            :updated mock-timestamp
                            :updatedBy mock-user-id}}
    :status 200})
-
+ 
 (def create-contact-happy-path-mock-consumer-response
-  (get-in create-contact-happy-path-mock-api-response [:api-response :result]))
+  (get-in create-contact-happy-path-mock-api-response [:api-response "result"]))
 
 (deftest create-contact-test-1
   (testing "Contact module create-contact function -- happy path -- pubsub response mechanism"
@@ -364,7 +364,7 @@
 ;; -----------------------------------------------------------------------------------------------------------
 
 (def update-contact-happy-path-mock-api-response
-  {:api-response {:result {:id mock-contact-id
+  {:api-response {"result" {:id mock-contact-id
                            :attributes {:name "Serenova"}
                            :created mock-timestamp
                            :createdBy mock-user-id
@@ -373,7 +373,7 @@
    :status 200})
 
 (def update-contact-happy-path-mock-consumer-response
-  (get-in update-contact-happy-path-mock-api-response [:api-response :result]))
+  (get-in update-contact-happy-path-mock-api-response [:api-response "result"]))
 
 (deftest update-contact-test-1
   (testing "Contact module update-contact function -- happy path -- pubsub response mechanism"
@@ -527,7 +527,7 @@
 ;; -----------------------------------------------------------------------------------------------------------
 
 (def merge-contacts-happy-path-mock-api-response
-  {:api-response {:result {:id mock-contact-id
+  {:api-response {"result" {:id mock-contact-id
                            :attributes {:name "Serenova"}
                            :created mock-timestamp
                            :createdBy mock-user-id
@@ -536,7 +536,7 @@
    :status 200})
 
 (def merge-contacts-happy-path-mock-consumer-response
-  (get-in merge-contacts-happy-path-mock-api-response [:api-response :result]))
+  (get-in merge-contacts-happy-path-mock-api-response [:api-response "result"]))
 
 (deftest merge-contacts-test-1
   (testing "Contact module merge-contacts function -- happy path -- pubsub response mechanism"

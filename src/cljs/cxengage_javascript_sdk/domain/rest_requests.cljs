@@ -286,7 +286,7 @@
 (defn get-contact-request [contact-id]
   (let [tenant-id (state/get-active-tenant-id)
         get-contact-request {:method :get
-                             :preserve-casing? true
+                             :stringify-keys? true
                              :url (iu/api-url
                                    "tenants/:tenant-id/contacts/:contact-id"
                                    {:tenant-id tenant-id
@@ -296,7 +296,7 @@
 (defn get-contacts-request []
   (let [tenant-id (state/get-active-tenant-id)
         get-contact-request {:method :get
-                             :preserve-casing? true
+                             :stringify-keys? true
                              :url (iu/api-url
                                    "tenants/:tenant-id/contacts"
                                    {:tenant-id tenant-id})}]
@@ -305,7 +305,7 @@
 (defn search-contacts-request [query]
   (let [tenant-id (state/get-active-tenant-id)
         search-contact-request {:method :get
-                                :preserve-casing? true
+                                 :stringify-keys? true
                                 :url (iu/api-url
                                       (str "tenants/:tenant-id/contacts" query)
                                       {:tenant-id tenant-id})}]
@@ -314,7 +314,7 @@
 (defn create-contact-request [create-contact-body]
   (let [tenant-id (state/get-active-tenant-id)
         create-contact-request {:method :post
-                                :preserve-casing? true
+                                :stringify-keys? true
                                 :url (iu/api-url
                                       "tenants/:tenant-id/contacts"
                                       {:tenant-id tenant-id})
@@ -324,7 +324,7 @@
 (defn update-contact-request [contact-id update-contact-body]
   (let [tenant-id (state/get-active-tenant-id)
         update-contact-request {:method :put
-                                :preserve-casing? true
+                                :stringify-keys? true
                                 :url (iu/api-url
                                       "tenants/:tenant-id/contacts/:contact-id"
                                       {:tenant-id tenant-id
@@ -345,7 +345,7 @@
 (defn merge-contact-request [merge-contacts-body]
   (let [tenant-id (state/get-active-tenant-id)
         merge-contact-request {:method :post
-                               :preserve-casing? true
+                               :stringify-keys? true
                                :url (iu/api-url
                                      "tenants/:tenant-id/contacts/merge"
                                      {:tenant-id tenant-id})
