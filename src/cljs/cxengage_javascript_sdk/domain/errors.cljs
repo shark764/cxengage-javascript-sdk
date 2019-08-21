@@ -2507,45 +2507,73 @@
    :message "Failed to get apiKeys information"})
    
 (defn failed-to-get-business-hours-err
-  "**Error Code:** 11120
+  "**Error Code:** 11126
   Message: Failed to get Business Hours information.
           
   This error is usually due to an unexpected status code returned from the API.
   **Solution:** Check your browsers dev tools console for additional error information"
   [data]
-  {:code 11120
+  {:code 11126
    :context :entities
    :data {:api-response data}
    :level "error"
    :message "Failed to get Business Hours information"})
            
 (defn failed-to-get-business-hour-err
-  "**Error Code:** 11121
+  "**Error Code:** 11127
   Message: Failed to get Business Hour information.
           
   This error is usually due to an unexpected status code returned from the API.
           
   **Solution:** Check your browsers dev tools console for additional error information"
   [data]
-  {:code 11121
+  {:code 11127
     :context :entities
     :data {:api-response data}
     :level "error"
     :message "Failed to get Business Hour information"})
 
 (defn failed-to-get-timezones-err
-  "**Error Code:** 11122
+  "**Error Code:** 11128
   Message: Failed to get timezones information.
           
   This error is usually due to an unexpected status code returned from the API.
           
   **Solution:** Check your browsers dev tools console for additional error information"
   [data]
-  {:code 11122
+  {:code 11128
     :context :entities
     :data {:api-response data}
     :level "error"
     :message "Failed to get timezones information"})
+
+(defn failed-to-create-business-hour-err
+  "**Error Code:** 11129
+   Message: Failed to create Business Hours.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11129
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create Business Hours."})
+
+  (defn failed-to-update-business-hour-err
+  "**Error Code:** 11130
+    Message: Failed to update Business Hours.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11130
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to update Business Hours."})
 
 (defn failed-to-get-message-templates-err
   "**Error Code:** 11070

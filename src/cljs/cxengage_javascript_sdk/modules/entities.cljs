@@ -2551,6 +2551,53 @@
                 :response api-response
                 :error response-error
                 :callback callback})))
+                
+(s/def ::create-business-hour-params
+  (s/keys :req-un [::specs/name ::specs/timezone ::specs/time-minutes ::specs/active]
+          :opt-un [::specs/callback ::specs/description ::specs/exceptions]))
+
+(def-sdk-fn create-business-hour
+  "``` javascript
+  CxEngage.entities.createBusinessHour({
+    name: {{string}} (required),
+    timezone: {{string}} (required),
+    description: {{string}} (optional),
+    active: {{boolean}} (required),
+    timeMinutes: {
+      monStartTimeMinutes: {{integer}} (required, between 0 and 1440),
+      monEndTimeMinutes: {{integer}} (required, between 0 and 1440),
+      ...
+      sunStartTimeMinutes: {{integer}} (required, between 0 and 1440),
+      sunEndTimeMinutes: {{integer}} (required, between 0 and 1440),
+    } (required)
+    exceptions: [
+      {
+        isAllDay: {{boolean}} (required),
+        date: {{Date}} (required),
+        startTimeMinutes: {{integer}} (required, between 0 and 1440),
+        endTimeMinutes: {{integer}} (required, between 0 and 1440),
+      }
+    ] (optional)
+  });
+  ```
+  Calls rest/create-business-hour-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-business-hours-response
+
+  Possible Errors:
+
+  - [Entities: 11129](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-business-hours-err)"
+  {:validation ::create-business-hour-params
+    :topic-key :create-business-hour-response}
+  [params]
+  (let [{:keys [callback topic name description timezone time-minutes exceptions active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-business-hour-request name timezone time-minutes active description))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-business-hour-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 
 ;;--------------------------------------------------------------------------- ;;
 ;; PUT Entity Functions
@@ -2824,6 +2871,54 @@
   (let [{:keys [callback message-template-id topic name description channels template-text-type template active]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-message-template-request message-template-id name description channels template-text-type template active))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-message-template-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+(s/def ::update-business-hour-params
+  (s/keys :req-un [::specs/business-hour-id]
+          :opt-un [::specs/callback ::specs/description ::specs/exceptions ::specs/name ::specs/timezone ::specs/time-minutes ::specs/active]))
+
+(def-sdk-fn update-business-hour
+  "``` javascript
+  CxEngage.entities.updateBusinessHour({
+    businessHourId: {{string}} (required),
+    name: {{string}} (optional),
+    timezone: {{string}} (optional),
+    description: {{string}} (optional),
+    active: {{boolean}} (optional),
+    timeMinutes: {
+      monStartTimeMinutes: {{integer}} (required, between 0 and 1440),
+      monEndTimeMinutes: {{integer}} (required, between 0 and 1440),
+      ...
+      sunStartTimeMinutes: {{integer}} (required, between 0 and 1440),
+      sunEndTimeMinutes: {{integer}} (required, between 0 and 1440),
+    } (optional)
+    exceptions: [
+      {
+        isAllDay: {{boolean}} (required),
+        date: {{Date}} (required),
+        startTimeMinutes: {{integer}} (required, between 0 and 1440),
+        endTimeMinutes: {{integer}} (required, between 0 and 1440),
+      }
+    ] (optional)
+  });
+  ```
+  Calls rest/update-business-hour-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-business-hours-response
+
+  Possible Errors:
+
+  - [Entities: 11130](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-business-hours-err)"
+  {:validation ::update-business-hour-params
+    :topic-key :update-business-hour-response}
+  [params]
+  (let [{:keys [callback topic business-hour-id name description timezone time-minutes exceptions active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-business-hour-request business-hour-id name timezone time-minutes active description))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-business-hour-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error response-error
@@ -3772,6 +3867,8 @@
                                        :get-message-template get-message-template
                                        :create-message-template create-message-template
                                        :update-message-template update-message-template
+                                       :create-business-hour create-business-hour
+                                       :update-business-hour update-business-hour
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item

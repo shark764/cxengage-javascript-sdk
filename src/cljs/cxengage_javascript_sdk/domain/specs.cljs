@@ -62,6 +62,7 @@
 (s/def ::active-version ::uuid)
 (s/def ::version (s/or :version id/valid-uuid? :version nil?))
 (s/def ::exclude-notations boolean?)
+(s/def ::minutes-day (s/int-in 0 1441))
 (s/def ::artifact-id ::uuid)
 (s/def ::assign-type #{"contact" "relatedTo"})
 (s/def ::attachment-id ::uuid)
@@ -83,6 +84,7 @@
 (s/def ::permissions (s/coll-of ::uuid))
 (s/def ::contact-point string?)
 (s/def ::crm string?)
+(s/def ::date #(instance? js/Date %))
 (s/def ::description (s/or ::description nil? ::description string?))
 (s/def ::digit #{"0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "*" "#"})
 (s/def ::direction #{"inbound" "outbound" "agent-initiated"})
@@ -90,6 +92,9 @@
 (s/def ::disposition-id ::uuid)
 (s/def ::email-type-id ::uuid)
 (s/def ::environment #{:dev :qe :staging :prod :us-east-1-test})
+(s/def ::end-time-minutes ::minutes-day)
+(s/def ::exception (s/keys :req-un [::date ::is-all-day ::start-time-minutes ::end-time-minutes]))
+(s/def ::exceptions (s/coll-of ::exception))
 (s/def ::extension-id string?)
 (s/def ::extension-value (s/or ::uuid string?))
 (s/def ::exclude-inactive boolean?)
@@ -107,6 +112,7 @@
 (s/def ::integration-id id/valid-uuid?)
 (s/def ::listener-id id/valid-uuid?)
 (s/def ::integration-type #{"rest" "salesforce" "zendesk" "calabrio"})
+(s/def ::is-all-day boolean?)
 (s/def ::properties (s/or :properties map? :properties nil?))
 (s/def ::items (s/coll-of map?))
 (s/def ::update-body (s/coll-of map?))
@@ -158,6 +164,7 @@
 (s/def ::stat-query
   (s/keys :req-un [::statistic]
           :opt-un [::queue-id ::resource-id ::stat-id]))
+(s/def ::start-time-minutes ::minutes-day)
 (s/def ::subject string?)
 (s/def ::subscription-id ::uuid)
 (s/def ::sub-type string?)
@@ -186,3 +193,6 @@
 (s/def ::channels vector?)
 (s/def ::template-text-type #{"plaintext" "html"})
 (s/def ::template string?)
+(s/def ::timezone string?)
+;; TODO: Write an actual spec for this one
+(s/def ::time-minutes map?)
