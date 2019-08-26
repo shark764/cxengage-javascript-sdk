@@ -7,12 +7,12 @@
             [cljs.core.async :as a]))
 
 (defn normalize-response-stucture
-  [[ok? response] preserve-casing? third-party-request?]
+  [[ok? response] preserve-casing? third-party-request? stringify-keys?]
   (if (and (false? ok?)
            (= (:status response) 200))
     {:api-response nil :status 200}
     (let [status (if ok? 200 (get response :status))
-          response (if (or preserve-casing? third-party-request?) response (ih/kebabify response))
+          response (if (or preserve-casing? third-party-request? stringify-keys?) response (ih/kebabify response))
           api-response (if (map? response)
                          (dissoc response :status)
                          response)]
@@ -38,19 +38,19 @@
   (let [resp-chan (a/promise-chan)]
     (go-loop [failed-attempts 0]
       (let [response-channel (a/promise-chan)
-            {:keys [method url body retry-logic preserve-casing? third-party-request? authless-request? csv-download?]} request-map
+            {:keys [method url body retry-logic preserve-casing? third-party-request? authless-request? csv-download? stringify-keys?]} request-map
             request (merge {:uri url
                             :method method
                             :timeout 120000
-                            :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? third-party-request?)]
+                            :handler #(let [normalized-response (normalize-response-stucture % preserve-casing? third-party-request? stringify-keys?)]
                                         (update-local-time-offset normalized-response)
                                         (a/put! response-channel normalized-response))
                             :format (ajax/json-request-format)
                             :response-format (if (or third-party-request? csv-download?)
                                               (ajax/text-response-format)
-                                              (ajax/json-response-format {:keywords? true}))}
+                                              (ajax/json-response-format {:keywords? (not stringify-keys?)}))}
                           (when body
-                            {:params (if preserve-casing? body (ih/camelify body))})
+                            {:params (if (or preserve-casing? stringify-keys?) body (ih/camelify body))})
                           (when-let [token (state/get-token)]
                             (if (or third-party-request? authless-request?)
                               {}

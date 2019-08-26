@@ -17,10 +17,11 @@
       (let [validation# (:validation ~options)
             topic-key# (:topic-key ~options)
             preserve-casing?# (or (:preserve-casing? ~options) false)
+            stringify-keys?# (or (:stringify-keys? ~options) false)
             topic# (if (string? topic-key#)
                     topic-key#
                     (cxengage-javascript-sdk.domain.topics/get-topic topic-key#))
-            args# (map #(cxengage-javascript-sdk.domain.interop-helpers/extract-params % preserve-casing?#) args#)
+            args# (map #(cxengage-javascript-sdk.domain.interop-helpers/extract-params % preserve-casing?# stringify-keys?#) args#)
             callback# (if (fn? (first args#)) (first args#) (second args#))]
         (if (> (count args#) 2)
           (cxengage-javascript-sdk.domain.interop-helpers/publish {:topics topic#

@@ -28,11 +28,12 @@
 (def-sdk-fn get-contact
   ""
   {:validation ::get-contact-params
-   :topic-key :get-contact}
+   :topic-key :get-contact
+   :stringify-keys? true}
   [params]
   (let [{:keys [contact-id callback topic]} params
         {:keys [api-response status] :as contacts-response} (a/<! (rest/get-contact-request contact-id))
-        retrieved-contact (:result api-response)]
+        retrieved-contact (get api-response "result")]
     (if (= status 200)
       (p/publish {:topics topic
                   :response retrieved-contact
@@ -53,11 +54,12 @@
 (def-sdk-fn get-contacts
   ""
   {:validation ::get-contacts-params
-   :topic-key :get-contacts}
+   :topic-key :get-contacts
+   :stringify-keys? true}
   [params]
   (let [{:keys [callback topic]} params
         {:keys [api-response status] :as contacts-response} (a/<! (rest/get-contacts-request))
-        retrieved-contacts (:result api-response)]
+        retrieved-contacts (get api-response "result")]
     (if (= status 200)
       (p/publish {:topics topic
                   :response retrieved-contacts
@@ -83,12 +85,12 @@
   ""
   {:validation ::search-contacts-params
    :topic-key :search-contacts
-   :preserve-casing? true}
+   :stringify-keys? true}
   [params]
   (let [{:keys [query callback topic]} params
         query-str (get-query-str query)
         {:keys [api-response status] :as contacts-response} (a/<! (rest/search-contacts-request query-str))
-        found-contacts (:result api-response)]
+        found-contacts (get api-response "result")]
     (if (= status 200)
       (p/publish {:topics topic
                   :response found-contacts
@@ -110,11 +112,11 @@
   ""
   {:validation ::create-contact-params
    :topic-key :create-contact
-   :preserve-casing? true}
+   :stringify-keys? true}
   [params]
   (let [{:keys [attributes callback topic]} params
         {:keys [api-response status] :as contacts-response} (a/<! (rest/create-contact-request {:attributes attributes}))
-        created-contact (:result api-response)]
+        created-contact (get api-response "result")]
     (if (= status 200)
       (p/publish {:topics topic
                   :response created-contact
@@ -137,15 +139,16 @@
   ""
   {:validation ::update-contact-params
    :topic-key :update-contact
-   :preserve-casing? true}
+   :stringify-keys? true}
   [params]
   (let [{:keys [attributes contactId callback topic]} params
         {:keys [api-response status] :as contacts-response} (a/<! (rest/update-contact-request contactId {:attributes attributes}))
-        updated-contact (:result api-response)]
+        updated-contact (get api-response "result")]
     (if (= status 200)
       (p/publish {:topics topic
                   :response updated-contact
-                  :callback callback})
+                  :callback callback
+                  :preserve-casing? true})
       (p/publish {:topics topic
                   :error (e/failed-to-update-contact-err contactId attributes contacts-response)
                   :callback callback}))))
@@ -188,12 +191,12 @@
   ""
   {:validation ::merge-contacts-params
    :topic-key :merge-contacts
-   :preserve-casing? true}
+   :stringify-keys? true}
   [params]
   (let [{:keys [contactIds attributes callback topic]} params
         {:keys [api-response status] :as contacts-response} (a/<! (rest/merge-contact-request {:contactIds contactIds
                                                                                                :attributes attributes}))
-        merged-contact (:result api-response)]
+        merged-contact (get api-response "result")]
     (if (= status 200)
       (p/publish {:topics topic
                   :response merged-contact
