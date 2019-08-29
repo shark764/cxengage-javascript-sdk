@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.0.0] - 2019-09-04
+### Changed
+- *Breaking* get-recordings sdk-function moved to `CxEngage.entities/get-recordings`
+### Fixed
+- Artity and undefined vars exceptions/warnings:
+** `failed-to-get-api-keys-error` undefined var `api-response`
+** `normalize-response-stucture` arity warning in rest-requests `file-api-request`
+** `owner` var undefined in `create-group-request`, always added
+** rest `create-tenant-request` and `update-tenant-request` missing `status` param on invocation in entities module
+** replace undefined var `new-stats` in `bulk-remove-stat-subscription` with current subscriptions
 
 ## [8.64.4] - 2019-09-05
 ### Fixed
@@ -37,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - CXV1-17588 - Unable to Create/Merge Contact when there are multiple slashes in the contact attribute
 - CXV1-19779 - unable to transfer interactions that are assinged to crm contacts with slashes
- 
+
 ## [8.61.0] - 2019-08-20
 ### Added
 - CXV1-18495 - SDK fucntions for creating and updating Business Hour entities
@@ -151,7 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [8.50.0] - 2019-02-05
 ### Added
-- CXV1-16762 - Added a new listener for the flow signal: "transfer-started" and "transfer-cancelled" 
+- CXV1-16762 - Added a new listener for the flow signal: "transfer-started" and "transfer-cancelled"
 
 ## [8.49.0] - 2019-05-18
 ### Added
@@ -163,11 +173,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [8.47.0] - 2019-02-15
 ### Added
-- CXV1-16883 - Added for Dispatch Mappings: GET single, GET all in tenant, POST and PUT 
+- CXV1-16883 - Added for Dispatch Mappings: GET single, GET all in tenant, POST and PUT
 
 ## [8.46.0] - 2019-02-11
 ### Added
-- CXV1-16884 - Added for Dispostions: GET single, GET all in tenant, POST and PUT 
+- CXV1-16884 - Added for Dispostions: GET single, GET all in tenant, POST and PUT
 
 ## [8.45.0] - 2019-02-11
 ### Added
@@ -179,7 +189,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [8.43.0] - 2019-02-05
 ### Added
-- CXV1-16762 - Added a new listener for the flow signal: "customer-hold-error" 
+- CXV1-16762 - Added a new listener for the flow signal: "customer-hold-error"
 
 ## [8.42.1] - 2019-01-29
 ### Fixed

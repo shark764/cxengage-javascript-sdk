@@ -198,11 +198,9 @@
    :topic-key :bulk-remove-stat}
   [params]
   (let [{:keys [stat-ids topic callback]} params]
-    (doseq [stat-id stat-ids]
-      (let [new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
-        (swap! stat-subscriptions assoc :statistics new-stats)))
+    (map #(swap! stat-subscriptions iu/dissoc-in [:statistics %]) stat-ids)
     (p/publish {:topics topic
-                :response new-stats
+                :response (:statistics @stat-subscriptions)
                 :callback callback
                 :preserve-casing? true})))
 

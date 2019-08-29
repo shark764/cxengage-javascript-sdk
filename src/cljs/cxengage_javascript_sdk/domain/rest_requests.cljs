@@ -1085,11 +1085,11 @@
   (let [tenant-id (state/get-active-tenant-id)
         create-group-request (cond-> {:method :post
                                       :url (iu/api-url "tenants/:tenant-id/groups"
-                                                       {:tenant-id tenant-id})}
-                               (not (nil? name))            (assoc-in [:body :name] name)
-                               (not (nil? description))     (assoc-in [:body :description] description)
-                               (not (nil? active))          (assoc-in [:body :active] active)
-                               (nil? owner)                 (assoc-in [:body :owner] (state/get-active-user-id)))]
+                                                       {:tenant-id tenant-id})
+                                      :body {:owner (state/get-active-user-id)}}
+                               (not (nil? name))        (assoc-in [:body :name] name)
+                               (not (nil? description)) (assoc-in [:body :description] description)
+                               (not (nil? active))      (assoc-in [:body :active] active))]
     (api/api-request create-group-request)))
 
 (defn update-group-request [group-id name description active]
@@ -1328,12 +1328,12 @@
 
 (defn create-tenant-request [name description active status]
   (let [create-tenant-request (cond-> {:method :post
-                                              :url (iu/api-url "tenants")}
-                                          
-                                    (not (nil? name))                             (assoc-in [:body :name] name)
-                                    (not (nil? description))                      (assoc-in [:body :description] description)
-                                    (not (nil? active))                           (assoc-in [:body :active] active)
-                                    (not (nil?  status))                        (assoc-in [:body :status] status))]                                     
+                                       :url (iu/api-url "tenants")}
+
+                                (not (nil? name))        (assoc-in [:body :name] name)
+                                (not (nil? description)) (assoc-in [:body :description] description)
+                                (not (nil? active))      (assoc-in [:body :active] active)
+                                (not (nil? status))      (assoc-in [:body :status] status))]
     (api/api-request create-tenant-request)))
 
 (defn update-tenant-request [tenant-id name description active status]
