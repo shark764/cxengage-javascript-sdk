@@ -1403,3 +1403,25 @@
                                                   (not (nil? description)) (assoc-in [:body :description] description)
                                                   (not (nil? time-minutes)) (update :body merge time-minutes))]
             (api/api-request update-business-hour-request)))
+
+(defn create-exception-request [business-hour-id date is-all-day description start-time-minutes end-time-minutes]
+      (let [tenant-id (state/get-active-tenant-id)
+            create-exception-request (cond->  {:method :post
+                                                   :url (iu/api-url "tenants/:tenant-id/business-hours/:business-hour-id/exceptions"
+                                                                    {:tenant-id tenant-id
+                                                                    :business-hour-id business-hour-id})
+                                                   :body {:date date
+                                                          :is-all-day is-all-day
+                                                          :start-time-minutes start-time-minutes
+                                                          :end-time-minutes end-time-minutes}}
+                                                   (not (nil? description)) (assoc-in [:body :description] description))]
+            (api/api-request create-exception-request)))
+
+(defn delete-exception-request [business-hour-id exception-id]
+      (let [tenant-id (state/get-active-tenant-id)
+            delete-exception-request {:method :delete
+                                      :url (iu/api-url "tenants/:tenant-id/business-hours/:business-hour-id/exceptions/:exception-id"
+                                                       {:tenant-id tenant-id
+                                                        :business-hour-id business-hour-id
+                                                        :exception-id exception-id})}]
+            (api/api-request delete-exception-request)))

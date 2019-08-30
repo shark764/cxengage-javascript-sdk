@@ -2630,6 +2630,35 @@
    :level "error"
    :message "Failed to update message template."})
 
+(defn failed-to-create-exception-err
+  "**Error Code:** 11131
+    Message: Failed to create Exception.
+
+    This error is usually due to an unexpected status code returned from the API.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11131
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to create Exception."})
+
+(defn failed-to-delete-exception-err
+  "**Error Code:** 11132
+    Message: Failed to delete Exception.
+
+    This error is usually due to an unexpected status code returned from the API.
+    Validate that the value passed into the sdk function was correct.
+
+    **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11132
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to delete Exception."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
