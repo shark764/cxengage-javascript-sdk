@@ -171,6 +171,8 @@
                  :get-business-hour-response "cxengage/entities/get-business-hour-response"
                  :create-business-hour-response "cxengage/entities/create-business-hour-response"
                  :update-business-hour-response "cxengage/entities/update-business-hour-response"
+                 :create-exception-response "cxengage/entities/create-exception-response"
+                 :delete-exception-response "cxengage/entities/delete-execption-response"
                  :get-timezones-response "cxengage/entities/get-timezones-response"
                  :get-message-templates-response "cxengage/entities/get-message-templates-response"
                  :get-message-template-response "cxengage/entities/get-message-template-response"

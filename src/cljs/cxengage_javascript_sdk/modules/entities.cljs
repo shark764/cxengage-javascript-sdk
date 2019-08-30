@@ -2554,7 +2554,7 @@
                 
 (s/def ::create-business-hour-params
   (s/keys :req-un [::specs/name ::specs/timezone ::specs/time-minutes ::specs/active]
-          :opt-un [::specs/callback ::specs/description ::specs/exceptions]))
+          :opt-un [::specs/callback ::specs/description]))
 
 (def-sdk-fn create-business-hour
   "``` javascript
@@ -2570,14 +2570,6 @@
       sunStartTimeMinutes: {{integer}} (required, between 0 and 1440),
       sunEndTimeMinutes: {{integer}} (required, between 0 and 1440),
     } (required)
-    exceptions: [
-      {
-        isAllDay: {{boolean}} (required),
-        date: {{Date}} (required),
-        startTimeMinutes: {{integer}} (required, between 0 and 1440),
-        endTimeMinutes: {{integer}} (required, between 0 and 1440),
-      }
-    ] (optional)
   });
   ```
   Calls rest/create-business-hour-request
@@ -2591,9 +2583,44 @@
   {:validation ::create-business-hour-params
     :topic-key :create-business-hour-response}
   [params]
-  (let [{:keys [callback topic name description timezone time-minutes exceptions active]} params
+  (let [{:keys [callback topic name description timezone time-minutes active]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/create-business-hour-request name timezone time-minutes active description))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-business-hour-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+  
+(s/def ::create-exception-params
+  (s/keys :req-un [::specs/business-hour-id ::specs/date ::specs/is-all-day ::specs/start-time-minutes ::specs/end-time-minutes]
+        :opt-un [::specs/callback ::specs/description]))
+
+(def-sdk-fn create-exception
+  "``` javascript
+  CxEngage.entities.createException({
+    businessHoursId: {{uuid}} (required)
+    date: {{Date object}} (required),
+    isAllDAy: {{boolean}} (required),
+    description: {{string}} (optional),
+    startTimeMinutes: {{ integer }} (required, between -1 and 1440)
+    startTimeMinutes: {{ integer }} (required, between -1 and 1440)
+  });
+  ```
+  Calls rest/create-exception-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-exception-response
+
+  Possible Errors:
+
+  - [Entities: 11129](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-exception-err)"
+  {:validation ::create-exception-params
+    :topic-key :create-exception-response}
+  [params]
+  (let [{:keys [callback topic business-hour-id date is-all-day description start-time-minutes end-time-minutes]} params
+        {:keys [status api-response] :as entity-response} (a/<! 
+          (rest/create-exception-request business-hour-id date is-all-day description start-time-minutes end-time-minutes))
+        response-error (when-not (= (:status entity-response) 200) (e/failed-to-create-exception-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error response-error
@@ -3766,6 +3793,36 @@
                 :error error
                 :callback callback})))
 
+(s/def ::delete-exception-params
+  (s/keys :req-un [::specs/business-hour-id ::specs/exception-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn delete-exception
+  "``` javascript
+  CxEngage.entities.deleteException({
+    businessHoursId: {{uuid}}, (required)
+    exceptionId: {{uuid}} (required)
+  });
+  ```
+  Removes single Exception by calling rest/delete-exception-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/delete-exception-response
+
+  Possible Errors:
+
+  - [Entities: 11088](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-delete-exception-err)"
+  {:validation ::delete-exception-params
+    :topic-key :delete-exception-response}
+  [params]
+  (let [{:keys [callback topic business-hour-id exception-id]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/delete-exception-request business-hour-id exception-id))
+        error (when-not (= status 200) (e/failed-to-delete-exception-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 ;;hygen-insert-before-delete
 
 ;; -------------------------------------------------------------------------- ;;
@@ -3869,6 +3926,7 @@
                                        :update-message-template update-message-template
                                        :create-business-hour create-business-hour
                                        :update-business-hour update-business-hour
+                                       :create-exception create-exception
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
@@ -3901,6 +3959,7 @@
                                        :delete-list-item delete-list-item
                                        :delete-email-template delete-email-template
                                        :remove-flow-draft remove-flow-draft
+                                       :delete-exception delete-exception
                                        :dissociate dissociate
                                       ;;hygen-insert-above-delete
                                        :download-list download-list}}
