@@ -28,8 +28,7 @@
 (def-sdk-fn get-contact
   ""
   {:validation ::get-contact-params
-   :topic-key :get-contact
-   :stringify-keys? true}
+   :topic-key :get-contact}
   [params]
   (let [{:keys [contact-id callback topic]} params
         {:keys [api-response status] :as contacts-response} (a/<! (rest/get-contact-request contact-id))
@@ -54,8 +53,7 @@
 (def-sdk-fn get-contacts
   ""
   {:validation ::get-contacts-params
-   :topic-key :get-contacts
-   :stringify-keys? true}
+   :topic-key :get-contacts}
   [params]
   (let [{:keys [callback topic]} params
         {:keys [api-response status] :as contacts-response} (a/<! (rest/get-contacts-request))
