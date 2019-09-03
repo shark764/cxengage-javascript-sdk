@@ -1649,6 +1649,7 @@
   ``` javascript
   CxEngage.entities.getEntity({
     path: {{array}} (required) Example Array ['groups', '0000-0000-0000-0000', 'outboundIdentifierLists']
+    stringifyKeys: {{boolean}} (optional)
   });
   ```
   Retrieves an entity from the api matching the required parameters
@@ -1663,10 +1664,11 @@
   {:validation ::get-entity-params
    :topic-key :get-entity-response}
   [params]
-  (let [{:keys [callback topic entity-name entity-id sub-entity-name path]} params]
+  (let [{:keys [callback topic entity-name entity-id sub-entity-name path stringify-keys]} params]
      (let [{:keys [status api-response]} (a/<! (rest/get-crud-entity-request (if path
                                                                               (into [] path)
-                                                                              [entity-name entity-id sub-entity-name])))
+                                                                              [entity-name entity-id sub-entity-name]) 
+                                                                             {:stringify-keys? stringify-keys}))
            status-is-200 (= status 200)]
           (p/publish
             {:topics topic

@@ -562,10 +562,13 @@
                   entity-body (assoc :body entity-body))]
     (api/api-request request))))
 
-(defn get-crud-entity-request [entity-map]
-   (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-map))
-         get-request {:method :get :url url}]
-    (api/api-request get-request)))
+(defn get-crud-entity-request 
+  ([entity-map]
+   (get-crud-entity-request entity-map {}))
+  ([entity-map options-map]
+    (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-map))
+          get-request {:method :get :url url}]
+      (api/api-request (merge get-request options-map)))))
 
 (defn crud-url [entity-vector]
     (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-vector)))
