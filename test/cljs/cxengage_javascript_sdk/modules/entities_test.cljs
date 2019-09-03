@@ -257,3 +257,33 @@
                                 (set! api/api-request old)
                                 (done)))
                  (ent/update-user {:user-id "76818798-9075-43d5-a00c-9b8ccff7b1df" :update-body {:first-name "asdfasdf"}}))))))
+
+;; -------------------------------------------------------------------------- ;;
+;; Fetch reporting events
+;; -------------------------------------------------------------------------- ;;
+
+(def fetch-reporting-event-success
+  {:api-response {:result [{:id 42
+                            :events [{:event-id "1"}
+                                     {:event-id "2"}
+                                     {:event-id "3"}]
+                            :interaction "523940-8-342"}]}
+   :status 200})
+
+(deftest fetch-reporting-event
+  (testing "get single user function success"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (go (let [old api/api-request
+                     resp-chan (a/promise-chan)
+                     pubsub-expected-response (get-in fetch-reporting-event-success [:api-response])]
+                 (a/>! resp-chan fetch-reporting-event-success)
+                 (reset! st/sdk-state test-state)
+                 (set! api/api-request (fn [_]
+                                          resp-chan))
+                 (p/subscribe "cxengage/entities/get-entity-response"
+                              (fn [error topic response]
+                                (is (= pubsub-expected-response (ih/kebabify response)))
+                                (set! api/api-request old)
+                                (done)))
+                 (ent/get-entity {:path ["interactions", "interaction-id", "reporting-events", "flow-state-log"]}))))))
