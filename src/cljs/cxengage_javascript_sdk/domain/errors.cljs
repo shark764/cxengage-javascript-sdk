@@ -2502,7 +2502,7 @@
   [data]
   {:code 11133
    :context :entities
-   :data {api-response data}
+   :data {:api-response data}
    :level "error"
    :message "Failed to get apiKeys information"})
 
