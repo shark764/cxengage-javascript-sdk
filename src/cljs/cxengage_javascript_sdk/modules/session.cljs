@@ -256,7 +256,7 @@
 
 (s/def ::set-presence-state-spec
   (s/keys :req-un [::specs/session-id ::specs/state]
-          :opt-un [::specs/callback ::specs/agent-id ::specs/reason ::specs/reason-id ::specs/reason-list-id]))
+          :opt-un [::specs/callback ::specs/agent-id ::specs/reason ::specs/reason-id ::specs/reason-list-id ::specs/next-state]))
 
 (def-sdk-fn set-presence-state
   "
@@ -267,7 +267,8 @@
     state: {{'ready' / 'notready' / 'offline'}},
     reason: {{string}} (Optional),
     reasonId: {{uuid}} (Optional),
-    reasonListId: {{uuid}} (Optional)
+    reasonListId: {{uuid}} (Optional),
+    nextState: {{'ready' / 'notready' / 'offline'}} (Optional) (Will be used when agent is busy and we need to set his/her state)
   });
   ```
 
@@ -289,12 +290,13 @@
   {:validation ::set-presence-state-spec
    :topic-key :set-presence-state-response}
   [params]
-  (let [{:keys [callback topic agent-id session-id state reason reason-id reason-list-id]} params
+  (let [{:keys [callback topic agent-id session-id state reason reason-id reason-list-id next-state]} params
         change-state-body {:session-id session-id
                            :state state
                            :reason reason
                            :reason-id reason-id
-                           :reason-list-id reason-list-id}
+                           :reason-list-id reason-list-id
+                           :next-state next-state}
         resp (a/<! (rest/change-state-request change-state-body agent-id))
         {:keys [status api-response]} resp
         state-details (:result api-response)
