@@ -15,7 +15,7 @@
         request (merge {:uri url
                         :method method
                         :timeout 120000
-                        :handler #(let [normalized-response (api/normalize-response-stucture % false true)]
+                        :handler #(let [normalized-response (api/normalize-response-stucture % false true false)]
                                     (if callback
                                       (callback normalized-response)
                                       (a/put! response-channel normalized-response)))
