@@ -2494,17 +2494,59 @@
     :message "Failed to get tenants information"})
 
 (defn failed-to-get-api-keys-err
-  "**Error Code:** 11119
+  "**Error Code:** 11133
   Message: Failed to get apiKeys information.
   This error is usually due to an unexpected status code returned from the API.
   Validate that the value passed into the sdk function was correct.
   **Solution:** Check your browsers dev tools console for additional error information"
   [data]
-  {:code 11119
+  {:code 11133
    :context :entities
    :data {api-response data}
    :level "error"
    :message "Failed to get apiKeys information"})
+
+(defn failed-to-create-api-key-err
+  "**Error Code:** 11134
+   Message: Failed to create Api Keys.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11134
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create Api Key."})
+
+(defn failed-to-update-api-key-err
+  "**Error Code:** 11135
+   Message: Failed to update Api Key.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11135
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update Api Key."})
+
+(defn failed-to-delete-api-key-err
+  "**Error Code:** 11136
+   Message: Failed to delete Api Key.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11135
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to delete Api Key."})
    
 (defn failed-to-get-business-hours-err
   "**Error Code:** 11126

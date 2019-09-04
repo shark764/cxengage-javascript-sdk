@@ -2015,6 +2015,85 @@
                 :error response-error
                 :callback callback})))
 
+(s/def ::create-api-key-params
+  (s/keys :req-un [::specs/name ::specs/role-id]
+          :opt-un [::specs/callback ::specs/description]))
+
+(def-sdk-fn create-api-key
+  "``` javascript
+  CxEngage.entities.createApiKeys({
+    name: {{string}},
+    description: {{string}}, (optional)
+    role-id: {{string}}
+  });
+  ```
+  Creates new ApiKey by calling rest/create-api-key-request
+  with the provided data.
+
+  Topic: cxengage/entities/create-api-key-response
+
+  Possible Errors:
+
+  - [Entities: 11061](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-group-err)"
+  {:validation ::create-api-key-params
+   :topic-key :create-api-key-response}
+  [params]
+  (let [{:keys [name description role-id callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-api-key-request name description role-id))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-api-key-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+(s/def ::update-api-key-params
+  (s/keys :req-un [::specs/api-key-id]
+          :opt-un [::specs/callback ::specs/name ::specs/role-id ::specs/description ::specs/active]))
+
+(def-sdk-fn update-api-key
+  "``` javascript
+  CxEngage.entities.updateApiKey({
+    tokenId: {{uuid}},
+    name: {{string}}, (optional)
+    description: {{string}}, (optional)
+    role-id: {{boolean}} (optional)
+  });
+  ```
+  Updates a single Api Key by calling rest/update-api-key-request
+  with the new data and groupId as the unique key.
+
+  Topic: cxengage/entities/update-api-key-response
+
+  Possible Errors:
+
+  - [Entities: 11062](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-group-err)"
+  {:validation ::update-api-key-params
+   :topic-key :update-api-key-response}
+  [params]
+  (let [{:keys [api-key-id name description role-id active callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-api-key-request api-key-id name description role-id active))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-api-key-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+(s/def ::delete-api-key-params
+  (s/keys :req-un [::specs/api-key-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn delete-api-key
+  ""
+  {:validation ::delete-api-key-params
+   :topic-key :delete-api-key-response}
+  [params]
+  (let [{:keys [callback api-key-id topic]} params
+        {:keys [api-response status] :as entity-response} (a/<! (rest/delete-api-key-request api-key-id))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-delete-api-key-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
 ;;hygen-insert-before-create
 
 (s/def ::create-dispatch-mapping-params
@@ -3929,6 +4008,9 @@
                                        :create-business-hour create-business-hour
                                        :update-business-hour update-business-hour
                                        :create-exception create-exception
+                                       :create-api-key create-api-key
+                                       :update-api-key update-api-key
+                                       :delete-api-key delete-api-key
                                       ;;hygen-insert-above-create
                                        :update-list update-list
                                        :update-list-item update-list-item
