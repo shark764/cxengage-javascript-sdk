@@ -189,6 +189,7 @@
 (s/def ::update-body map?)
 (s/def ::visibility boolean?)
 (s/def ::width number?)
+(s/def ::without-active-dashboard boolean?)
 (s/def ::wrapup string?)
 (s/def ::enable-indicator boolean?)
 (s/def ::business-hour-id id/valid-uuid?)
