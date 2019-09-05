@@ -255,15 +255,15 @@
                   :callback callback})))
 
 (s/def ::set-presence-state-spec
-  (s/keys :req-un [::specs/session-id ::specs/state]
-          :opt-un [::specs/callback ::specs/agent-id ::specs/reason ::specs/reason-id ::specs/reason-list-id ::specs/next-state]))
+  (s/keys :req-un [::specs/state]
+          :opt-un [::specs/callback ::specs/agent-id ::specs/session-id ::specs/reason ::specs/reason-id ::specs/reason-list-id ::specs/next-state]))
 
 (def-sdk-fn set-presence-state
   "
   ``` javascript
   CxEngage.session.setPresenceState({
-    agentId: {{ uuid }} (Optional),
-    sessionId: {{ uuid }},
+    agentId: {{ uuid }} (Optional), (Required just when function is called from Agent Monitoring)
+    sessionId: {{ uuid }} (Optional),
     state: {{'ready' / 'notready' / 'offline'}},
     reason: {{string}} (Optional),
     reasonId: {{uuid}} (Optional),
@@ -291,7 +291,7 @@
    :topic-key :set-presence-state-response}
   [params]
   (let [{:keys [callback topic agent-id session-id state reason reason-id reason-list-id next-state]} params
-        change-state-body {:session-id session-id
+        change-state-body {:session-id (or session-id (state/get-session-id))
                            :state state
                            :reason reason
                            :reason-id reason-id
