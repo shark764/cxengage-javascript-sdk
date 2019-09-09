@@ -703,8 +703,8 @@
 
   Possible Errors:
 
-  - [Entities: 11027](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-artifactss-err
-  - [Entities: 11140](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-recordings-err"
+  - [Entities: 11027](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-artifacts-err
+  - [Entities: 11137](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-recordings-err"
   {:validation ::get-recordings-params
    :topic-key :get-recordings-response}
   [params]
