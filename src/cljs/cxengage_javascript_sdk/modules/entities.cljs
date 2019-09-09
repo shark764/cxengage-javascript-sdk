@@ -712,7 +712,7 @@
         {:keys [api-response status]} (-> interaction-id
                                           (rest/get-interaction-artifacts-request tenant-id)
                                           a/<!)
-        artifact-ids (->> api-response :results (filter recording?) :artifact-id)
+        artifact-ids (->> api-response :results (filter recording?) (mapv :artifact-id))
         get-recording-chans (mapv #(rest/get-artifact-by-id-request % interaction-id tenant-id) artifact-ids)]
     (go-loop [api-response api-response
               status status

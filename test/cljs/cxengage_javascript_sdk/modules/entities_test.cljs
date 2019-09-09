@@ -7,11 +7,14 @@
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
             [cxengage-javascript-sdk.domain.api-utils :as api]
             [cxengage-javascript-sdk.domain.topics :as topics]
+            [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.state :as st]
             [cxengage-javascript-sdk.modules.entities :as ent]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cljs-uuid-utils.core :as uuid]
-            [cljs.test :refer-macros [deftest is testing async]]))
+            [cljs.test :refer-macros [deftest is testing async]]
+            [camel-snake-kebab.extras :refer [transform-keys]]
+            [camel-snake-kebab.core :refer [->kebab-case-keyword]]))
 
 (def test-state {:session {:tenant-id "f5b660ef-9d64-47c9-9905-2f27a74bc14c"}})
 
@@ -289,64 +292,64 @@
                  (ent/get-entity {:path ["interactions", "interaction-id", "reporting-events", "flow-state-log"]}))))))
 
 
-(def files ["blahblahblah.png"])
+(def file "blahblahblah.png")
 (def artifact-id (uuid/make-random-uuid))
 (def tenant-id (uuid/make-random-uuid))
-(deftest get-recording-test
-  (testing "the get-recording fn"
-    (async
-     done
-     (set! rest/get-artifact-by-id-request (fn [& _]
-                                             (go {:api-response {:files files}
-                                                  :status 200})))
-     (p/subscribe
-      (topics/get-topic :get-recordings-response)
-      (fn [error topic response]
-        (is (= files (js->clj response :keywordize-keys true)))
-        (done)))
-     (ent/get-recording interaction-id tenant-id artifact-id (fn [& _] nil)))))
+(def interaction-id (uuid/make-random-uuid))
 
-(deftest get-recording-error-test
+(deftest get-recordings-error-test
   (testing "the get-recording error response"
-    (async
-     done
-     (set! rest/get-artifact-by-id-request (fn [& _]
-                                             (go not-found)))
-     (p/subscribe
-      (topics/get-topic :get-recordings-response)
-      (fn [error topic response]
-        (is (= (camels (e/failed-to-get-recordings-err interaction-id artifact-id not-found)) (js->clj error :keywordize-keys true)))
-        (done)))
-     (ent/get-recording interaction-id tenant-id artifact-id (fn [& _] nil)))))
+    (let [topic (topics/get-topic :get-recordings-response)]
+      (async
+       done
+       (set! rest/get-interaction-artifacts-request (fn [& _]
+                                                      (go {:api-response {:results [{:artifact-id artifact-id
+                                                                                     :artifact-type "cxengage-recording"}]}
+                                                           :status 200})))
+       (set! rest/get-artifact-by-id-request (fn [& _]
+                                               (go {:status 404})))
+       (swap! p/sdk-subscriptions dissoc topic)
+       (p/subscribe
+        topic
+        (fn [error topic response]
+          (is (= (e/failed-to-get-recordings-err {:interaction-id interaction-id :artifact-ids [artifact-id] :api-response nil})
+                 (-> error ih/kebabify (update :context keyword))))
+          (done)))
+       (ent/get-recordings {:interaction-id interaction-id :tenant-id tenant-id :callback (fn [& _] nil)})))))
 
 (deftest get-recordings-test
   (testing "the get-recordings fn"
-    (async
-     done
-     (state/set-active-tenant! tenant-id)
-     (set! rest/get-artifact-by-id-request (fn [& _]
-                                             (go {:api-response {:files files}
-                                                  :status 200})))
-     (set! rest/get-interaction-artifacts-request (fn [& _]
-                                                    (go {:api-response {:results [{:artifact-type "audio-recording"}]}
-                                                         :status 200})))
-     (p/subscribe
-      (topics/get-topic :get-recordings-response)
-      (fn [error topic response]
-        (is (= files (js->clj response :keywordize-keys true)))
-        (done)))
-     (ent/get-recordings {:interaction-id interaction-id}))))
+    (let [topic (topics/get-topic :get-recordings-response)]
+      (async
+       done
+       (st/set-active-tenant! tenant-id)
+       (set! rest/get-artifact-by-id-request (fn [& _]
+                                               (go {:api-response file
+                                                    :status 200})))
+       (set! rest/get-interaction-artifacts-request (fn [& _]
+                                                      (go {:api-response {:results [{:artifact-type "audio-recording"
+                                                                                     :artifact-id artifact-id}]}
+                                                           :status 200})))
+       (swap! p/sdk-subscriptions dissoc topic)
+       (p/subscribe
+        (topics/get-topic :get-recordings-response)
+        (fn [error topic response]
+          (is (= [file] (js->clj response :keywordize-keys true)))
+          (done)))
+       (ent/get-recordings {:interaction-id interaction-id})))))
 
 (deftest get-recordings-none-test
   (testing "the get-recordings response for no recordings"
-    (async
-     done
-     (set! rest/get-interaction-artifacts-request (fn [& _]
-                                                    (go {:api-response {:results []}
-                                                         :status 200})))
-     (p/subscribe
-      (topics/get-topic :get-recordings-response)
-      (fn [error topic response]
-        (is (= [] (js->clj response :keywordize-keys true)))
-        (done)))
-     (ent/get-recordings {:interaction-id interaction-id}))))
+    (let [topic (topics/get-topic :get-recordings-response)]
+      (async
+       done
+       (set! rest/get-interaction-artifacts-request (fn [& _]
+                                                      (go {:api-response {:results []}
+                                                           :status 200})))
+       (swap! p/sdk-subscriptions dissoc topic)
+       (p/subscribe
+        (topics/get-topic :get-recordings-response)
+        (fn [error topic response]
+          (is (= [] (js->clj response :keywordize-keys true)))
+          (done)))
+       (ent/get-recordings {:interaction-id interaction-id})))))

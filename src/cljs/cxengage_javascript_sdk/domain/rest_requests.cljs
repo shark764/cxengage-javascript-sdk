@@ -687,6 +687,13 @@
                                     :url (iu/api-url "me")}]
     (api/api-request get-tenant-details-request)))
 
+(defn query-params
+  "Turn a map of parameters into a url query string."
+  [params]
+  (string/join "&"
+               (for [[k v] params]
+                 (str (name k) "=" v))))
+
 (defn get-dashboards-request [method entity-type exclude-inactive without-active-dashboard]
    (let [query-parameters (cond-> {}
                                 (true? exclude-inactive) (assoc :active true)
@@ -1459,11 +1466,4 @@
                                       "tenants/:tenant-id/api-keys/:api-key-id"
                                       {:tenant-id tenant-id
                                        :api-key-id api-key-id})}]
-    (api/api-request delete-api-key-request)))  
-
-(defn query-params
-  "Turn a map of parameters into a url query string."
-  [params]
-  (string/join "&"
-      (for [[k v] params]
-            (str (name k) "=" v))))
+    (api/api-request delete-api-key-request)))
