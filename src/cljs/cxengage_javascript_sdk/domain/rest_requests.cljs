@@ -687,18 +687,19 @@
                                     :url (iu/api-url "me")}]
     (api/api-request get-tenant-details-request)))
 
-(defn get-dashboards-request [method entity-type exclude-inactive]
-  (let [tenant-id (state/get-active-tenant-id)
-        url (str "tenants/:tenant-id/" entity-type "s")
-        url (if exclude-inactive
-              (str url "?active=true")
-              url)
-        get-url (iu/api-url
-                 url
-                 {:tenant-id tenant-id})
-        get-request {:method method
-                     :url get-url}]
-    (api/api-request get-request)))
+(defn get-dashboards-request [method entity-type exclude-inactive without-active-dashboard]
+   (let [query-parameters (cond-> {}
+                                (true? exclude-inactive) (assoc :active true)
+                                (true? without-active-dashboard) (assoc :without-active-dashboard true))]
+    (let [tenant-id (state/get-active-tenant-id)
+          url (str "tenants/:tenant-id/" entity-type "s")
+          url (str url "?" (query-params query-parameters))
+          get-url (iu/api-url
+                   url
+                   {:tenant-id tenant-id})
+          get-request {:method method
+                       :url get-url}]
+      (api/api-request get-request))))
 
 (defn get-timezones-request []
   (let [url (iu/api-url "timezones")
@@ -1428,27 +1429,27 @@
                                                         :business-hour-id business-hour-id
                                                         :exception-id exception-id})}]
             (api/api-request delete-exception-request)))
-            
+
 (defn create-api-key-request [name description role-id]
   (let [tenant-id (state/get-active-tenant-id)
         create-api-key-request (cond-> {:method :post
-                                      :url (iu/api-url "tenants/:tenant-id/api-keys"
-                                                       {:tenant-id tenant-id})}
-                               (not (nil? name))            (assoc-in [:body :name] name)
-                               (not (nil? description))     (assoc-in [:body :description] description)
-                               (not (nil? role-id))         (assoc-in [:body :role-id] role-id))]
+                                        :url (iu/api-url "tenants/:tenant-id/api-keys"
+                                                         {:tenant-id tenant-id})}
+                                 (not (nil? name))            (assoc-in [:body :name] name)
+                                 (not (nil? description))     (assoc-in [:body :description] description)
+                                 (not (nil? role-id))         (assoc-in [:body :role-id] role-id))]
     (api/api-request create-api-key-request)))
 
 (defn update-api-key-request [api-key-id name description role-id active]
   (let [tenant-id (state/get-active-tenant-id)
         update-api-key-request (cond-> {:method :put
-                                      :url (iu/api-url "tenants/:tenant-id/api-keys/:api-key-id"
-                                                       {:tenant-id tenant-id :api-key-id api-key-id})}
-                               (not (nil? name))            (assoc-in [:body :name] name)
-                               (not (nil? description))     (assoc-in [:body :description] description)
-                               (not (nil? role-id))         (assoc-in [:body :role-id] role-id)
-                               (not (nil? active))         (assoc-in [:body :status] (if active "enabled" "disabled")))]
-    (api/api-request update-api-key-request)))          
+                                        :url (iu/api-url "tenants/:tenant-id/api-keys/:api-key-id"
+                                                         {:tenant-id tenant-id :api-key-id api-key-id})}
+                                 (not (nil? name))            (assoc-in [:body :name] name)
+                                 (not (nil? description))     (assoc-in [:body :description] description)
+                                 (not (nil? role-id))         (assoc-in [:body :role-id] role-id)
+                                 (not (nil? active))         (assoc-in [:body :status] (if active "enabled" "disabled")))]
+    (api/api-request update-api-key-request)))
 
 (defn delete-api-key-request [api-key-id]
   (let [tenant-id (state/get-active-tenant-id)
@@ -1459,3 +1460,10 @@
                                       {:tenant-id tenant-id
                                        :api-key-id api-key-id})}]
     (api/api-request delete-api-key-request)))  
+
+(defn query-params
+  "Turn a map of parameters into a url query string."
+  [params]
+  (string/join "&"
+      (for [[k v] params]
+            (str (name k) "=" v))))

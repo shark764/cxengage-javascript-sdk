@@ -313,7 +313,7 @@
 
 (s/def ::get-dashboards-params
   (s/keys :req-un []
-          :opt-un [::specs/callback ::specs/exclude-inactive]))
+          :opt-un [::specs/callback ::specs/exclude-inactive ::specs/without-active-dashboard]))
 
 (def-sdk-fn get-dashboards
   "``` javascript
@@ -329,8 +329,8 @@
   {:validation ::get-dashboards-params
    :topic-key :get-dashboards-response}
   [params]
-  (let [{:keys [callback topic exclude-inactive]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-dashboards-request :get "dashboard" exclude-inactive))]
+  (let [{:keys [callback topic exclude-inactive without-active-dashboard]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-dashboards-request :get "dashboard" exclude-inactive without-active-dashboard))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
