@@ -317,6 +317,22 @@
           (done)))
        (ent/get-recordings {:interaction-id interaction-id :tenant-id tenant-id :callback (fn [& _] nil)})))))
 
+(deftest get-recordings-artifacts-error-test
+  (testing "the get-recording error response"
+    (let [topic (topics/get-topic :get-recordings-response)]
+      (async
+       done
+       (set! rest/get-interaction-artifacts-request (fn [& _]
+                                                      (go {:status 404})))
+       (swap! p/sdk-subscriptions dissoc topic)
+       (p/subscribe
+        topic
+        (fn [error topic response]
+          (is (= (e/failed-to-get-artifacts-err nil)
+                 (-> error ih/kebabify (update :context keyword))))
+          (done)))
+       (ent/get-recordings {:interaction-id interaction-id :tenant-id tenant-id :callback (fn [& _] nil)})))))
+
 (deftest get-recordings-test
   (testing "the get-recordings fn"
     (let [topic (topics/get-topic :get-recordings-response)]

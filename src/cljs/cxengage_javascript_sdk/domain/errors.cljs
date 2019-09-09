@@ -1264,6 +1264,19 @@
    :level "error"
    :message "Failed to get artifact."})
 
+(defn failed-to-get-recordings-err
+  "**Error Code:** 11140
+  Message: Failed to get recordings for provided interaction-id.
+  This error is usually due to an unexpected status code returned from the API where
+  one of the requested recordings (via artifact-id) is unavailable.
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code  11140
+   :context :entities
+   :data data
+   :level "error"
+   :message "Failed to retrieve the recordings for the interaction-id specified."})
+
 (defn failed-to-get-tenant-protected-branding-err [data]
   {:code 11029
    :context :entities
@@ -2691,13 +2704,6 @@
     :data {:api-response data}
     :level "error"
     :message "Failed to delete Exception."})
-
-(defn failed-to-get-recordings-err [data]
-  {:code  11133
-   :context :entities
-   :data data
-   :level "error"
-   :message "Failed to retrieve the recordings for the interaction-id specified."})
 
 ;;hygen-insert-before-11000s
 
