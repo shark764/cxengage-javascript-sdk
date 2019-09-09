@@ -868,15 +868,6 @@
    :level "error"
    :message "Failed to cancel outbound dial."})
 
-(defn failed-to-get-specific-recording-err [interaction-id artifact-id data]
-  {:code 7021
-   :context :voice
-   :data {:interaction-id interaction-id
-          :artifact-id artifact-id
-          :api-response data}
-   :level "error"
-   :message "Failed to retrieve the specified recording."})
-
 (defn failed-to-start-silent-monitoring [interaction-id data]
   {:code 7022
    :context :voice
@@ -2700,6 +2691,13 @@
     :data {:api-response data}
     :level "error"
     :message "Failed to delete Exception."})
+
+(defn failed-to-get-recordings-err [data]
+  {:code  11133
+   :context :entities
+   :data data
+   :level "error"
+   :message "Failed to retrieve the recordings for the interaction-id specified."})
 
 ;;hygen-insert-before-11000s
 

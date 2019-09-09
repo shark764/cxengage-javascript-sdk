@@ -703,30 +703,29 @@
 
   Possible Errors:
 
-  - [Entities: 7021](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-specific-recording-err
-  - [Entities: 11027](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-artifacts-err"
+  - [Entities: 11133](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-recordings-err"
   {:validation ::get-recordings-params
-   :topic-key :recording-response}
+   :topic-key :get-recordings-response}
   [params]
-  (let [{:keys [interaction-id topic callback]} params
-        tenant-id (state/get-active-tenant-id)
-        {:keys [api-response status] :as resp} (-> interaction-id
-                                                   (rest/get-interaction-artifacts-request tenant-id)
-                                                   a/<!)
-        get-recording-chans (->> api-response
-                                 :results
-                                 (filter recording?)
-                                 (mapv #(rest/get-artifact-by-id-request (:artifact-id %) interaction-id tenant-id)))]
+  (let [{:keys [interaction-id topic callback tenant-id]} params
+        tenant-id (or tenant-id (state/get-active-tenant-id))
+        {:keys [api-response status]} (-> interaction-id
+                                          (rest/get-interaction-artifacts-request tenant-id)
+                                          a/<!)
+        artifact-ids (->> api-response :results (filter recording?) :artifact-id)
+        get-recording-chans (mapv #(rest/get-artifact-by-id-request % interaction-id tenant-id) artifact-ids)]
     (go-loop [api-response api-response
               status status
               recordings []]
       (cond
         (>= status 300) (p/publish {:topics topic
-                                    :error (e/failed-to-get-artifacts-err api-response)
+                                    :error (e/failed-to-get-recordings-err {:interaction-id interaction-id
+                                                                            :artifact-ids artifact-ids
+                                                                            :api-response api-response})
                                     :response api-response})
         (= (count recordings)
            (count get-recording-chans)) (p/publish {:topics topic
-                                                    :response recordings
+                                                    :response (sort-by :created recordings)
                                                     :callback callback})
         :otherwise (let [{r :api-response
                           s :status} (a/<! (nth get-recording-chans (count recordings)))]
