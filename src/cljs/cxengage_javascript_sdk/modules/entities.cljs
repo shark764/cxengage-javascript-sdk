@@ -1,5 +1,5 @@
 (ns cxengage-javascript-sdk.modules.entities
-  (:require-macros [cljs.core.async.macros :refer [go]]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [cxengage-javascript-sdk.domain.macros :refer [def-sdk-fn log]])
   (:require [cljs.spec.alpha :as s]
             [cljs.core.async :as a]
@@ -672,6 +672,72 @@
       (p/publish {:topics topic
                   :error (e/failed-to-get-artifact-err entity-response)
                   :callback callback}))))
+
+;; -------------------------------------------------------------------------- ;;
+;; CxEngage.entities.getRecordings({
+;;   interactionId: "{{uuid}}",
+;;   tenantId: "{{uuid}}" (optional)
+;; });
+;; -------------------------------------------------------------------------- ;;
+
+(s/def ::get-recordings-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback
+                   ::specs/tenant-id]))
+
+(defn- recording?
+  [{:keys [artifact-type]}]
+  (try (re-find #".*recording" artifact-type)
+       (catch js/Error _)))
+
+(def-sdk-fn get-recordings
+  "``` javascript
+  CxEngage.entities.getRecordings({
+    interactionId: {{uuid}}, (required)
+    tenantId: {{uuid}} (optional)
+  });
+  ```
+  Fetches a list of all recordings for the provided interaction-id
+
+  Topic: cxengage/entities/get-recordings
+
+  Possible Errors:
+
+  - [Entities: 11027](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-artifacts-err
+  - [Entities: 11137](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-recordings-err"
+  {:validation ::get-recordings-params
+   :topic-key :get-recordings-response}
+  [params]
+  (let [{:keys [interaction-id topic callback tenant-id]} params
+        tenant-id (or tenant-id (state/get-active-tenant-id))
+        {artifacts-response :api-response
+         artifacts-status :status} (-> interaction-id
+                                       (rest/get-interaction-artifacts-request tenant-id)
+                                       a/<!)
+        artifact-ids (->> artifacts-response :results (filter recording?) (mapv :artifact-id))
+        get-recording-chans (mapv #(rest/get-artifact-by-id-request % interaction-id tenant-id) artifact-ids)]
+    (cond
+      (>= artifacts-status 300) (p/publish {:topics topic
+                                            :error (e/failed-to-get-artifacts-err artifacts-response)
+                                            :response api-response})
+      (-> get-recording-chans count zero?) (p/publish {:topics topic
+                                                       :response []
+                                                       :callback callback})
+      :else (go-loop [recordings []
+                      {:keys [api-response status]} (->> recordings count (nth get-recording-chans) a/<!)]
+              (let [recordings (conj recordings api-response)]
+                (cond
+                  (>= status 300) (p/publish {:topics topic
+                                              :error (e/failed-to-get-recordings-err {:interaction-id interaction-id
+                                                                                      :artifact-ids artifact-ids
+                                                                                      :api-response api-response})
+                                              :response api-response})
+                  (= (count recordings)
+                     (count get-recording-chans)) (p/publish {:topics topic
+                                                              :response (sort-by :created recordings)
+                                                              :callback callback})
+                  :otherwise (recur recordings (->> recordings count (nth get-recording-chans) a/<!))))))))
+
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getOutboundIdentifierList({
@@ -2592,7 +2658,7 @@
    :topic-key :create-tenant-response}
   [params]
   (let [{:keys [callback topic name description active]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-tenant-request name description active))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-tenant-request name description active nil))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-tenant-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -3055,10 +3121,9 @@
   Possible Errors:
   - [Entities: 11116](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-tenant-err)"
   {:validation ::update-tenant-params
-   :topic-key :update-tenant-response}
-  [params]
+   :topic-key :update-tenant-response}  [params]
   (let [{:keys [callback tenant-id topic name description active]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-tenant-request tenant-id name description active))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-tenant-request tenant-id name description active nil))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-tenant-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -3939,6 +4004,7 @@
                                        :get-email-templates get-email-templates
                                        :get-artifacts get-artifacts
                                        :get-artifact get-artifact
+                                       :get-recordings get-recordings
                                        :get-custom-metrics get-custom-metrics
                                        :get-custom-metric get-custom-metric
                                        :get-slas get-slas

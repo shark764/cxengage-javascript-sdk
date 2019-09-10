@@ -403,21 +403,21 @@
         session-id (state/get-session-id)
         outbound-integration-type (state/get-outbound-integration-type)
         dial-body { :channel-type "voice"
-                    :contact-point (if outbound-ani 
-                                       outbound-ani
-                                       "click to call")
-                    :customer phone-number
-                    :direction "agent-initiated"
-                    :interaction {:resource-id resource-id
-                                  :session-id session-id
-                                  :pop-uri pop-uri
-                                  :outbound-identifier-id outbound-identifier-id
-                                  :outbound-identifier-list-id outbound-identifier-list-id}
-                    :metadata {}
-                    :source outbound-integration-type}
-        dial-body (merge dial-body (if flow-id 
-                                       {:flow-id flow-id}                          
-                                       {}))]
+                   :contact-point (if outbound-ani
+                                    outbound-ani
+                                    "click to call")
+                   :customer phone-number
+                   :direction "agent-initiated"
+                   :interaction {:resource-id resource-id
+                                 :session-id session-id
+                                 :pop-uri pop-uri
+                                 :outbound-identifier-id outbound-identifier-id
+                                 :outbound-identifier-list-id outbound-identifier-list-id}
+                   :metadata {}
+                   :source outbound-integration-type}
+        dial-body (merge dial-body (if flow-id
+                                     {:flow-id flow-id}
+                                     {}))]
     (let [dial-response (a/<! (rest/create-interaction-request dial-body))
           {:keys [api-response status]} dial-response]
       (if (= status 200)
@@ -497,46 +497,6 @@
                     :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.getRecordings({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
-(defn- get-recording [interaction-id tenant-id artifact-id callback]
-  (go (let [audio-recording (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id nil))
-            {:keys [api-response status]} audio-recording
-            topic (topics/get-topic :recording-response)]
-        (if (= status 200)
-          (p/publish {:topics topic
-                      :response (:files api-response)
-                      :callback callback})
-          (p/publish {:topics topic
-                      :error (e/failed-to-get-specific-recording-err interaction-id artifact-id audio-recording)
-                      :callback callback})))))
-
-(s/def ::get-recordings-params
-  (s/keys :req-un [::specs/interaction-id]
-          :opt-un [::specs/callback]))
-
-(def-sdk-fn get-recordings
-  ""
-  {:validation ::get-recordings-params
-   :topic-key :recording-response}
-  [params]
-  (let [{:keys [interaction-id topic callback]} params
-        interaction-files (a/<! (rest/get-interaction-artifacts-request interaction-id nil))
-        {:keys [api-response status]} interaction-files
-        {:keys [results]} api-response
-        tenant-id (state/get-active-tenant-id)
-        audio-recordings (filterv #(= (:artifact-type %) "audio-recording") results)]
-    (if (= (count audio-recordings) 0)
-      (p/publish {:topics topic
-                  :response []
-                  :callback callback})
-      (doseq [rec audio-recordings]
-        (get-recording interaction-id tenant-id (:artifact-id rec) callback)))))
-
-;; -------------------------------------------------------------------------- ;;
 ;; SDK Voice Module
 ;; -------------------------------------------------------------------------- ;;
 
@@ -559,7 +519,6 @@
                                                  :dial dial
                                                  :cancel-dial cancel-dial
                                                  :send-digits send-digits
-                                                 :get-recordings get-recordings
                                                  :resource-remove remove-resource
                                                  :resource-hold resource-hold
                                                  :resource-resume resource-resume

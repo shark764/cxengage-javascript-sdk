@@ -181,6 +181,7 @@
                  :get-message-template-response "cxengage/entities/get-message-template-response"
                  :create-message-template-response "cxengage/entities/create-message-template-response"
                  :update-message-template-response "cxengage/entities/update-message-template-response"
+                 :get-recordings-response "cxengage/entities/get-recordings-response"
                 ;;hygen-insert-above-CRUD-topics
 
                  ;; Reporting
@@ -260,7 +261,6 @@
                  :agent-cancel-reply-acknowledged "cxengage/interactions/email/agent-cancel-reply-acknowledged"
 
                  ;; Voice Interaction Topics
-                 :recording-response "cxengage/interactions/voice/recording-received"
                  :hold-acknowledged "cxengage/interactions/voice/hold-acknowledged"
                  :resume-acknowledged "cxengage/interactions/voice/resume-acknowledged"
                  :mute-acknowledged "cxengage/interactions/voice/mute-acknowledged"

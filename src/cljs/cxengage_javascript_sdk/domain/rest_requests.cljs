@@ -687,6 +687,13 @@
                                     :url (iu/api-url "me")}]
     (api/api-request get-tenant-details-request)))
 
+(defn query-params
+  "Turn a map of parameters into a url query string."
+  [params]
+  (string/join "&"
+               (for [[k v] params]
+                 (str (name k) "=" v))))
+
 (defn get-dashboards-request [method entity-type exclude-inactive without-active-dashboard]
    (let [query-parameters (cond-> {}
                                 (true? exclude-inactive) (assoc :active true)
@@ -1085,11 +1092,11 @@
   (let [tenant-id (state/get-active-tenant-id)
         create-group-request (cond-> {:method :post
                                       :url (iu/api-url "tenants/:tenant-id/groups"
-                                                       {:tenant-id tenant-id})}
-                               (not (nil? name))            (assoc-in [:body :name] name)
-                               (not (nil? description))     (assoc-in [:body :description] description)
-                               (not (nil? active))          (assoc-in [:body :active] active)
-                               (nil? owner)                 (assoc-in [:body :owner] (state/get-active-user-id)))]
+                                                       {:tenant-id tenant-id})
+                                      :body {:owner (state/get-active-user-id)}}
+                               (not (nil? name))        (assoc-in [:body :name] name)
+                               (not (nil? description)) (assoc-in [:body :description] description)
+                               (not (nil? active))      (assoc-in [:body :active] active))]
     (api/api-request create-group-request)))
 
 (defn update-group-request [group-id name description active]
@@ -1328,12 +1335,12 @@
 
 (defn create-tenant-request [name description active status]
   (let [create-tenant-request (cond-> {:method :post
-                                              :url (iu/api-url "tenants")}
-                                          
-                                    (not (nil? name))                             (assoc-in [:body :name] name)
-                                    (not (nil? description))                      (assoc-in [:body :description] description)
-                                    (not (nil? active))                           (assoc-in [:body :active] active)
-                                    (not (nil?  status))                        (assoc-in [:body :status] status))]                                     
+                                       :url (iu/api-url "tenants")}
+
+                                (not (nil? name))        (assoc-in [:body :name] name)
+                                (not (nil? description)) (assoc-in [:body :description] description)
+                                (not (nil? active))      (assoc-in [:body :active] active)
+                                (not (nil? status))      (assoc-in [:body :status] status))]
     (api/api-request create-tenant-request)))
 
 (defn update-tenant-request [tenant-id name description active status]
@@ -1459,11 +1466,4 @@
                                       "tenants/:tenant-id/api-keys/:api-key-id"
                                       {:tenant-id tenant-id
                                        :api-key-id api-key-id})}]
-    (api/api-request delete-api-key-request)))  
-
-(defn query-params
-  "Turn a map of parameters into a url query string."
-  [params]
-  (string/join "&"
-      (for [[k v] params]
-            (str (name k) "=" v))))
+    (api/api-request delete-api-key-request)))

@@ -868,15 +868,6 @@
    :level "error"
    :message "Failed to cancel outbound dial."})
 
-(defn failed-to-get-specific-recording-err [interaction-id artifact-id data]
-  {:code 7021
-   :context :voice
-   :data {:interaction-id interaction-id
-          :artifact-id artifact-id
-          :api-response data}
-   :level "error"
-   :message "Failed to retrieve the specified recording."})
-
 (defn failed-to-start-silent-monitoring [interaction-id data]
   {:code 7022
    :context :voice
@@ -2542,7 +2533,7 @@
 
    **Solution:** Check network tab for additional error information."
   [data]
-  {:code 11135
+  {:code 11136
    :context :entities
    :data {:api-response data}
    :level "error"
@@ -2700,6 +2691,19 @@
     :data {:api-response data}
     :level "error"
     :message "Failed to delete Exception."})
+
+(defn failed-to-get-recordings-err
+  "**Error Code:** 11137
+  Message: Failed to get recordings for provided interaction-id.
+  This error is usually due to an unexpected status code returned from the API where
+  one of the requested recordings (via artifact-id) is unavailable.
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code  11137
+   :context :entities
+   :data data
+   :level "error"
+   :message "Failed to retrieve the recordings for the interaction-id specified."})
 
 ;;hygen-insert-before-11000s
 
