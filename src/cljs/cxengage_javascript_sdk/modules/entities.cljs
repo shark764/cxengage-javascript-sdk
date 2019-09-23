@@ -1696,9 +1696,9 @@
 (s/def ::get-entity-params
   (s/or
     :entity-name (s/keys :req-un [::specs/entity-name]
-                         :opt-un [::specs/callback ::specs/entity-id ::specs/sub-entity-name])
+                         :opt-un [::specs/callback ::specs/entity-id ::specs/sub-entity-name ::specs/custom-topic])
     :path (s/keys :req-un [::specs/path]
-                   :opt-un [::specs/callback])))
+                   :opt-un [::specs/callback ::specs/custom-topic])))
 
 (def-sdk-fn get-entity
   "A generic method of retrieving an entity. The first way to call the function allows you to explicitly
@@ -1708,6 +1708,8 @@
     entityName: {{string}} (required)
     entityId: {{uuid}} (optional)
     subEntityName: {{string}} (optional)
+    stringifyKeys: {{boolean}} (optional)
+    customTopic: {{string}} (optional)
   });
   ```
   Advanced users/consumers of the sdk/api can pass in an object with path as the key and an ordered array of the variables
@@ -1716,6 +1718,7 @@
   CxEngage.entities.getEntity({
     path: {{array}} (required) Example Array ['groups', '0000-0000-0000-0000', 'outboundIdentifierLists']
     stringifyKeys: {{boolean}} (optional)
+    customTopic: {{string}} (optional)
   });
   ```
   Retrieves an entity from the api matching the required parameters
@@ -1730,17 +1733,19 @@
   {:validation ::get-entity-params
    :topic-key :get-entity-response}
   [params]
-  (let [{:keys [callback topic entity-name entity-id sub-entity-name path stringify-keys]} params]
-     (let [{:keys [status api-response]} (a/<! (rest/get-crud-entity-request (if path
-                                                                              (into [] path)
-                                                                              [entity-name entity-id sub-entity-name]) 
-                                                                             {:stringify-keys? stringify-keys}))
-           status-is-200 (= status 200)]
-          (p/publish
-            {:topics topic
-             :response api-response
-             :error (if (false? status-is-200) (e/failed-to-get-entity-err api-response))
-             :callback callback}))))
+  (let [{:keys [callback topic entity-name entity-id sub-entity-name path stringify-keys custom-topic]} params
+        {:keys [status api-response]} (a/<! (rest/get-crud-entity-request 
+                                             (if path
+                                               (into [] path)
+                                               [entity-name entity-id sub-entity-name])
+                                             {:stringify-keys? stringify-keys}))
+        response-error (if-not (= status 200) (e/failed-to-get-entity-err api-response))
+        topic (or custom-topic topic)]
+      (p/publish
+       {:topics topic
+        :response api-response
+        :error response-error
+        :callback callback})))
 
 (s/def ::get-platform-user-params
   (s/keys :req-un [::specs/user-id]
