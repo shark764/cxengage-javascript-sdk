@@ -172,11 +172,10 @@
   {:validation ::remove-statistics-params
    :topic-key :remove-stat}
   [params]
-  (let [{:keys [stat-id topic callback]} params
-        new-stats (dissoc (:statistics @stat-subscriptions) stat-id)]
-    (swap! stat-subscriptions assoc :statistics new-stats)
+  (let [{:keys [stat-id topic callback]} params]
+    (swap! stat-subscriptions iu/dissoc-in [:statistics stat-id])
     (p/publish {:topics topic
-                :response new-stats
+                :response (:statistics @stat-subscriptions)
                 :callback callback
                 :preserve-casing? true})))
 
@@ -198,7 +197,7 @@
    :topic-key :bulk-remove-stat}
   [params]
   (let [{:keys [stat-ids topic callback]} params]
-    (map #(swap! stat-subscriptions iu/dissoc-in [:statistics %]) stat-ids)
+    (doseq [id stat-ids] (swap! stat-subscriptions iu/dissoc-in [:statistics id]))
     (p/publish {:topics topic
                 :response (:statistics @stat-subscriptions)
                 :callback callback
