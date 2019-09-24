@@ -312,9 +312,13 @@
   {:statistics {"c82d912c-2034-4b9e-a92a-f175870f5d8b" {:statistic "queue-length"
                                                         :topic "cxengage/reporting/stat-subscription-added"}
                 "7749c9c0-3979-11e7-b8fc-d0f69d796523" {:statistic "queue-time"
+                                                        :topic "cxengage/reporting/stat-subscription-added"}
+                "8749c9c0-4979-11e7-b8fc-b0f69d796526" {:statistic "some-custom-stat"
                                                         :topic "cxengage/reporting/stat-subscription-added"}}})
 
 (def stat-removal-response {:7749c9c0-3979-11e7-b8fc-d0f69d796523 {:statistic "queue-time"
+                                                                   :topic "cxengage/reporting/stat-subscription-added"}
+                            :8749c9c0-4979-11e7-b8fc-b0f69d796526 {:statistic "some-custom-stat"
                                                                    :topic "cxengage/reporting/stat-subscription-added"}})
 
 (deftest remove-stat-sub--happy-test
@@ -329,3 +333,20 @@
               (is (= stat-removal-response (js->clj response :keywordize-keys true)))
               (done)))
            (rep/remove-stat-subscription {:stat-id "c82d912c-2034-4b9e-a92a-f175870f5d8b"}))))
+
+(deftest bulk-remove-stat-sub--happy-test
+  (testing "remove multiple statistic subscriptions - subscription success"
+    (async done
+           (reset! p/sdk-subscriptions {})
+           (reset! st/sdk-state test-state)
+           (reset! rep/stat-subscriptions stat-removal-mock-subscription)
+           (p/subscribe
+            (topics/get-topic :bulk-remove-stat)
+            (fn [error topic response]
+              (is (= (dissoc stat-removal-response :8749c9c0-4979-11e7-b8fc-b0f69d796526)
+                     (js->clj response :keywordize-keys true)))
+              (done)))
+           (rep/bulk-remove-stat-subscription {:stat-ids ["c82d912c-2034-4b9e-a92a-f175870f5d8b"
+                                                          "8749c9c0-4979-11e7-b8fc-b0f69d796526"]}))))
+
+

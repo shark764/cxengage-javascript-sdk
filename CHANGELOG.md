@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.0.2] - 2019-09-24
+### Fixed
+- bug in bulk-remove-stat-subscriptions
+- undefined response on recordings function when api-status on artifact fetch > 300
+
 ## [9.0.1] - 2019-09-10
 ### Fixed
 - jenkins down rebuild
@@ -11,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [9.0.0] - 2019-09-09
 ### Changed
 - *Breaking* get-recordings sdk-function moved to `CxEngage.entities/get-recordings`
-- Moved `Failed to get specified recording` error from voice to entities. 
+- Moved `Failed to get specified recording` error from voice to entities.
 - GetRecording topic moved: `:recording-response "cxengage/interactions/voice/recording-received"` to `:get-recordings-response "cxengage/entities/get-recordings-response"`
 
 ### Fixed

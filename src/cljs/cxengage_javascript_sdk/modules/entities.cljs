@@ -719,7 +719,7 @@
     (cond
       (>= artifacts-status 300) (p/publish {:topics topic
                                             :error (e/failed-to-get-artifacts-err artifacts-response)
-                                            :response api-response})
+                                            :response artifacts-response})
       (-> get-recording-chans count zero?) (p/publish {:topics topic
                                                        :response []
                                                        :callback callback})
