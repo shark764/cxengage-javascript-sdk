@@ -691,6 +691,22 @@
    :level "error"
    :message "Failed to retrieve specific messaging transcript."})
 
+(defn failed-to-retrieve-smooch-messaging-history-err [interaction-id data]
+  {:code 6006
+   :context :messaging
+   :data {:interaction-id interaction-id
+          :api-response data}
+   :level "error"
+   :message "Failed to retrieve messaging history."})
+
+(defn failed-to-send-smooch-message [interaction-id message]
+  {:code 6007
+   :context :messaging
+   :data {:interaction-id interaction-id
+          :message message}
+   :level "error"
+   :message "Failed to send message."})
+
 (defn failed-to-refresh-twilio-integration-err [data]
   {:code 7000
    :context :voice
@@ -2594,7 +2610,7 @@
    :level "error"
    :message "Failed to create Business Hours."})
 
-  (defn failed-to-update-business-hour-err
+(defn failed-to-update-business-hour-err
   "**Error Code:** 11130
     Message: Failed to update Business Hours.
 

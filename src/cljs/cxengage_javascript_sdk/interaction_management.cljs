@@ -12,6 +12,16 @@
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.modules.messaging :as messaging]))
 
+(defn get-smooch-history [interaction-id]
+  (go (let [history-response (a/<! (rest/get-smooch-interaction-history-request interaction-id))
+            {:keys [api-response status]} history-response
+            {:keys [result]} api-response]
+        (if (not= status 200)
+          (p/publish {:topics (topics/get-topic :smooch-history-received)
+                      :error (e/failed-to-retrieve-smooch-messaging-history-err interaction-id history-response)})
+          (p/publish {:topics (topics/get-topic :smooch-history-received)
+                      :response api-response})))))
+
 (defn get-messaging-history [interaction-id]
   (go (let [history-response (a/<! (rest/get-messaging-interaction-history-request interaction-id))
             {:keys [api-response status]} history-response
@@ -94,17 +104,20 @@
       (state/transition-interaction! :incoming :pending (:interaction-id message))
       (state/add-interaction! :pending message))
     (state/add-interaction! :pending message))
-  (let [{:keys [channel-type interaction-id timeout direction]} message
+  (let [{:keys [channel-type interaction-id timeout direction source]} message
         now (iu/get-now)
         expiry (.getTime (js/Date. timeout))]
     (if (> now expiry)
       (log :warn "Received an expired work offer; doing nothing")
-      (do (when (or (= channel-type "sms")
-                    (= channel-type "messaging"))
-            (let [{:keys [interaction-id]} message]
-              (get-messaging-metadata interaction-id)))
-          (when (and (= channel-type "email") (= direction "inbound"))
-            (let [{:keys [interaction-id artifact-id]} message]
+      (do (cond
+            (and (= channel-type "messaging")
+                 (= source "smooch"))
+            (get-smooch-history interaction-id)
+            (or (= channel-type "sms")
+                (= channel-type "messaging"))
+            (get-messaging-metadata interaction-id)
+            (and (= channel-type "email") (= direction "inbound"))
+            (let [{:keys [artifact-id]} message]
               (get-email-artifact-data interaction-id artifact-id)))
           (p/publish {:topics (topics/get-topic :work-offer-received)
                       :response message}))))
@@ -310,7 +323,7 @@
                            :script script}})))
 
 (defn handle-generic [message]
-  (log :warn "Couldn't handle message: " message))
+  (log :warn "Couldn't handle message: " (clj->js message)))
 
 (defn handle-resource-added [message]
   (p/publish {:topics (topics/get-topic :resource-added-received)
@@ -397,9 +410,11 @@
     (p/publish {:topics (topics/get-topic :customer-resume-error)
                 :error (e/failed-to-resume-customer-err interaction-id message)})))
 
+(defn handle-send-message [message]
+  (p/publish {:topics (topics/get-topic :smooch-message-received)
+              :response message}))
 
-    
-(defn msg-router [message]
+(defn msg-router [message msg-type]
   (let [handling-fn (case (:sdk-msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
                       :INTERACTIONS/WORK_OFFER_RECEIVED handle-work-offer
@@ -438,10 +453,12 @@
                       :INTERACTIONS/CUSTOMER_CONNECTED handle-customer-connected
                       :INTERACTIONS/CUSTOMER_HOLD_ERROR handle-customer-hold-error
                       :INTERACTIONS/CUSTOMER_RESUME_ERROR handle-customer-resume-error
+                      :INTERACTIONS/SEND_MESSAGE_RECEIVED handle-send-message
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
-               (not= (get message :type) "send-script"))
+               (not= (get message :type) "send-script")
+               (not= msg-type "send-message"))
       (log :info (str "Acknowledging receipt of flow action: "
                       (or (:notification-type message) (:type message))))
       (when (or (:notification-type message) (:type message))
@@ -499,6 +516,14 @@
                                        :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
       (merge {:sdk-msg-type inferred-notification-type} message))))
 
+(defn infer-message-type
+  [message]
+  (let [{:keys [message-type]} message
+        inferred-message-type (case message-type
+                                "send-message" :INTERACTIONS/SEND_MESSAGE_RECEIVED
+                                :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
+    (merge {:sdk-msg-type inferred-message-type} message)))
+
 (defn sqs-msg-router [message]
   (let [cljsd-msg (ih/kebabify message)
         msg-type (:type cljsd-msg)
@@ -510,12 +535,13 @@
                        "resource-direction-change" (merge {:sdk-msg-type :SESSION/CHANGE_DIRECTION_RESPONSE} cljsd-msg)
                        "work-offer" (merge {:sdk-msg-type :INTERACTIONS/WORK_OFFER_RECEIVED} cljsd-msg)
                        "send-script" (merge {:sdk-msg-type :INTERACTIONS/SCRIPT_RECEIVED} cljsd-msg)
+                       "send-message" (infer-message-type cljsd-msg)
                        "agent-notification" (infer-notification-type cljsd-msg)
                        nil)]
     (when (state/get-blast-sqs-output)
       (log :debug (str "[SQS] Message received (" (:sdk-msg-type inferred-msg) "):") (ih/camelify message)))
     (if inferred-msg
-      (msg-router inferred-msg)
+      (msg-router inferred-msg msg-type)
       (do (log :warn "Unable to infer message type from sqs")
           (p/publish {:topics (topics/get-topic :unknown-agent-notification-type-received)
                       :error (e/unknown-agent-notification-type-err inferred-msg)})

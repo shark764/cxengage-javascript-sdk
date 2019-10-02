@@ -318,6 +318,15 @@
       (do (js/console.warn "[SDK State] Unable to find user id in state; likely to have unintended side-effects.")
           nil))))
 
+(defn get-active-user-name
+  []
+  (let [user-first-name (get-state-value [:user :first-name])
+        user-last-name (get-state-value [:user :last-name])]
+    (if (or user-first-name user-last-name)
+      (str user-first-name " " user-last-name)
+      (do (js/console.warn "[SDK State] Unable to find user name in state.")
+          "Agent"))))
+
 ;;;;;;;;;;;;;;;;;;
 ;; Sessiony Things
 ;;;;;;;;;;;;;;;;;;

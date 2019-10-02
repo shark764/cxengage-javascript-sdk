@@ -192,6 +192,31 @@
 (defn- format-payload [message]
   (t/write (t/writer :json-verbose) (clojure.walk/stringify-keys message)))
 
+(def-sdk-fn send-smooch-message
+  "``` javascript
+  CxEngage.interactions.messaging.sendSmoochMessage({
+    interactionId: {{uuid}}, (required)
+    message: {{string}}, (required)
+  });
+  ```
+
+  Sends a message to all participants in the interaction.
+
+  Topic: cxengage/interactions/messaging/send-smooch-message"
+  {:validation ::send-message-params
+   :topic-key :smooch-message-received}
+  [params]
+  (let [{:keys [interaction-id message topic callback]} params
+        smooch-response (a/<! (rest/send-smooch-message interaction-id message))
+        {:keys [api-response status]} smooch-response]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-send-smooch-message interaction-id message)
+                  :callback callback}))))
+
 ;; ----------------------------------------------------------------;;
 ;; CxEngage.interactions.messaging.sendMessage({
 ;;   interactionId: "{{interaction-id}}",
@@ -432,7 +457,8 @@
                                          (transform-keys camel/->kebab-case-keyword)
                                          (#(rename-keys % {:region :region-name})))]
           (do (mqtt-init formatted-integration client-id on-msg-fn)
-              (ih/register {:api {:interactions {:messaging {:send-message send-message
+              (ih/register {:api {:interactions {:messaging {:send-smooch-message send-smooch-message
+                                                             :send-message send-message
                                                              :get-transcripts get-transcripts
                                                              :initialize-outbound-sms click-to-sms
                                                              :send-outbound-sms send-sms-by-interrupt

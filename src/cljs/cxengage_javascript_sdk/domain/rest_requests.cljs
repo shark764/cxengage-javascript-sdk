@@ -42,6 +42,30 @@
                                   :initiator-id initiator-id}}]
     (api/api-request direction-request)))
 
+(defn get-smooch-interaction-history-request [interaction-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        history-request {:method :get
+                         :url (iu/api-url
+                               "smooch/tenants/:tenant-id/interactions/:interaction-id/conversation"
+                               {:tenant-id tenant-id
+                                :interaction-id interaction-id})}]
+    (api/api-request history-request)))
+
+(defn send-smooch-message [interaction-id message]
+  (let [tenant-id (state/get-active-tenant-id)
+        agent-id (state/get-active-user-id)
+        agent-name (state/get-active-user-name)
+        send-request {:method :post
+                      :url (iu/api-url
+                            "smooch/tenants/:tenant-id/interactions/:interaction-id/message"
+                            {:tenant-id tenant-id
+                             :interaction-id interaction-id})
+                      :body {:type "agent"
+                             :resource-id agent-id
+                             :from agent-name
+                             :message message}}]
+    (api/api-request send-request)))
+
 (defn get-messaging-interaction-history-request [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
         history-request {:method :get
@@ -1360,8 +1384,8 @@
 (defn create-message-template-request [name description channels template-text-type template active]
   (let [tenant-id (state/get-active-tenant-id)
         create-message-template-request (cond-> {:method :post
-                                              :url (iu/api-url "tenants/:tenant-id/message-templates"
-                                                               {:tenant-id tenant-id})}
+                                                 :url (iu/api-url "tenants/:tenant-id/message-templates"
+                                                                  {:tenant-id tenant-id})}
                                           name                            (assoc-in [:body :name] name)
                                           (not (nil? description))        (assoc-in [:body :description] description)
                                           channels                        (assoc-in [:body :channels] channels)
@@ -1373,9 +1397,9 @@
 (defn update-message-template-request [message-template-id name description channels template-text-type template active]
   (let [tenant-id (state/get-active-tenant-id)
         update-message-template-request (cond-> {:method :put
-                                              :url (iu/api-url "tenants/:tenant-id/message-templates/:message-template-id"
-                                                               {:tenant-id tenant-id 
-                                                               :message-template-id message-template-id})}
+                                                 :url (iu/api-url "tenants/:tenant-id/message-templates/:message-template-id"
+                                                                  {:tenant-id tenant-id 
+                                                                   :message-template-id message-template-id})}
                                           (not (nil? name))                             (assoc-in [:body :name] name)
                                           (not (nil? description))                      (assoc-in [:body :description] description)
                                           (not (nil? channels))                         (assoc-in [:body :channels] channels)

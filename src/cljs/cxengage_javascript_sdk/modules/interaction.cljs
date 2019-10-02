@@ -100,7 +100,7 @@
         tenant-id (state/get-active-tenant-id)
         interrupt-body {:resource-id (state/get-active-user-id)}
         interrupt-type "offer-accept"
-        {:keys [timeout timeout-end channel-type]} (state/get-interaction interaction-id)
+        {:keys [timeout timeout-end channel-type source]} (state/get-interaction interaction-id)
         {:keys [status] :as resp} (a/<! (rest/send-interrupt-request interaction-id interrupt-type interrupt-body))]
     (if (not= status 200)
       (p/publish {:topics topic
@@ -113,31 +113,34 @@
             (p/publish {:topics topic
                         :error (e/work-offer-expired-err)
                         :callback callback})
-            (do (when (and (= channel-type "voice")
-                           (= (:provider (state/get-active-extension)) "twilio"))
-                  (go-loop [t (a/timeout 1000)
-                            attempts 1]
-                    ;; Wait 35 seconds for Twilio to be in an incoming state after the accept, to account for network latencies, etc.
-                    (if (= attempts 35)
-                      (p/publish {:topics topic
-                                  :error (e/failed-to-find-twilio-connection-object interaction-id)
-                                  :callback callback})
-                      (let [connection (state/get-twilio-connection)
-                            twilio-state (state/get-twilio-state)]
-                        (if (and connection
-                              (.-accept connection)
-                              (= "incoming" twilio-state))
-                          (do
-                            (log :debug "Accepting Twilio connection.")
-                            (.accept connection))
-                          (do
-                            (log :debug "Twilio not in an incoming state to accept. Waiting 1 second to try again." (str "State: " twilio-state) "Connection: " connection)
-                            (a/<! t)
-                            (recur (a/timeout 1000)
-                                   (inc attempts))))))))
-                (when (or (= channel-type "sms")
-                          (= channel-type "messaging"))
-                  (int/get-messaging-history interaction-id))))))))
+            (cond 
+              (and (= channel-type "voice")
+                   (= (:provider (state/get-active-extension)) "twilio"))
+              (go-loop [t (a/timeout 1000)
+                        attempts 1]
+                ;; Wait 35 seconds for Twilio to be in an incoming state after the accept, to account for network latencies, etc.
+                (if (= attempts 35)
+                  (p/publish {:topics topic
+                              :error (e/failed-to-find-twilio-connection-object interaction-id)
+                              :callback callback})
+                  (let [connection (state/get-twilio-connection)
+                        twilio-state (state/get-twilio-state)]
+                    (if (and connection
+                          (.-accept connection)
+                          (= "incoming" twilio-state))
+                      (do
+                        (log :debug "Accepting Twilio connection.")
+                        (.accept connection))
+                      (do
+                        (log :debug "Twilio not in an incoming state to accept. Waiting 1 second to try again." (str "State: " twilio-state) "Connection: " connection)
+                        (a/<! t)
+                        (recur (a/timeout 1000)
+                               (inc attempts)))))))
+              (= "smooch" source)
+              (int/get-smooch-history interaction-id)
+              (or (= channel-type "sms")
+                  (= channel-type "messaging"))
+              (int/get-messaging-history interaction-id)))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.focus({

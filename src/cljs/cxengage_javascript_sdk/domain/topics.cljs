@@ -303,6 +303,8 @@
 
                  ;; Messaging Interaction Topics
                  :transcript-response "cxengage/interactions/messaging/transcript-received"
+                 :smooch-history-received "cxengage/interactions/messaging/smooch-history-received"
+                 :smooch-message-received "cxengage/interactions/messaging/smooch-message-received"
                  :messaging-history-received "cxengage/interactions/messaging/history-received"
                  :send-message-acknowledged "cxengage/interactions/messaging/send-message-acknowledged"
                  :new-message-received "cxengage/interactions/messaging/new-message-received"
