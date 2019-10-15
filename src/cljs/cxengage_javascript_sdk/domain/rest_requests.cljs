@@ -66,6 +66,34 @@
                              :message message}}]
     (api/api-request send-request)))
 
+(defn send-smooch-conversation-read [interaction-id]
+  (let [tenant-id (state/get-active-tenant-id)
+        agent-id (state/get-active-user-id)
+        agent-name (state/get-active-user-name)
+        send-request {:method :put
+                      :url (iu/api-url
+                            "smooch/tenants/:tenant-id/interactions/:interaction-id/conversation"
+                            {:tenant-id tenant-id
+                             :interaction-id interaction-id})
+                      :body {:resource-id agent-id
+                             :from agent-name
+                             :event "conversation-read"}}]
+    (api/api-request send-request)))
+
+(defn send-smooch-typing [interaction-id typing]
+  (let [tenant-id (state/get-active-tenant-id)
+        agent-id (state/get-active-user-id)
+        agent-name (state/get-active-user-name)
+        send-request {:method :put
+                      :url (iu/api-url
+                            "smooch/tenants/:tenant-id/interactions/:interaction-id/conversation"
+                            {:tenant-id tenant-id
+                             :interaction-id interaction-id})
+                      :body {:resource-id agent-id
+                             :from agent-name
+                             :event (if typing "typing-start" "typing-stop")}}]
+    (api/api-request send-request)))
+
 (defn get-messaging-interaction-history-request [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
         history-request {:method :get

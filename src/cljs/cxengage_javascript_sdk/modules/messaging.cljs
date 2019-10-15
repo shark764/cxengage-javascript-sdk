@@ -217,6 +217,66 @@
                   :error (e/failed-to-send-smooch-message interaction-id message)
                   :callback callback}))))
 
+(s/def ::send-smooch-conversation-read-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn send-smooch-conversation-read
+  "``` javascript
+    CxEngage.interactions.messaging.sendSmoochConversationRead({
+      interactionId: {{uuid}}, (required)
+    });
+  ```
+  Sends a conversation read event to all participants in the interaction.
+
+  Topic: cxengage/interactions/messaging/smooch-conversation-read-received
+
+  Possible Errors:
+
+  - [Messaging: 6008] (/cxengage-javascript-sdk.domain.errors.html#var-failed-to-send-smooch-conversation-read)"
+  {:validation ::send-smooch-conversation-read-params
+   :topic-key :smooch-conversation-read-received}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        smooch-response (a/<! (rest/send-smooch-conversation-read interaction-id))
+        {:keys [api-response status]} smooch-response
+        errror (if-not (= 200 status) (e/failed-to-send-smooch-conversation-read interaction-id))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
+(s/def ::send-smooch-typing-indicator-params
+  (s/keys :req-un [::specs/interaction-id
+                   ::specs/typing]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn send-smooch-typing-indicator
+  "``` javascript
+    CxEngage.interactions.messaging.sendSmoochTypingIndicator({
+      interactionId: {{uuid}}, (required)
+      typing: {{boolean}}, (required)
+    });
+  ```
+  Sends a typing indicator to all participants in the interaction.
+
+  Topic: cxengage/interactions/messaging/smooch-typing-received
+
+  Possible Errors:
+
+  - [Messaging: 6009] (/cxengage-javascript-sdk.domain.errors.html#var-failed-to-send-smooch-typing)"
+  {:validation ::send-smooch-typing-indicator-params
+   :topic-key :smooch-typing-received}
+  [params]
+  (let [{:keys [interaction-id typing topic callback]} params
+        smooch-response (a/<! (rest/send-smooch-typing interaction-id typing))
+        {:keys [api-response status]} smooch-response
+        error (if-not (= status 200) (e/failed-to-send-smooch-typing interaction-id typing))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error
+                :callback callback})))
+
 ;; ----------------------------------------------------------------;;
 ;; CxEngage.interactions.messaging.sendMessage({
 ;;   interactionId: "{{interaction-id}}",
@@ -458,6 +518,8 @@
                                          (#(rename-keys % {:region :region-name})))]
           (do (mqtt-init formatted-integration client-id on-msg-fn)
               (ih/register {:api {:interactions {:messaging {:send-smooch-message send-smooch-message
+                                                             :send-smooch-conversation-read send-smooch-conversation-read
+                                                             :send-smooch-typing-indicator send-smooch-typing-indicator
                                                              :send-message send-message
                                                              :get-transcripts get-transcripts
                                                              :initialize-outbound-sms click-to-sms
