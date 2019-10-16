@@ -3360,13 +3360,14 @@
 
 (s/def ::update-users-capacity-rule-params
   (s/keys :req-un [::specs/user-id ::specs/capacity-rule-id]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/callback ::specs/effective-capacity-rule]))
 
 (def-sdk-fn update-users-capacity-rule
   "``` javascript
   CxEngage.entities.updateUsersCapacityRule({
-    userId: {{string}}, (required)
-    capacityRuleId: {{string or null}}, (required)
+    userId: {{uuid}}, (required)
+    capacityRuleId: {{uuid or null}}, (optional)
+    effectiveCapacityRule: {{uuid or null}}, (optional)
   });
   ```
   Updates the users effective capacity rule.
@@ -3379,8 +3380,7 @@
   {:validation ::update-users-capacity-rule-params
    :topic-key :update-users-capacity-rule-response}
   [params]
-  (let [{:keys [callback topic user-id capacity-rule-id]} params
-        effective-capacity-rule (get-in (a/<! (rest/crud-entity-request :get "user" user-id)) [:api-response :result :effective-capacity-rule :id])
+  (let [{:keys [callback topic user-id capacity-rule-id effective-capacity-rule]} params
         deleted (and effective-capacity-rule (a/<! (rest/delete-users-capacity-request user-id effective-capacity-rule)))
         deletedResponse (:api-response deleted)
         deletedStatus (:status deleted)
@@ -3388,10 +3388,12 @@
         updatedResponse (:api-response updated)
         updatedStatus (:status updated)
         response (if (not= capacity-rule-id nil) updatedResponse deletedResponse)
-        error (if (not= capacity-rule-id nil) (if (not= updatedStatus 200) (e/failed-to-update-users-capacity-rule-err response)) (if (not= deletedStatus 200) (e/failed-to-update-users-capacity-rule-err response)))]
+        error1 (if-not (= deletedStatus 200) (e/failed-to-update-users-capacity-rule-err deletedResponse))
+        error2 (if-not (= updatedStatus 200) (e/failed-to-update-users-capacity-rule-err updatedResponse))
+        response-error (or error1 error2 nil)]
    (p/publish {:topics topic
                :response response
-               :error error
+               :error response-error
                :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
