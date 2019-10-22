@@ -183,7 +183,6 @@
                  :update-message-template-response "cxengage/entities/update-message-template-response"
                  :get-recordings-response "cxengage/entities/get-recordings-response"
                 ;;hygen-insert-above-CRUD-topics
-
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"
                  :get-stat-query-response "cxengage/reporting/get-stat-query-response"
@@ -305,6 +304,8 @@
                  :transcript-response "cxengage/interactions/messaging/transcript-received"
                  :smooch-history-received "cxengage/interactions/messaging/smooch-history-received"
                  :smooch-message-received "cxengage/interactions/messaging/smooch-message-received"
+                 :smooch-conversation-read-received "cxengage/interactions/messaging/smooch-conversation-read-received"
+                 :smooch-typing-received "cxengage/interactions/messaging/smooch-typing-received"
                  :messaging-history-received "cxengage/interactions/messaging/history-received"
                  :send-message-acknowledged "cxengage/interactions/messaging/send-message-acknowledged"
                  :new-message-received "cxengage/interactions/messaging/new-message-received"

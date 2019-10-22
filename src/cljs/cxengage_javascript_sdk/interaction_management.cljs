@@ -414,6 +414,14 @@
   (p/publish {:topics (topics/get-topic :smooch-message-received)
               :response message}))
 
+(defn handle-conversation-read [message]
+  (p/publish {:topics (topics/get-topic :smooch-conversation-read-received)
+              :response message}))
+
+(defn handle-typing [message]
+  (p/publish {:topics (topics/get-topic :smooch-typing-received)
+              :response message}))
+
 (defn msg-router [message msg-type]
   (let [handling-fn (case (:sdk-msg-type message)
                       :INTERACTIONS/WORK_ACCEPTED_RECEIVED handle-work-accepted
@@ -454,6 +462,8 @@
                       :INTERACTIONS/CUSTOMER_HOLD_ERROR handle-customer-hold-error
                       :INTERACTIONS/CUSTOMER_RESUME_ERROR handle-customer-resume-error
                       :INTERACTIONS/SEND_MESSAGE_RECEIVED handle-send-message
+                      :INTERACTIONS/CONVERSATION_READ_RECEIVED handle-conversation-read
+                      :INTERACTIONS/TYPING_RECEIVED handle-typing
                       nil)]
     (when (and (get message :action-id)
                (not= (get message :interaction-id) "00000000-0000-0000-0000-000000000000")
@@ -518,9 +528,12 @@
 
 (defn infer-message-type
   [message]
-  (let [{:keys [message-type]} message
-        inferred-message-type (case message-type
-                                "send-message" :INTERACTIONS/SEND_MESSAGE_RECEIVED
+  (let [type (:message-type message)
+        inferred-message-type (case type
+                                "received-message" :INTERACTIONS/SEND_MESSAGE_RECEIVED
+                                "conversation-read" :INTERACTIONS/CONVERSATION_READ_RECEIVED
+                                "typing-start" :INTERACTIONS/TYPING_RECEIVED
+                                "typing-stop" :INTERACTIONS/TYPING_RECEIVED
                                 :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
     (merge {:sdk-msg-type inferred-message-type} message)))
 

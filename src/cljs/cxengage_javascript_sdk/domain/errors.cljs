@@ -707,6 +707,21 @@
    :level "error"
    :message "Failed to send message."})
 
+(defn failed-to-send-smooch-conversation-read [interaction-id]
+  {:code 6008
+   :context :messaging
+   :data {:interaction-id interaction-id}
+   :level "error"
+   :message "Failed to send read indicator."})
+
+(defn failed-to-send-smooch-typing [interaction-id typing]
+  {:code 6009
+   :context :messaging
+   :data {:interaction-id interaction-id
+          :typing typing}
+   :level "error"
+   :message "Failed to send typing indicator"})
+
 (defn failed-to-refresh-twilio-integration-err [data]
   {:code 7000
    :context :voice

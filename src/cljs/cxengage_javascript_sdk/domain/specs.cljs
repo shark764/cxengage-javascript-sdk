@@ -201,3 +201,4 @@
 (s/def ::timezone string?)
 ;; TODO: Write an actual spec for this one
 (s/def ::time-minutes map?)
+(s/def ::typing boolean?)
