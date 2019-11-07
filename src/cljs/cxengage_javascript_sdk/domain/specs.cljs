@@ -128,7 +128,6 @@
 (s/def ::locale string?)
 (s/def ::log-level #{:debug :info :warn :error :fatal :off})
 (s/def ::message string?)
-(s/def ::next-state string?)
 (s/def ::note-id ::uuid)
 (s/def ::no-session boolean?)
 (s/def ::outbound-ani string?)

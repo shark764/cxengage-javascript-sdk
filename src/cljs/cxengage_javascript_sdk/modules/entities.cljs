@@ -1666,10 +1666,10 @@
   (let [{:keys [callback topic message-template-id]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["message-templates" message-template-id]))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-message-template-err entity-response))]
-        (p/publish {:topics topic
-                    :response api-response
-                    :error response-error
-                    :callback callback})))
+       (p/publish {:topics topic
+                   :response api-response
+                   :error response-error
+                   :callback callback})))
 
 (def-sdk-fn get-platform-roles
   "``` javascript
@@ -1805,11 +1805,11 @@
    :topic-key :get-business-hours-response}
   [params]
   (let [{:keys [callback topic]} params
-    {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "business-hour"))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/crud-entities-request :get "business-hour"))]
     (if (= status 200)
       (p/publish {:topics topic
-        :response api-response
-        :callback callback})
+                  :response api-response
+                  :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-business-hours-err entity-response)
                   :callback callback}))))
@@ -1855,11 +1855,11 @@
    :topic-key :get-timezones-response}
   [params]
   (let [{:keys [callback topic]} params
-    {:keys [status api-response] :as entity-response} (a/<! (rest/get-timezones-request))]
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-timezones-request))]
     (if (= status 200)
       (p/publish {:topics topic
-        :response api-response
-        :callback callback})
+                  :response api-response
+                  :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-timezones-err entity-response)
                   :callback callback}))))
@@ -2771,7 +2771,7 @@
   [params]
   (let [{:keys [callback topic business-hour-id date is-all-day description start-time-minutes end-time-minutes]} params
         {:keys [status api-response] :as entity-response} (a/<! 
-          (rest/create-exception-request business-hour-id date is-all-day description start-time-minutes end-time-minutes))
+                                                           (rest/create-exception-request business-hour-id date is-all-day description start-time-minutes end-time-minutes))
         response-error (when-not (= (:status entity-response) 200) (e/failed-to-create-exception-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -3382,15 +3382,14 @@
   [params]
   (let [{:keys [callback topic user-id capacity-rule-id effective-capacity-rule]} params
         deleted (and effective-capacity-rule (a/<! (rest/delete-users-capacity-request user-id effective-capacity-rule)))
-        deletedResponse (:api-response deleted)
-        deletedStatus (:status deleted)
+        deleted-response (and deleted (:api-response deleted))
         updated (and (not= capacity-rule-id nil) (a/<! (rest/update-users-capacity-request user-id capacity-rule-id)))
-        updatedResponse (:api-response updated)
-        updatedStatus (:status updated)
-        response (if (not= capacity-rule-id nil) updatedResponse deletedResponse)
-        error1 (if-not (= deletedStatus 200) (e/failed-to-update-users-capacity-rule-err deletedResponse))
-        error2 (if-not (= updatedStatus 200) (e/failed-to-update-users-capacity-rule-err updatedResponse))
-        response-error (or error1 error2 nil)]
+        updated-response (:api-response updated)
+        response (if-not (nil? capacity-rule-id) updated-response deleted-response)
+        deleted-error (if (and (not (nil? deleted-response)) (not (= (:status deleted) 200)))
+                          (e/failed-to-update-users-capacity-rule-err deleted-response))
+        updated-error (if-not (= (:status updated) 200) (e/failed-to-update-users-capacity-rule-err updated-response))
+        response-error (or updated-error deleted-error nil)]
    (p/publish {:topics topic
                :response response
                :error response-error
