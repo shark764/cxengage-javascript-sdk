@@ -3657,8 +3657,8 @@
                 :callback callback})))
 
 (s/def ::update-disposition-params
-  (s/keys :req-un [ ::specs/disposition-id ::specs/name ::specs/active ::specs/shared]
-          :opt-un [ ::specs/callback ::specs/description ::specs/external-id]))
+  (s/keys :req-un [ ::specs/disposition-id]
+          :opt-un [ ::specs/callback ::specs/description ::specs/external-id ::specs/name ::specs/active ::specs/shared]))
 
 (def-sdk-fn update-disposition
   "``` javascript
