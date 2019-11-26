@@ -63,6 +63,7 @@
 (s/def ::active-version ::uuid)
 (s/def ::version (s/or :version id/valid-uuid? :version nil?))
 (s/def ::exclude-notations boolean?)
+(s/def ::include-drafts boolean?)
 (s/def ::minutes-day (s/int-in -1 1441))
 (s/def ::artifact-id ::uuid)
 (s/def ::assign-type #{"contact" "relatedTo"})

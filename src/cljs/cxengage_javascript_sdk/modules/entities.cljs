@@ -1249,16 +1249,18 @@
 ;;;----flow------;;
 (s/def ::get-flow-params
   (s/keys :req-un [::specs/flow-id]
-          :opt-un []))
+          :opt-un [::specs/include-drafts]))
 
 (def-sdk-fn get-flow
   "``` javascript
   CxEngage.entities.getFlow({
-    flowId: {{uuid}}
+    flowId: {{uuid}},
+    includeDrafts: {{boolean}} (optional)
   });
   ```
   Retrieves single Flow given parameter flowId
   as a unique key.
+  Parameter includeDrafts indicates if drafts will be retrieved along the flow data and its versions.
 
   Topic: cxengage/entities/get-flow-response
 
@@ -1268,16 +1270,19 @@
   {:validation ::get-flow-params
    :topic-key :get-flow-response}
   [params]
-  (let [{:keys [callback topic flow-id]} params
+  (let [{:keys [callback topic flow-id include-drafts]} params
         entity-response (a/<! (rest/get-crud-entity-request ["flows" flow-id]))
         error (if-not (= (:status entity-response) 200) (e/failed-to-get-flow-err entity-response))
         flow-versions-response (if (nil? error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "versions"])))
         flow-versions-error (if-not (= (:status flow-versions-response) 200) (e/failed-to-get-flow-err flow-versions-response))
-        flow-drafts-response (if (nil? flow-versions-error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "drafts"])))
-        flow-drafts-error (if-not (= (:status flow-drafts-response) 200) (e/failed-to-get-flow-err flow-drafts-response))
+        flow-drafts-response (if (and (true? include-drafts) (nil? flow-versions-error)) (a/<! (rest/get-crud-entity-request ["flows" flow-id "drafts"])))
+        flow-drafts-error (if (and (true? include-drafts) (not= (:status flow-drafts-response) 200)) (e/failed-to-get-flow-err flow-drafts-response))
         response (-> (:api-response entity-response)
                    (assoc-in [:result :versions] (get-in flow-versions-response [:api-response :result]))
-                   (assoc-in [:result :drafts] (get-in flow-drafts-response [:api-response :result])))
+                   (assoc-in [:result :drafts]
+                      (if (true? include-drafts)
+                        (get-in flow-drafts-response [:api-response :result])
+                        [])))
         response-error (or error flow-versions-error flow-drafts-error nil)]
     (p/publish {:topics topic
                 :response response
