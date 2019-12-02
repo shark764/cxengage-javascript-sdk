@@ -2736,6 +2736,34 @@
    :level "error"
    :message "Failed to retrieve the recordings for the interaction-id specified."})
 
+(defn failed-to-create-disposition-list-err
+  "**Error Code:** 11138
+   Message: Failed to create disposition list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11138
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create disposition list."})
+
+(defn failed-to-update-disposition-list-err
+  "**Error Code:** 11139
+   Message: Failed to update disposition list.
+
+   This error is usually due to an unexpected status code returned from the API.
+
+   **Solution:** Check network tab for additional error information."
+  [data]
+  {:code 11139
+   :context :entities
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to update disposition list."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]

@@ -2312,6 +2312,41 @@
                 :callback callback})))
 
 
+(s/def ::create-disposition-list-params
+  (s/keys :req-un [ ::specs/name ::specs/active]
+          :opt-un [ ::specs/callback ::specs/description ::specs/external-id ::specs/dispositions ::specs/shared]))
+
+(def-sdk-fn create-disposition-list
+  "``` javascript
+  CxEngage.entities.createDispositionList({
+    name: {{string}} (required),
+    description: {{string}} (optional),
+    externalId: {{string}} (optional),
+    active: {{boolean}} (required),
+    shared: {{boolean}} (required),
+    dispositions: {{object}} (optional)
+  });
+  ```
+  Calls rest/create-disposition-list-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/create-disposition-list-response
+
+  Possible Errors:
+
+  - [Entities: 11138](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-disposition-list-err)"
+  {:validation ::create-disposition-list-params
+   :topic-key :create-disposition-list-response}
+  [params]
+  (let [{:keys [name description external-id active shared dispositions callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-disposition-list-request name description external-id active shared dispositions))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-disposition-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
+
 (s/def ::create-user-params
   (s/keys :req-un [::specs/email ::specs/role-id ::specs/platform-role-id]
           :opt-un [::specs/first-name ::specs/last-name ::specs/callback ::specs/status ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id]))
@@ -3765,6 +3800,41 @@
                 :error response-error
                 :callback callback})))
 
+(s/def ::update-disposition-list-params
+  (s/keys :req-un [::specs/disposition-list-id]
+          :opt-un [::specs/name ::specs/active ::specs/shared ::specs/callback ::specs/description ::specs/external-id ::specs/dispositions]))
+
+(def-sdk-fn update-disposition-list
+  "``` javascript
+  CxEngage.entities.updateDispositionList({
+        dispositionListId: {{uuid}} (required),
+        name: {{string}} (optional),
+        description: {{string}} (optional),
+        externalId: {{string}} (optional),
+        active: {{boolean}} (optional),
+        shared: {{boolean}} (optional),
+        dispositions: {{object}} (optional)
+      });
+  ```
+  Calls rest/update-disposition-list-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/update-disposition-list-response
+
+  Possible Errors:
+
+  - [Entities: 11139](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-disposition-list-err)"
+  {:validation ::update-disposition-list-params
+    :topic-key :update-disposition-list-response}
+  [params]
+  (let [{:keys [disposition-list-id name description external-id active shared dispositions callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-disposition-list-request disposition-list-id name description external-id active shared dispositions))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-disposition-list-err entity-response))]
+    (p/publish {:topics topic
+                :response api-response
+                :error response-error
+                :callback callback})))
+
 
 (s/def ::update-role-params
   (s/keys :req-un [::specs/role-id]
@@ -4064,6 +4134,7 @@
                                        :create-user create-user
                                        :create-reason create-reason
                                        :create-reason-list create-reason-list
+                                       :create-disposition-list create-disposition-list
                                        :create-flow create-flow
                                        :create-flow-draft create-flow-draft
                                        :create-disposition create-disposition
@@ -4111,6 +4182,7 @@
                                        :update-users-capacity-rule update-users-capacity-rule
                                        :update-reason update-reason
                                        :update-reason-list update-reason-list
+                                       :update-disposition-list update-disposition-list
                                        :update-flow update-flow
                                        :update-disposition update-disposition
                                        :update-dispatch-mapping update-dispatch-mapping

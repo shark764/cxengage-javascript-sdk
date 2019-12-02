@@ -93,6 +93,12 @@
 (s/def ::direction #{"inbound" "outbound" "agent-initiated"})
 (s/def ::dismissed boolean?)
 (s/def ::disposition-id ::uuid)
+(s/def ::disposition-obj (s/keys :req-un [::disposition-id ::sort-order ::hierarchy]))
+;;TODO: add the proper spec for Disposition List Dispositions, not allowing empty objects
+(s/def ::dispositions (s/or
+                        :empty (s/and vector? empty?)
+                        :disposition-obj (s/coll-of ::disposition-obj)))
+(s/def ::disposition-list-id id/valid-uuid?)
 (s/def ::email-type-id ::uuid)
 (s/def ::environment #{:dev :qe :staging :prod :us-east-1-test})
 (s/def ::end-time-minutes ::minutes-day)
