@@ -618,9 +618,9 @@
   ([entity-map]
    (get-crud-entity-request entity-map {}))
   ([entity-map options-map]
-    (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-map))
-          get-request {:method :get :url url}]
-      (api/api-request (merge get-request options-map)))))
+   (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-map))
+         get-request {:method :get :url url}]
+     (api/api-request (merge get-request options-map)))))
 
 (defn crud-url [entity-vector]
     (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-vector)))
@@ -1041,6 +1041,32 @@
                                     (not (nil? is-default))      (assoc-in [:body :is-default] is-default))]
     (api/api-request update-reason-list-request)))
 
+(defn create-disposition-list-request [name description external-id active shared dispositions]
+  (let [tenant-id (state/get-active-tenant-id)
+        create-disposition-list-request (cond-> {:method :post
+                                                 :url (iu/api-url "tenants/:tenant-id/disposition-lists"
+                                                            {:tenant-id tenant-id})}
+                                          (not (nil? name))            (assoc-in [:body :name] name)
+                                          (not (nil? description))     (assoc-in [:body :description] description)
+                                          (not (nil? external-id))     (assoc-in [:body :external-id] external-id)
+                                          (not (nil? active))          (assoc-in [:body :active] active)
+                                          (not (nil? shared))          (assoc-in [:body :shared] shared)
+                                          (not (nil? dispositions))    (assoc-in [:body :dispositions] dispositions))]
+    (api/api-request create-disposition-list-request)))
+
+(defn update-disposition-list-request [disposition-list-id name description external-id active shared dispositions]
+  (let [tenant-id (state/get-active-tenant-id)
+        update-disposition-list-request (cond-> {:method :put
+                                                 :url (iu/api-url "tenants/:tenant-id/disposition-lists/:disposition-list-id"
+                                                              {:tenant-id tenant-id :disposition-list-id disposition-list-id})}
+                                          (not (nil? name))            (assoc-in [:body :name] name)
+                                          (not (nil? description))     (assoc-in [:body :description] description)
+                                          (not (nil? external-id))     (assoc-in [:body :external-id] external-id)
+                                          (not (nil? active))          (assoc-in [:body :active] active)
+                                          (not (nil? shared))          (assoc-in [:body :shared] shared)
+                                          (not (nil? dispositions))    (assoc-in [:body :dispositions] dispositions))]
+    (api/api-request update-disposition-list-request)))
+
 (defn create-flow-request [flow-type name active description]
   (let [tenant-id (state/get-active-tenant-id)
         create-flow-request (cond-> {:method :post
@@ -1449,36 +1475,36 @@
                                                                   :name name
                                                                   :active active
                                                                   :timezone timezone}
-                                                                  time-minutes)}
-                                                   (not (nil? description)) (assoc-in [:body :description] description))]
-            (api/api-request create-business-hour-request)))
+                                                                 time-minutes)}
+                                                  (not (nil? description)) (assoc-in [:body :description] description))]
+           (api/api-request create-business-hour-request)))
 
 (defn update-business-hour-request [business-hours-id name timezone time-minutes active description]
       (let [tenant-id (state/get-active-tenant-id)
             update-business-hour-request (cond-> {:method :put
                                                   :url (iu/api-url "tenants/:tenant-id/business-hours/:business-hours-id"
                                                             {:tenant-id tenant-id
-                                                            :business-hours-id business-hours-id})
+                                                             :business-hours-id business-hours-id})
                                                   :body {:tenant-id tenant-id}}
-                                                  (not (nil? active)) (assoc-in [:body :active] active)
+                                                 (not (nil? active)) (assoc-in [:body :active] active)
                                                   (not (nil? timezone)) (assoc-in [:body :timezone] timezone)
                                                   (not (nil? name)) (assoc-in [:body :name] name)
                                                   (not (nil? description)) (assoc-in [:body :description] description)
                                                   (not (nil? time-minutes)) (update :body merge time-minutes))]
-            (api/api-request update-business-hour-request)))
+           (api/api-request update-business-hour-request)))
 
 (defn create-exception-request [business-hour-id date is-all-day description start-time-minutes end-time-minutes]
       (let [tenant-id (state/get-active-tenant-id)
             create-exception-request (cond->  {:method :post
                                                    :url (iu/api-url "tenants/:tenant-id/business-hours/:business-hour-id/exceptions"
                                                                     {:tenant-id tenant-id
-                                                                    :business-hour-id business-hour-id})
+                                                                     :business-hour-id business-hour-id})
                                                    :body {:date date
                                                           :is-all-day is-all-day
                                                           :start-time-minutes start-time-minutes
                                                           :end-time-minutes end-time-minutes}}
-                                                   (not (nil? description)) (assoc-in [:body :description] description))]
-            (api/api-request create-exception-request)))
+                                              (not (nil? description)) (assoc-in [:body :description] description))]
+           (api/api-request create-exception-request)))
 
 (defn delete-exception-request [business-hour-id exception-id]
       (let [tenant-id (state/get-active-tenant-id)
@@ -1487,7 +1513,7 @@
                                                        {:tenant-id tenant-id
                                                         :business-hour-id business-hour-id
                                                         :exception-id exception-id})}]
-            (api/api-request delete-exception-request)))
+           (api/api-request delete-exception-request)))
 
 (defn create-api-key-request [name description role-id]
   (let [tenant-id (state/get-active-tenant-id)
