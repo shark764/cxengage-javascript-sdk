@@ -394,6 +394,50 @@
                   :error (e/failed-to-get-crm-interactions-err id crm sub-type history-response)
                   :callback callback}))))
 
+;; ----------------------------------------------------------------;;
+;; CxEngage.reporting.getTranscripts({
+;;   interactionId: "{{interaction-id}}"
+;; });
+;; ----------------------------------------------------------------;;
+
+(s/def ::get-transcripts-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(defn- get-transcript [interaction-id tenant-id artifact-id callback]
+  (go (let [transcript (a/<! (rest/get-artifact-by-id-request artifact-id interaction-id nil))
+            {:keys [api-response status]} transcript
+            topic (topics/get-topic :transcript-response)]
+        (if (= status 200)
+          (p/publish {:topics topic
+                      :response (:files api-response)
+                      :callback callback})
+          (p/publish {:topics topic
+                      :error (e/failed-to-get-specific-messaging-transcript-err interaction-id artifact-id transcript)
+                      :callback callback})))))
+
+(def-sdk-fn get-transcripts
+  ""
+  {:validation ::get-transcripts-params
+   :topic-key :transcript-response}
+  [params]
+  (let [{:keys [interaction-id topic callback]} params
+        interaction-files (a/<! (rest/get-interaction-artifacts-request interaction-id nil))
+        {:keys [api-response status]} interaction-files
+        {:keys [results]} api-response
+        tenant-id (st/get-active-tenant-id)
+        transcripts (filterv #(= (:artifact-type %) "messaging-transcript") results)]
+    (if (= status 200)
+      (if (= (count transcripts) 0)
+        (p/publish {:topics topic
+                    :response []
+                    :callback callback})
+        (doseq [t transcripts]
+          (get-transcript interaction-id tenant-id (:artifact-id t) callback)))
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-messaging-transcripts-err interaction-id interaction-files)
+                  :callback callback}))))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Reporting Module
 ;; -------------------------------------------------------------------------- ;;
@@ -413,7 +457,8 @@
                                        :get-available-stats get-available-stats
                                        :get-contact-interaction-history get-contact-interaction-history
                                        :get-interaction get-interaction
-                                       :get-crm-interactions get-crm-interactions}}
+                                       :get-crm-interactions get-crm-interactions
+                                       :get-transcripts get-transcripts}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

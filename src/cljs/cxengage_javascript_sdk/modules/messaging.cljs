@@ -452,6 +452,7 @@
                   :error (e/failed-to-create-outbound-sms-interaction-err phone-number message sms-response)
                   :callback callback}))))
 
+;; NOTE: THIS HAS BEEN ADDED TO THE REPORTING NAMESPACE AND WILL SOON BE DEPRECATED
 ;; ----------------------------------------------------------------;;
 ;; CxEngage.interactions.messaging.getTranscripts({
 ;;   interactionId: "{{interaction-id}}"
