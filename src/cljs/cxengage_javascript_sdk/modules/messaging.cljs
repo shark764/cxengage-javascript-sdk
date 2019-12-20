@@ -266,7 +266,7 @@
 
   - [Messaging: 6009] (/cxengage-javascript-sdk.domain.errors.html#var-failed-to-send-smooch-typing)"
   {:validation ::send-smooch-typing-indicator-params
-   :topic-key :smooch-typing-received}
+   :topic-key :smooch-typing-agent-received}
   [params]
   (let [{:keys [interaction-id typing topic callback]} params
         smooch-response (a/<! (rest/send-smooch-typing interaction-id typing))
