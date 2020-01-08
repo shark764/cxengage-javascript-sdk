@@ -240,7 +240,7 @@
   (let [{:keys [interaction-id topic callback]} params
         smooch-response (a/<! (rest/send-smooch-conversation-read interaction-id))
         {:keys [api-response status]} smooch-response
-        errror (if-not (= 200 status) (e/failed-to-send-smooch-conversation-read interaction-id))]
+        error (if-not (= 200 status) (e/failed-to-send-smooch-conversation-read interaction-id))]
     (p/publish {:topics topic
                 :response api-response
                 :error error
