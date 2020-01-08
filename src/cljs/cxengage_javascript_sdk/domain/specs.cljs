@@ -57,7 +57,7 @@
 (s/def ::last-name (s/or :last-name string? :last-name nil?))
 (s/def ::flow-id id/valid-uuid?)
 (s/def ::draft-id id/valid-uuid?)
-(s/def ::flow string?)
+(s/def ::flow (s/or :flow string? :flow nil?))
 (s/def ::flow-type #{"customer" "resource" "reusable"})
 (s/def ::metadata string?)
 (s/def ::active-version ::uuid)

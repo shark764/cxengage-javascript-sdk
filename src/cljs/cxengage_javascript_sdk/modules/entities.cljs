@@ -2467,7 +2467,7 @@
   CxEngage.entities.createFlowDraft({
     flowId: {{uuid}}, (required)
     name: {{string}}, (required)
-    flow: {{string}}, (required)
+    flow: {{string}}, (optional)
     metadata: {{string}}, (optional)
     description: {{string}} (optional)
   });
