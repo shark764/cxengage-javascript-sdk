@@ -229,13 +229,13 @@
   ```
   Sends a conversation read event to all participants in the interaction.
 
-  Topic: cxengage/interactions/messaging/smooch-conversation-read-received
+  Topic: cxengage/interactions/messaging/smooch-conversation-read-agent-received
 
   Possible Errors:
 
   - [Messaging: 6008] (/cxengage-javascript-sdk.domain.errors.html#var-failed-to-send-smooch-conversation-read)"
   {:validation ::send-smooch-conversation-read-params
-   :topic-key :smooch-conversation-read-received}
+   :topic-key :smooch-conversation-read-agent-received}
   [params]
   (let [{:keys [interaction-id topic callback]} params
         smooch-response (a/<! (rest/send-smooch-conversation-read interaction-id))
@@ -260,7 +260,7 @@
   ```
   Sends a typing indicator to all participants in the interaction.
 
-  Topic: cxengage/interactions/messaging/smooch-typing-received
+  Topic: cxengage/interactions/messaging/smooch-typing-agent-received
 
   Possible Errors:
 

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.4.3] - 2020-1-16
+### Added
+- CXV1-21032 - Replace smooch-conversation-read-received topic for smooch-conversation-read-agent-received
+
 ## [9.4.2] - 2020-01-08
 ### Fixed
 - <no-jira> - Creating flows fails when flow metadata is null.
