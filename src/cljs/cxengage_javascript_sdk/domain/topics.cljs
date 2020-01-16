@@ -307,6 +307,7 @@
                  :smooch-history-received "cxengage/interactions/messaging/smooch-history-received"
                  :smooch-message-received "cxengage/interactions/messaging/smooch-message-received"
                  :smooch-conversation-read-received "cxengage/interactions/messaging/smooch-conversation-read-received"
+                 :smooch-conversation-read-agent-received "cxengage/interactions/messaging/smooch-conversation-read-agent-received"
                  :smooch-typing-received "cxengage/interactions/messaging/smooch-typing-received"
                  :smooch-typing-agent-received "cxengage/interactions/messaging/smooch-typing-agent-received"
                  :messaging-history-received "cxengage/interactions/messaging/history-received"
