@@ -208,3 +208,4 @@
 ;; TODO: Write an actual spec for this one
 (s/def ::time-minutes map?)
 (s/def ::typing boolean?)
+(s/def ::agent-message-id string?)

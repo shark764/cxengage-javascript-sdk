@@ -51,7 +51,7 @@
                                 :interaction-id interaction-id})}]
     (api/api-request history-request)))
 
-(defn send-smooch-message [interaction-id message]
+(defn send-smooch-message [interaction-id agent-message-id message]
   (let [tenant-id (state/get-active-tenant-id)
         agent-id (state/get-active-user-id)
         agent-name (state/get-active-user-name)
@@ -62,6 +62,7 @@
                              :interaction-id interaction-id})
                       :body {:type "agent"
                              :resource-id agent-id
+                             :agent-message-id agent-message-id
                              :from agent-name
                              :message message}}]
     (api/api-request send-request)))

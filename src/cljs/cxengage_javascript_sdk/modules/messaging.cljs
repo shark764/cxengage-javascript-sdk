@@ -197,6 +197,7 @@
   CxEngage.interactions.messaging.sendSmoochMessage({
     interactionId: {{uuid}}, (required)
     message: {{string}}, (required)
+    agentMessageId: {{string}} Identifier of agent's pending message.
   });
   ```
 
@@ -206,8 +207,8 @@
   {:validation ::send-message-params
    :topic-key :smooch-message-received}
   [params]
-  (let [{:keys [interaction-id message topic callback]} params
-        smooch-response (a/<! (rest/send-smooch-message interaction-id message))
+  (let [{:keys [interaction-id message agent-message-id topic callback]} params
+        smooch-response (a/<! (rest/send-smooch-message interaction-id agent-message-id message))
         {:keys [api-response status]} smooch-response]
     (if (= status 200)
       (p/publish {:topics topic
@@ -287,7 +288,8 @@
 (s/def ::send-message-params
   (s/keys :req-un [::specs/interaction-id
                    ::specs/message]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/agent-message-id
+                   ::specs/callback]))
 
 (def-sdk-fn send-message
   ""
