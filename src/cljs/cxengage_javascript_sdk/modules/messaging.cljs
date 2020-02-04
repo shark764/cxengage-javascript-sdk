@@ -192,6 +192,80 @@
 (defn- format-payload [message]
   (t/write (t/writer :json-verbose) (clojure.walk/stringify-keys message)))
 
+(s/def ::smooch-add-attachment-params
+  (s/keys :req-un [::specs/interaction-id ::specs/file]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn smooch-add-attachment
+  "``` javascript
+  CxEngage.interactions.messaging.smoochAddAttachment({
+    interactionId: {{uuid}}, (required)
+    file: {{HTML5 File}}
+  });
+  ```
+
+  Store files attached temporary for current interaction.
+
+  Topic: cxengage/interactions/messaging/smooch-attachment-added"
+  {:validation ::smooch-add-attachment-params
+   :topic-key :smooch-add-attachment}
+  [params]
+  (let [{:keys [topic interaction-id file callback]} params
+        attachment-id (id/uuid-string (id/make-random-uuid))]
+    (state/smooch-add-attachment-to-conversation {:interaction-id interaction-id
+                                                  :attachment-id attachment-id
+                                                  :file file})
+    (p/publish {:topics topic
+                :response {:interaction-id interaction-id
+                           :attachment-id attachment-id
+                           :filename (.-name file)}
+                :callback callback})))
+
+(s/def ::smooch-attachment-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn smooch-remove-attachment
+  "``` javascript
+  CxEngage.interactions.messaging.smoochRemoveAttachment({
+    interactionId: {{uuid}} (required)
+  });
+  ```
+
+  Remove stored file attached for current interaction.
+
+  Topic: cxengage/interactions/messaging/smooch-attachment-removed"
+  {:validation ::smooch-attachment-params
+   :topic-key :smooch-remove-attachment}
+  [params]
+  (let [{:keys [topic interaction-id callback]} params]
+    (state/smooch-remove-attachment-from-conversation {:interaction-id interaction-id})
+    (p/publish {:topics topic
+                :response {:interaction-id interaction-id}
+                :callback callback})))
+
+(def-sdk-fn send-smooch-attachment
+  "``` javascript
+  CxEngage.interactions.messaging.sendSmoochAttachment({
+    interactionId: {{uuid}} (required)
+  });
+  ```
+
+  Sends an attachment to all participants in the interaction.
+
+  Topic: cxengage/interactions/messaging/smooch-attachment-sent"
+  {:validation ::smooch-attachment-params
+   :topic-key :smooch-send-attachment}
+  [params]
+  (let [{:keys [topic interaction-id callback]} params
+        file (state/get-smooch-conversation-attachment {:interaction-id interaction-id})
+        {:keys [api-response status] :as smooch-response} (a/<! (rest/send-smooch-attachment interaction-id file))
+        error-response (if-not (= status 200) (e/failed-to-send-smooch-attachment interaction-id file))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error-response
+                :callback callback})))
+
 (def-sdk-fn send-smooch-message
   "``` javascript
   CxEngage.interactions.messaging.sendSmoochMessage({
@@ -203,7 +277,7 @@
 
   Sends a message to all participants in the interaction.
 
-  Topic: cxengage/interactions/messaging/send-smooch-message"
+  Topic: cxengage/interactions/messaging/smooch-message-received"
   {:validation ::send-message-params
    :topic-key :smooch-message-received}
   [params]
@@ -523,6 +597,9 @@
               (ih/register {:api {:interactions {:messaging {:send-smooch-message send-smooch-message
                                                              :send-smooch-conversation-read send-smooch-conversation-read
                                                              :send-smooch-typing-indicator send-smooch-typing-indicator
+                                                             :smooch-add-attachment smooch-add-attachment
+                                                             :smooch-remove-attachment smooch-remove-attachment
+                                                             :send-smooch-attachment send-smooch-attachment
                                                              :send-message send-message
                                                              :get-transcripts get-transcripts
                                                              :initialize-outbound-sms click-to-sms

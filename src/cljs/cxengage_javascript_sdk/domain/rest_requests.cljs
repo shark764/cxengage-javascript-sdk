@@ -68,6 +68,19 @@
                              :message message}}]
     (api/api-request send-request)))
 
+(defn send-smooch-attachment [interaction-id file]
+  (let [tenant-id (state/get-active-tenant-id)
+        form-data (doto
+                      (js/FormData.)
+                      (.append (.-name file) file (.-name file)))
+        send-request {:method :post
+                      :url (iu/api-url
+                            "smooch/tenants/:tenant-id/interactions/:interaction-id/attachment"
+                            {:tenant-id tenant-id
+                             :interaction-id interaction-id})
+                      :body form-data}]
+    (file-api-request send-request)))
+
 (defn send-smooch-conversation-read [interaction-id]
   (let [tenant-id (state/get-active-tenant-id)
         agent-id (state/get-active-user-id)

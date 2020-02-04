@@ -722,6 +722,14 @@
    :level "error"
    :message "Failed to send typing indicator"})
 
+(defn failed-to-send-smooch-attachment [interaction-id attachment]
+  {:code 6010
+   :context :messaging
+   :data {:interaction-id interaction-id
+          :attachment attachment}
+   :level "error"
+   :message "Failed to send attachment."})
+
 (defn failed-to-refresh-twilio-integration-err [data]
   {:code 7000
    :context :voice
