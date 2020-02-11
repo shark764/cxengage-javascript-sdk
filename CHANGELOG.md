@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.5.0] - 2020-02-11
+### Added
+- <no-jira> - Functionality to set the API version you want to use for the API module
+### Fixed
+- <no-jira> - Path attribute is now correctly able to translate camelCase entities to kebab-case ones
+
 ## [9.4.4] - 2020-1-16
 ### Added
 - CXV1-21294 - Add `agentMessageId` parameter in `send-smooch-message` function

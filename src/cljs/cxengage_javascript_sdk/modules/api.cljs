@@ -16,7 +16,7 @@
 
 (s/def ::create-params
   (s/keys :req-un [::specs/path ::specs/body]
-          :opt-un [::specs/callback ::specs/custom-topic]))
+          :opt-un [::specs/callback ::specs/custom-topic ::specs/api-version]))
 
 (def-sdk-fn create
   "CRUD api create request.
@@ -25,6 +25,9 @@
     path: {{array}} (required) Example Array ['groups', '0000-0000-0000-0000', 'outboundIdentifierLists']
     body: {{object}} (required)
     customTopic: {{string}} (optional)
+    apiVersion: {{string}} (optional) (If this attribute is passed, it will be able to override the default api version used to make the
+                                       requests, set up when initializing the SDK, to any existing version on the platform.
+                                       E.g., 'v2', 'v3'. etc)
   });
   ```
   A generic method for creating an api entity.
@@ -35,8 +38,8 @@
   {:validation ::create-params
    :topic-key :create-response}
   [params]
-  (let [{:keys [path body callback topic custom-topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/api-create-request (into [] path) body))
+  (let [{:keys [path body callback topic custom-topic api-version]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/api-create-request (into [] path) body api-version))
         topic (or custom-topic topic)
         error (if-not (= status 200) (e/failed-to-create-err api-response))]
       (p/publish {:topics topic
@@ -46,7 +49,7 @@
 
 (s/def ::read-params
   (s/keys :req-un [::specs/path]
-          :opt-un [::specs/callback ::specs/custom-topic]))
+          :opt-un [::specs/callback ::specs/custom-topic ::specs/api-version]))
 
 (def-sdk-fn read
   "CRUD api get request.
@@ -54,6 +57,9 @@
   CxEngage.api.read({
     path: {{array}} (required) Example Array ['groups', '0000-0000-0000-0000', 'outboundIdentifierLists']
     customTopic: {{string}} (optional)
+    apiVersion: {{string}} (optional) (If this attribute is passed, it will be able to override the default api version used to make the
+                                       requests, set up when initializing the SDK, to any existing version on the platform.
+                                       E.g., 'v2', 'v3'. etc)
   });
   ```
   A generic method of retrieving an api endpoint.
@@ -68,20 +74,20 @@
   {:validation ::read-params
     :topic-key :read-response}
   [params]
-  (let [{:keys [path callback topic custom-topic]} params]
-      (let [{:keys [status api-response]} (a/<! (rest/api-read-request (into [] path)))
-            topic (or custom-topic topic)
-            error (if-not (= status 200) (e/failed-to-read-err api-response))]
-          (p/publish
-            {:topics topic
-              :response api-response
-              :error error
-              :callback callback}))))
+  (let [{:keys [path callback topic custom-topic api-version]} params
+        {:keys [status api-response]} (a/<! (rest/api-read-request (into [] path) api-version))
+        topic (or custom-topic topic)
+        error (if-not (= status 200) (e/failed-to-read-err api-response))]
+    (p/publish
+     {:topics topic
+      :response api-response
+      :error error
+      :callback callback})))
 
 
 (s/def ::update-params
   (s/keys :req-un [::specs/path ::specs/body]
-          :opt-un [::specs/callback ::specs/custom-topic]))
+          :opt-un [::specs/callback ::specs/custom-topic ::specs/api-version]))
 
 (def-sdk-fn update
   "CRUD api update request.
@@ -90,6 +96,9 @@
     path: {{array}} (required) Example Array ['groups', '0000-0000-0000-0000', 'outboundIdentifierLists']
     body: {{object}} (required)
     customTopic: {{string}} (optional)
+    apiVersion: {{string}} (optional) (If this attribute is passed, it will be able to override the default api version used to make the
+                                       requests, set up when initializing the SDK, to any existing version on the platform.
+                                       E.g., 'v2', 'v3'. etc)
   });
   ```
   A generic method for updating an api entity.
@@ -100,8 +109,8 @@
   {:validation ::update-params
     :topic-key :update-response}
   [params]
-  (let [{:keys [path body callback topic custom-topic]} params
-        {:keys [status api-response] :as api-response} (a/<! (rest/api-update-request (into [] path) body))
+  (let [{:keys [path body callback topic custom-topic api-version]} params
+        {:keys [status api-response] :as api-response} (a/<! (rest/api-update-request (into [] path) body api-version))
         topic (or custom-topic topic)
         error (if-not (= status 200) (e/failed-to-update-err api-response))]
       (p/publish {:topics topic
@@ -112,7 +121,7 @@
 
 (s/def ::delete-params
   (s/keys :req-un [::specs/path]
-          :opt-un [::specs/callback ::specs/custom-topic]))
+          :opt-un [::specs/callback ::specs/custom-topic ::specs/api-version]))
 
 (def-sdk-fn delete
   "CRUD api delete request.
@@ -120,6 +129,9 @@
   CxEngage.api.delete({
     path: {{array}} (required) Example Array ['groups', '0000-0000-0000-0000', 'outboundIdentifierLists']
     customTopic: {{string}} (optional)
+    apiVersion: {{string}} (optional) (If this attribute is passed, it will be able to override the default api version used to make the
+                                       requests, set up when initializing the SDK, to any existing API version on the platform.
+                                       E.g., 'v2', 'v3'. etc)
   });
   ```
   A generic method for deleting an api entity.
@@ -130,8 +142,8 @@
   {:validation ::delete-params
     :topic-key :delete-response}
   [params]
-  (let [{:keys [path callback topic custom-topic]} params
-        {:keys [status api-response] :as api-response} (a/<! (rest/api-delete-request (into [] path)))
+  (let [{:keys [path callback topic custom-topic api-version]} params
+        {:keys [status api-response] :as api-response} (a/<! (rest/api-delete-request (into [] path) api-version))
         topic (or custom-topic topic)
         error (if-not (= status 200) (e/failed-to-delete-err api-response))]
       (p/publish {:topics topic
