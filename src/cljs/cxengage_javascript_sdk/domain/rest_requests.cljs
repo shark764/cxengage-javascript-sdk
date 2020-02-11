@@ -7,7 +7,8 @@
             [clojure.string :as string]
             [ajax.core :as ajax]
             [cljs.core.async :as a]
-            [cljs-uuid-utils.core :as id]))
+            [cljs-uuid-utils.core :as id]
+            [camel-snake-kebab.core :as camel]))
 
 (defn file-api-request [request-map]
   (let [response-channel (a/promise-chan)
@@ -623,20 +624,21 @@
          get-request {:method :get :url url}]
      (api/api-request (merge get-request options-map)))))
 
-(defn crud-url [entity-vector]
-    (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-vector)))
+(defn crud-url [entity-vector api-version]
+  (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] (map camel/->kebab-case entity-vector)))]
+    (if api-version (string/replace-first url #"v\d{1}" api-version) url)))
 
-(defn api-create-request [entity-vector body]
-    (api/api-request {:method :post :url (crud-url entity-vector) :body body}))
+(defn api-create-request [entity-vector body api-version]
+    (api/api-request {:method :post :url (crud-url entity-vector api-version) :body body}))
 
-(defn api-read-request [entity-vector]
-    (api/api-request {:method :get :url (crud-url entity-vector)}))
+(defn api-read-request [entity-vector api-version]
+    (api/api-request {:method :get :url (crud-url entity-vector api-version)}))
 
-(defn api-update-request [entity-vector body]
-    (api/api-request {:method :put :url (crud-url entity-vector) :body body}))
+(defn api-update-request [entity-vector body api-version]
+    (api/api-request {:method :put :url (crud-url entity-vector api-version) :body body}))
 
-(defn api-delete-request [entity-vector]
-    (api/api-request {:method :delete :url (crud-url entity-vector)}))
+(defn api-delete-request [entity-vector api-version]
+    (api/api-request {:method :delete :url (crud-url entity-vector api-version)}))
 
 (defn send-flow-action-request [interaction-id action-id body]
   (let [tenant-id (state/get-active-tenant-id)

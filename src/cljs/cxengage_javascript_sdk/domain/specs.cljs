@@ -209,3 +209,4 @@
 (s/def ::time-minutes map?)
 (s/def ::typing boolean?)
 (s/def ::agent-message-id string?)
+(s/def ::api-version string?)
