@@ -258,7 +258,7 @@
 
 (s/def ::set-presence-state-spec
   (s/keys :req-un [::specs/state]
-          :opt-un [::specs/callback ::specs/agent-id ::specs/session-id ::specs/reason ::specs/reason-id ::specs/reason-list-id]))
+          :opt-un [::specs/callback ::specs/agent-id ::specs/session-id ::specs/reason ::specs/reason-id ::specs/reason-list-id ::specs/force-logout]))
 
 (def-sdk-fn set-presence-state
   "
@@ -270,6 +270,7 @@
     reason: {{string}} (Optional),
     reasonId: {{uuid}} (Optional),
     reasonListId: {{uuid}} (Optional)
+    forceLogout: {{boolean}} (Optional)
   });
   ```
 
@@ -291,12 +292,13 @@
   {:validation ::set-presence-state-spec
    :topic-key :set-presence-state-response}
   [params]
-  (let [{:keys [callback topic agent-id session-id state reason reason-id reason-list-id]} params
+  (let [{:keys [callback topic agent-id session-id state reason reason-id reason-list-id force-logout]} params
         change-state-body {:session-id (or session-id (state/get-session-id))
                            :state state
                            :reason reason
                            :reason-id reason-id
-                           :reason-list-id reason-list-id}
+                           :reason-list-id reason-list-id
+                           :force-logout force-logout}
         resp (a/<! (rest/change-state-request change-state-body agent-id))
         {:keys [status api-response]} resp
         state-details (:result api-response)
