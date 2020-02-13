@@ -625,7 +625,7 @@
      (api/api-request (merge get-request options-map)))))
 
 (defn crud-url [entity-vector api-version]
-  (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] (map camel/->kebab-case entity-vector)))]
+  (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-vector))]
     (if api-version (string/replace-first url #"v\d{1}" api-version) url)))
 
 (defn api-create-request [entity-vector body api-version]
