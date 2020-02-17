@@ -275,6 +275,25 @@
     (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :email-artifact :reply :attachments] new-attachments)))
 
 ;;;;;;;;;;;
+;; Smooch
+;;;;;;;;;;;
+
+(defn get-smooch-conversation-attachment [file-info]
+  (let [{:keys [interaction-id]} file-info
+        interaction-location (find-interaction-location interaction-id)]
+    (get-state-value [:interactions interaction-location interaction-id :smooch-attachment])))
+
+(defn smooch-remove-attachment-from-conversation [file-info]
+  (let [{:keys [interaction-id]} file-info
+        interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state update-in [:interactions interaction-location interaction-id] dissoc :smooch-attachment)))
+
+(defn smooch-add-attachment-to-conversation [file-info]
+  (let [{:keys [interaction-id file]} file-info
+        interaction-location (find-interaction-location interaction-id)]
+    (swap! sdk-state assoc-in [:interactions interaction-location interaction-id :smooch-attachment] file)))
+
+;;;;;;;;;;;
 ;; Auth
 ;;;;;;;;;;;
 
