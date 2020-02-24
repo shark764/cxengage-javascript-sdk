@@ -722,14 +722,14 @@
    :level "error"
    :message "Failed to send typing indicator"})
 
-(defn failed-to-send-smooch-attachment [interaction-id agent-message-id file]
+(defn failed-to-send-smooch-attachment [interaction-id agent-message-id file err-status-text]
   {:code 6010
    :context :messaging
    :data {:interaction-id interaction-id
           :agent-message-id agent-message-id
           :file file}
    :level "error"
-   :message "Failed to send attachment."})
+   :message (str "Failed to send attachment: " err-status-text)})
 
 (defn failed-to-refresh-twilio-integration-err [data]
   {:code 7000
