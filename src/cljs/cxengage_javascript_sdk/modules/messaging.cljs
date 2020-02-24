@@ -223,7 +223,7 @@
 
 (s/def ::smooch-attachment-params
   (s/keys :req-un [::specs/interaction-id]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/agent-message-id ::specs/callback]))
 
 (def-sdk-fn smooch-remove-attachment
   "``` javascript
@@ -247,7 +247,8 @@
 (def-sdk-fn send-smooch-attachment
   "``` javascript
   CxEngage.interactions.messaging.sendSmoochAttachment({
-    interactionId: {{uuid}} (required)
+    interactionId: {{uuid}} (required),
+    agentMessageId: {{uuid}} Identifier of agent's pending message.
   });
   ```
 
@@ -257,10 +258,10 @@
   {:validation ::smooch-attachment-params
    :topic-key :smooch-send-attachment}
   [params]
-  (let [{:keys [topic interaction-id callback]} params
+  (let [{:keys [topic interaction-id agent-message-id callback]} params
         file (state/get-smooch-conversation-attachment {:interaction-id interaction-id})
-        {:keys [api-response status] :as smooch-response} (a/<! (rest/send-smooch-attachment interaction-id file))
-        error-response (if-not (= status 200) (e/failed-to-send-smooch-attachment interaction-id file))]
+        {:keys [api-response status] :as smooch-response} (a/<! (rest/send-smooch-attachment interaction-id agent-message-id file))
+        error-response (if-not (= status 200) (e/failed-to-send-smooch-attachment interaction-id agent-message-id file))]
     (p/publish {:topics topic
                 :response api-response
                 :error error-response

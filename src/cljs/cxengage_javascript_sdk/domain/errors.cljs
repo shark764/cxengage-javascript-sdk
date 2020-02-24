@@ -722,11 +722,12 @@
    :level "error"
    :message "Failed to send typing indicator"})
 
-(defn failed-to-send-smooch-attachment [interaction-id attachment]
+(defn failed-to-send-smooch-attachment [interaction-id agent-message-id file]
   {:code 6010
    :context :messaging
    :data {:interaction-id interaction-id
-          :attachment attachment}
+          :agent-message-id agent-message-id
+          :file file}
    :level "error"
    :message "Failed to send attachment."})
 
