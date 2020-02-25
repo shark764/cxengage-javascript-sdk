@@ -699,10 +699,11 @@
    :level "error"
    :message "Failed to retrieve messaging history."})
 
-(defn failed-to-send-smooch-message [interaction-id message]
+(defn failed-to-send-smooch-message [interaction-id agent-message-id message]
   {:code 6007
    :context :messaging
    :data {:interaction-id interaction-id
+          :agent-message-id agent-message-id
           :message message}
    :level "error"
    :message "Failed to send message."})

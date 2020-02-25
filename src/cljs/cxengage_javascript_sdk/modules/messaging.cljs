@@ -284,14 +284,12 @@
   [params]
   (let [{:keys [interaction-id message agent-message-id topic callback]} params
         smooch-response (a/<! (rest/send-smooch-message interaction-id agent-message-id message))
-        {:keys [api-response status]} smooch-response]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-send-smooch-message interaction-id message)
-                  :callback callback}))))
+        {:keys [api-response status]} smooch-response
+        error-response (if-not (= status 200) (e/failed-to-send-smooch-message interaction-id agent-message-id message))]
+    (p/publish {:topics topic
+                :response api-response
+                :error error-response
+                :callback callback})))
 
 (s/def ::send-smooch-conversation-read-params
   (s/keys :req-un [::specs/interaction-id]
