@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.6.4] - 2020-03-24
+### Added
+- CXV1-17693 - Adding query param noFlowData and setting it to true for /versions call to avoid fetching flow data for each version.                
+
 ## [9.6.3] - 2020-02-25
 ### Changed
 - <no-jira> - Adding variable to error response when sending message to smooch fails.
