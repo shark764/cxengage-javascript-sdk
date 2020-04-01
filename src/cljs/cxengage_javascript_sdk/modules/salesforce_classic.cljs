@@ -349,10 +349,8 @@
         error (:error response)]
     (if-not error
       (set-current-salesforce-org-id! result)
-      (log :debug "Unable to get org-id. Managed package 1.8 has probably not yet been released/installed."))))
-      ;; TODO publish error when managed package 1.8 has been released:
-      ;; (ih/publish (clj->js {:topics "cxengage/salesforce-classic/failed-to-get-current-org-id"
-      ;;                       :error (e/failed-to-get-current-salesforce-classic-org-id-err error)})))))
+      (ih/publish (clj->js {:topics "cxengage/salesforce-classic/failed-to-get-current-org-id"
+                            :error (e/failed-to-get-current-salesforce-classic-org-id-err error)})))))
 
 (defn- handle-click-to-dial [dial-details]
   (let [result (:result (js->clj dial-details :keywordize-keys true))
