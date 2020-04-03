@@ -437,10 +437,8 @@
         error (:errors response)]
     (if-not error
       (set-current-salesforce-org-id! result)
-      (log :debug "Unable to get org-id. Managed package 1.8 has probably not yet been released/installed."))))
-      ;; TODO publish error when managed package 1.8 has been released:
-      ;; (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/failed-to-get-current-org-id"
-      ;;                       :error (e/failed-to-get-current-salesforce-lightning-org-id-err error)})))))
+      (ih/publish (clj->js {:topics "cxengage/salesforce-lightning/failed-to-get-current-org-id"
+                            :error (e/failed-to-get-current-salesforce-lightning-org-id-err error)})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; Salesforce Initialization Functions
