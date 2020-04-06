@@ -14,8 +14,7 @@
 
 (defn get-smooch-history [interaction-id]
   (go (let [history-response (a/<! (rest/get-smooch-interaction-history-request interaction-id))
-            {:keys [api-response status]} history-response
-            {:keys [result]} api-response]
+            {:keys [api-response status]} history-response]
         (if (not= status 200)
           (p/publish {:topics (topics/get-topic :smooch-history-received)
                       :error (e/failed-to-retrieve-smooch-messaging-history-err interaction-id history-response)})
@@ -203,8 +202,7 @@
 (defn handle-work-accepted [message]
   (let [{:keys [interaction-id tenant-id active-resources customer-on-hold recording]} message
         interaction (state/get-pending-interaction interaction-id)
-        {:keys [direction]} interaction
-        channel-type (get interaction :channel-type)]
+        {:keys [direction channel-type source]} interaction]
     (state/transition-interaction! :pending :active interaction-id)
     (p/publish {:topics (topics/get-topic :work-accepted-received)
                 :response {:interaction-id interaction-id
@@ -212,7 +210,8 @@
                            :customer-on-hold customer-on-hold
                            :recording recording}})
     (when (or (= channel-type "sms")
-              (= channel-type "messaging"))
+              (and (= channel-type "messaging")
+                   (not= source "smooch")))
       (messaging/subscribe-to-messaging-interaction
        {:tenant-id tenant-id
         :interaction-id interaction-id
@@ -242,7 +241,7 @@
 (defn handle-work-ended [message]
   (let [{:keys [interaction-id tenant-id]} message
         interaction (state/get-interaction interaction-id)
-        channel-type (get interaction :channel-type)]
+        {:keys [channel-type source]} interaction]
     (cond
       (and (= channel-type "voice")
         (state/get-integration-by-type "twilio")
@@ -250,7 +249,8 @@
       (let [connection (state/get-twilio-device)]
         (.disconnectAll connection))
       (or (= channel-type "sms")
-          (= channel-type "messaging"))
+          (and (= channel-type "messaging")
+               (not= source "smooch")))
       (messaging/unsubscribe-to-messaging-interaction
        {:tenant-id tenant-id
         :interaction-id interaction-id
@@ -362,10 +362,11 @@
 (defn handle-wrapup-started [message]
   (let [{:keys [interaction-id tenant-id]} message
         interaction (state/get-interaction interaction-id)
-        channel-type (get interaction :channel-type)
+        {:keys [channel-type source]} interaction
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
     (when (or (= channel-type "sms")
-              (= channel-type "messaging"))
+              (and (= channel-type "messaging")
+                   (not= source "smooch")))
           (messaging/unsubscribe-to-messaging-interaction
            {:tenant-id tenant-id
             :interaction-id interaction-id

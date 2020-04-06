@@ -304,22 +304,22 @@
 
                  ;; Messaging Interaction Topics
                  :transcript-response "cxengage/interactions/messaging/transcript-received"
-                 :smooch-history-received "cxengage/interactions/messaging/smooch-history-received"
-                 :smooch-message-received "cxengage/interactions/messaging/smooch-message-received"
-                 :smooch-conversation-read-received "cxengage/interactions/messaging/smooch-conversation-read-received"
-                 :smooch-conversation-read-agent-received "cxengage/interactions/messaging/smooch-conversation-read-agent-received"
-                 :smooch-typing-received "cxengage/interactions/messaging/smooch-typing-received"
-                 :smooch-typing-agent-received "cxengage/interactions/messaging/smooch-typing-agent-received"
-                 :smooch-add-attachment "cxengage/interactions/messaging/smooch-attachment-added"
-                 :smooch-remove-attachment "cxengage/interactions/messaging/smooch-attachment-removed"
-                 :smooch-send-attachment "cxengage/interactions/messaging/smooch-attachment-sent"
                  :messaging-history-received "cxengage/interactions/messaging/history-received"
                  :send-message-acknowledged "cxengage/interactions/messaging/send-message-acknowledged"
                  :new-message-received "cxengage/interactions/messaging/new-message-received"
                  :initialize-outbound-sms-response "cxengage/interactions/messaging/initialize-outbound-sms-response"
                  :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
-                 :set-typing-indicator "cxengage/interactions/messaging/set-typing-indicator"
-                 :mark-as-seen "cxengage/interactions/messaging/mark-as-seen"
+
+                 ;; Smooch Messaging Interaction Topics
+                 :smooch-history-received "cxengage/interactions/smooch-messaging/history-received"
+                 :smooch-message-received "cxengage/interactions/smooch-messaging/message-received"
+                 :smooch-conversation-read-received "cxengage/interactions/smooch-messaging/conversation-read-received"
+                 :smooch-conversation-read-agent-received "cxengage/interactions/smooch-messaging/conversation-read-agent-received"
+                 :smooch-typing-received "cxengage/interactions/smooch-messaging/typing-received"
+                 :smooch-typing-agent-received "cxengage/interactions/smooch-messaging/typing-agent-received"
+                 :smooch-add-attachment "cxengage/interactions/smooch-messaging/attachment-added"
+                 :smooch-remove-attachment "cxengage/interactions/smooch-messaging/attachment-removed"
+                 :smooch-send-attachment "cxengage/interactions/smooch-messaging/attachment-sent"
 
                  ;; Errors
                  :failed-to-refresh-sqs-integration "cxengage/errors/fatal/failed-to-refresh-sqs-integration"

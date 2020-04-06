@@ -693,15 +693,15 @@
 
 (defn failed-to-retrieve-smooch-messaging-history-err [interaction-id data]
   {:code 6006
-   :context :messaging
+   :context :smooch-messaging
    :data {:interaction-id interaction-id
           :api-response data}
    :level "error"
-   :message "Failed to retrieve messaging history."})
+   :message "Failed to retrieve smooch messaging interaction history."})
 
 (defn failed-to-send-smooch-message [interaction-id agent-message-id message]
   {:code 6007
-   :context :messaging
+   :context :smooch-messaging
    :data {:interaction-id interaction-id
           :agent-message-id agent-message-id
           :message message}
@@ -710,14 +710,14 @@
 
 (defn failed-to-send-smooch-conversation-read [interaction-id]
   {:code 6008
-   :context :messaging
+   :context :smooch-messaging
    :data {:interaction-id interaction-id}
    :level "error"
    :message "Failed to send read indicator."})
 
 (defn failed-to-send-smooch-typing [interaction-id typing]
   {:code 6009
-   :context :messaging
+   :context :smooch-messaging
    :data {:interaction-id interaction-id
           :typing typing}
    :level "error"
@@ -725,7 +725,7 @@
 
 (defn failed-to-send-smooch-attachment [interaction-id agent-message-id file err-status-text]
   {:code 6010
-   :context :messaging
+   :context :smooch-messaging
    :data {:interaction-id interaction-id
           :agent-message-id agent-message-id
           :file file}
