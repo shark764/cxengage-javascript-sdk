@@ -27,6 +27,7 @@
             [cxengage-javascript-sdk.interaction-management :as int]
             [cxengage-javascript-sdk.modules.reporting :as reporting]
             [cxengage-javascript-sdk.modules.messaging :as messaging]
+            [cxengage-javascript-sdk.modules.smooch-messaging :as smooch]
             [cxengage-javascript-sdk.modules.interaction :as interaction]
             [cxengage-javascript-sdk.modules.authentication :as authentication]
             [cxengage-javascript-sdk.modules.zendesk :as zendesk]
@@ -34,7 +35,7 @@
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]
             [cxengage-javascript-sdk.modules.testing :as testing]))
 
-(def *SDK-VERSION* "9.6.5")
+(def *SDK-VERSION* "9.7.0")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -89,11 +90,12 @@
   (let [enabled-modules (state/get-enabled-modules)
         sqs {:name "sqs" :record (sqs/map->SQSModule. {:on-msg-fn int/sqs-msg-router})}
         messaging {:name "messaging" :record (messaging/map->MessagingModule {:on-msg-fn int/messaging-msg-router})}
+        smooch {:name "smooch-messaging" :record (smooch/map->SmoochMessagingModule.)}
         voice {:name "voice" :record (voice/map->VoiceModule.)}
         email {:name "email" :record (email/map->EmailModule.)}
         twilio {:name "twilio" :record (twilio/map->TwilioModule.)}
         modules-to-be-enabled (if-not (state/get-supervisor-mode)
-                                [sqs messaging voice email twilio]
+                                [sqs messaging smooch voice email twilio]
                                 (if (state/is-default-extension-twilio)
                                   [sqs voice twilio]
                                   [sqs voice]))]

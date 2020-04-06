@@ -128,6 +128,7 @@
                            'cxengage-javascript-sdk.modules.api
                            'cxengage-javascript-sdk.modules.entities
                            'cxengage-javascript-sdk.modules.messaging
+                           'cxengage-javascript-sdk.modules.smooch-messaging
                            'cxengage-javascript-sdk.modules.reporting
                            'cxengage-javascript-sdk.modules.salesforce-classic
                            'cxengage-javascript-sdk.modules.salesforce-lightning
