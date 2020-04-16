@@ -106,16 +106,31 @@
                           :error (e/session-heartbeats-failed-err resp)})
               nil))))))
 
-(defn- start-session* [silent-monitoring]
+(defn- start-session* [silent-monitoring reason-lists]
   (go (let [resp (a/<! (rest/start-session-request silent-monitoring))
             {:keys [status api-response]} resp
             topic (topics/get-topic :session-started)
-            session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))]
+            session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))
+            default-rsl (->> reason-lists 
+                             (filter #(and (= (:name %) "System Presence Reasons")
+                                           (:active %)))
+                             first)
+            initial-reason (->> (:reasons default-rsl)
+                                (filter #(and (= (:name %)  "Logged in")
+                                              (:active %)))
+                                first)
+            reason-info (when (and default-rsl 
+                                   initial-reason)
+                              {:reason         (:name initial-reason)
+                               :reason-id      (:reason-id initial-reason)
+                               :reason-list-id (:id default-rsl)})]
         (if (= status 200)
           (do (state/set-session-details! (assoc session-details :expired? false))
               (p/publish {:topics topic
                           :response session-details})
-              (go-not-ready)
+              (if reason-info
+                (go-not-ready {:reason-info reason-info})
+                (go-not-ready))            
               (start-heartbeats*))
           (p/publish {:topics topic
                       :error (e/failed-to-start-agent-session-err resp)}))
@@ -144,7 +159,7 @@
                                 :error (e/failed-to-update-extension-err resp)
                                 :callback callback}))))
               (when-not no-session
-                (start-session* silent-monitoring)
+                (start-session* silent-monitoring (:reason-lists user-config))
                 (ih/send-core-message {:type :config-ready})))
           (p/publish {:topics topic
                       :error (e/failed-to-get-session-config-err config-response)}))))
