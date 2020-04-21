@@ -382,6 +382,12 @@
 (defn get-all-extensions []
   (get-state-value [:session :config :extensions]))
 
+(defn get-monitor-integration []
+  (get-state-value [:session :config :silent-monitoring :integration]))
+
+(defn get-monitor-extension []
+  (get-state-value [:session :config :silent-monitoring :extension]))
+
 (defn get-default-extension []
   (first (get-state-value [:session :config :extensions])))
 
@@ -420,7 +426,9 @@
     (first (filter #(= value (:value %)) extensions))))
 
 (defn get-integration-by-type [type]
-  (first (filter #(= (:type %) type) (get-all-integrations))))
+  (if (and (get-supervisor-mode) (= type (:type (get-monitor-integration))))
+    (get-monitor-integration)
+    (first (filter #(= (:type %) type) (get-all-integrations)))))
 
 (defn update-integration [type integration]
   (let [state-integrations (get-all-integrations)

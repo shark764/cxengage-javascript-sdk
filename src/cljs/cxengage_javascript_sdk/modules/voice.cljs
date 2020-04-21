@@ -36,7 +36,7 @@
    :topic-key :silent-monitoring-start-acknowledged}
   [params]
   (let [{:keys [interaction-id topic callback]} params
-        extension (first (state/get-all-extensions))]
+        extension (state/get-monitor-extension)]
     (if extension
       (let [interrupt-type "silent-monitoring"
             interrupt-body {:resource-id (state/get-active-user-id)
@@ -52,9 +52,10 @@
           (p/publish {:topics topic
                       :error (e/failed-to-start-silent-monitoring interaction-id interrupt-response)
                       :callback callback})))
-      (p/publish {:topics topic
-                  :error (e/failed-to-start-silent-monitoring-no-extension interaction-id (state/get-all-extensions))
-                  :callback callback}))))
+      (do (log :debug "No Silent Monitoring extension found")
+          (p/publish {:topics topic
+                      :error (e/failed-to-start-silent-monitoring-no-extension interaction-id (state/get-all-extensions))
+                      :callback callback})))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.customerHold({
