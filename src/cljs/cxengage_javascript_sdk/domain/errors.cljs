@@ -414,9 +414,9 @@
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
-   :level (if (= 404 (:status data))
-            "interaction-fatal"
-            "error")
+   :level (cond
+            (or (= (:status data) 404) (= (:status data) 410)) "interaction-fatal"
+            :else "error" )
    :message "Failed to end interaction."})
 
 (defn failed-to-accept-interaction-err [interaction-id data]
@@ -731,15 +731,6 @@
           :file file}
    :level "error"
    :message (str "Failed to send attachment: " err-status-text)})
-
-(defn dead-interaction [interaction-id agent-message-id message]
-  {:code 6011
-   :context :smooch-messaging
-   :data {:interaction-id interaction-id
-          :agent-message-id agent-message-id
-          :message message}
-   :level "error"
-   :message "Failed to send message to dead interaction. Removing dead interaction"})
 
 (defn failed-to-refresh-twilio-integration-err [data]
   {:code 7000

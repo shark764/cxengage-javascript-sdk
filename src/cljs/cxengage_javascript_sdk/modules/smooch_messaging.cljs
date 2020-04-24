@@ -86,7 +86,7 @@
         file (state/get-smooch-conversation-attachment {:interaction-id interaction-id})
         {:keys [api-response status] :as smooch-response} (a/<! (rest/send-smooch-attachment interaction-id agent-message-id file))
         error-response (cond
-                          (= status 410) (e/dead-interaction interaction-id agent-message-id nil)
+                          (= status 410) (e/failed-to-end-interaction-err interaction-id smooch-response)
                           (not= status 200) (e/failed-to-send-smooch-attachment interaction-id agent-message-id file (get-in api-response [:response :message]))
                           :else nil)]
     (p/publish {:topics topic
@@ -118,7 +118,7 @@
   (let [{:keys [interaction-id message agent-message-id topic callback]} params
         {:keys [api-response status] :as smooch-response} (a/<! (rest/send-smooch-message interaction-id agent-message-id message))
         error-response (cond
-                          (= status 410) (e/dead-interaction interaction-id agent-message-id message)
+                          (= status 410) (e/failed-to-end-interaction-err interaction-id smooch-response)
                           (not= status 200) (e/failed-to-send-smooch-message interaction-id agent-message-id message)
                           :else nil)]
     (p/publish {:topics topic
