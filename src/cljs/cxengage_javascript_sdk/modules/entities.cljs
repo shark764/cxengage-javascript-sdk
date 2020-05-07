@@ -1273,7 +1273,7 @@
   (let [{:keys [callback topic flow-id include-drafts]} params
         entity-response (a/<! (rest/get-crud-entity-request ["flows" flow-id]))
         error (if-not (= (:status entity-response) 200) (e/failed-to-get-flow-err entity-response))
-        flow-versions-response (if (nil? error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "versions?noFlowData=true"])))
+        flow-versions-response (if (nil? error) (a/<! (rest/get-crud-entity-request ["flows" flow-id "versions"])))
         flow-versions-error (if-not (= (:status flow-versions-response) 200) (e/failed-to-get-flow-err flow-versions-response))
         flow-drafts-response (if (and (true? include-drafts) (nil? flow-versions-error)) (a/<! (rest/get-crud-entity-request ["flows" flow-id "drafts"])))
         flow-drafts-error (if (and (true? include-drafts) (not= (:status flow-drafts-response) 200)) (e/failed-to-get-flow-err flow-drafts-response))

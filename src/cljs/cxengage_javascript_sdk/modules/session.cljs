@@ -138,7 +138,7 @@
 
 (defn- get-config* [no-session silent-monitoring callback]
   (go (let [topic (topics/get-topic :config-response)
-            config-response (a/<! (rest/get-config-request silent-monitoring))
+            config-response (a/<! (rest/get-config-request))
             {:keys [api-response status]} config-response
             user-config (:result api-response)
             extensions (:extensions user-config)

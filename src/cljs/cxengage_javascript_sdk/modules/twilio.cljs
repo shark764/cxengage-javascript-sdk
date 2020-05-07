@@ -132,7 +132,7 @@
               min-ttl (* twilio-token-ttl 500)]
           (a/<! (a/timeout min-ttl))
           (let [topic (topics/get-topic :config-response)
-                {:keys [status api-response] :as config-response} (a/<! (rest/get-config-request (state/get-supervisor-mode)))
+                {:keys [status api-response] :as config-response} (a/<! (rest/get-config-request))
                 {:keys [result]} api-response
                 {:keys [integrations]} result
                 twilio-integration (peek (filterv #(= (:type %1) "twilio") integrations))
