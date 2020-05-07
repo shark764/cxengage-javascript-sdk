@@ -35,7 +35,7 @@
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]
             [cxengage-javascript-sdk.modules.testing :as testing]))
 
-(def *SDK-VERSION* "9.7.5")
+(def *SDK-VERSION* "9.7.6")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -96,7 +96,9 @@
         twilio {:name "twilio" :record (twilio/map->TwilioModule.)}
         modules-to-be-enabled (if-not (state/get-supervisor-mode)
                                 [sqs messaging smooch voice email twilio]
-                                [sqs voice twilio])]
+                                (if (state/is-default-extension-twilio)
+                                  [sqs voice twilio]
+                                  [sqs voice]))]
     (doseq [module modules-to-be-enabled]
       (if-not (some #(= % (get module :name)) enabled-modules)
         (start-internal-module (get module :record))

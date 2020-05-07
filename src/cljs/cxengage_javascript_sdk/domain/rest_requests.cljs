@@ -128,20 +128,15 @@
                                  :interaction-id interaction-id})}]
     (api/api-request metadata-request)))
 
-(defn get-config-request
-  ([] (get-config-request false))
-  ([silent-monitoring] 
-      (let [resource-id (state/get-active-user-id)
-            tenant-id (state/get-active-tenant-id)
-            _ (log :debug (str "monitor=" silent-monitoring))
-            config-request {:method :get
-                              :url (iu/api-url
-                                    (if silent-monitoring
-                                          "tenants/:tenant-id/users/:resource-id/config?silentMonitor=true"
-                                          "tenants/:tenant-id/users/:resource-id/config")
-                                    {:tenant-id tenant-id
-                                    :resource-id resource-id})}]
-    (api/api-request config-request))))
+(defn get-config-request []
+  (let [resource-id (state/get-active-user-id)
+        tenant-id (state/get-active-tenant-id)
+        config-request {:method :get
+                        :url (iu/api-url
+                              "tenants/:tenant-id/users/:resource-id/config"
+                              {:tenant-id tenant-id
+                               :resource-id resource-id})}]
+    (api/api-request config-request)))
 
 (defn create-artifact-request [interaction-id artifact-body]
   (let [tenant-id (state/get-active-tenant-id)
