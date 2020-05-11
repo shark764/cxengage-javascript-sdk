@@ -70,7 +70,7 @@
                                           (go successful-login-response)))
                  (p/subscribe "cxengage/authentication/login-response"
                               (fn [error topic response]
-                                (is (= pubsub-expected-response (ih/kebabify response)))
+                                (is (= (merge pubsub-expected-response {:auth "username"}) (ih/kebabify response)))
                                 (set! api/api-request old)
                                 (done)))
                  (auth/login {:username "testuser@testemail.com"

@@ -96,7 +96,8 @@
               (p/publish {:topics (topics/get-topic :tenant-list)
                           :response tenants})
               (p/publish {:topics topic
-                          :response user-identity
+                          :response (merge user-identity
+                                           {:auth "token"})
                           :callback callback}))))
       (let [token-body {:username username
                         :password password
@@ -122,7 +123,8 @@
                   (p/publish {:topics (topics/get-topic :tenant-list)
                               :response tenants})
                   (p/publish {:topics topic
-                              :response user-identity
+                              :response (merge user-identity
+                                               {:auth "username"})
                               :callback callback}))))))))))
 
 (s/def ::auth-info-spec
@@ -189,10 +191,6 @@
                   :callback callback
                   :response api-response}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.authentication.popIdentityPage();
-;; -------------------------------------------------------------------------- ;;
-
 (defn- post-message-handler [event]
   (let [token (aget event "data" "token")
         error (aget event "data" "error")]
@@ -208,14 +206,18 @@
   (s/keys :req-un []
           :opt-un [::specs/callback]))
 
-;; cxengageSsoWindow opened here will be blocked by popup blockers by default.
-;; The window must be previously opened by a on-click handler to not be blocked.
 (def-sdk-fn pop-identity-page
   "The popIdentityPage function is used to open a third party Single Sign On
    provider using the information gathered from the getAuthInfo function. This
    information is stored in the SDK's internal state, and does not require it
    passed in as parameters. We require this to be a separate function in order
-   to bypass the browser's popup blocker.
+   to bypass the browser's popup blocker. A window with the name 'cxengageSsoWindow'
+   must first be previously opened in response to a user event to prevent being
+   blocked by default popup blockers.
+
+   ``` javascript
+   window.open('', 'cxengageSsoWindow', 'width=500,height=500');
+   ```
 
    ``` javascript
    CxEngage.authentication.popIdentityPage();
