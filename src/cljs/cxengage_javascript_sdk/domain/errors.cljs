@@ -393,7 +393,11 @@
    :level "error"
    :message "Unable to perform this action as there are interactions still active."})
 
-(defn work-offer-expired-err []
+(defn work-offer-expired-err
+  "**Error Code:** 4001
+  Message: Attempted to accept a work offer that is already expired.
+  "
+  []
   {:code 4001
    :context :interaction
    :data {}
@@ -409,17 +413,29 @@
    :level "error"
    :message "Failed to acknowledge action."})
 
-(defn failed-to-end-interaction-err [interaction-id data]
+(defn failed-to-end-interaction-err
+  "**Error Code:** 4003
+  Message: Failed to end interaction.
+  
+  This error is thrown when the 'remove-resource' interrupt ('resource-disconnect' interrupt for non-voice) fails to send.
+  If the error is status:404/level:interaction-fatal, then the interaction no longer exists."
+  [interaction-id data]
   {:code 4003
    :context :interaction
    :data {:api-response data
           :interaction-id interaction-id}
    :level (cond
             (or (= (:status data) 404) (= (:status data) 410)) "interaction-fatal"
-            :else "error" )
+            :else "error")
    :message "Failed to end interaction."})
 
-(defn failed-to-accept-interaction-err [interaction-id data]
+(defn failed-to-accept-interaction-err
+  "**Error Code:** 4004
+  Message: Failed to accept interaction.
+  
+  This error is thrown when the 'offer-accept' interrupt fails to send.
+  If the error is status:404/level:interaction-fatal, then the interaction no longer exists."
+  [interaction-id data]
   {:code 4004
    :context :interaction
    :data {:api-response data
@@ -429,7 +445,12 @@
             "error")
    :message "Failed to accept interaction."})
 
-(defn failed-to-focus-interaction-err [interaction-id data]
+(defn failed-to-focus-interaction-err
+  "**Error Code:** 4005
+  Message: Failed to focus interaction.
+  
+  This error is thrown when the 'interaction-focused' interrupt fails to send."
+  [interaction-id data]
   {:code 4005
    :context :interaction
    :data {:api-response data
@@ -437,7 +458,12 @@
    :level "error"
    :message "Failed to focus interaction."})
 
-(defn failed-to-unfocus-interaction-err [interaction-id data]
+(defn failed-to-unfocus-interaction-err
+  "**Error Code:** 4006
+  Message: Failed to unfocus interaction.
+  
+  This error is thrown when the 'interaction-unfocused' interrupt fails to send."
+  [interaction-id data]
   {:code 4006
    :context :interaction
    :data {:api-response data
@@ -445,7 +471,12 @@
    :level "error"
    :message "Failed to unfocus interaction."})
 
-(defn failed-to-assign-contact-to-interaction-err [interaction-id data]
+(defn failed-to-assign-contact-to-interaction-err
+  "**Error Code:** 4007
+  Message: Failed to assign specified contact to interaction.
+  
+  This error is thrown when the 'interaction-contact-selected' interrupt fails to send."
+  [interaction-id data]
   {:code 4007
    :context :interaction
    :data {:api-response data
@@ -453,7 +484,12 @@
    :level "error"
    :message "Failed to assign specified contact to interaction."})
 
-(defn failed-to-unassign-contact-from-interaction-err [interaction-id data]
+(defn failed-to-unassign-contact-from-interaction-err
+  "**Error Code:** 4008
+  Message: Failed to unassign specified contact to interaction.
+  
+  This error is thrown when the 'interaction-contact-deselected' interrupt fails to send."
+  [interaction-id data]
   {:code 4008
    :context :interaction
    :data {:api-response data
@@ -461,7 +497,12 @@
    :level "error"
    :message "Failed to unassign specified contact to interaction."})
 
-(defn failed-to-enable-wrapup-err [interaction-id data]
+(defn failed-to-enable-wrapup-err
+  "**Error Code:** 4009
+  Message: Failed to enable wrapup.
+  
+  This error is thrown when the 'wrapup-on' interrupt fails to send."
+  [interaction-id data]
   {:code 4009
    :context :interaction
    :data {:api-response data
@@ -469,7 +510,12 @@
    :level "error"
    :message "Failed to enable wrapup."})
 
-(defn failed-to-disable-wrapup-err [interaction-id data]
+(defn failed-to-disable-wrapup-err
+  "**Error Code:** 4010
+  Message: Failed to disable wrapup.
+  
+  This error is thrown when the 'wrapup-off' interrupt fails to send."
+  [interaction-id data]
   {:code 4010
    :context :interaction
    :data {:api-response data
@@ -478,6 +524,11 @@
    :message "Failed to disable wrapup."})
 
 (defn failed-to-end-wrapup-err [interaction-id data]
+  "**Error Code:** 4011
+  Message: Failed to end wrapup.
+  
+  This error is thrown when the 'wrapup-end' interrupt fails to send.
+  If the error is status:404/level:interaction-fatal, then the interaction no longer exists."
   {:code 4011
    :context :interaction
    :data {:api-response data
@@ -488,6 +539,11 @@
    :message "Failed to end wrapup."})
 
 (defn failed-to-deselect-disposition-err [interaction-id data]
+  "**Error Code:** 4012
+  Message: Failed to deselect disposition code.
+  
+  This error is thrown when the 'disposition-select' interrupt with no dispositions fails to send.
+  If the error is status:404/level:interaction-fatal, then the interaction no longer exists."
   {:code 4012
    :context :interaction
    :data {:api-response data
@@ -947,6 +1003,11 @@
    :message "Failed to send digits via Twilio. Potentially invalid dial tones."})
 
 (defn failed-to-find-twilio-connection-object
+  "**Error Code:** 8002
+  Message: Failed to find the twilio connection object in state
+  
+  This error is thrown when the interaction has been accepted through flow, 
+  but the subsequent Twilio connection has not been received within 35 seconds."
   [interaction-id]
   {:code 8002
    :context :twilio
@@ -955,6 +1016,11 @@
    :message "Failed to find the twilio connection object in state"})
 
 (defn force-killed-twilio-connection-err
+  "**Error Code:** 8003
+  Message: Force-killed the connection with Twilio; previous attempts to end it naturally were unsuccessful.
+  
+  This error is thrown when the interaction is dead (status:404),
+  but a twilio connection still exists for it and is disconnected."
   [interaction-id]
   {:code 8003
    :context :twilio

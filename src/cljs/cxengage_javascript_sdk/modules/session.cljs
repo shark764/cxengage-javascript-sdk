@@ -75,10 +75,6 @@
                       :error (e/failed-to-change-state-err resp)
                       :callback callback}))))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.setActiveTenant({ tenantId: "{{uuid}}" });
-;; -------------------------------------------------------------------------- ;;
-
 (defn- start-heartbeats* []
   (log :debug "Sending heartbeats...")
   (go-loop []
@@ -223,10 +219,6 @@
                           :callback callback})
               (get-config* no-session silent-monitoring callback))))))))
 
-;; ---------------------------------------------------------------------------------- ;;
-;; CxEngage.session.setDirection({ direction: "{{inbound/outbound/agent-initiated}}" });
-;; ---------------------------------------------------------------------------------- ;;
-
 (s/def ::set-direction-spec
   (s/keys :req-un [::specs/direction]
           :opt-un [::specs/callback ::specs/agent-id ::specs/session-id]))
@@ -322,10 +314,6 @@
                   :response state-details
                   :error response-error
                   :callback callback})))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.goReady({ extensionValue: "{{uuid/extension}}" });
-;; -------------------------------------------------------------------------- ;;
 
 (defn- go-ready* [topic callback]
   (go (let [session-id (state/get-session-id)
@@ -460,10 +448,6 @@
                 :callback callback})
     token))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.setToken();
-;; -------------------------------------------------------------------------- ;;
-
 (defn set-token
   "``` javascript
   CxEngage.session.setToken('{{string}}');
@@ -479,10 +463,6 @@
                 :response token
                 :callback callback})
     token))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.setUserIdentity();
-;; -------------------------------------------------------------------------- ;;
 
 (defn set-user-identity
   "``` javascript
@@ -545,10 +525,6 @@
                 :callback callback})
     extension))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.getTenantDetails();
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::get-tenant-details-spec
   (s/keys :req-un []
           :opt-un [::specs/callback]))
@@ -593,10 +569,6 @@
                 :response interaction
                 :callback callback})
     interaction))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.session.clearMonitoredInteraction();
-;; -------------------------------------------------------------------------- ;;
 
 (defn clear-monitored-interaction
   "``` javascript

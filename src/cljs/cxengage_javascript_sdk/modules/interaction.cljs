@@ -42,20 +42,25 @@
      :direction direction
      :channel-type channel-type}))
 
-;; -------------------------------------------------------------------------- ;;
-;; //End interaction
-;; CxEngage.interactions.end({
-;;   interactionId: "{{uuid}}"
-;; });
-;;
-;; //Reject interaction
-;; CxEngage.interactions.reject({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn end
-  ""
+  "The reject/end function is used to reject a work offer or end an interaction from the agent perspective and disconnect from the customer.
+
+  ```javascript
+  CxEngage.interactions.end({
+    interactionId: '{{uuid}}'
+  });
+
+  // Same as
+  CxEngage.interactions.reject({
+    interactionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4003](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-end-interaction-err)
+  - [Twilio: 8002](/cxengage-javascript-sdk.domain.errors.html#var-force-killed-twilio-connection-err)
+  "
   {:validation ::generic-interaction-fn-params
    :topic-key :interaction-end-acknowledged}
   [params]
@@ -85,14 +90,21 @@
                       :error (e/failed-to-end-interaction-err interaction-id resp)
                       :callback callback})))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.accept({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn accept
-  ""
+  "The accept function is used to accept a work offer/interaction and initiate communication with the customer.
+
+  ```javascript
+  CxEngage.interactions.accept({
+    interactionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4001](/cxengage-javascript-sdk.domain.errors.html#var-work-offer-expired-err)
+  - [Interaction: 4004](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-accept-interaction-err)
+  - [Twilio: 8002](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-find-twilio-connection-object)
+  "
   {:validation ::generic-interaction-fn-params
    :topic-key :interaction-accept-acknowledged}
   [params]
@@ -142,14 +154,19 @@
                   (= channel-type "messaging"))
               (int/get-messaging-history interaction-id)))))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.focus({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn focus
-  ""
+  "The focus function is used to signal reporting that the agent is actively viewing the interaction.
+
+  ```javascript
+  CxEngage.interactions.focus({
+    interactionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4005](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-focus-interaction-err)
+  "
   {:validation ::generic-interaction-fn-params
    :topic-key :interaction-focus-acknowledged}
   [params]
@@ -165,14 +182,19 @@
                   :error (e/failed-to-focus-interaction-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.unfocus({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn unfocus
-  ""
+  "The unfocus function is used to signal reporting that the agent is no longer viewing the interaction.
+
+  ```javascript
+  CxEngage.interactions.unfocus({
+    interactionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4006](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-unfocus-interaction-err)
+  "
   {:validation ::generic-interaction-fn-params
    :topic-key :interaction-unfocus-acknowledged}
   [params]
@@ -188,15 +210,19 @@
                   :error (e/failed-to-unfocus-interaction-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.assignContact({
-;;   interactionId: "{{uuid}}",
-;;   contactId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn assign
-  ""
+  "The assignContact function is used to assign a Skylight CRM contact to the interaction.
+
+  ```javascript
+  CxEngage.interactions.assignContact({
+    interactionId: '{{uuid}}',
+    contactId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4007](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-assign-contact-to-interaction-err)"
   {:validation ::contact-operation-params
    :topic-key :contact-assignment-acknowledged}
   [params]
@@ -220,7 +246,18 @@
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn unassign
-  ""
+  "The unassignContact function is used to unassign a Skylight CRM contact from the interaction.
+
+  ```javascript
+  CxEngage.interactions.unassignContact({
+    interactionId: '{{uuid}}',
+    contactId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4008](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-unassign-contact-from-interaction-err)"
   {:validation ::contact-operation-params
    :topic-key :contact-unassignment-acknowledged}
   [params]
@@ -236,14 +273,20 @@
                   :error (e/failed-to-unassign-contact-from-interaction-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.enableWrapup({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn enable-wrapup
-  ""
+  "The enableWrapup function is used during an interaction to turn wrap up on following the end of the interaction.
+  This should only be called when the interaction has 'Allow Wrap Up Update' configured on the interaction.
+
+  ```javascript
+  CxEngage.interactions.enableWrapup({
+    interactionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4009](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-enable-wrapup-err)
+  "
   {:validation ::generic-interaction-fn-params
    :topic-key :enable-wrapup-acknowledged}
   [params]
@@ -259,14 +302,20 @@
                   :error (e/failed-to-enable-wrapup-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.disableWrapup({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn disable-wrapup
-  ""
+  "The disableWrapup function is used during an interaction to turn wrap up off on following the end of the interaction.
+  This should only be called when the interaction has 'Allow Wrap Up Update' configured on the interaction.
+
+  ```javascript
+  CxEngage.interactions.disableWrapup({
+    interactionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4010](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-disable-wrapup-err)
+  "
   {:validation ::generic-interaction-fn-params
    :topic-key :disable-wrapup-acknowledged}
   [params]
@@ -282,14 +331,19 @@
                   :error (e/failed-to-disable-wrapup-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.endWrapup({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn end-wrapup
-  ""
+  "The endWrapup function can be used during wrap up to end the wrap up phase of the interaction,
+  freeing the resource for new work.
+
+  ```javascript
+  CxEngage.interactions.endWrapup({
+    interactionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4011](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-end-wrapup-err)"
   {:validation ::generic-interaction-fn-params
    :topic-key :end-wrapup-acknowledged}
   [params]
@@ -305,14 +359,18 @@
                   :error (e/failed-to-end-wrapup-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.deselectdispositioncode({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn deselect-disposition
-  ""
+  "The deselectDispositionCode is used to remove all selected dispositions from the interaction.
+
+  ```javascript
+  CxEngage.interactions.deselectDispositionCode({
+    interactionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4012](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-deselect-disposition-err)"
   {:validation ::generic-interaction-fn-params
    :topic-key :disposition-code-changed}
   [params]
