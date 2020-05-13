@@ -184,6 +184,8 @@
                  :create-message-template-response "cxengage/entities/create-message-template-response"
                  :update-message-template-response "cxengage/entities/update-message-template-response"
                  :get-recordings-response "cxengage/entities/get-recordings-response"
+                 :upload-branding-image-response "cxengage/entities/upload-branding-image-response"
+                 :update-branding-response "cxengage/entities/update-branding-response"
                 ;;hygen-insert-above-CRUD-topics
                  ;; Reporting
                  :get-capacity-response "cxengage/reporting/get-capacity-response"

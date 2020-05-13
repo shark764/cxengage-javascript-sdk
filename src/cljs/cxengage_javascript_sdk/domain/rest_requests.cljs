@@ -638,15 +638,18 @@
          get-request {:method :get :url url}]
      (api/api-request (merge get-request options-map)))))
 
-(defn crud-url [entity-vector api-version]
-  (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-vector))]
-    (if api-version (string/replace-first url #"v\d{1}" api-version) url)))
+(defn crud-url [entity-vector api-version tenant-id platform-entity]
+  (let [tenant-id (or tenant-id (state/get-active-tenant-id))
+      url (if platform-entity
+            (iu/construct-api-url entity-vector)
+            (iu/construct-api-url (into ["tenants" tenant-id] entity-vector)))]
+  (if api-version (string/replace-first url #"v\d{1}" api-version) url)))
 
 (defn api-create-request [entity-vector body api-version]
     (api/api-request {:method :post :url (crud-url entity-vector api-version) :body body}))
 
-(defn api-read-request [entity-vector api-version]
-    (api/api-request {:method :get :url (crud-url entity-vector api-version)}))
+(defn api-read-request [entity-vector api-version tenant-id platform-entity]
+    (api/api-request {:method :get :url (crud-url entity-vector api-version tenant-id platform-entity)}))
 
 (defn api-update-request [entity-vector body api-version]
     (api/api-request {:method :put :url (crud-url entity-vector api-version) :body body}))
@@ -714,6 +717,13 @@
                                               "tenants/:tenant-id/protected-brandings"
                                               {:tenant-id tenant-id})}]
     (api/api-request get-protected-branding-request)))
+
+(defn update-branding-request [tenant-id styles]
+  (let [update-branding-request (cond-> {:method :put
+                                         :url (iu/api-url "tenants/:tenant-id/branding"
+                                                  {:tenant-id tenant-id})}
+                                    styles         (assoc-in [:body :styles] (str styles)))]
+      (api/api-request update-branding-request)))
 
 (defn get-tenant-request [tenant-id]
   (let [get-tenant-request {:method :get
@@ -1428,24 +1438,33 @@
                                     {:region-id region-id})}]
     (api/api-request get-tenants-request)))
 
-(defn create-tenant-request [name description active status]
+(defn create-tenant-request [name admin-user-id parent-id region-id timezone active description]
   (let [create-tenant-request (cond-> {:method :post
                                        :url (iu/api-url "tenants")}
 
-                                (not (nil? name))        (assoc-in [:body :name] name)
-                                (not (nil? description)) (assoc-in [:body :description] description)
-                                (not (nil? active))      (assoc-in [:body :active] active)
-                                (not (nil? status))      (assoc-in [:body :status] status))]
+                                name                     (assoc-in [:body :name] name)
+                                admin-user-id            (assoc-in [:body :admin-user-id] admin-user-id)
+                                parent-id                (assoc-in [:body :parent-id] parent-id)
+                                region-id                (assoc-in [:body :region-id] region-id)
+                                timezone                 (assoc-in [:body :timezone] timezone)
+                                active                   (assoc-in [:body :active] active)
+                                (not (nil? description)) (assoc-in [:body :description] description))]
     (api/api-request create-tenant-request)))
 
-(defn update-tenant-request [tenant-id name description active status]
+(defn update-tenant-request [tenant-id name description admin-user-id timezone outbound-integration-id cxengage-identity-provider default-identity-provider default-sla-id active]
   (let [update-tenant-request (cond->   {:method :put
                                                 :url (iu/api-url "tenants/:tenant-id"
                                                       {:tenant-id tenant-id})}
-      
-                                    (not (nil? name))                             (assoc-in [:body :name] name)
-                                    (not (nil? description))                      (assoc-in [:body :description] description)
-                                    (not (nil? active))                           (assoc-in [:body :active] active))]                                     
+                                    (not (nil? name))                       (assoc-in [:body :name] name)
+                                    (not (nil? description))                (assoc-in [:body :description] description)
+                                    (not (nil? admin-user-id))              (assoc-in [:body :admin-user-id] admin-user-id)
+                                    (not (nil? timezone))                   (assoc-in [:body :timezone] timezone)
+                                    (not (nil? outbound-integration-id))    (assoc-in [:body :outbound-integration-id] outbound-integration-id)
+                                    (not (nil? cxengage-identity-provider)) (assoc-in [:body :cxengage-identity-provider] cxengage-identity-provider)
+                                    (not (nil? default-identity-provider))  (assoc-in [:body :default-identity-provider] default-identity-provider)
+                                    (not (nil? default-sla-id))             (assoc-in [:body :default-sla-id] default-sla-id)
+                                    (not (nil? active))                     (assoc-in [:body :active] active)
+                                    (not (nil? status))                     (assoc-in [:body :status] status))]                                     
     (api/api-request update-tenant-request)))
 
 ;;--------------------------------------------------------------------------- ;;

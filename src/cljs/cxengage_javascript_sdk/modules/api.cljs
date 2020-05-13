@@ -49,7 +49,7 @@
 
 (s/def ::read-params
   (s/keys :req-un [::specs/path]
-          :opt-un [::specs/callback ::specs/custom-topic ::specs/api-version]))
+          :opt-un [::specs/callback ::specs/custom-topic ::specs/api-version ::specs/tenant-id ::specs/platform-entity]))
 
 (def-sdk-fn read
   "CRUD api get request.
@@ -60,6 +60,8 @@
     apiVersion: {{string}} (optional) (If this attribute is passed, it will be able to override the default api version used to make the
                                        requests, set up when initializing the SDK, to any existing version on the platform.
                                        E.g., 'v2', 'v3'. etc)
+    tenantId: {{string}} (optional)  (In the Tenants page, we need to fetch entities data that belong to a different tenant.)
+    platformEntity: {{boolean}} (optional) (Entities like regions & timezones are platform-level entities, which needs to fetched without sending tenantId in the request)
   });
   ```
   A generic method of retrieving an api endpoint.
@@ -74,8 +76,8 @@
   {:validation ::read-params
     :topic-key :read-response}
   [params]
-  (let [{:keys [path callback topic custom-topic api-version]} params
-        {:keys [status api-response]} (a/<! (rest/api-read-request (into [] path) api-version))
+  (let [{:keys [path callback topic custom-topic api-version tenant-id platform-entity]} params
+        {:keys [status api-response]} (a/<! (rest/api-read-request (into [] path) api-version tenant-id platform-entity))
         topic (or custom-topic topic)
         error (if-not (= status 200) (e/failed-to-read-err api-response))]
     (p/publish
