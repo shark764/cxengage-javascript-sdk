@@ -2840,6 +2840,33 @@
    :level "error"
    :message "Failed to update disposition list."})
 
+(defn failed-to-upload-branding-image-err 
+"**Error Code:** 11140
+  Message: Failed to upload branding image.
+          
+  This error is usually due to an unexpected status code returned from the API.
+          
+  **Solution:** Check your browsers dev tools console for additional error information"
+ [data]
+ {:code 11140
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to upload branding image."})
+
+(defn failed-to-update-tenant-branding-err 
+"**Error Code:** 11141
+  Message: Failed to update tenant branding.
+          
+  This error is usually due to an unexpected status code returned from the API.
+          
+  **Solution:** Check your browsers dev tools console for additional error information"
+ [data]
+ {:code 11141
+  :context :entities
+  :data {:api-response data}
+  :level "error"
+  :message "Failed to update tenant branding."})
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
@@ -3172,3 +3199,4 @@
           :api-response data}
    :level "error"
    :message "Failed to assign item. The API returned an error."})
+

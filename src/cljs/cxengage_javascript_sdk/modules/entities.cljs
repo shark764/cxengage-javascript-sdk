@@ -2680,15 +2680,19 @@
 ;;--------------------------------------------------------------------------- ;;
 
 (s/def ::create-tenant-params
-  (s/keys :req-un [ ::specs/name ::specs/active]
+  (s/keys :req-un [ ::specs/name ::specs/admin-user-id ::specs/parent-id ::specs/region-id ::specs/timezone ::specs/active]
           :opt-un [ ::specs/callback ::specs/description]))
 
 (def-sdk-fn create-tenant
   "``` javascript
   CxEngage.entities.createTenant({
     name: {{string}} (required),
+    adminUserId: {{uuid}} (required),
+    parentId: {{uuid}} (required),
+    regionId: {{uuid}} (required),
+    timezone: {{string}} (required),
+    active: {{boolean}} (required),
     description: {{string}} (optional),
-    active: {{boolean}} (required)
   });
   ```
   Calls rest/create-tenant-request
@@ -2702,8 +2706,8 @@
   {:validation ::create-tenant-params
    :topic-key :create-tenant-response}
   [params]
-  (let [{:keys [callback topic name description active]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-tenant-request name description active nil))
+  (let [{:keys [callback topic name admin-user-id parent-id region-id timezone active description]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-tenant-request name admin-user-id parent-id region-id timezone active description))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-tenant-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -3148,15 +3152,21 @@
 ;;----------------------------------------------------------;;
 
 (s/def ::update-tenant-params
-  (s/keys :req-un [ ::specs/tenant-id]
-          :opt-un [ ::specs/callback ::specs/name ::specs/active ::specs/description]))
+  (s/keys :req-un [ ::specs/tenant-id] 
+          :opt-un [ ::specs/callback ::specs/name ::specs/description ::specs/admin-user-id ::specs/timezone ::specs/outbound-integration-id ::specs/cxengage-identity-provider ::specs/default-identity-provider ::specs/default-sla-id ::specs/active]))
 
 (def-sdk-fn update-tenant
   "``` javascript
-  CxEngage.entities.updateTenant({
-    tenantId: {{uuid}} (required)
+  CxEngage.entities.updateTenant({ 
+    tenantId: {{uuid}} (required),
     name: {{string}} (optional),
     description: {{string}} (optional),
+    adminUserId: {{uuid}} (optional),
+    timezone: {{string}} (optional),
+    outboundIntegrationId: {{uuid}} (optional),
+    cxengageIdentityProvider: {{string}} (optional),
+    defaultIdentityProvider: {{uuid}} (optional),
+    defaultSlaId: {{uuid}} (optional),
     active: {{boolean}} (optional)
   });
   ```
@@ -3167,13 +3177,14 @@
   - [Entities: 11116](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-tenant-err)"
   {:validation ::update-tenant-params
    :topic-key :update-tenant-response}  [params]
-  (let [{:keys [callback tenant-id topic name description active]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-tenant-request tenant-id name description active nil))
+  (let [{:keys [callback tenant-id topic name description admin-user-id timezone outbound-integration-id cxengage-identity-provider default-identity-provider default-sla-id active]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-tenant-request tenant-id name description admin-user-id timezone outbound-integration-id cxengage-identity-provider default-identity-provider default-sla-id active))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-tenant-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
                 :error response-error
                 :callback callback})))
+
 (s/def ::create-outbound-identifier-params
   (s/keys :req-un [::specs/name ::specs/active ::specs/value ::specs/flow-id ::specs/channel-type]
           :opt-un [::specs/description]))
@@ -3933,6 +3944,77 @@
                 :error response-error
                 :callback callback})))
 
+(s/def ::update-branding-params
+  (s/keys :req-un [::specs/tenant-id ::specs/styles]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn update-branding
+    "``` javascript
+  CxEngage.entities.updateBranding({
+    tenantId: {{uuid}}, (required)
+    styles: {{string}}, (required)
+  });
+  ```
+  Updates tenants branding by calling rest/update-branding-request
+  with the provided styles for the current tenant.
+
+  Topic: cxengage/entities/update-branding-response
+
+  Possible Errors:
+
+  - [Entities: 11141](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-tenant-branding-err)"
+  {:validation ::update-branding-params
+   :topic-key :update-branding-response}
+  [params]
+  (let [{:keys [tenant-id styles callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-branding-request tenant-id styles))
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-tenant-branding-err entity-response))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error response-error
+                  :callback callback})))
+
+(s/def ::upload-branding-image-params
+  (s/keys :req-un [::specs/tenant-id ::specs/file ::specs/image-type]
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn upload-branding-image
+      "``` javascript
+  CxEngage.entities.uploadBrandingImage({
+    tenantId: {{uuid}}, (required)
+    file: {{object}}, (required)
+    image-type: {{string}}, (required)
+  });
+  ```
+  uploads branding image by calling rest/upload-branding-image
+  with the provided styles for the current tenant.
+
+  Topic: cxengage/entities/update-branding-response
+
+  Possible Errors:
+
+  - [Entities: 11140](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-upload-branding-image-err)"
+  {:validation ::upload-branding-image-params
+   :topic-key :upload-branding-image-response}
+  [params]
+  (let [{:keys [tenant-id file image-type callback topic]} params
+        url (iu/api-url
+              (str "tenants/:tenant-id/branding/:image-type/upload")
+              {:tenant-id tenant-id
+               :image-type image-type})
+        form-data (doto (js/FormData.) (.append "file" file))
+        {:keys [api-response status] :as upload-branding-image-response} (a/<! (rest/file-api-request
+                                                                           {:method :post
+                                                                            :url url
+                                                                            :body form-data}))]
+      (if (= status 200)
+        (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-upload-branding-image-err upload-branding-image-response)
+                  :callback callback}))))
+
 ;;--------------------------------------------------------------------------- ;;
 ;; DELETE Entity Functions
 ;; -------------------------------------------------------------------------- ;;
@@ -4195,7 +4277,9 @@
                                        :delete-exception delete-exception
                                        :dissociate dissociate
                                       ;;hygen-insert-above-delete
-                                       :download-list download-list}}
+                                       :download-list download-list
+                                       :upload-branding-image upload-branding-image
+                                       :update-branding update-branding}}
 
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
