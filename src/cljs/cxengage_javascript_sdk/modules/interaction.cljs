@@ -238,13 +238,6 @@
                   :error (e/failed-to-assign-contact-to-interaction-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.unassignContact({
-;;   interactionId: "{{uuid}}",
-;;   contactId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn unassign
   "The unassignContact function is used to unassign a Skylight CRM contact from the interaction.
 
@@ -386,15 +379,20 @@
                   :error (e/failed-to-deselect-disposition-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.selectDispositionCode({
-;;   interactionId: "{{uuid}}",
-;;   dispositionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn select-disposition
-  ""
+  "The selectDispositionCode is used to assign a disposition to the interaction.
+
+  ```javascript
+  CxEngage.interactions.selectDispositionCode({
+    interactionId: '{{uuid}}',
+    dispositionId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4020](/cxengage-javascript-sdk.domain.errors.html#var-invalid-disposition-provided-err)
+  - [Interaction: 4013](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-select-disposition-err)"
   {:validation ::disposition-operation-params
    :topic-key :disposition-code-changed}
   [params]

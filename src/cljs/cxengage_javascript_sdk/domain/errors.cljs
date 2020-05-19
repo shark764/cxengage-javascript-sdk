@@ -554,6 +554,11 @@
    :message "Failed to deselect disposition code."})
 
 (defn failed-to-select-disposition-err [interaction-id data]
+  "**Error Code:** 4013
+  Message: Failed to select disposition code.
+  
+  This error is thrown when the 'disposition-select' interrupt with a disposition id fails to send.
+  If the error is status:404/level:interaction-fatal, then the interaction no longer exists."
   {:code 4013
    :context :interaction
    :data {:api-response data
@@ -616,6 +621,11 @@
    :message "Failed to send custom interrupt."})
 
 (defn invalid-disposition-provided-err [interaction-id data]
+  "**Error Code:** 4020
+  Message: Invalid disposition code provided.
+  
+  This error is thrown when the disposition id passed into select-disposition
+  is not one of the possible disposition ids assigned to the interaction."
   {:code 4020
    :context :interaction
    :level "error"
@@ -2841,7 +2851,7 @@
    :message "Failed to update disposition list."})
 
 (defn failed-to-upload-branding-image-err 
-"**Error Code:** 11140
+ "**Error Code:** 11140
   Message: Failed to upload branding image.
           
   This error is usually due to an unexpected status code returned from the API.
@@ -2855,7 +2865,7 @@
   :message "Failed to upload branding image."})
 
 (defn failed-to-update-tenant-branding-err 
-"**Error Code:** 11141
+ "**Error Code:** 11141
   Message: Failed to update tenant branding.
           
   This error is usually due to an unexpected status code returned from the API.
