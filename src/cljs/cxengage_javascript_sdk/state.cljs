@@ -566,3 +566,13 @@
 
 (defn set-monitored-interaction! [interaction]
   (swap! sdk-state assoc-in [:supervisor :monitored-interaction] interaction))
+
+(defn get-branding-images-s3-bucket-url [image]
+  (let [env (clojure.string/replace (str (get-env)) ":" "")
+        region (get-region)]
+        (cond
+          (and (= env "prod") (= region "us-east-1"))
+            (str "https://us-east-1-cxengage-prod-configurator-images.s3.amazonaws.com/" image)
+          (and (= env "prod") (= region "eu-west-1"))
+            (str "https://s3-eu-west-1.amazonaws.com/eu-west-1-cxengage-prod-configurator-images/" image)
+          :else (str "https://cxengagelabs-" env "-configurator-images.s3.amazonaws.com/" image))))

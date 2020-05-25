@@ -179,6 +179,7 @@
                  :create-exception-response "cxengage/entities/create-exception-response"
                  :delete-exception-response "cxengage/entities/delete-execption-response"
                  :get-timezones-response "cxengage/entities/get-timezones-response"
+                 :get-regions-response "cxengage/entities/get-regions-response"
                  :get-message-templates-response "cxengage/entities/get-message-templates-response"
                  :get-message-template-response "cxengage/entities/get-message-template-response"
                  :create-message-template-response "cxengage/entities/create-message-template-response"

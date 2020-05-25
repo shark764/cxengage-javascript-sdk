@@ -26,7 +26,7 @@
 
 (s/def ::get-entities-params
   (s/keys :req-un []
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/callback ::specs/tenant-id]))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; GET Entity Functions
@@ -99,7 +99,7 @@
 
 (s/def ::get-users-params
   (s/keys :req-un []
-          :opt-un [::specs/callback ::specs/exclude-offline]))
+          :opt-un [::specs/callback ::specs/exclude-offline ::specs/tenant-id]))
 
 (def-sdk-fn get-users
   "``` javascript
@@ -115,8 +115,8 @@
   {:validation ::get-users-params
    :topic-key :get-users-response}
   [params]
-  (let [{:keys [callback topic exclude-offline]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-users-request :get "user" exclude-offline))]
+  (let [{:keys [callback topic exclude-offline tenant-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-users-request :get "user" exclude-offline tenant-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -282,15 +282,17 @@
   {:validation ::get-entities-params
    :topic-key :get-branding-response}
   [params]
-  (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-branding-request))]
-    (if (= status 200)
-      (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-get-tenant-branding-err entity-response)
-                  :callback callback}))))
+  (let [{:keys [callback topic tenant-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-branding-request tenant-id))
+        response {:result (#(cond-> %
+                              (and (not (nil? (get-in api-response [:result :logo])))    (not= "" (get-in api-response [:result :logo])))     (assoc :logo (state/get-branding-images-s3-bucket-url (get-in api-response [:result :logo])))
+                              (and (not (nil? (get-in api-response [:result :favicon]))) (not= "" (get-in api-response [:result :favicon])))  (assoc :favicon (state/get-branding-images-s3-bucket-url (get-in api-response [:result :favicon]))))
+                            (:result api-response))}
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-branding-err entity-response))]
+        (p/publish {:topics topic
+                :response response
+                :error error
+                :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getProtectedBranding();
@@ -301,8 +303,8 @@
   {:validation ::get-entities-params
    :topic-key :get-protected-branding-response}
   [params]
-  (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-protected-branding-request))]
+  (let [{:keys [callback topic tenant-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-protected-branding-request tenant-id))]
     (if (= status 200)
       (p/publish {:topics topic
                   :response api-response
@@ -885,8 +887,8 @@
   {:validation ::get-entities-params
    :topic-key :get-slas-response}
   [params]
-  (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["slas"]))
+  (let [{:keys [callback topic tenant-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["slas" {:tenant-id tenant-id}]))
         error (if-not (= (:status entity-response) 200) (e/failed-to-get-slas-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -1501,8 +1503,8 @@
   {:validation ::get-entities-params
    :topic-key :get-integrations-response}
   [params]
-  (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["integrations"]))
+  (let [{:keys [callback topic tenant-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["integrations" {:tenant-id tenant-id}]))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-get-integrations-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -1790,8 +1792,8 @@
   {:validation ::get-entities-params
    :topic-key :get-identity-providers-response}
   [params]
-  (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["identity-providers"]))
+  (let [{:keys [callback topic tenant-id]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["identity-providers" {:tenant-id tenant-id}]))
         error (if-not (= status 200) (e/failed-to-get-identity-providers-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
@@ -1867,6 +1869,27 @@
                   :callback callback})
       (p/publish {:topics topic
                   :error (e/failed-to-get-timezones-err entity-response)
+                  :callback callback}))))
+
+(def-sdk-fn get-regions
+  "``` javascript
+  CxEngage.entities.getRegions();
+  ```
+  Retrieves regions that CxEngage platform can handle
+  Topic: cxengage/entities/get-regions-response
+  Possible Errors:
+  - [Entities: 11142](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-regions)"
+  {:validation ::get-entities-params
+   :topic-key :get-regions-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/get-regions-request))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response api-response
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-regions-err entity-response)
                   :callback callback}))))
 
 ;;--------------------------------------------------------------------------- ;;
@@ -3946,13 +3969,15 @@
 
 (s/def ::update-branding-params
   (s/keys :req-un [::specs/tenant-id ::specs/styles]
-          :opt-un [::specs/callback]))
+          :opt-un [::specs/callback ::specs/logo ::specs/favicon]))
 
 (def-sdk-fn update-branding
     "``` javascript
   CxEngage.entities.updateBranding({
     tenantId: {{uuid}}, (required)
-    styles: {{string}}, (required)
+    styles: {{string}}, (required),
+    logo: {{string}}, (optional)
+    favicon: {{string}}, (optional)
   });
   ```
   Updates tenants branding by calling rest/update-branding-request
@@ -3966,8 +3991,8 @@
   {:validation ::update-branding-params
    :topic-key :update-branding-response}
   [params]
-  (let [{:keys [tenant-id styles callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-branding-request tenant-id styles))
+  (let [{:keys [tenant-id styles logo favicon callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/update-branding-request tenant-id styles logo favicon))
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-tenant-branding-err entity-response))]
       (p/publish {:topics topic
                   :response api-response
@@ -4203,6 +4228,7 @@
                                        :get-business-hours get-business-hours
                                        :get-business-hour get-business-hour
                                        :get-timezones get-timezones
+                                       :get-regions get-regions
                                       ;;hygen-insert-above-get
                                        :create-list create-list
                                        :create-list-item create-list-item
