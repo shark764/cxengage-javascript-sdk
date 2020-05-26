@@ -220,3 +220,5 @@
 (s/def ::image-type string?)
 (s/def ::styles string?)
 (s/def ::platform-entity boolean?)
+(s/def ::logo string?)
+(s/def ::favicon string?)

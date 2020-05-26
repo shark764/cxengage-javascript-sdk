@@ -634,7 +634,9 @@
   ([entity-map]
    (get-crud-entity-request entity-map {}))
   ([entity-map options-map]
-   (let [url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] entity-map))
+   (let [tenant-id-param (first (filterv (fn [k] (:tenant-id k)) entity-map))
+         tenant-id (or (:tenant-id tenant-id-param) (state/get-active-tenant-id))
+         url (iu/construct-api-url (into ["tenants" tenant-id] (remove (fn [k] (map? k)) entity-map)))
          get-request {:method :get :url url}]
      (api/api-request (merge get-request options-map)))))
 
@@ -677,8 +679,8 @@
                      :url get-url}]
     (api/api-request get-request)))
 
-(defn get-users-request [method entity-type exclude-offline]
-  (let [tenant-id (state/get-active-tenant-id)
+(defn get-users-request [method entity-type exclude-offline tenant-id]
+  (let [tenant-id (or tenant-id (state/get-active-tenant-id))
         url (str "tenants/:tenant-id/" entity-type "s")
         url (if exclude-offline
               (str url "?offline=false")
@@ -702,27 +704,29 @@
                                   :interrupt interrupt-body}}]
     (api/api-request interrupt-request)))
 
-(defn get-branding-request []
-  (let [tenant-id (state/get-active-tenant-id)
+(defn get-branding-request [tenant-id]
+  (let [tenant-id (or tenant-id (state/get-active-tenant-id))
         get-branding-request {:method :get
                               :url (iu/api-url
                                     "tenants/:tenant-id/branding"
                                     {:tenant-id tenant-id})}]
     (api/api-request get-branding-request)))
 
-(defn get-protected-branding-request []
-  (let [tenant-id (state/get-active-tenant-id)
+(defn get-protected-branding-request [tenant-id]
+  (let [tenant-id (or tenant-id (state/get-active-tenant-id))
         get-protected-branding-request {:method :get
                                         :url (iu/api-url
                                               "tenants/:tenant-id/protected-brandings"
                                               {:tenant-id tenant-id})}]
     (api/api-request get-protected-branding-request)))
 
-(defn update-branding-request [tenant-id styles]
+(defn update-branding-request [tenant-id styles logo favicon]
   (let [update-branding-request (cond-> {:method :put
                                          :url (iu/api-url "tenants/:tenant-id/branding"
                                                   {:tenant-id tenant-id})}
-                                    styles         (assoc-in [:body :styles] (str styles)))]
+                              styles               (assoc-in [:body :styles] (str styles))
+                              (not (nil? logo))    (assoc-in [:body :logo] logo)
+                              (not (nil? favicon)) (assoc-in [:body :favicon] favicon))]
       (api/api-request update-branding-request)))
 
 (defn get-tenant-request [tenant-id]
@@ -789,6 +793,12 @@
 
 (defn get-timezones-request []
   (let [url (iu/api-url "timezones")
+        request {:method "get"
+                 :url url}]
+    (api/api-request request)))
+
+(defn get-regions-request []
+  (let [url (iu/api-url "regions")
         request {:method "get"
                  :url url}]
     (api/api-request request)))
