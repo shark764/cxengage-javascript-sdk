@@ -26,6 +26,7 @@
                  :get-active-user-id-response "cxengage/session/get-active-user-id-response"
                  :get-active-tenant-id-response "cxengage/session/get-active-tenant-id-response"
                  :get-default-extension-response "cxengage/session/get-default-extension-response"
+                 :get-extensions "cxengage/session/get-extensions"
                  :get-token-response "cxengage/session/get-token-response"
                  :set-token-response "cxengage/session/set-token-response"
                  :set-user-identity-response "cxengage/session/set-user-identity-response"

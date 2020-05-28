@@ -16,6 +16,10 @@
             [cxengage-javascript-sdk.pubsub :as p]
             [cljs.spec.alpha :as s]))
 
+(s/def ::silent-monitor-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/chosen-extension ::specs/callback]))
+
 (s/def ::generic-voice-interaction-fn-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
@@ -27,16 +31,17 @@
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.interactions.voice.silentMonitor({
 ;;   interactionId: "{{uuid}}"
+;;   chosenExtension: "{{object}}"
 ;; });
 ;; -------------------------------------------------------------------------- ;;
 
 (def-sdk-fn silent-monitor
   ""
-  {:validation ::generic-voice-interaction-fn-params
+  {:validation ::silent-monitor-params
    :topic-key :silent-monitoring-start-acknowledged}
   [params]
-  (let [{:keys [interaction-id topic callback]} params
-        extension (first (state/get-all-extensions))]
+  (let [{:keys [interaction-id chosen-extension topic callback]} params
+        extension (if chosen-extension chosen-extension (first (state/get-all-extensions)))]
     (if extension
       (let [interrupt-type "silent-monitoring"
             interrupt-body {:resource-id (state/get-active-user-id)
@@ -402,7 +407,7 @@
         resource-id (state/get-active-user-id)
         session-id (state/get-session-id)
         outbound-integration-type (state/get-outbound-integration-type)
-        dial-body { :channel-type "voice"
+        dial-body {:channel-type "voice"
                    :contact-point (if outbound-ani
                                     outbound-ani
                                     "click to call")
