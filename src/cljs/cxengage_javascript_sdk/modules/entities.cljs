@@ -2402,8 +2402,8 @@
   {:validation ::create-user-params
    :topic-key :create-user-response}
   [params]
-  (let [{:keys [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-user-request email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))
+  (let [{:keys [email, role-id, platform-role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-user-request email, role-id, platform-role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))
         response (update-in api-response [:result] rename-keys {:user-id :id})
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-create-user-err entity-response))]
     (p/publish {:topics topic
