@@ -3968,14 +3968,14 @@
                 :callback callback})))
 
 (s/def ::update-branding-params
-  (s/keys :req-un [::specs/tenant-id ::specs/styles]
-          :opt-un [::specs/callback ::specs/logo ::specs/favicon]))
+  (s/keys :req-un [::specs/tenant-id]
+          :opt-un [::specs/callback ::specs/styles ::specs/logo ::specs/favicon]))
 
 (def-sdk-fn update-branding
     "``` javascript
   CxEngage.entities.updateBranding({
     tenantId: {{uuid}}, (required)
-    styles: {{string}}, (required),
+    styles: {{string}}, (optional),
     logo: {{string}}, (optional)
     favicon: {{string}}, (optional)
   });
@@ -3993,9 +3993,17 @@
   [params]
   (let [{:keys [tenant-id styles logo favicon callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-branding-request tenant-id styles logo favicon))
+          response {:result (#(cond-> %
+                              (and (not (nil? (get-in api-response [:result :logo])))
+                                   (not-empty (get-in api-response [:result :logo])))
+                              (assoc :logo (state/get-branding-images-s3-bucket-url (get-in api-response [:result :logo])))
+                              (and (not (nil? (get-in api-response [:result :favicon])))
+                                   (not-empty (get-in api-response [:result :favicon])))
+                              (assoc :favicon (state/get-branding-images-s3-bucket-url (get-in api-response [:result :favicon]))))
+                            (:result api-response))}
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-tenant-branding-err entity-response))]
       (p/publish {:topics topic
-                  :response api-response
+                  :response response
                   :error response-error
                   :callback callback})))
 
