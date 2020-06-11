@@ -2418,7 +2418,7 @@
 
 (def-sdk-fn invite-user
   "``` javascript
-  CxEngage.entities.createUser({
+  CxEngage.entities.inviteUser({
     email: {{string}} (required),
     roleId: {{uuid}} (required),
     defaultIdentityProvider: {{uuid}} (optional),
