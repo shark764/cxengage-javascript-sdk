@@ -2892,6 +2892,21 @@
     :level "error"
     :message "Failed to get regions information"})
 
+(defn failed-to-invite-user-err
+  "**Error Code:** 11143
+    Message: Failed to invite user.
+  
+    This error is usually due to an unexpected status code returned from the API.
+    Validate that the values passed into the sdk function were correct.
+  
+    **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11143
+    :context :entities
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to invite user."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
@@ -3225,17 +3240,3 @@
    :level "error"
    :message "Failed to assign item. The API returned an error."})
 
-(defn failed-to-invite-user-err
-"**Error Code:** 17005
-  Message: Failed to invite user.
-
-  This error is usually due to an unexpected status code returned from the API.
-  Validate that the values passed into the sdk function were correct.
-
-  **Solution:** Check your browsers dev tools console for additional error information"
-[data]
-{:code 11143
-  :context :entities
-  :data {:api-response data}
-  :level "error"
-  :message "Failed to invite user."})
