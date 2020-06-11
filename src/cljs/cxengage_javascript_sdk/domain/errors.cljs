@@ -3234,7 +3234,7 @@
 
   **Solution:** Check your browsers dev tools console for additional error information"
 [data]
-{:code 17005
+{:code 11143
   :context :entities
   :data {:api-response data}
   :level "error"
