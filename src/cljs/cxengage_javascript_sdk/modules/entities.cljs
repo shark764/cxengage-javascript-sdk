@@ -2412,6 +2412,47 @@
                 :callback callback})))
 
 
+(s/def ::invite-user-params
+  (s/keys :req-un [::specs/email ::specs/role-id]
+          :opt-un [::specs/first-name ::specs/last-name ::specs/callback ::specs/status ::specs/default-identity-provider ::specs/no-password ::specs/work-station-id ::specs/external-id]))
+
+(def-sdk-fn invite-user
+  "``` javascript
+  CxEngage.entities.createUser({
+    email: {{string}} (required),
+    roleId: {{uuid}} (required),
+    defaultIdentityProvider: {{uuid}} (optional),
+    noPassword: {{boolean}} (optional),
+    status: {{string}} (required),
+    workStationId: {{string}} (optional),
+    externalId: {{string}} (optional),
+    extensions: {{object}} (optional),
+    firstName: {{string}} (optional),
+    lastName: {{string}} (optional),
+    capacityRuleId: {{uuid}} (optional)
+  });
+  ```
+  Invite new single User by calling rest/invite-user-request
+  with the provided data for current tenant.
+
+  Topic: cxengage/entities/invite-user-response
+
+  Possible Errors:
+
+  - [Entities: 11065](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-invite-user-err)"
+  {:validation ::invite-user-params
+    :topic-key :invite-user-response}
+  [params]
+  (let [{:keys [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/invite-user-request email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))
+        response (update-in api-response [:result] rename-keys {:user-id :id})
+        response-error (if-not (= (:status entity-response) 200) (e/failed-to-invite-user-err entity-response))]
+    (p/publish {:topics topic
+                :response response
+                :error response-error
+                :callback callback})))
+            
+
 (s/def ::create-role-params
   (s/keys :req-un [::specs/name]
           :opt-un [::specs/description ::specs/permissions ::specs/active ::specs/shared ::specs/callback]))
@@ -4248,6 +4289,7 @@
                                        :create-skill create-skill
                                        :create-group create-group
                                        :create-user create-user
+                                       :invite-user invite-user
                                        :create-reason create-reason
                                        :create-reason-list create-reason-list
                                        :create-disposition-list create-disposition-list

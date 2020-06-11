@@ -1244,6 +1244,25 @@
                                     (not (nil? capacity-rule-id))           (assoc-in [:body :capacity-rule-id] capacity-rule-id))]
     (api/api-request create-user-request)))
 
+(defn invite-user-request [email, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id]
+(let [tenant-id (state/get-active-tenant-id)
+      invite-user-request (cond-> {:method :post
+                                    :url (iu/api-url "tenants/:tenant-id/users"
+                                                      {:tenant-id tenant-id})}
+                                    (not (nil? email))                      (assoc-in [:body :email] email)
+                                    (not (nil? default-identity-provider))  (assoc-in [:body :default-identity-provider] default-identity-provider)
+                                    (not (nil? no-password))                (assoc-in [:body :no-password] no-password)
+                                    (not (nil? status))                     (assoc-in [:body :status] status)
+                                    (not (nil? work-station-id))            (assoc-in [:body :work-station-id] work-station-id)
+                                    (not (nil? external-id))                (assoc-in [:body :external-id] external-id)
+                                    (and
+                                    (not (nil? extensions))
+                                    (not (empty? extensions)))            (assoc-in [:body :extensions] extensions)
+                                    (not (nil? first-name))                 (assoc-in [:body :first-name] first-name)
+                                    (not (nil? last-name))                  (assoc-in [:body :last-name] last-name)
+                                    (not (nil? capacity-rule-id))           (assoc-in [:body :capacity-rule-id] capacity-rule-id))]
+      (api/api-request invite-user-request)))
+
 (defn create-role-request [name description permissions active shared]
   (let [tenant-id (state/get-active-tenant-id)
         create-role-request (cond-> {:method :post
