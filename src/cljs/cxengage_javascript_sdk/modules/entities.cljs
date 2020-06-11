@@ -2420,7 +2420,6 @@
   "``` javascript
   CxEngage.entities.createUser({
     email: {{string}} (required),
-    roleId: {{uuid}} (required),
     defaultIdentityProvider: {{uuid}} (optional),
     noPassword: {{boolean}} (optional),
     status: {{string}} (required),
