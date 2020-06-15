@@ -1224,13 +1224,14 @@
                                (not (nil? active))          (assoc-in [:body :active] active))]
     (api/api-request update-group-request)))
 
-(defn create-user-request [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id]
+(defn create-user-request [email, role-id, platform-role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id]
   (let [tenant-id (state/get-active-tenant-id)
         create-user-request (cond-> {:method :post
                                       :url (iu/api-url "tenants/:tenant-id/users"
                                                        {:tenant-id tenant-id})}
                                     (not (nil? email))                      (assoc-in [:body :email] email)
                                     (not (nil? role-id))                    (assoc-in [:body :role-id] role-id)
+                                    (not (nil? platform-role-id))           (assoc-in [:body :platform-role-id] platform-role-id)
                                     (not (nil? default-identity-provider))  (assoc-in [:body :default-identity-provider] default-identity-provider)
                                     (not (nil? no-password))                (assoc-in [:body :no-password] no-password)
                                     (not (nil? status))                     (assoc-in [:body :status] status)
