@@ -140,6 +140,7 @@
                  :update-data-access-report-response "cxengage/entities/update-data-access-report-response"
                  :get-data-access-member-response "cxengage/entities/get-data-access-member-response"
                  :create-user-response "cxengage/entities/create-user-response"
+                 :invite-user-response "cxengage/entities/invite-user-response"
                  :update-user-response "cxengage/entities/update-user-response"
                  :update-platform-user-response "cxengage/entities/update-platform-user-response"
                  :get-platform-user-response "cxengage/entities/get-platform-user-response"
