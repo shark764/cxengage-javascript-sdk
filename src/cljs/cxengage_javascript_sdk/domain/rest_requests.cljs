@@ -128,12 +128,15 @@
                                  :interaction-id interaction-id})}]
     (api/api-request metadata-request)))
 
-(defn get-config-request []
+(defn get-config-request [silent-monitor]
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
+        url-string (if silent-monitor
+                     "tenants/:tenant-id/users/:resource-id/config?silent-monitor=true"
+                     "tenants/:tenant-id/users/:resource-id/config")
         config-request {:method :get
                         :url (iu/api-url
-                              "tenants/:tenant-id/users/:resource-id/config"
+                              url-string
                               {:tenant-id tenant-id
                                :resource-id resource-id})}]
     (api/api-request config-request)))

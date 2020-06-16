@@ -134,7 +134,7 @@
 
 (defn- get-config* [no-session silent-monitoring callback]
   (go (let [topic (topics/get-topic :config-response)
-            config-response (a/<! (rest/get-config-request))
+            config-response (a/<! (rest/get-config-request silent-monitoring))
             {:keys [api-response status]} config-response
             user-config (:result api-response)
             extensions (:extensions user-config)
@@ -525,6 +525,24 @@
                 :callback callback})
     extension))
 
+(s/def ::get-extensions-spec
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-extensions
+  "``` javascript
+  CxEngage.session.getExtensions();
+  ```
+  Retrieves full extension list for the actively-authenticated user."
+  {:validation ::get-extensions-spec
+   :topic-key :get-extensions}
+  [params]
+  (let [{:keys [callback topic]} params
+        extension-list (state/get-all-extensions)]
+    (p/publish {:topic topic
+                :response extension-list
+                :callback callback})))
+
 (s/def ::get-tenant-details-spec
   (s/keys :req-un []
           :opt-un [::specs/callback]))
@@ -605,6 +623,7 @@
                                        :set-token set-token
                                        :set-user-identity set-user-identity
                                        :get-default-extension get-default-extension
+                                       :get-extensions get-extensions
                                        :get-tenant-details get-tenant-details
                                        :get-monitored-interaction get-monitored-interaction
                                        :clear-monitored-interaction clear-monitored-interaction}}
