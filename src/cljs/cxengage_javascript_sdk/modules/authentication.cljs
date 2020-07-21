@@ -41,7 +41,9 @@
             resp (a/<! (rest/change-state-request change-state-body nil))
             {:keys [status api-response]} resp
             new-state-data (:result api-response)]
-        (if (= status 200)
+        ;Adding success condition when status is 404 because session is dead 
+        ;and agent is already logged out. No need to log an error saying failed to logout.
+        (if (or (= status 200) (= status 404))
           (do (state/set-session-expired! true)
               (p/publish {:topics topic
                           :response new-state-data
