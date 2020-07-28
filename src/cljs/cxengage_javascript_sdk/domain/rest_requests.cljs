@@ -651,13 +651,21 @@
   (if api-version (string/replace-first url #"v\d{1}" api-version) url)))
 
 (defn api-create-request [entity-vector body api-version]
-    (api/api-request {:method :post :url (crud-url entity-vector api-version) :body body}))
+    (api/api-request {:method :post
+                      :preserve-casing? (ih/is-entity-request-and-response-preserve-casing (first entity-vector))
+                      :url (crud-url entity-vector api-version)
+                      :body body}))
 
 (defn api-read-request [entity-vector api-version tenant-id platform-entity]
-    (api/api-request {:method :get :url (crud-url entity-vector api-version tenant-id platform-entity)}))
+    (api/api-request {:method :get 
+                      :preserve-casing? (ih/is-entity-request-and-response-preserve-casing (first entity-vector))
+                      :url (crud-url entity-vector api-version tenant-id platform-entity)}))
 
 (defn api-update-request [entity-vector body api-version]
-    (api/api-request {:method :put :url (crud-url entity-vector api-version) :body body}))
+    (api/api-request {:method :put 
+                      :preserve-casing? (ih/is-entity-request-and-response-preserve-casing (first entity-vector))
+                      :url (crud-url entity-vector api-version) 
+                      :body body}))
 
 (defn api-delete-request [entity-vector api-version]
     (api/api-request {:method :delete :url (crud-url entity-vector api-version)}))

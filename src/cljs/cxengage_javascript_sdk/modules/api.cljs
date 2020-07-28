@@ -7,8 +7,6 @@
             [cxengage-javascript-sdk.domain.protocols :as pr]
             [cxengage-javascript-sdk.domain.errors :as e]
             [cxengage-javascript-sdk.pubsub :as p]
-            [cxengage-javascript-sdk.state :as state]
-            [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.domain.topics :as topics]
@@ -45,6 +43,7 @@
       (p/publish {:topics topic
                   :response api-response
                   :error error
+                  :preserve-casing? (ih/is-entity-request-and-response-preserve-casing (first path))
                   :callback callback})))
 
 (s/def ::read-params
@@ -84,6 +83,7 @@
      {:topics topic
       :response api-response
       :error error
+      :preserve-casing? (ih/is-entity-request-and-response-preserve-casing (first path))
       :callback callback})))
 
 
@@ -118,8 +118,8 @@
       (p/publish {:topics topic
                   :response api-response
                   :error error
+                  :preserve-casing? (ih/is-entity-request-and-response-preserve-casing (first path))
                   :callback callback})))
-
 
 (s/def ::delete-params
   (s/keys :req-un [::specs/path]
