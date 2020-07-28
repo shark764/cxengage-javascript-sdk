@@ -85,15 +85,18 @@
           (into r {(keyword k) v})) {} %)
           %))))
 
+(defn is-entity-request-and-response-preserve-casing [entity]
+  (some #(= entity %) ["contacts/layouts", "contacts/attributes"]))
+
 (defn extract-params
   ([params]
     (extract-params params false))
     ([params preserve-casing?]
     (extract-params params preserve-casing? false))
     ([params preserve-casing? stringify-keys?]
-      (if preserve-casing?
+      (let [{:strs [path]} (js->clj params)]
+      (if (or preserve-casing? (is-entity-request-and-response-preserve-casing (first path)))
         (js->clj params :keywordize-keys true)
         (if stringify-keys?
           (keywordize-surface-level-keys params)
-          (kebabify (js->clj params :keywordize-keys true))))))
-
+          (kebabify (js->clj params :keywordize-keys true)))))))
