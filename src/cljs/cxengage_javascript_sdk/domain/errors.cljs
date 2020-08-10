@@ -288,6 +288,13 @@
    :level "error"
    :message "Failed to set user presence state. The API returned an error."})
 
+(defn failed-to-get-running-session-state [api-response]
+  {:code 2014
+   :context :session
+   :data {:api-response api-response}
+   :level "error"
+   :message "Failed to get a running session for the user."})
+
 (defn login-failed-token-request-err
   "**Error Code:** 3000
    Message: Login attempt failed. Unable to retrieve token.
@@ -996,7 +1003,7 @@
    :data {:interaction-id interaction-id
           :extensions extensions}
    :level "error"
-   :message "There is no extension to use to start silent monitoring ."})
+   :message "There is no extension to use to start silent monitoring."})
 
 (defn no-microphone-access-err [error]
   {:code 8000
