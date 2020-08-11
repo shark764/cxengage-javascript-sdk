@@ -61,14 +61,13 @@
                   :error (e/failed-to-start-silent-monitoring-no-extension interaction-id (state/get-all-extensions))
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.customerHold({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn customer-hold
-  ""
+  "Place the customer on hold.
+  ```javascript
+  CxEngage.interactions.voice.customerHold({
+    interactionId: '{{uuid}}'
+  });
+  ```"
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :hold-acknowledged}
   [params]
@@ -84,14 +83,13 @@
                   :error (e/failed-to-place-customer-on-hold-err interaction-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.customerResume({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn customer-resume
-  ""
+  "Take the customer off of hold.
+  ```javascript
+  CxEngage.interactions.voice.customerResume({
+    interactionId: '{{uuid}}'
+  });
+  ```"
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :resume-acknowledged}
   [params]
@@ -107,15 +105,14 @@
                   :error (e/failed-to-resume-customer-err interaction-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.mute({
-;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn mute
-  ""
+  "Mute a resource on the call.
+  ```javascript
+  CxEngage.interactions.voice.mute({
+    interactionId: '{{uuid}}',
+    targetResourceId: '{{uuid}}' (Optional, defaults to current user id)
+  });
+  ```"
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :mute-acknowledged}
   [params]
@@ -133,15 +130,14 @@
                   :error (e/failed-to-mute-target-resource-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.unmute({
-;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn unmute
-  ""
+  "Unumute a resource on the call.
+  ```javascript
+  CxEngage.interactions.voice.unmute({
+    interactionId: '{{uuid}}',
+    targetResourceId: '{{uuid}}' (Optional, defaults to current user id)
+  });
+  ```"
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :unmute-acknowledged}
   [params]
@@ -159,15 +155,14 @@
                   :error (e/failed-to-unmute-target-resource-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.resourceHold({
-;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn resource-hold
-  ""
+  "Place a resource on the call on hold.
+  ```javascript
+  CxEngage.interactions.voice.resourceHold({
+    interactionId: '{{uuid}}',
+    targetResourceId: '{{uuid}}' (Optional, defaults to current user id)
+  });
+  ```"
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :resource-hold-acknowledged}
   [params]
@@ -185,15 +180,14 @@
                   :error (e/failed-to-place-resource-on-hold-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.resourceResume({
-;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn resource-resume
-  ""
+  "Take a resource on the call off of hold.
+  ```javascript
+  CxEngage.interactions.voice.resourceResume({
+    interactionId: '{{uuid}}',
+    targetResourceId: '{{uuid}}' (Optional, defaults to current user id)
+  });
+  ```"
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :resource-resume-acknowledged}
   [params]
@@ -211,14 +205,13 @@
                   :error (e/failed-to-resume-resource-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.resumeAll({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn resume-all
-  ""
+  "Take all resources on the call off of hold.
+  ```javascript
+  CxEngage.interactions.voice.resumeAll({
+    interactionId: '{{uuid}}'
+  });
+  ```"
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :resume-all-acknowledged}
   [params]
@@ -234,15 +227,14 @@
                   :error (e/failed-to-resume-all-err interaction-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.resourceRemove({
-;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}" (Optional, defaults to current user id)
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn remove-resource
-  ""
+  "Remove a resource from the call (hang up the resource).
+  ```javascript
+  CxEngage.interactions.voice.resourceRemove({
+    interactionId: '{{uuid}}',
+    targetResourceId: '{{uuid}}' (Optional, defaults to current user id)
+  });
+  ```"
   {:validation ::generic-resource-voice-interaction-fn-params
    :topic-key :resource-removed-acknowledged}
   [params]
@@ -260,14 +252,13 @@
                   :error (e/failed-to-remove-resource-err interaction-id target-resource-id resource-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.startRecording({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn start-recording
-  ""
+  "Start recording.
+  ```javascript
+  CxEngage.interactions.voice.startRecording({
+    interactionId: '{{uuid}}'
+  });
+  ```"
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :recording-start-acknowledged}
   [params]
@@ -284,14 +275,13 @@
                   :error (e/failed-to-start-recording-err interaction-id resource-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.stopRecording({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (def-sdk-fn stop-recording
-  ""
+  "Stop recording.
+  ```javascript
+  CxEngage.interactions.voice.stopRecording({
+    interactionId: '{{uuid}}'
+  });
+  ```"
   {:validation ::generic-voice-interaction-fn-params
    :topic-key :recording-stop-acknowledged}
   [params]
@@ -386,20 +376,22 @@
               Use 'CxEngage.interactions.cancelExtensionTransfer' instead.")
   (int/cancel-extension-transfer params))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.dial({
-;;   phoneNumber: "{{number}}"
-;;   popUri: "{{string}}" (Optional, used for salesforce screen pop)
-;;   outboundAni: "{{string}}" (Optional)-- click to call
-;;   flow-id: "{{string}}" (Optional)
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::dial-params
   (s/keys :req-un [::specs/phone-number]
           :opt-un [::specs/pop-uri ::specs/outbound-ani ::specs/flow-id ::specs/outbound-identifier-id ::specs/outbound-identifier-list-id ::specs/callback]))
+
 (def-sdk-fn dial
-  ""
+  "Perform an outbound dial.
+  ```javascript
+  CxEngage.interactions.voice.dial({
+    phoneNumber: '{{number}}',
+    outboundAni: '{{string}}' (Optional, used for outbound identifier),
+    outboundIdentifierId: '{{uuid}}' (Optional, used for outbound identifier),
+    outboundIdentifierListId: '{{uuid}}' (Optional, used for outbound identifier),
+    flow-id: '{{uuid}}' (Optional, used to specify flow),
+    popUri: '{{string}}' (Optional, used for salesforce screen pop)
+  });
+  ```"
   {:validation ::dial-params
    :topic-key :dial-send-acknowledged}
   [params]
@@ -433,18 +425,17 @@
                     :error (e/failed-to-perform-outbound-dial-err phone-number dial-response)
                     :callback callback})))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.cancelDial({
-;;   interactionId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::cancel-dial-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn cancel-dial
-  ""
+  "Cancel an outbound dial (before the interaction has been received).
+  ```javascript
+  CxEngage.interactions.voice.cancelDial({
+    interactionId: '{{uuid}}'
+  });
+  ```"
   {:validation ::cancel-dial-params
    :topic-key :cancel-dial-acknowledged}
   [params]
@@ -461,20 +452,19 @@
                   :error (e/failed-to-cancel-outbound-dial-err interaction-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.sendDigits({
-;;   interactionId: "{{uuid}}",
-;;   digit: "{{number}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::send-digits-params
   (s/keys :req-un [::specs/interaction-id
                    ::specs/digit]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-digits
-  ""
+  "Send a DTMF signal to the call (Twilio only).
+  ```javascript
+  CxEngage.interactions.voice.sendDigits({
+    interactionId: '{{uuid}}',
+    digit: '{{DTMF digit}}' (1-9, *, or #)
+  });
+  ```"
   {:validation ::send-digits-params
    :topic-key :send-digits-acknowledged}
   [params]
