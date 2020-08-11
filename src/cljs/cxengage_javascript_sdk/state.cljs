@@ -87,6 +87,12 @@
 (defn get-config []
   (get @sdk-state :config))
 
+(defn set-crm-module! [crm-module]
+  (swap! sdk-state assoc-in [:config :crm-module] crm-module))
+  
+(defn get-crm-module []
+  (get-state-value [:config :crm-module]))
+
 ;;;;;;;;;;;
 ;; Interactions
 ;;;;;;;;;;;
@@ -556,7 +562,6 @@
   (let [modules-after-removal (remove #{module-name} (get-enabled-modules))]
     (swap! sdk-state assoc-in [:internal :enabled-modules] modules-after-removal)))
 
-
 ;;;;;;;;;;;;;;;;;;
 ;; Supervisor Mode
 ;;;;;;;;;;;;;;;;;;
@@ -570,9 +575,9 @@
 (defn get-branding-images-s3-bucket-url [image]
   (let [env (clojure.string/replace (str (get-env)) ":" "")
         region (get-region)]
-        (cond
-          (and (= env "prod") (= region "us-east-1"))
-            (str "https://us-east-1-cxengage-prod-configurator-images.s3.amazonaws.com/" image)
-          (and (= env "prod") (= region "eu-west-1"))
-            (str "https://s3-eu-west-1.amazonaws.com/eu-west-1-cxengage-prod-configurator-images/" image)
-          :else (str "https://cxengagelabs-" env "-configurator-images.s3.amazonaws.com/" image))))
+       (cond
+         (and (= env "prod") (= region "us-east-1"))
+         (str "https://us-east-1-cxengage-prod-configurator-images.s3.amazonaws.com/" image)
+         (and (= env "prod") (= region "eu-west-1"))
+         (str "https://s3-eu-west-1.amazonaws.com/eu-west-1-cxengage-prod-configurator-images/" image)
+         :else (str "https://cxengagelabs-" env "-configurator-images.s3.amazonaws.com/" image))))

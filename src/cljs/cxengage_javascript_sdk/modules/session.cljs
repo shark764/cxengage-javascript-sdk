@@ -11,7 +11,9 @@
             [cxengage-javascript-sdk.state :as state]
             [cxengage-javascript-sdk.internal-utils :as iu]
             [cxengage-javascript-sdk.domain.interop-helpers :as ih]
-            [cxengage-javascript-sdk.domain.specs :as specs]))
+            [cxengage-javascript-sdk.domain.specs :as specs]
+            [cxengage-javascript-sdk.modules.salesforce_classic :as sfc]
+            [cxengage-javascript-sdk.modules.salesforce_lightning :as sfl]))
 
 (s/def ::go-not-ready-spec
   (s/keys :req-un []
@@ -103,7 +105,11 @@
               nil))))))
 
 (defn- start-session* [silent-monitoring reason-lists]
-  (go (let [resp (a/<! (rest/start-session-request silent-monitoring))
+  (go (let [crm-module (state/get-crm-module)
+            sf-user-id (cond 
+                          (= crm-module "salesforce-classic") (sfc/get-current-salesforce-user-id)
+                          (= crm-module "salesforce-lightning") (sfl/get-current-salesforce-user-id))
+            resp (a/<! (rest/start-session-request silent-monitoring sf-user-id))
             {:keys [status api-response]} resp
             topic (topics/get-topic :session-started)
             session-details (assoc (:result api-response) :resource-id (state/get-active-user-id))

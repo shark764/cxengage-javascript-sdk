@@ -317,17 +317,16 @@
                            :body body}]
     (api/api-request save-logs-request)))
 
-(defn start-session-request [silent-monitoring]
+(defn start-session-request [silent-monitoring sf-user-id]
   (let [resource-id (state/get-active-user-id)
         tenant-id (state/get-active-tenant-id)
-        start-session-req {:method :post
-                           :url (iu/api-url
-                                 "tenants/:tenant-id/presence/:resource-id/session"
-                                 {:tenant-id tenant-id
-                                  :resource-id resource-id})
-                           :body (if silent-monitoring
-                                    {:silent-monitoring true}
-                                    {})}]
+        start-session-req (cond-> {:method :post
+                                   :url (iu/api-url
+                                          "tenants/:tenant-id/presence/:resource-id/session"
+                                          {:tenant-id tenant-id
+                                           :resource-id resource-id})}
+                              (not (nil? silent-monitoring)) (assoc-in [:body :silent-monitoring] true)
+                              (not (nil? sf-user-id)) (assoc-in [:body :metadata :sf-user-id] sf-user-id))]
     (api/api-request start-session-req)))
 
 (defn heartbeat-request []

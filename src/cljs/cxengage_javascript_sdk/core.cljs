@@ -35,7 +35,7 @@
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]
             [cxengage-javascript-sdk.modules.testing :as testing]))
 
-(def *SDK-VERSION* "9.10.3")
+(def *SDK-VERSION* "9.10.4")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."
@@ -172,6 +172,7 @@
           (state/set-env! environment)
           (state/set-blast-sqs-output! blast-sqs-output)
           (state/set-supervisor-mode! supervisor-mode)
+          (state/set-crm-module! (name crm-module))
           (start-base-modules module-comm-chan)
           (start-crm-module module-comm-chan crm-module)
           (start-simple-consumer! module-comm-chan (partial route-module-message module-comm-chan)))))))
