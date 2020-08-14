@@ -315,6 +315,7 @@
                  :new-message-received "cxengage/interactions/messaging/new-message-received"
                  :initialize-outbound-sms-response "cxengage/interactions/messaging/initialize-outbound-sms-response"
                  :send-outbound-sms-response "cxengage/interactions/messaging/send-outbound-sms-response"
+                 :mqtt-session-connected "cxengage/interactions/messaging/mqtt-session-connected"
 
                  ;; Smooch Messaging Interaction Topics
                  :smooch-history-received "cxengage/interactions/smooch-messaging/history-received"
