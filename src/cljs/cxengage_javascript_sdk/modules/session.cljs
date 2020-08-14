@@ -608,6 +608,25 @@
                 :callback callback})
     nil))
 
+(def-sdk-fn get-running-session-state
+  "``` javascript
+  CxEngage.session.getRunningSessionState();
+  ```
+  Retrieves state of any currently-running session, if one exists."
+  {:validation ::get-tenant-details-spec
+   :topic-key :get-running-session-state}
+  [params]
+  (let [{:keys [topic callback]} params
+        {:keys [api-response status]} (a/<! (rest/get-user-presence-info))]
+    (if (= status 200)
+      (p/publish {:topics topic
+                  :response {:state (:state (:result api-response))
+                             :session-id (:session-id (:result api-response))}
+                  :callback callback})
+      (p/publish {:topics topic
+                  :error (e/failed-to-get-running-session-state api-response)
+                  :callback callback}))))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Presence Session Module
 ;; -------------------------------------------------------------------------- ;;
@@ -632,7 +651,8 @@
                                        :get-extensions get-extensions
                                        :get-tenant-details get-tenant-details
                                        :get-monitored-interaction get-monitored-interaction
-                                       :clear-monitored-interaction clear-monitored-interaction}}
+                                       :clear-monitored-interaction clear-monitored-interaction
+                                       :get-running-session-state get-running-session-state}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

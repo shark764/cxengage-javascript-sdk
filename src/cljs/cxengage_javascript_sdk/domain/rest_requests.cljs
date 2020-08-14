@@ -353,6 +353,16 @@
                               :body change-state-body}]
     (api/api-request change-state-request)))
 
+(defn get-user-presence-info []
+  (let [resource-id (state/get-active-user-id)
+        tenant-id (state/get-active-tenant-id)
+        get-user-presence-info {:method :get
+                                :url (iu/api-url
+                                      "tenants/:tenant-id/presence/:resource-id"
+                                      {:tenant-id tenant-id
+                                       :resource-id resource-id})}]
+    (api/api-request get-user-presence-info)))
+
 (defn get-contact-request [contact-id]
   (let [tenant-id (state/get-active-tenant-id)
         get-contact-request {:method :get

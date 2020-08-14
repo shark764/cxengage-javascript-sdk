@@ -34,6 +34,7 @@
                  :set-locale-response "cxengage/session/set-locale-response"
                  :get-tenant-details "cxengage/session/get-tenant-details"
                  :sqs-shut-down "cxengage/session/sqs-shut-down"
+                 :get-running-session-state "cxengage/session/get-running-session-state"
 
                  ;; Contact topics
                  :get-contact "cxengage/contacts/get-contact-response"
