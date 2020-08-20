@@ -519,6 +519,10 @@
   [client]
   (swap! sdk-state assoc-in [:internal :mqtt-client] client))
 
+(defn set-mqtt-client-options
+  [client-options]
+  (swap! sdk-state assoc-in [:internal :client-options] client-options))
+
 (defn get-mqtt-client
   []
   (get-state-value [:internal :mqtt-client]))

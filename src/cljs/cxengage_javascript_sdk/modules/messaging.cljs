@@ -113,7 +113,8 @@
                 :callback callback})))
 
 (defn- on-connect []
-  (log :debug "Mqtt client connected"))
+  (log :debug "Mqtt client connected")
+  (p/publish {:topics (topics/get-topic :mqtt-session-connected)}))
 
 (defn- on-failure [msg]
   (log :error "Mqtt Client failed to connect " msg)
@@ -134,7 +135,9 @@
     (set! (.-reconnect connect-options) true)
     (set! (.-onConnectionLost mqtt) (fn [reason-code reason-message]
                                       (if (zero? (get (js->clj reason-code :keywordize-keys true) :errorCode))
-                                        (log :info "Previous Mqtt Session Successfully Disconnected")
+                                        (do
+                                          (log :info "Previous Mqtt Session Successfully Disconnected")
+                                          (p/publish {:topics (topics/get-topic :mqtt-lost-connection)}))
                                         (do
                                           (p/publish {:topics (topics/get-topic :mqtt-lost-connection)
                                                       :error (e/mqtt-connection-lost-err {:reason-code reason-code
@@ -148,6 +151,7 @@
     (set! (.-onSuccess connect-options) on-connect)
     (set! (.-onFailure connect-options) (fn [_ _ msg]
                                           (on-failure msg)))
+    (state/set-mqtt-client-options connect-options)
     (.connect mqtt connect-options)
     mqtt))
 
