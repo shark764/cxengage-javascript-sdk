@@ -114,7 +114,22 @@
 
 (defn- on-connect []
   (log :debug "Mqtt client connected")
+  (subscribe-to-active-messaging-interaction)
   (p/publish {:topics (topics/get-topic :mqtt-session-connected)}))
+
+(defn subscribe-to-active-messaging-interaction []
+  (let [interaction-map (state/get-all-active-interactions)
+        tenant-id (state/get-active-tenant-id)
+        env (state/get-env)
+        interactions (vals interaction-map)]
+    (doseq [interaction interactions]
+      (let [{:keys [channel-type interaction-id]} interaction]
+        (when
+          (or (= channel-type "sms") (= channel-type "messaging"))
+            (subscribe-to-messaging-interaction
+              {:tenant-id tenant-id
+               :interaction-id interaction-id
+               :env env}))))))
 
 (defn- on-failure [msg]
   (log :error "Mqtt Client failed to connect " msg)
