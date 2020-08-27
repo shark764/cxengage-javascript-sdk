@@ -128,18 +128,21 @@
                                  :interaction-id interaction-id})}]
     (api/api-request metadata-request)))
 
-(defn get-config-request [silent-monitor]
-  (let [resource-id (state/get-active-user-id)
-        tenant-id (state/get-active-tenant-id)
-        url-string (if silent-monitor
-                     "tenants/:tenant-id/users/:resource-id/config?silent-monitor=true"
-                     "tenants/:tenant-id/users/:resource-id/config")
-        config-request {:method :get
-                        :url (iu/api-url
-                              url-string
-                              {:tenant-id tenant-id
-                               :resource-id resource-id})}]
-    (api/api-request config-request)))
+(defn get-config-request
+  ([]
+   (get-config-request nil))
+  ([silent-monitor]
+   (let [resource-id (state/get-active-user-id)
+         tenant-id (state/get-active-tenant-id)
+         url-string (if silent-monitor
+                      "tenants/:tenant-id/users/:resource-id/config?silent-monitor=true"
+                      "tenants/:tenant-id/users/:resource-id/config")
+         config-request {:method :get
+                         :url (iu/api-url
+                                url-string
+                                {:tenant-id tenant-id
+                                 :resource-id resource-id})}]
+    (api/api-request config-request))))
 
 (defn create-artifact-request [interaction-id artifact-body]
   (let [tenant-id (state/get-active-tenant-id)
@@ -441,36 +444,6 @@
                                        {:tenant-id tenant-id})}]
     (api/api-request list-attributes-request)))
 
-(defn create-custom-metric-request [name description custom-metrics-type active sla-abandon-type sla-threshold sla-abandon-threshold]
-  (let [tenant-id (state/get-active-tenant-id)
-        create-custom-metric-request (cond-> {:method :post
-                                              :url (iu/api-url "tenants/:tenant-id/custom-metrics"
-                                                     {:tenant-id tenant-id})
-                                              :body {:custom-metrics-type (or custom-metrics-type "SLA")
-                                                     :active (or active true)}}
-                                            (not (nil? name))                               (assoc-in [:body :name] name)
-                                            (not (nil? description))                        (assoc-in [:body :description] description)
-                                            (not (nil? sla-abandon-type))                   (assoc-in [:body :sla-abandon-type] sla-abandon-type)
-                                            (not (nil? sla-threshold))                      (assoc-in [:body :sla-threshold] sla-threshold)
-                                            (= sla-abandon-type "ignored-abandoned-calls")  (assoc-in [:body :sla-abandon-threshold] sla-abandon-threshold)
-                                            (= sla-abandon-type "count-against-sla")        (assoc-in [:body :sla-abandon-threshold] nil))]
-    (api/api-request create-custom-metric-request)))
-
-(defn update-custom-metric-request [description custom-metrics-type custom-metric-id active sla-abandon-type sla-threshold name sla-abandon-threshold]
-  (let [tenant-id (state/get-active-tenant-id)
-        update-custom-metric-request (cond-> {:method :put
-                                              :url (iu/api-url "tenants/:tenant-id/custom-metrics/:custom-metric-id"
-                                                            {:tenant-id tenant-id :custom-metric-id custom-metric-id})}
-                                            (not (nil? description))                        (assoc-in [:body :description] description)
-                                            (not (nil? custom-metrics-type))                (assoc-in [:body :custom-metrics-type] custom-metrics-type)
-                                            (not (nil? active))                             (assoc-in [:body :active] active)
-                                            (not (nil? sla-abandon-type))                   (assoc-in [:body :sla-abandon-type] sla-abandon-type)
-                                            (not (nil? sla-threshold))                      (assoc-in [:body :sla-threshold] sla-threshold)
-                                            (not (nil? name))                               (assoc-in [:body :name] name)
-                                            (= sla-abandon-type "ignored-abandoned-calls")  (assoc-in [:body :sla-abandon-threshold] sla-abandon-threshold)
-                                            (= sla-abandon-type "count-against-sla")        (assoc-in [:body :sla-abandon-threshold] nil))]
-    (api/api-request update-custom-metric-request)))
-
 (defn create-sla-request [name description active shared active-sla]
   (let [tenant-id (state/get-active-tenant-id)
         create-sla-request (cond-> {:method :post
@@ -652,12 +625,17 @@
          get-request {:method :get :url url}]
      (api/api-request (merge get-request options-map)))))
 
-(defn crud-url [entity-vector api-version tenant-id platform-entity]
-  (let [tenant-id (or tenant-id (state/get-active-tenant-id))
-      url (if platform-entity
-            (iu/construct-api-url entity-vector)
-            (iu/construct-api-url (into ["tenants" tenant-id] entity-vector)))]
-  (if api-version (string/replace-first url #"v\d{1}" api-version) url)))
+(defn crud-url
+  ([entity-vector api-version]
+   (crud-url entity-vector api-version nil nil))
+  ([entity-vector api-version tenant-id platform-entity]
+   (let [tenant-id (or tenant-id (state/get-active-tenant-id))
+         url (if platform-entity
+                (iu/construct-api-url entity-vector)
+                (iu/construct-api-url (into ["tenants" tenant-id] entity-vector)))]
+    (if api-version
+      (string/replace-first url #"v\d{1}" api-version)
+      url))))
 
 (defn api-create-request [entity-vector body api-version]
     (api/api-request {:method :post
@@ -744,9 +722,9 @@
   (let [update-branding-request (cond-> {:method :put
                                          :url (iu/api-url "tenants/:tenant-id/branding"
                                                   {:tenant-id tenant-id})}
-                              styles               (assoc-in [:body :styles] (str styles))
-                              (not (nil? logo))    (assoc-in [:body :logo] logo)
-                              (not (nil? favicon)) (assoc-in [:body :favicon] favicon))]
+                                 styles               (assoc-in [:body :styles] (str styles))
+                                 (not (nil? logo))    (assoc-in [:body :logo] logo)
+                                 (not (nil? favicon)) (assoc-in [:body :favicon] favicon))]
       (api/api-request update-branding-request)))
 
 (defn get-tenant-request [tenant-id]
@@ -1483,8 +1461,8 @@
     (api/api-request create-tenant-request)))
 
 (defn update-tenant-request [tenant-id name description admin-user-id timezone outbound-integration-id cxengage-identity-provider default-identity-provider default-sla-id active]
-  (let [update-tenant-request (cond->   {:method :put
-                                                :url (iu/api-url "tenants/:tenant-id"
+  (let [update-tenant-request (cond-> {:method :put
+                                       :url (iu/api-url "tenants/:tenant-id"
                                                       {:tenant-id tenant-id})}
                                     (not (nil? name))                       (assoc-in [:body :name] name)
                                     (not (nil? description))                (assoc-in [:body :description] description)
@@ -1494,8 +1472,7 @@
                                     (not (nil? cxengage-identity-provider)) (assoc-in [:body :cxengage-identity-provider] cxengage-identity-provider)
                                     (not (nil? default-identity-provider))  (assoc-in [:body :default-identity-provider] default-identity-provider)
                                     (not (nil? default-sla-id))             (assoc-in [:body :default-sla-id] default-sla-id)
-                                    (not (nil? active))                     (assoc-in [:body :active] active)
-                                    (not (nil? status))                     (assoc-in [:body :status] status))]                                     
+                                    (not (nil? active))                     (assoc-in [:body :active] active))]
     (api/api-request update-tenant-request)))
 
 ;;--------------------------------------------------------------------------- ;;

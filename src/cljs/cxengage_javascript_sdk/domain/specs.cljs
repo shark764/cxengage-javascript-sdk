@@ -11,14 +11,15 @@
 (s/def ::recipient (s/keys :req-un [::address] :opt-un [::name]))
 (s/def ::type #{"pstn" "sip" "webrtc"})
 (s/def ::crm-module #{:salesforce-classic :salesforce-lightning :zendesk :none})
+(s/def ::device-ids (s/or
+                      :device-ids string?
+                      :device-ids (s/coll-of string?)))
 (s/def ::value string?)
 (s/def ::channel-type #{"voice" "sms" "email" "messaging" "work-item" "any"})
 (s/def ::answers map?)
 (s/def ::artifact-file-id ::uuid)
 (s/def ::outbound-identifier-id id/valid-uuid?)
 (s/def ::outbound-identifier-list-id id/valid-uuid?)
-(s/def ::custom-metric-id id/valid-uuid?)
-(s/def ::custom-metrics-type #{"SLA"})
 (s/def ::sla-abandon-type #{"ignored-abandoned-calls" "count-against-sla"})
 (s/def ::sla-abandon-threshold (s/or :sla-abandon-threshold number? :sla-abandon-threshold nil?))
 (s/def ::sla-id id/valid-uuid?)

@@ -112,10 +112,17 @@
                 :response true
                 :callback callback})))
 
-(defn- on-connect []
-  (log :debug "Mqtt client connected")
-  (subscribe-to-active-messaging-interaction)
-  (p/publish {:topics (topics/get-topic :mqtt-session-connected)}))
+(defn- subscribe-to-messaging-interaction [message]
+  (let [{:keys [tenant-id interaction-id env]} message
+        topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
+    (log :debug "Subscribing to topic:" topic)
+    (subscribe topic)))
+
+(defn- unsubscribe-to-messaging-interaction [message]
+  (let [{:keys [tenant-id interaction-id env]} message
+        topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
+    (log :debug "Unsubscribing from topic:" topic)
+    (unsubscribe topic)))
 
 (defn subscribe-to-active-messaging-interaction []
   (let [interaction-map (state/get-all-active-interactions)
@@ -126,10 +133,15 @@
       (let [{:keys [channel-type interaction-id]} interaction]
         (when
           (or (= channel-type "sms") (= channel-type "messaging"))
-            (subscribe-to-messaging-interaction
-              {:tenant-id tenant-id
-               :interaction-id interaction-id
-               :env env}))))))
+          (subscribe-to-messaging-interaction
+            {:tenant-id tenant-id
+             :interaction-id interaction-id
+             :env env}))))))
+
+(defn- on-connect []
+  (log :debug "Mqtt client connected")
+  (subscribe-to-active-messaging-interaction)
+  (p/publish {:topics (topics/get-topic :mqtt-session-connected)}))
 
 (defn- on-failure [msg]
   (log :error "Mqtt Client failed to connect " msg)
@@ -177,18 +189,6 @@
   [mqtt-conf client-id on-received]
   (let [mqtt-client (connect (get-iot-url (time/now) mqtt-conf) client-id on-received)]
     (state/set-mqtt-client mqtt-client)))
-
-(defn- subscribe-to-messaging-interaction [message]
-  (let [{:keys [tenant-id interaction-id env]} message
-        topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
-    (log :debug "Subscribing to topic:" topic)
-    (subscribe topic)))
-
-(defn- unsubscribe-to-messaging-interaction [message]
-  (let [{:keys [tenant-id interaction-id env]} message
-        topic (str (name env) "/tenants/" tenant-id "/channels/" interaction-id)]
-    (log :debug "Unsubscribing from topic:" topic)
-    (unsubscribe topic)))
 
 (defn- gen-payload [message]
   (let [{:keys [message action-type resource-id tenant-id interaction-id]} message

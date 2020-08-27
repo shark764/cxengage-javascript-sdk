@@ -120,8 +120,8 @@
         (let [result
               (try
                 (loop [sqs-queue original-sqs-queue
-                      sqs-queue-url original-sqs-queue-url
-                      sqs-needs-refresh-time original-sqs-needs-refresh-time]
+                       sqs-queue-url original-sqs-queue-url
+                       sqs-needs-refresh-time original-sqs-needs-refresh-time]
                   (if (> (.getTime (js/Date.)) sqs-needs-refresh-time)
                     ;; 3/4 of the TTL has passed using this SQS Queue object, we need to create a new one for subsequent SQS polls
                     (do (log :debug "Refreshing SQS integration")
@@ -204,11 +204,11 @@
                   (p/publish {:topics (topics/get-topic :sqs-uncaught-exception)
                               :error (e/sqs-uncaught-exception {:message (aget e "message")
                                                                 :stack (aget e "stack")})})))]
-      (p/publish {:topics (topics/get-topic :sqs-loop-ended)
-                  :error (e/sqs-loop-ended restart-count)})
-      (when (not= :shutdown result)
-        (a/<! (a/timeout (* 1000 restart-count)))
-        (recur (inc restart-count))))))))
+         (p/publish {:topics (topics/get-topic :sqs-loop-ended)
+                     :error (e/sqs-loop-ended restart-count)})
+         (when (not= :shutdown result)
+           (a/<! (a/timeout (* 1000 restart-count)))
+           (recur (inc restart-count))))))))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK SQS Module

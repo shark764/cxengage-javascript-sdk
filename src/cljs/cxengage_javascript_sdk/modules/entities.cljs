@@ -288,11 +288,11 @@
                               (and (not (nil? (get-in api-response [:result :logo])))    (not= "" (get-in api-response [:result :logo])))     (assoc :logo (state/get-branding-images-s3-bucket-url (get-in api-response [:result :logo])))
                               (and (not (nil? (get-in api-response [:result :favicon]))) (not= "" (get-in api-response [:result :favicon])))  (assoc :favicon (state/get-branding-images-s3-bucket-url (get-in api-response [:result :favicon]))))
                             (:result api-response))}
-        error (if-not (= (:status entity-response) 200) (e/failed-to-get-branding-err entity-response))]
-        (p/publish {:topics topic
-                :response response
-                :error error
-                :callback callback})))
+        error (if-not (= (:status entity-response) 200) (e/failed-to-get-tenant-branding-err entity-response))]
+       (p/publish {:topics topic
+                   :response response
+                   :error error
+                   :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
 ;; CxEngage.entities.getProtectedBranding();
@@ -814,66 +814,6 @@
                   :error (e/failed-to-get-user-outbound-identifier-lists-err entity-response)
                   :callback callback}))))
 
-(def-sdk-fn get-custom-metrics
-  "``` javascript
-  CxEngage.entities.getCustomMetrics();
-  ```
-  Retrieves available Custom Metrics configured for current logged in tenant
-
-  Possible Errors:
-
-  - [Entities: 11040](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-custom-metrics-err)"
-  {:validation ::get-entities-params
-   :topic-key :get-custom-metrics-response}
-  [params]
-  (let [{:keys [callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request ["custom-metrics"]))
-       ; We set value for updated and updated-by if entity hasn't been updated yet
-       ; since those values are not set by default like in other entities.
-       ; JIRA Reference: https://liveops.atlassian.net/browse/CXV1-15814
-        response {:result (map #(cond-> %
-                                   (nil? (:updated %))    (assoc :updated (:created %))
-                                   (nil? (:updated-by %)) (assoc :updated-by (:created-by %)))
-                             (:result api-response))}
-        error (if-not (= (:status entity-response) 200) (e/failed-to-get-custom-metrics-err entity-response))]
-    (p/publish {:topics topic
-                :response response
-                :error error
-                :callback callback})))
-
-(s/def ::get-custom-metric-params
-  (s/keys :req-un [::specs/custom-metric-id]
-          :opt-un []))
-
-(def-sdk-fn get-custom-metric
-  "``` javascript
-  CxEngage.entities.getCustomMetric({
-    customMetricId: {{uuid}},
-  });
-  ```
-  Retrieves single Custom Metrics given parameter customMetricId
-  as a unique key
-
-  Possible Errors:
-
-  - [Entities: 11041](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-custom-metric-err)"
-  {:validation ::get-custom-metric-params
-   :topic-key :get-custom-metric-response}
-  [params]
-  (let [{:keys [callback topic custom-metric-id]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/get-crud-entity-request  ["custom-metrics" custom-metric-id]))
-       ; We set value for updated and updated-by if entity hasn't been updated yet
-       ; since those values are not set by default like in other entities.
-       ; JIRA Reference: https://liveops.atlassian.net/browse/CXV1-15814
-        response {:result (#(cond-> %
-                               (nil? (:updated %))    (assoc :updated (:created %))
-                               (nil? (:updated-by %)) (assoc :updated-by (:created-by %)))
-                            (:result api-response))}
-        error (if-not (= (:status entity-response) 200) (e/failed-to-get-custom-metric-err entity-response))]
-    (p/publish {:topics topic
-                :response response
-                :error error
-                :callback callback})))
 
 (def-sdk-fn get-slas
   "``` javascript
@@ -2444,7 +2384,7 @@
     :topic-key :invite-user-response}
   [params]
   (let [{:keys [email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-user-request email, role-id, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-user-request email, role-id, nil, default-identity-provider, no-password, status, work-station-id, external-id, extensions, first-name, last-name, capacity-rule-id))
         response (update-in api-response [:result] rename-keys {:user-id :id})
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-invite-user-err entity-response))]
     (p/publish {:topics topic
@@ -3562,39 +3502,6 @@
                   :error (e/failed-to-remove-outbound-identifier-list-member-err entity-response)
                   :callback callback}))))
 
-(s/def ::update-custom-metric-params
-    (s/keys :req-un [::specs/custom-metric-id]
-            :opt-un [::specs/callback ::specs/sla-threshold ::specs/sla-abandon-type ::specs/active ::specs/name ::specs/sla-abandon-threshold ::specs/custom-metrics-type ::specs/description]))
-
-(def-sdk-fn update-custom-metric
-  "``` javascript
-  CxEngage.entities.updateCustomMetric({
-    customMetricId: {{uuid}},
-    slaThreshold: {{integer}}, (optional)
-    slaAbandonType: {{string}}, (optional)
-    active: {{boolean}}, (optional)
-    name: {{string}}, (optional)
-    slaAbandonThreshold: {{integer}}, (optional)
-    customMetricsType: {{string}}, (optional)
-    description: {{string}}, (optional)
-  });
-  ```
-  Updates a single Custom Metric by calling rest/update-custom-metric-request
-  with the new data and customMetricId as the unique key.
-
-  Possible Errors:
-
-  - [Entities: 11042](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-custom-metric-err)"
-  {:validation ::update-custom-metric-params
-   :topic-key :update-custom-metric-response}
-  [params]
-  (let [{:keys [custom-metric-id sla-abandon-type active name custom-metrics-type sla-threshold sla-abandon-threshold description callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/update-custom-metric-request description custom-metrics-type custom-metric-id active sla-abandon-type sla-threshold name sla-abandon-threshold))
-        error (if-not (= (:status entity-response) 200) (e/failed-to-update-custom-metric-err entity-response))]
-    (p/publish {:topics topic
-                :response api-response
-                :error error
-                :callback callback})))
 
 (s/def ::update-sla-params
     (s/keys :req-un [::specs/sla-id]
@@ -4035,13 +3942,13 @@
   (let [{:keys [tenant-id styles logo favicon callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-branding-request tenant-id styles logo favicon))
           response {:result (#(cond-> %
-                              (and (not (nil? (get-in api-response [:result :logo])))
-                                   (not-empty (get-in api-response [:result :logo])))
-                              (assoc :logo (state/get-branding-images-s3-bucket-url (get-in api-response [:result :logo])))
-                              (and (not (nil? (get-in api-response [:result :favicon])))
-                                   (not-empty (get-in api-response [:result :favicon])))
-                              (assoc :favicon (state/get-branding-images-s3-bucket-url (get-in api-response [:result :favicon]))))
-                            (:result api-response))}
+                               (and (not (nil? (get-in api-response [:result :logo])))
+                                    (not-empty (get-in api-response [:result :logo])))
+                               (assoc :logo (state/get-branding-images-s3-bucket-url (get-in api-response [:result :logo])))
+                               (and (not (nil? (get-in api-response [:result :favicon])))
+                                    (not-empty (get-in api-response [:result :favicon])))
+                               (assoc :favicon (state/get-branding-images-s3-bucket-url (get-in api-response [:result :favicon]))))
+                             (:result api-response))}
         response-error (if-not (= (:status entity-response) 200) (e/failed-to-update-tenant-branding-err entity-response))]
       (p/publish {:topics topic
                   :response response
@@ -4078,16 +3985,16 @@
                :image-type image-type})
         form-data (doto (js/FormData.) (.append "file" file))
         {:keys [api-response status] :as upload-branding-image-response} (a/<! (rest/file-api-request
-                                                                           {:method :post
-                                                                            :url url
-                                                                            :body form-data}))]
+                                                                                {:method :post
+                                                                                 :url url
+                                                                                 :body form-data}))]
       (if (= status 200)
         (p/publish {:topics topic
-                  :response api-response
-                  :callback callback})
-      (p/publish {:topics topic
-                  :error (e/failed-to-upload-branding-image-err upload-branding-image-response)
-                  :callback callback}))))
+                    :response api-response
+                    :callback callback})
+       (p/publish {:topics topic
+                   :error (e/failed-to-upload-branding-image-err upload-branding-image-response)
+                   :callback callback}))))
 
 ;;--------------------------------------------------------------------------- ;;
 ;; DELETE Entity Functions
@@ -4242,8 +4149,6 @@
                                        :get-artifacts get-artifacts
                                        :get-artifact get-artifact
                                        :get-recordings get-recordings
-                                       :get-custom-metrics get-custom-metrics
-                                       :get-custom-metric get-custom-metric
                                        :get-slas get-slas
                                        :get-sla get-sla
                                        :get-roles get-roles
@@ -4327,7 +4232,6 @@
                                        :update-outbound-identifier-list update-outbound-identifier-list
                                        :add-outbound-identifier-list-member add-outbound-identifier-list-member
                                        :remove-outbound-identifier-list-member remove-outbound-identifier-list-member
-                                       :update-custom-metric update-custom-metric
                                        :update-sla update-sla
                                        :update-role update-role
                                        :update-data-access-report update-data-access-report

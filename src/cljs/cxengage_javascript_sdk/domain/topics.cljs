@@ -107,10 +107,6 @@
                  :get-outbound-identifier-lists-response "cxengage/entities/get-outbound-identifier-lists-response"
                  :add-outbound-identifier-list-member-response "cxengage/entities/add-outbound-identifier-list-member-response"
                  :remove-outbound-identifier-list-member-response "cxengage/entities/remove-outbound-identifier-list-member-response"
-                 :get-custom-metrics-response "cxengage/entities/get-custom-metrics-response"
-                 :get-custom-metric-response "cxengage/entities/get-custom-metric-response"
-                 :update-custom-metric-response "cxengage/entities/update-custom-metric-response"
-                 :create-custom-metric-response "cxengage/entities/create-custom-metric-response"
                  :get-slas-response "cxengage/entities/get-slas-response"
                  :get-sla-response "cxengage/entities/get-sla-response"
                  :update-sla-response "cxengage/entities/update-sla-response"
@@ -306,7 +302,12 @@
                  :customer-resume-error "cxengage/interactions/voice/customer-resume-error"
 
                  ;; Twilio Topics
+                 :twilio-initialization "cxengage/twilio/twilio-initialization"
+                 :twilio-microphone-not-available "cxengage/microphone-not-available"
+                 :twilio-device-error "cxengage/errors/error/twilio-device-error"
                  :twilio-device-ready "cxengage/twilio/device-ready"
+                 :twilio-output-devices-changed "cxengage/twilio/output-devices-changed"
+                 :twilio-active-output-devices-changed "cxengage/twilio/active-output-devices-changed"
 
                  ;; Messaging Interaction Topics
                  :transcript-response "cxengage/interactions/messaging/transcript-received"
