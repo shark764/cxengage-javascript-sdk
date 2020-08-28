@@ -130,9 +130,11 @@
         env (state/get-env)
         interactions (vals interaction-map)]
     (doseq [interaction interactions]
-      (let [{:keys [channel-type interaction-id]} interaction]
+      (let [{:keys [channel-type source interaction-id]} interaction]
         (when
-          (or (= channel-type "sms") (= channel-type "messaging"))
+          (or (= channel-type "sms")
+              (and (= channel-type "messaging")
+                   (not= source "smooch")))
           (subscribe-to-messaging-interaction
             {:tenant-id tenant-id
              :interaction-id interaction-id
