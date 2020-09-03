@@ -388,9 +388,7 @@
           client-id (state/get-active-user-id)
           mqtt-integration (state/get-integration-by-type "messaging")]
       (if-not mqtt-integration
-        (ih/send-core-message {:type :module-registration-status
-                               :status :failure
-                               :module-name module-name})
+        (log :warn "Messaging integration not found. Stopping messsaging (MQTT) module registration.")
         (let [formatted-integration (->> (merge (select-keys mqtt-integration [:region :endpoint])
                                                 (select-keys
                                                  (:credentials mqtt-integration)
