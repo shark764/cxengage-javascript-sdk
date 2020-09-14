@@ -35,6 +35,7 @@
                  :get-tenant-details "cxengage/session/get-tenant-details"
                  :sqs-shut-down "cxengage/session/sqs-shut-down"
                  :get-running-session-state "cxengage/session/get-running-session-state"
+                 :get-user-config-response "cxengage/session/get-user-config-response"
 
                  ;; Contact topics
                  :get-contact "cxengage/contacts/get-contact-response"
