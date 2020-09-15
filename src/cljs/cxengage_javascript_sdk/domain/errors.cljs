@@ -295,6 +295,21 @@
    :level "error"
    :message "Failed to get a running session for the user."})
 
+(defn failed-to-get-user-config-err
+  "**Error Code:** 2015
+    Message: Failed to get user configuration details.
+  
+    This error is usually due to an unexpected status code returned from the API.
+    Validate that the values passed into the sdk function were correct.
+  
+    **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 2015
+    :context :session
+    :data {:api-response data}
+    :level "error"
+    :message "Failed to get user config details."})
+
 (defn login-failed-token-request-err
   "**Error Code:** 3000
    Message: Login attempt failed. Unable to retrieve token.

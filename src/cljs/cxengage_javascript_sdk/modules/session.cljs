@@ -627,6 +627,31 @@
                   :error (e/failed-to-get-running-session-state api-response)
                   :callback callback}))))
 
+(s/def ::get-user-config-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn get-user-config
+  "``` javascript
+  CxEngage.session.getUserConfig();
+  ```
+  Retrieves current loggedIn user configuration details like; extensions, integrations, reasons & etc, etc..
+
+  Topic: cxengage/session/get-user-config-response
+
+  Possible Errors:
+
+  - [Session: 2015](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-user-config-err)"
+  {:validation ::get-user-config-params
+   :topic-key  :get-user-config-response}
+  [params]
+  (let [{:keys [callback topic]} params
+        {:keys [status api-response] :as resp} (a/<! (rest/get-config-request))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error (if-not (= status 200)
+                            (e/failed-to-get-user-config-err resp))
+                  :callback callback})))
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Presence Session Module
 ;; -------------------------------------------------------------------------- ;;
@@ -652,7 +677,8 @@
                                        :get-tenant-details get-tenant-details
                                        :get-monitored-interaction get-monitored-interaction
                                        :clear-monitored-interaction clear-monitored-interaction
-                                       :get-running-session-state get-running-session-state}}
+                                       :get-running-session-state get-running-session-state
+                                       :get-user-config get-user-config}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success
