@@ -504,24 +504,26 @@
                                       (not (nil? properties))   (assoc-in [:body :properties] properties))]
     (api/api-request update-integration-request)))
 
-(defn create-integration-listener-request [integration-id name active properties]
+(defn create-integration-listener-request [integration-id name active properties listener-type]
   (let [tenant-id (state/get-active-tenant-id)
         create-integration-listener-request (cond-> {:method :post
                                                      :url (iu/api-url "tenants/:tenant-id/integrations/:integration-id/listeners"
                                                             {:tenant-id tenant-id :integration-id integration-id})}
                                               (not (nil? name))       (assoc-in [:body :name] name)
                                               (not (nil? active))     (assoc-in [:body :active] active)
-                                              (not (nil? properties)) (assoc-in [:body :properties] properties))]
+                                              (not (nil? properties)) (assoc-in [:body :properties] properties)
+                                              listener-type (assoc-in [:body :listener-type] listener-type))]
     (api/api-request create-integration-listener-request)))
 
-(defn update-integration-listener-request [integration-id listener-id name active properties]
+(defn update-integration-listener-request [integration-id listener-id name active properties listener-type]
   (let [tenant-id (state/get-active-tenant-id)
         update-integration-listener-request (cond-> {:method :put
                                                      :url (iu/api-url "tenants/:tenant-id/integrations/:integration-id/listeners/:listener-id"
                                                             {:tenant-id tenant-id :integration-id integration-id :listener-id listener-id})}
                                               (not (nil? name))       (assoc-in [:body :name] name)
                                               (not (nil? active))     (assoc-in [:body :active] active)
-                                              (not (nil? properties)) (assoc-in [:body :properties] properties))]
+                                              (not (nil? properties)) (assoc-in [:body :properties] properties)
+                                              listener-type (assoc-in [:body :listener-type] listener-type))]
     (api/api-request update-integration-listener-request)))
 
 (defn get-layout-request [layout-id]

@@ -2649,7 +2649,7 @@
 
 (s/def ::create-integration-listener-params
   (s/keys :req-un [::specs/integration-id ::specs/name]
-          :opt-un [::specs/callback ::specs/active ::specs/properties]))
+          :opt-un [::specs/callback ::specs/active ::specs/properties ::specs/listener-type]))
 
 (def-sdk-fn create-integration-listener
   "``` javascript
@@ -2657,7 +2657,8 @@
     integrationId: {{uuid}}, (required)
     name: {{string}} (required),
     active: {{boolean}} (optional),
-    properties: {{object}} (optional)
+    properties: {{object}} (optional),
+    listener-type: {{string}} (optional)
   });
   ```
   Creates new single Integration Listener by calling rest/create-integration-listener-request
@@ -2671,8 +2672,8 @@
   {:validation ::create-integration-listener-params
     :topic-key :create-integration-listener-response}
   [params]
-  (let [{:keys [integration-id name active properties callback topic]} params
-        {:keys [status api-response] :as entity-response} (a/<! (rest/create-integration-listener-request integration-id name active properties))
+  (let [{:keys [integration-id name active properties listener-type callback topic]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/create-integration-listener-request integration-id name active properties listener-type))
         response-error (if-not (= status 200) (e/failed-to-create-integration-listener-err entity-response))]
     (p/publish {:topics topic
                 :response api-response
