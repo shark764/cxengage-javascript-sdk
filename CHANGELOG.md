@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.14.1] - 2020-09-22
+### Added
+- CXV1-23122 - Fix Twilio events being dropped by reverting EventEmitter syntax to use old style.
+
 ## [9.14.0] - 2020-09-15
 ### Added
 - CXV1-22998 - Config 2 | Update listeners modal with new configs.
@@ -14,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [9.12.2] - 2020-09-03
 ### Fixed
-- No JIRA - Log warning to console instead of failing module registration when messaging integration not present.
+- <no-Jira> - Log warning to console instead of failing module registration when messaging integration not present.
 
 ## [9.12.1] - 2020-08-28
 ### Fixed

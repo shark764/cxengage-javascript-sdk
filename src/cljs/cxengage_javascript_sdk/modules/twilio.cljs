@@ -216,13 +216,13 @@
                               ;; meaning events should be managed with .on(eventName, handler) and .removeListener(eventName, handler),
                               ;; replacing our legacy handlers (such as .accept(handler), .error(handler), etc...).
                               ;; https://www.twilio.com/docs/voice/client/javascript/device#deprecated-methods
-                              (js/Twilio.Device.on "incoming" on-twilio-incoming)
-                              (js/Twilio.Device.on "connect" on-twilio-connect)
-                              (js/Twilio.Device.on "ready" on-twilio-ready)
-                              (js/Twilio.Device.on "cancel" on-twilio-cancel)
-                              (js/Twilio.Device.on "offline" on-twilio-offline)
-                              (js/Twilio.Device.on "disconnect" on-twilio-disconnect)
-                              (js/Twilio.Device.on "error" handle-twilio-error)
+                              (js/Twilio.Device.incoming on-twilio-incoming)
+                              (js/Twilio.Device.connect on-twilio-connect)
+                              (js/Twilio.Device.ready on-twilio-ready)
+                              (js/Twilio.Device.cancel on-twilio-cancel)
+                              (js/Twilio.Device.offline on-twilio-offline)
+                              (js/Twilio.Device.disconnect on-twilio-disconnect)
+                              (js/Twilio.Device.error handle-twilio-error)
                               ;; Register a handler that will be fired whenever a new audio device is found,
                               ;; an existing audio device is lost or the label of an existing device is changed.
                               ;; This typically happens when the user plugs in or unplugs an audio device, like a headset or a microphone.
