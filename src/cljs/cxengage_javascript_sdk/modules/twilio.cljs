@@ -229,25 +229,16 @@
                               ;; This will also trigger after the customer has given access to user media via getUserMedia for the first time,
                               ;; as the labels will become populated.
                               ;; https://www.twilio.com/docs/voice/client/javascript/device#event-twiliodeviceaudiodevicechange
-                              (-> js/Twilio.Device
-                                (aget "audio")
-                                (.on "deviceChange" handle-device-change))
+                              (.on
+                                (aget js/Twilio.Device "audio")
+                                "deviceChange" handle-device-change)
                               (ih/publish {:topics (topics/get-topic :twilio-initialization)
                                                       ;; False if the browser does not support setSinkId or enumerateDevices and Twilio
                                                       ;; can not facilitate output selection functionality.
                                                       ;; If changing device is not supported by the browser,
                                                       ;; then we disable feature on UI
                                                       ;; https://twilio.github.io/twilio-client.js/classes/voice.audiohelper.html#isoutputselectionsupported
-                                           :response {:is-output-selection-supported (aget js/Twilio.Device "audio" "isOutputSelectionSupported")
-                                                      ;; Get current available devices
-                                                      ;; https://www.twilio.com/docs/voice/client/javascript/device#audioavailableoutputdevices
-                                                      :available-output-devices (aget js/Twilio.Device "audio" "availableOutputDevices")
-                                                      ;; Start with "default" as active ringtone device
-                                                      ;; https://www.twilio.com/docs/voice/client/javascript/device#quick-api-reference_1
-                                                      :active-output-ringtone-devices (.get (aget js/Twilio.Device "audio" "ringtoneDevices"))
-                                                      ;; Start with "default" as active speaker device
-                                                      ;; https://www.twilio.com/docs/voice/client/javascript/device#quick-api-reference
-                                                      :active-output-speaker-devices (.get (aget js/Twilio.Device "audio" "speakerDevices"))}}))
+                                           :response {:is-output-selection-supported (aget js/Twilio.Device "audio" "isOutputSelectionSupported")}}))
                             (do (a/<! (a/timeout 250))
                                 (recur))))))]
     (-> js/navigator

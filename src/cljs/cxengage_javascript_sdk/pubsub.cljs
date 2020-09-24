@@ -89,25 +89,24 @@
 (defn format-request-logs
   [log]
   (let [{:keys [log-level level data code message]} log
-        date-time (js/Date.)]
-    (try
-      (let [log-level (if log-level
-                        log-level
-                        (if (or (= "session-fatal" level) (= "interaction-fatal"))
+        date-time (js/Date.)
+        error-message "Exception when trying to format request logs; unable to format request logs for publishing. Likely passing a circularly dependent javascript object to a CxEngage logging statement."
+        log-level (if log-level
+                      log-level
+                      (if (or (= "session-fatal" level) (= "interaction-fatal"))
                           "error"
                           level))]
-        (assoc {}
-               :level log-level
-               :message (js/JSON.stringify (clj->js { :data data 
-                                                      :original-client-log-level (name level)
-                                                      :code code 
-                                                      :message message}))
-               :timestamp (.toISOString date-time)))
-      (catch js/Object e
-        (log :error "Exception when trying to format request logs; unable to format request logs for publishing. Likely passing a circularly dependent javascript object to a CxEngage logging statement.")
-        { :level "error"
-          :message "Exception when trying to format request logs; unable to format request logs for publishing. Likely passing a circularly dependent javascript object to a CxEngage logging statement."
-          :timestamp (.toISOString (js/Date.))}))))
+    (assoc {}
+          :level log-level
+          :message (js/JSON.stringify (clj->js {:data (try
+                                                        (js/JSON.stringify (clj->js data))
+                                                        (catch js/Object e
+                                                          (log :error error-message)
+                                                          {:error error-message}))
+                                                :original-client-log-level (name level)
+                                                :code code 
+                                                :message message}))
+          :timestamp (.toISOString date-time))))
 
 (defn save-logs
   [error]

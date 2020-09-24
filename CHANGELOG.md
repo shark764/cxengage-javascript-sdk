@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.14.2] - 2020-09-21
+### Fixed
+- CXV1-17657 - Fixing circular dependency when formatting logs for publishing.
+- <no-Jira> - "deviceChange" event from Twilio.Device.audio is no longer firing twice.
+
 ## [9.14.1] - 2020-09-22
 ### Added
 - CXV1-23122 - Fix Twilio events being dropped by reverting EventEmitter syntax to use old style.
@@ -18,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [9.12.2] - 2020-09-03
 ### Fixed
-- <no-Jira> - Log warning to console instead of failing module registration when messaging integration not present.
+- <no-jira> - Log warning to console instead of failing module registration when messaging integration not present.
 
 ## [9.12.1] - 2020-08-28
 ### Fixed
