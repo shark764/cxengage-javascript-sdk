@@ -378,7 +378,7 @@
 
 (s/def ::dial-params
   (s/keys :req-un [::specs/phone-number]
-          :opt-un [::specs/pop-uri ::specs/outbound-ani ::specs/flow-id ::specs/outbound-identifier-id ::specs/outbound-identifier-list-id ::specs/callback]))
+          :opt-un [::specs/pop-uri ::specs/outbound-ani ::specs/flow-id ::specs/outbound-identifier-id ::specs/outbound-identifier-list-id ::specs/direction ::specs/interaction-metadata ::specs/callback]))
 
 (def-sdk-fn dial
   "Perform an outbound dial.
@@ -389,13 +389,15 @@
     outboundIdentifierId: '{{uuid}}' (Optional, used for outbound identifier),
     outboundIdentifierListId: '{{uuid}}' (Optional, used for outbound identifier),
     flow-id: '{{uuid}}' (Optional, used to specify flow),
-    popUri: '{{string}}' (Optional, used for salesforce screen pop)
+    popUri: '{{string}}' (Optional, used for salesforce screen pop),
+    direction: '{{'inbound' / 'outbound' / 'agent-initiated'}} (Optional, defaults to agent-initiated),
+    interactionMetadata: '{{map}}' (Optional, map to be included in interaction body)
   });
   ```"
   {:validation ::dial-params
    :topic-key :dial-send-acknowledged}
   [params]
-  (let [{:keys [topic phone-number outbound-ani pop-uri flow-id outbound-identifier-id outbound-identifier-list-id callback]} params
+  (let [{:keys [topic phone-number outbound-ani pop-uri flow-id outbound-identifier-id outbound-identifier-list-id direction interaction-metadata callback]} params
         resource-id (state/get-active-user-id)
         session-id (state/get-session-id)
         outbound-integration-type (state/get-outbound-integration-type)
@@ -404,12 +406,13 @@
                                     outbound-ani
                                     "click to call")
                    :customer phone-number
-                   :direction "agent-initiated"
-                   :interaction {:resource-id resource-id
-                                 :session-id session-id
-                                 :pop-uri pop-uri
-                                 :outbound-identifier-id outbound-identifier-id
-                                 :outbound-identifier-list-id outbound-identifier-list-id}
+                   :direction (or direction "agent-initiated")
+                   :interaction (merge {:resource-id resource-id
+                                        :session-id session-id
+                                        :pop-uri pop-uri
+                                        :outbound-identifier-id outbound-identifier-id
+                                        :outbound-identifier-list-id outbound-identifier-list-id}
+                                       (or interaction-metadata {}))
                    :metadata {}
                    :source outbound-integration-type}
         dial-body (merge dial-body (if flow-id

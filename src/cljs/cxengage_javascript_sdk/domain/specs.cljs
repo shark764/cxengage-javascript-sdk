@@ -224,3 +224,4 @@
 (s/def ::platform-entity boolean?)
 (s/def ::logo string?)
 (s/def ::favicon string?)
+(s/def ::interaction-metadata map?)
