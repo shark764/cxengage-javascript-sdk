@@ -1178,6 +1178,19 @@
    :level "error"
    :message "Failed to send email reply. There is no artifact for the interaction."})
 
+(defn failed-to-get-email-transcripts-err
+  "**Error Code:** 10009
+  Message: Failed to retrieve email transcripts.
+  This error is usually due to an unexpected status code returned from the API where
+  one of the requested transcripts (via artifact-id) is unavailable.
+  **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 10009
+   :context :email
+   :data data
+   :level "error"
+   :message "Failed to retrieve email transcripts."})
+
 (defn failed-to-get-user-err
   "**Error Code:** 11000
    Message: Failed to get specified user.

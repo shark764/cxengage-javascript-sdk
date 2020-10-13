@@ -438,6 +438,62 @@
                   :error (e/failed-to-get-messaging-transcripts-err interaction-id interaction-files)
                   :callback callback}))))
 
+(s/def ::get-email-transcripts-params
+  (s/keys :req-un [::specs/interaction-id]
+          :opt-un [::specs/callback
+                   ::specs/tenant-id]))
+
+(defn- email?
+  [{:keys [artifact-type]}]
+  (= "email" artifact-type))
+
+(def-sdk-fn get-email-transcripts
+  "``` javascript
+  CxEngage.reporting.getEmailTranscripts({
+    interactionId: {{uuid}}, (required)
+    tenantId: {{uuid}} (optional)
+  });
+  ```
+  Fetches a list of all email artifacts for the provided interaction-id
+
+  Topic: cxengage/interactions/email/transcript-received
+
+  Possible Errors:
+  - [Entities: 11027](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-artifacts-err
+  - [Entities: 10009](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-get-email-transcripts-err"
+  {:validation ::get-email-transcripts-params
+   :topic-key :get-email-transcripts-response}
+  [params]
+  (let [{:keys [interaction-id topic callback tenant-id]} params
+        tenant-id (or tenant-id (st/get-active-tenant-id))
+        {artifacts-response :api-response
+         artifacts-status :status} (-> interaction-id
+                                       (rest/get-interaction-artifacts-request tenant-id)
+                                       a/<!)
+        artifact-ids (->> artifacts-response :results (filter email?) (mapv :artifact-id))
+        get-email-transcript-chans (mapv #(rest/get-artifact-by-id-request % interaction-id tenant-id) artifact-ids)]
+    (cond
+      (>= artifacts-status 300) (p/publish {:topics topic
+                                            :error (e/failed-to-get-artifacts-err artifacts-response)
+                                            :response artifacts-response})
+      (-> get-email-transcript-chans count zero?) (p/publish {:topics topic
+                                                              :response []
+                                                              :callback callback})
+      :else (go-loop [email-transcripts []
+                      {:keys [api-response status]} (->> email-transcripts count (nth get-email-transcript-chans) a/<!)]
+              (let [email-transcripts (conj email-transcripts api-response)]
+                (cond
+                  (>= status 300) (p/publish {:topics topic
+                                              :error (e/failed-to-get-email-transcripts-err {:interaction-id interaction-id
+                                                                                             :artifact-ids artifact-ids
+                                                                                             :api-response api-response})
+                                              :response api-response})
+                  (= (count email-transcripts)
+                     (count get-email-transcript-chans)) (p/publish {:topics topic
+                                                                     :response (sort-by :created email-transcripts)
+                                                                     :callback callback})
+                  :otherwise (recur email-transcripts (->> email-transcripts count (nth get-email-transcript-chans) a/<!))))))))
+
 ;; -------------------------------------------------------------------------- ;;
 ;; SDK Reporting Module
 ;; -------------------------------------------------------------------------- ;;
@@ -458,7 +514,8 @@
                                        :get-contact-interaction-history get-contact-interaction-history
                                        :get-interaction get-interaction
                                        :get-crm-interactions get-crm-interactions
-                                       :get-transcripts get-transcripts}}
+                                       :get-transcripts get-transcripts
+                                       :get-email-transcripts get-email-transcripts}}
                     :module-name module-name})
       (ih/send-core-message {:type :module-registration-status
                              :status :success

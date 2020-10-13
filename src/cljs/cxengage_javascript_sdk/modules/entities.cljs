@@ -675,13 +675,6 @@
                   :error (e/failed-to-get-artifact-err entity-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.entities.getRecordings({
-;;   interactionId: "{{uuid}}",
-;;   tenantId: "{{uuid}}" (optional)
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (s/def ::get-recordings-params
   (s/keys :req-un [::specs/interaction-id]
           :opt-un [::specs/callback

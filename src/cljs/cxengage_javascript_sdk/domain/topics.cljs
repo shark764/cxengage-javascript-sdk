@@ -263,6 +263,7 @@
                  :agent-reply-started-acknowledged "cxengage/interactions/email/agent-reply-started-acknowledged"
                  :agent-no-reply-acknowledged "cxengage/interactions/email/agent-no-reply-acknowledged"
                  :agent-cancel-reply-acknowledged "cxengage/interactions/email/agent-cancel-reply-acknowledged"
+                 :get-email-transcripts-response "cxengage/interactions/email/transcript-received"
 
                  ;; Voice Interaction Topics
                  :hold-acknowledged "cxengage/interactions/voice/hold-acknowledged"
