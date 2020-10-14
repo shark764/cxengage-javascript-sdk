@@ -140,6 +140,7 @@
 (s/def ::message string?)
 (s/def ::note-id ::uuid)
 (s/def ::no-session boolean?)
+(s/def ::no-state-reset boolean?)
 (s/def ::outbound-ani string?)
 (s/def ::page number?)
 (s/def ::password string?)
