@@ -36,6 +36,7 @@
                  :sqs-shut-down "cxengage/session/sqs-shut-down"
                  :get-running-session-state "cxengage/session/get-running-session-state"
                  :get-user-config-response "cxengage/session/get-user-config-response"
+                 :get-new-token-response "cxengage/sessions/get-new-token-response"
 
                  ;; Contact topics
                  :get-contact "cxengage/contacts/get-contact-response"

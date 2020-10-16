@@ -55,7 +55,7 @@
 (s/def ::login-spec
   (s/or
     :credentials (s/keys :req-un [::specs/username ::specs/password]
-                         :opt-un [::specs/ttl ::specs/callback])
+                         :opt-un [::specs/ttl ::specs/callback ::specs/no-state-reset])
     :token (s/keys :req-un [::specs/token]
                    :opt-un [::specs/callback])))
 
@@ -66,8 +66,9 @@
   ``` javascript
   CxEngage.authentication.login({
     username: '{{string}}',
-    password: '{{string}}'
-    ttl: '{{number}}'
+    password: '{{string}}',
+    ttl: '{{number}}',
+    noStateReset: '{{boolean}}'
   });
   ```
   ``` javascript
@@ -82,7 +83,7 @@
   {:validation ::login-spec
    :topic-key :login-response}
   [params]
-  (let [{:keys [callback topic username password ttl token]} params]
+  (let [{:keys [callback topic username password ttl token no-state-reset]} params]
     (if token
       (let [_ (state/set-token! token)
             login-response (a/<! (rest/login-request))
@@ -104,7 +105,7 @@
       (let [token-body {:username username
                         :password password
                         :ttl ttl}
-            _ (state/reset-state)
+            _ (if-not no-state-reset (state/reset-state))
             resp (a/<! (rest/token-request token-body))
             {:keys [status api-response]} resp]
         (if (not (= status 200))
@@ -113,21 +114,25 @@
                       :error (e/login-failed-token-request-err resp)})
           (do
             (state/set-token! (:token api-response))
-            (let [resp (a/<! (rest/login-request))
+            (if-not no-state-reset
+              (let [resp (a/<! (rest/login-request))
                   {:keys [status api-response]} resp]
-              (if (not (= status 200))
-                (p/publish {:topics topic
-                            :callback callback
-                            :error (e/login-failed-login-request-err resp)})
-                (let [user-identity (:result api-response)
-                      tenants (:tenants user-identity)]
-                  (state/set-user-identity! user-identity)
-                  (p/publish {:topics (topics/get-topic :tenant-list)
-                              :response tenants})
+                (if (not (= status 200))
                   (p/publish {:topics topic
-                              :response (merge user-identity
-                                               {:auth "username"})
-                              :callback callback}))))))))))
+                              :callback callback
+                              :error (e/login-failed-login-request-err resp)})
+                  (let [user-identity (:result api-response)
+                        tenants (:tenants user-identity)]
+                    (state/set-user-identity! user-identity)
+                    (p/publish {:topics (topics/get-topic :tenant-list)
+                                :response tenants})
+                    (p/publish {:topics topic
+                                :response (merge user-identity
+                                                {:auth "username"})
+                                :callback callback}))))
+                (p/publish {:topics (topics/get-topic :get-new-token-response)
+                            :response api-response
+                            :callback callback}))))))))
 
 (s/def ::auth-info-spec
   (s/or
