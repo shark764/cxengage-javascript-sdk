@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.17.1] - 2020-11-11
+### Added
+- CXV1-23377 - Using smooch-messaging module instead of old messaging one for whatsapp interactions.
+
 ## [9.17.0] - 2020-10-14
 ### Added
 - CXV1-22915 - Config 2 - Build and Translate User Profile Page (Added new parameter to login function so it only returns a token and doesn't reset the state) 
