@@ -109,8 +109,10 @@
     (if (> now expiry)
       (log :warn "Received an expired work offer; doing nothing")
       (do (cond
-            (and (= channel-type "messaging")
-                 (= source "smooch"))
+            (and
+              (or (= channel-type "sms")
+                  (= channel-type "messaging"))
+              (= source "smooch"))
             (get-smooch-history interaction-id)
             (or (= channel-type "sms")
                 (= channel-type "messaging"))
@@ -209,9 +211,10 @@
                            :active-resources active-resources
                            :customer-on-hold customer-on-hold
                            :recording recording}})
-    (when (or (= channel-type "sms")
-              (and (= channel-type "messaging")
-                   (not= source "smooch")))
+    (when (and
+            (or (= channel-type "sms")
+                (= channel-type "messaging"))
+            (not= source "smooch"))
       (messaging/subscribe-to-messaging-interaction
        {:tenant-id tenant-id
         :interaction-id interaction-id
@@ -248,9 +251,10 @@
         (= (:provider (state/get-active-extension)) "twilio"))
       (let [connection (state/get-twilio-device)]
         (.disconnectAll connection))
-      (or (= channel-type "sms")
-          (and (= channel-type "messaging")
-               (not= source "smooch")))
+      (and
+        (or (= channel-type "sms")
+            (= channel-type "messaging"))
+        (not= source "smooch"))
       (messaging/unsubscribe-to-messaging-interaction
        {:tenant-id tenant-id
         :interaction-id interaction-id
@@ -364,9 +368,10 @@
         interaction (state/get-interaction interaction-id)
         {:keys [channel-type source]} interaction
         wrapup-details (state/get-interaction-wrapup-details interaction-id)]
-    (when (or (= channel-type "sms")
-              (and (= channel-type "messaging")
-                   (not= source "smooch")))
+    (when (and
+            (or (= channel-type "sms")
+                (= channel-type "messaging"))
+            (not= source "smooch"))
           (messaging/unsubscribe-to-messaging-interaction
            {:tenant-id tenant-id
             :interaction-id interaction-id

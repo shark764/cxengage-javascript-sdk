@@ -132,9 +132,10 @@
     (doseq [interaction interactions]
       (let [{:keys [channel-type source interaction-id]} interaction]
         (when
-          (or (= channel-type "sms")
-              (and (= channel-type "messaging")
-                   (not= source "smooch")))
+          (and
+            (or (= channel-type "sms")
+                (= channel-type "messaging"))
+            (not= source "smooch"))
           (subscribe-to-messaging-interaction
             {:tenant-id tenant-id
              :interaction-id interaction-id
