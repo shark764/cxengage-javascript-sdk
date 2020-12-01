@@ -110,6 +110,7 @@
 (s/def ::exclude-inactive boolean?)
 (s/def ::exclude-offline boolean?)
 (s/def ::exception-id id/valid-uuid?)
+(s/def ::exit-reason #{"user-submitted" "scrip-timeout" "script-auto-dismissed"})
 (s/def ::fallback boolean?)
 (s/def ::file any?)
 (s/def ::height number?)

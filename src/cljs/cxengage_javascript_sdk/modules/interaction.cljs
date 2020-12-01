@@ -715,17 +715,6 @@
                   :error (e/failed-to-cancel-extension-transfer-err interrupt-body interrupt-response)
                   :callback callback}))))
 
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.sendScript({
-;;   interactionId: "{{uuid}}",
-;;   scriptId: "{{uuid}}",
-;;   answers: "{{object}}",
-;;   dismissed: "{{bool}}",
-;;   scriptReporting: "{{bool}}",
-;; });
-;; -------------------------------------------------------------------------- ;;
-
 (defn- modify-elements
   "One of two helper functions for prepping the send-script payload. Modifies the keys to be the same as the front-end element's name."
   [elements]
@@ -747,15 +736,30 @@
     updated-elements))
 
 (s/def ::script-params
-  (s/keys :req-un [::specs/interaction-id ::specs/answers ::specs/script-id ::specs/dismissed ::specs/script-reporting]
+  (s/keys :req-un [::specs/interaction-id ::specs/answers ::specs/script-id ::specs/dismissed ::specs/script-reporting ::specs/exit-reason]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn send-script
-  ""
+  "The sendSript function is used to send a script either submited by the user, auto-submit itself after a configurable amount of time or automatically when configured on the end of the interaction.
+
+  ```javascript
+  CxEngage.interactions.sendScript({
+    interactionId: '{{uuid}}',
+    scriptId: '{{uuid}}',
+    answers: '{{object}}',
+    dismissed: '{{bool}}',
+    scriptReporting: '{{bool}}',
+    exitReason: '{{'user-submitted'||'scrip-timeout'||'script-auto-dismissed'}}'
+  });
+  ```
+  Possible Errors:
+
+  - [Interaction: 4018](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-send-interaction-script-response-err)
+  "
   {:validation ::script-params
    :topic-key :send-script}
   [params]
-  (let [{:keys [topic answers script-id interaction-id dismissed script-reporting callback]} params
+  (let [{:keys [topic answers script-id interaction-id dismissed script-reporting exit-reason callback]} params
         original-script (state/get-script interaction-id script-id)]
     (if-not original-script
       (p/publish {:topics topic
@@ -784,6 +788,7 @@
             script-update {:resource-id (state/get-active-user-id)
                            :dismissed dismissed
                            :script-reporting script-reporting
+                           :exit-reason exit-reason
                            :script-response {(keyword (:name parsed-script)) {:elements final-elements
                                                                               :id (:id parsed-script)
                                                                               :name (:name parsed-script)}}}
