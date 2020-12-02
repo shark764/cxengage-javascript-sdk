@@ -749,7 +749,7 @@
     answers: '{{object}}',
     dismissed: '{{bool}}',
     scriptReporting: '{{bool}}',
-    exitReason: '{{'user-submitted'||'scrip-timeout'||'script-auto-dismissed'}}'
+    exitReason: '{{'user-submitted'||'script-timeout'||'script-auto-dismissed'}}'
   });
   ```
   Possible Errors:
@@ -788,9 +788,9 @@
             script-update {:resource-id (state/get-active-user-id)
                            :dismissed dismissed
                            :script-reporting script-reporting
-                           :exit-reason exit-reason
                            :script-response {(keyword (:name parsed-script)) {:elements final-elements
                                                                               :id (:id parsed-script)
+                                                                              :exit-reason exit-reason
                                                                               :name (:name parsed-script)}}}
             script-body {:source "client"
                          :sub-id sub-id
