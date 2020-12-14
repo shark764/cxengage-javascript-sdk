@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.18.2] - 2020-12-14
+### Updated
+- CXV1-23622 - Improved logging for Salesforce search-pop
+- CXV1-23652 - Use officially supported Zendesk SDK URL
+
 ## [9.18.1] - 2020-12-01
 ### Fixed
 - CXV1-23353 - exit-reason moved to script-response instead of script-body and typo fix for script-timeout.

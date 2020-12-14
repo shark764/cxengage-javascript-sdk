@@ -287,7 +287,7 @@
                   :hookSubType (:RecordType record)
                   :hookName (:Name record)}]
         (send-assign-interrupt hook interaction-id nil "cxengage/salesforce-lightning/contact-assignment-acknowledged"))
-      (log :info "More than one result - skipping auto-assign"))))
+      (log :info "There was not exactly one result. Skipping auto-assign for result:" response))))
 
 (defn- dump-state []
   (js/console.log (clj->js @sfl-state)))
@@ -411,6 +411,7 @@
                                                         (string/join " or " terms)
                                                         (string/join (str " " filterType " ") (vals filter)))]
                                      (try
+                                       (log :info "Performing search" search-params)
                                        (js/sforce.opencti.searchAndScreenPop (clj->js {:searchParams search-params
                                                                                        :queryParams ""
                                                                                        :callType "inbound"

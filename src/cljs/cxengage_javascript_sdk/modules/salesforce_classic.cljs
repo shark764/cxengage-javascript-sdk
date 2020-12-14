@@ -297,7 +297,7 @@
                            :objectId object-id
                            :objectName object-name}]
           (send-assign-interrupt tab-details interaction-id nil "cxengage/salesforce-classic/contact-assignment-acknowledged"))
-        (log :info "More than one result - skipping auto-assign"))))
+        (log :info "There was not exactly one result. Skipping auto-assign for result:" result))))
 
 (defn- dump-state []
   (js/console.log (clj->js @sfc-state)))
@@ -406,29 +406,23 @@
                               (catch js/Object e
                                 (ih/publish (clj->js {:topics topic
                                                       :error e}))))
-          (= popType "search-pop") (cond
-                                     (= searchType "fuzzy")
-                                     (try
-                                       (js/sforce.interaction.searchAndScreenPop
-                                         (string/join " or " terms)
-                                         ""
-                                         "inbound"
-                                         pop-callback)
-                                       (catch js/Object e
-                                         (ih/publish (clj->js {:topics topic
-                                                               :error e}))))
-                                     (= searchType "strict")
-                                     (try
-                                       (js/sforce.interaction.searchAndScreenPop
-                                         (string/join (str " " filterType " ") (vals filter))
-                                         ""
-                                         "inbound"
-                                         pop-callback)
-                                       (catch js/Object e
-                                        (ih/publish (clj->js {:topics topic
-                                                                 :error e}))))
-                                     :else (log :error "Invalid search type" searchType))
-           (not= popType "external-url") (log :error "Invalid pop type" popType))
+          (= popType "search-pop") (if (or (= searchType "fuzzy")
+                                           (= searchType "strict"))
+                                    (let [search-params (if (= searchType "fuzzy")
+                                                            (string/join " or " terms)
+                                                            (string/join (str " " filterType " ") (vals filter)))]
+                                      (try
+                                        (log :info "Performing search" search-params)
+                                        (js/sforce.interaction.searchAndScreenPop
+                                          search-params
+                                          ""
+                                          "inbound"
+                                          pop-callback)
+                                        (catch js/Object e
+                                          (ih/publish (clj->js {:topics topic
+                                                                :error e})))))
+                                    (log :error "Invalid search type" searchType))
+          (not= popType "external-url") (log :error "Invalid pop type" popType))
         (log :debug "Ignoring non-v2 screen pop"))))
 
 ;; -------------------------------------------------------------------------- ;;

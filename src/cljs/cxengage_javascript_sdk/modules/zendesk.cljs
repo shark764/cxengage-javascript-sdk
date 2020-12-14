@@ -502,7 +502,7 @@
     (go-loop []
       (if (ih/core-ready?)
         (let [module-name :zendesk
-              zendesk-integration "https://assets.zendesk.com/apps/sdk/2.0/zaf_sdk.js"]
+              zendesk-integration "https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"]
             (zendesk-init zendesk-integration)
             (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
             (ih/subscribe (topics/get-topic :generic-screen-pop-received) handle-screen-pop)
