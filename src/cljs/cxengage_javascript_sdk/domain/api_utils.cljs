@@ -23,7 +23,8 @@
   (not (or (and (>= status 200)
                 (< status 300))
            (and (>= status 400)
-                (< status 500)))))
+                (< status 500))
+           (= status 501))))
 
 (defn update-local-time-offset
   [response]
