@@ -486,8 +486,7 @@
                                                    (str s (name k) ":" v " "))
                                                  "/api/v2/search.json?query="
                                                  filter)]
-                                       (.then (js/client.request (clj->js {:url query
-                                                                           :type "POST"}))
+                                       (.then (js/client.request (clj->js {:url query}))
                                               (fn [result]
                                                 (let [search-results (:results (ih/extract-params result))]
                                                   (handle-search-results search-results interaction interaction-id))))))))))
