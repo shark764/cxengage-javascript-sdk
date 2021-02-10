@@ -478,7 +478,7 @@
                                                                     (conj all-results (filterv #(not= (:result_type %) "ticket") results)))
                                                                   []
                                                                   results)
-                                                search-results (vec (flatten combined-results))]
+                                                search-results (distinct (vec (flatten combined-results)))]
                                             (handle-search-results search-results interaction interaction-id))))))
                                   (when (= search-type "strict")
                                     (let [query (reduce-kv
