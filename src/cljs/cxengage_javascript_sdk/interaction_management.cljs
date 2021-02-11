@@ -540,6 +540,7 @@
                                 "conversation-read" :INTERACTIONS/CONVERSATION_READ_RECEIVED
                                 "typing-start" :INTERACTIONS/TYPING_RECEIVED
                                 "typing-stop" :INTERACTIONS/TYPING_RECEIVED
+                                "show-banner" :INTERACTIONS/SHOW_BANNER
                                 :INTERACTIONS/GENERIC_AGENT_NOTIFICATION)]
     (merge {:sdk-msg-type inferred-message-type} message)))
 
