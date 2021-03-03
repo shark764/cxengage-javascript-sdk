@@ -465,7 +465,7 @@
                                                             (fn [all-promises term]
                                                               (conj all-promises (promise
                                                                                   (fn [resolve reject]
-                                                                                    (.then (js/client.request (clj->js {:url (str "/api/v2/search.json?query=" term)}))
+                                                                                    (.then (js/client.request (clj->js {:url (str "/api/v2/search.json?query=user:" term "*")}))
                                                                                            (fn [data]
                                                                                              (resolve (:results (js->clj data :keywordize-keys true)))))))))
                                                             []
@@ -475,7 +475,7 @@
                                         (fn [results]
                                           (let [combined-results (reduce
                                                                   (fn [all-results results]
-                                                                    (conj all-results (filterv #(not= (:result_type %) "ticket") results)))
+                                                                    (conj [all-results] results))
                                                                   []
                                                                   results)
                                                 search-results (distinct (vec (flatten combined-results)))]
@@ -488,7 +488,7 @@
                                                  filter)]
                                        (.then (js/client.request (clj->js {:url query}))
                                               (fn [result]
-                                                (let [search-results (:results (ih/extract-params result))]
+                                                (let [search-results (:results (js->clj result :keywordize-keys true))]
                                                   (handle-search-results search-results interaction interaction-id))))))))))
 
 ;; -------------------------------------------------------------------------- ;;
