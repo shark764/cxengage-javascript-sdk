@@ -465,9 +465,12 @@
                                                             (fn [all-promises term]
                                                               (conj all-promises (promise
                                                                                   (fn [resolve reject]
-                                                                                    (.then (js/client.request (clj->js {:url (str "/api/v2/search.json?query=user:" term "*")}))
+                                                                                    (let [formatted-term (if (nil? (string/index-of (string/trim term) " "))
+                                                                                      (str term "*")
+                                                                                      (str "\"" term "\""))]
+                                                                                    (.then (js/client.request (clj->js {:url (str "/api/v2/search.json?query=user:"formatted-term)}))
                                                                                            (fn [data]
-                                                                                             (resolve (:results (js->clj data :keywordize-keys true)))))))))
+                                                                                             (resolve (:results (js->clj data :keywordize-keys true))))))))))
                                                             []
                                                             terms)
                                           all-req-promises (all all-req-promises)]
