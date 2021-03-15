@@ -450,7 +450,8 @@
   (let [result (ih/extract-params interaction-details)
         agent-id (get @zendesk-state :zen-user-id)
         {:keys [pop-type pop-uri new-window size search-type filter filter-type terms interaction-id]} result
-        interaction (get-in @zendesk-state [:interactions interaction-id])]
+        interaction (get-in @zendesk-state [:interactions interaction-id])
+        formatted-strict-terms (into [] (for [[k v] filter] (str (name k) ":" "\"" v "\"")))]
     (cond
       (= pop-type "url") (do
                             (js/client.request (clj->js {:url (str "/api/v2/channels/voice/agents/" agent-id pop-uri "/display.json")
@@ -460,19 +461,22 @@
                                     (ih/publish {:topics "cxengage/zendesk/internal-pop-received"
                                                  :response (merge {:interaction-id interaction-id} (js->clj response :keywordize-keys true))}))))
       (= pop-type "search-pop") (do
-                                  (when (= search-type "fuzzy")
+                                  (when (or (= search-type "fuzzy") (and (= search-type "strict") (= filter-type "or")))
                                     (let [all-req-promises (reduce
                                                             (fn [all-promises term]
                                                               (conj all-promises (promise
                                                                                   (fn [resolve reject]
-                                                                                    (let [formatted-term (if (nil? (string/index-of (string/trim term) " "))
-                                                                                      (str term "*")
-                                                                                      (str "\"" term "\""))]
-                                                                                    (.then (js/client.request (clj->js {:url (str "/api/v2/search.json?query=user:"formatted-term)}))
+                                                                                    (let [formatted-term (if (= search-type "fuzzy") 
+                                                                                                              (if (nil? (string/index-of (string/trim term) " "))
+                                                                                                                (str term "*")
+                                                                                                                (str "\"" term "\"")))]
+                                                                                    (.then (js/client.request (clj->js {:url (if (= search-type "fuzzy") 
+                                                                                                                                (str "/api/v2/search.json?query=user:"formatted-term) 
+                                                                                                                                (str "/api/v2/search.json?query="term))}))
                                                                                            (fn [data]
                                                                                              (resolve (:results (js->clj data :keywordize-keys true))))))))))
                                                             []
-                                                            terms)
+                                                            (if (= search-type "fuzzy") terms formatted-strict-terms))
                                           all-req-promises (all all-req-promises)]
                                       (then all-req-promises
                                         (fn [results]
@@ -483,7 +487,7 @@
                                                                   results)
                                                 search-results (distinct (vec (flatten combined-results)))]
                                             (handle-search-results search-results interaction interaction-id))))))
-                                  (when (= search-type "strict")
+                                  (when (and (= search-type "strict") (= filter-type "and"))
                                     (let [query (reduce-kv
                                                  (fn [s k v]
                                                    (str s (name k) ":" v " "))

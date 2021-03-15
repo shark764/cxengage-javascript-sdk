@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.19.3] -2021-03-15
+## Fixed
+-CXV1-23708 - Fixed OR condition for strict search pops in Zendesk.
+
 ## [9.19.2] -2021-03-10
 ## Fixed
 -CXV1-23708 - Fixed fuzzy search pops in Zendesk.
