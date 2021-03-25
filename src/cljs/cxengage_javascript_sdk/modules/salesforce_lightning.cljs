@@ -300,14 +300,18 @@
   (if error
     (ih/publish {:topics topic
                  :error error})
-    (let [state (:state (ih/extract-params response))]
+    (let [state (:state (ih/extract-params response))
+         reason (:reason (ih/extract-params response))]
+    (log :debug "state change response" response)
       (when (= state "notready")
+        (js/sforce.console.setCustomConsoleComponentPopoutable false)
         (try
           (js/sforce.opencti.disableClickToDial)
           (catch js/Object e
             (ih/publish (clj->js {:topics topic
                                   :error e})))))
       (when (= state "ready")
+        (js/sforce.console.setCustomConsoleComponentPopuptable false)
         (try
           (js/sforce.opencti.enableClickToDial)
           (catch js/Object e
@@ -449,11 +453,12 @@
 
 (defn- sfl-ready? []
   (and (aget js/window "sforce")
-       (aget js/window "sforce" "opencti")))
+  (aget js/window "sforce" "opencti")
+  (aget js/window "sforce" "console")))
 
 (defn- sfl-init
-  [interaction]
-  (doseq [url [interaction]]
+  [interaction opencti]
+  (doseq [url [interaction opencti]]
     (let [script (js/document.createElement "script")
           body (.-body js/document)]
       (.setAttribute script "type" "text/javascript")
@@ -462,6 +467,7 @@
   (go-loop []
     (if (sfl-ready?)
       (do
+        (js/sforce.console.setCustomConsoleComponentPopoutable true)
         (js/sforce.opencti.onNavigationChange (clj->js {:listener handle-focus-change}))
         (js/sforce.opencti.runApex (clj->js {:apexClass "net_cxengage.CxLookup"
                                              :methodName "getCurrentUserId"
@@ -492,8 +498,9 @@
     (go-loop []
       (if (ih/core-ready?)
         (let [module-name :salesforce-lightning
-              sfl-interaction "https://login.salesforce.com/support/api/41.0/lightning/opencti_min.js"]
-          (sfl-init sfl-interaction)
+              sfl-integration "https://login.salesforce.com/support/console/50.0/integration.js"
+              sfl-opencti "https://login.salesforce.com/support/api/41.0/lightning/opencti_min.js"]
+          (sfl-init sfl-integration sfl-opencti)
           (ih/register (clj->js {:api {:salesforce-lightning {:set-dimensions set-dimensions
                                                               :is-visible is-visible?
                                                               :set-visibility set-visibility

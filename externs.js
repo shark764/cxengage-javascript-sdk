@@ -271,6 +271,11 @@ sforce.opencti.onClickToDial = function() {};
 sforce.opencti.onNavigationChange = function() {};
 
 /**
+* @return {Object}
+*/
+sforce.console.setCustomConsoleComponentPopoutable = function() {};
+
+/**
  * @const
  */
 var AWSCognito = {};

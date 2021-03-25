@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.19.4] -2021-03-25
+## Fixed
+-CXV1-17694 - Salesforce Lightning Pop-Out feature completely logs out agent.
+
 ## [9.19.3] -2021-03-15
 ## Fixed
 -CXV1-23708 - Fixed OR condition for strict search pops in Zendesk.
@@ -25,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -CXV1-22774 - Zendesk fuzzy search pop can have duplicate records
 
 ## [9.18.4] - 2020-02-09
-### Fixed 
+### Fixed
 -CXV1-23708 - When adding Screen pop for skylight to flows it is throwing 400 error.
 
 ## [9.18.3] - 2020-01-27
@@ -51,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [9.17.0] - 2020-10-14
 ### Added
-- CXV1-22915 - Config 2 - Build and Translate User Profile Page (Added new parameter to login function so it only returns a token and doesn't reset the state) 
+- CXV1-22915 - Config 2 - Build and Translate User Profile Page (Added new parameter to login function so it only returns a token and doesn't reset the state)
 
 ## [9.16.0] - 2020-10-12
 ### Added
@@ -124,7 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [9.9.3] - 2020-06-10
 ### Added
-- CXV1-22325 - Add new function invite-user. 
+- CXV1-22325 - Add new function invite-user.
 
 ## [9.9.2] - 2020-06-09
 ### Fixed
