@@ -528,19 +528,27 @@
                   :error (e/failed-to-create-interaction-note-err interaction-id resp)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.transferToResource({
-;;   interactionId: "{{uuid}}",
-;;   resourceId: "{{uuid}}",
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
 (s/def ::resource-transfer-params
   (s/keys :req-un [::specs/interaction-id ::specs/resource-id]
           :opt-un [::specs/transfer-type ::specs/callback]))
 
 (def-sdk-fn transfer-to-resource
-  ""
+  "Transfer an interaction to another resource (user).
+  Warm transfer type will keep the current agent on the conference and put the customer on hold.
+  Cold transfer type will immediately remove the current agent from the conference.  
+
+  ```javascript
+  CxEngage.interactions.transferToResource({
+    interactionId: '{{uuid}}',
+    resourceId: '{{uuid}}',
+    transferType: '{{warm or cold}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4022](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-transfer-to-resource-err)
+  "
   {:validation ::resource-transfer-params
    :topic-key :customer-transfer-acknowledged}
   [params]
@@ -559,19 +567,27 @@
                   :error (e/failed-to-transfer-to-resource-err interrupt-body interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.transferToQueue({
-;;   interactionId: "{{uuid}}",
-;;   queueId: "{{uuid}}",
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
 (s/def ::queue-transfer-params
   (s/keys :req-un [::specs/interaction-id ::specs/queue-id]
           :opt-un [::specs/transfer-type ::specs/callback]))
 
 (def-sdk-fn transfer-to-queue
-  ""
+  "Transfer an interaction to a queue.
+  Warm transfer type will keep the current agent on the conference and put the customer on hold.
+  Cold transfer type will immediately remove the current agent from the conference.  
+
+  ```javascript
+  CxEngage.interactions.transferToExtension({
+    interactionId: '{{uuid}}',
+    queueId: '{{uuid}}',
+    transferType: '{{warm or cold}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4024](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-transfer-to-queue-err)
+  "
   {:validation ::queue-transfer-params
    :topic-key :customer-transfer-acknowledged}
   [params]
@@ -590,20 +606,27 @@
                   :error (e/failed-to-transfer-to-queue-err interrupt-body interrupt-response)
                   :callback callback}))))
 
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.transferToExtension({
-;;   interactionId: "{{uuid}}",
-;;   transferExtension: {type: "pstn", value: "+15055555555"},
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
 (s/def ::extension-transfer-params
   (s/keys :req-un [::specs/interaction-id ::specs/transfer-extension]
           :opt-un [::specs/transfer-type ::specs/callback]))
 
 (def-sdk-fn transfer-to-extension
-  ""
+  "Transfer an interaction to a PSTN, SIP, or WebRTC extension.
+  Warm transfer type will keep the current agent on the conference and put the customer on hold.
+  Cold transfer type will immediately remove the current agent from the conference.  
+
+  ```javascript
+  CxEngage.interactions.transferToExtension({
+    interactionId: '{{uuid}}',
+    transferExtension: {type: '{pstn or sip or webrtc}', value: '+15055555555'},
+    transferType: '{{warm or cold}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4026](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-transfer-to-extension-err)
+  "
   {:validation ::extension-transfer-params
    :topic-key :customer-transfer-acknowledged}
   [params]
@@ -622,19 +645,25 @@
                   :error (e/failed-to-transfer-to-extension-err interrupt-body interrupt-response)
                   :callback callback}))))
 
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.cancelResourceTransfer({
-;;   interactionId: "{{uuid}}",
-;;   transferResourceId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
 (s/def ::cancel-resource-transfer-params
   (s/keys :req-un [::specs/interaction-id ::specs/transfer-resource-id]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn cancel-resource-transfer
-  ""
+  "Cancel a resource (user) transfer.
+  Note: only warm transfers can be cancelled.
+
+  ```javascript
+  CxEngage.interactions.cancelResourceTransfer({
+    interactionId: '{{uuid}}',
+    transferResourceId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4023](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-cancel-resource-transfer-err)
+  "
   {:validation ::cancel-resource-transfer-params
    :topic-key :cancel-transfer-acknowledged}
   [params]
@@ -653,19 +682,25 @@
                   :error (e/failed-to-cancel-resource-transfer-err interrupt-body interrupt-response)
                   :callback callback}))))
 
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.cancelQueueTransfer({
-;;   interactionId: "{{uuid}}",
-;;   transferQueueId: "{{uuid}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
 (s/def ::cancel-queue-transfer-params
   (s/keys :req-un [::specs/interaction-id ::specs/transfer-queue-id]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn cancel-queue-transfer
-  ""
+  "Cancel a queue transfer.
+  Note: only warm transfers can be cancelled.
+
+  ```javascript
+  CxEngage.interactions.cancelQueueTransfer({
+    interactionId: '{{uuid}}',
+    transferQueueId: '{{uuid}}'
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4025](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-cancel-queue-transfer-err)
+  "
   {:validation ::cancel-queue-transfer-params
    :topic-key :cancel-transfer-acknowledged}
   [params]
@@ -684,19 +719,24 @@
                   :error (e/failed-to-cancel-queue-transfer-err interrupt-body interrupt-response)
                   :callback callback}))))
 
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.cancelExtensionTransfer({
-;;   interactionId: "{{uuid}}",
-;;   transferExtension: {type: "pstn", value: "+15055555555"}
-;; });
-;; -------------------------------------------------------------------------- ;;
 (s/def ::cancel-extension-transfer-params
   (s/keys :req-un [::specs/interaction-id ::specs/transfer-extension]
           :opt-un [::specs/callback]))
 
 (def-sdk-fn cancel-extension-transfer
-  ""
+  "Cancel a transfer to a PSTN, SIP, or WebRTC extension.
+  Note: only warm transfers can be cancelled.
+
+  ```javascript
+  CxEngage.interactions.cancelQueueTransfer({
+    interactionId: '{{uuid}}',
+    transferExtension: {type: '{pstn or sip or webrtc}', value: '+15055555555'}
+  });
+  ```
+
+  Possible Errors:
+
+  - [Interaction: 4027](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-cancel-extension-transfer-err)"
   {:validation ::cancel-extension-transfer-params
    :topic-key :cancel-transfer-acknowledged}
   [params]

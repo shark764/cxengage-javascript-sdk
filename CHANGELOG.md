@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [10.0.0] - 2021-04-13
+## Breaking Changes
+- CXV1-24274 - Removed deprecated `interactions.voice` transfer functions.
+## Updated
+- CXV1-24274 - Updated code docs on transfers.
+
 ## [9.19.4] -2021-03-25
 ## Fixed
 -CXV1-17694 - Salesforce Lightning Pop-Out feature completely logs out agent.

@@ -298,84 +298,6 @@
                   :error (e/failed-to-stop-recording-err interaction-id resource-id interrupt-response)
                   :callback callback}))))
 
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.transferToResource({
-;;   interactionId: "{{uuid}}",
-;;   resourceId: "{{uuid}}",
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
-(defn transfer-to-resource [params]
-  (log :warn "Function 'CxEngage.interactions.voice.transferToResource' will be deprecated.
-              Use 'CxEngage.interactions.transferToResource' instead.")
-  (int/transfer-to-resource params))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.transferToQueue({
-;;   interactionId: "{{uuid}}",
-;;   queueId: "{{uuid}}",
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
-(defn transfer-to-queue [params]
-  (log :warn "Function 'CxEngage.interactions.voice.transferToQueue' will be deprecated.
-              Use 'CxEngage.interactions.transferToQueue' instead.")
-  (int/transfer-to-queue params))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.transferToExtension({
-;;   interactionId: "{{uuid}}",
-;;   transferExtension: {type: "pstn", value: "+15055555555"},
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
-(defn transfer-to-extension [params]
-  (log :warn "Function 'CxEngage.interactions.voice.transferToExtension' will be deprecated.
-              Use 'CxEngage.interactions.transferToExtension' instead.")
-  (int/transfer-to-extension params))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.cancelResourceTransfer({
-;;   interactionId: "{{uuid}}",
-;;   targetResourceId: "{{uuid}}",
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
-(defn cancel-resource-transfer [params]
-  (log :warn "Function 'CxEngage.interactions.voice.cancelResourceTransfer' will be deprecated.
-              Use 'CxEngage.interactions.cancelResourceTransfer' instead.")
-  (int/cancel-resource-transfer params))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.cancelQueueTransfer({
-;;   interactionId: "{{uuid}}",
-;;   transferQueueId: "{{uuid}}",
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
-(defn cancel-queue-transfer [params]
-  (log :warn "Function 'CxEngage.interactions.voice.cancelQueueTransfer' will be deprecated.
-              Use 'CxEngage.interactions.cancelQueueTransfer' instead.")
-  (int/cancel-queue-transfer params))
-
-;; -------------------------------------------------------------------------- ;;
-;; CxEngage.interactions.voice.cancelExtensionTransfer({
-;;   interactionId: "{{uuid}}",
-;;   transferExtension: {type: "pstn", value: "+15055555555"},
-;;   transferType: "{{warm or cold}}"
-;; });
-;; -------------------------------------------------------------------------- ;;
-
-(defn cancel-extension-transfer [params]
-  (log :warn "Function 'CxEngage.interactions.voice.cancelExtensionTransfer' will be deprecated.
-              Use 'CxEngage.interactions.cancelExtensionTransfer' instead.")
-  (int/cancel-extension-transfer params))
-
 (s/def ::dial-params
   (s/keys :req-un [::specs/phone-number]
           :opt-un [::specs/pop-uri ::specs/outbound-ani ::specs/flow-id ::specs/outbound-identifier-id ::specs/outbound-identifier-list-id ::specs/direction ::specs/interaction-metadata ::specs/callback]))
@@ -508,12 +430,6 @@
                                                  :unmute unmute
                                                  :start-recording start-recording
                                                  :stop-recording stop-recording
-                                                 :transfer-to-resource transfer-to-resource
-                                                 :transfer-to-queue transfer-to-queue
-                                                 :transfer-to-extension transfer-to-extension
-                                                 :cancel-resource-transfer cancel-resource-transfer
-                                                 :cancel-queue-transfer cancel-queue-transfer
-                                                 :cancel-extension-transfer cancel-extension-transfer
                                                  :dial dial
                                                  :cancel-dial cancel-dial
                                                  :send-digits send-digits

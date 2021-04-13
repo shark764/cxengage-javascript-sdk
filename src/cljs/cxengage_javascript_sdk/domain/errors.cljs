@@ -663,6 +663,54 @@
           :script-id-provided data}
    :message "Unable to find a script that matches that ID."})
 
+(defn failed-to-transfer-to-resource-err [transfer-body data]
+  {:code 4022
+   :context :interaction
+   :data {:requested-transfer transfer-body
+          :api-response data}
+   :level "error"
+   :message "Failed to transfer customer to another resource."})
+
+(defn failed-to-cancel-resource-transfer-err [transfer-body data]
+  {:code 4023
+   :context :interaction
+   :data {:requested-transfer transfer-body
+          :api-response data}
+   :level "error"
+   :message "Failed to cancel pending transfer to resource."})
+
+(defn failed-to-transfer-to-queue-err [transfer-body data]
+  {:code 4024
+   :context :interaction
+   :data {:requested-transfer transfer-body
+          :api-response data}
+   :level "error"
+   :message "Failed to transfer customer to queue."})
+
+(defn failed-to-cancel-queue-transfer-err [transfer-body data]
+  {:code 4025
+   :context :interaction
+   :data {:requested-transfer transfer-body
+          :api-response data}
+   :level "error"
+   :message "Failed to cancel pending transfer to queue."})
+
+(defn failed-to-transfer-to-extension-err [transfer-body data]
+  {:code 4026
+   :context :interaction
+   :data {:requested-transfer transfer-body
+          :api-response data}
+   :level "error"
+   :message "Failed to transfer customer to extension."})
+
+(defn failed-to-cancel-extension-transfer-err [transfer-body data]
+  {:code 4027
+   :context :interaction
+   :data {:requested-transfer transfer-body
+          :api-response data}
+   :level "error"
+   :message "Failed to cancel pending transfer to extension."})
+
 (defn failed-to-refresh-sqs-integration-err [data]
   {:code 5000
    :context :sqs
@@ -898,22 +946,6 @@
    :level "error"
    :message "Failed to start recording on interaction."})
 
-(defn failed-to-transfer-to-resource-err [transfer-body data]
-  {:code 7009
-   :context :voice
-   :data {:requested-transfer transfer-body
-          :api-response data}
-   :level "error"
-   :message "Failed to transfer customer to another resource."})
-
-(defn failed-to-cancel-resource-transfer-err [transfer-body data]
-  {:code 7010
-   :context :voice
-   :data {:requested-transfer transfer-body
-          :api-response data}
-   :level "error"
-   :message "Failed to cancel pending transfer to resource."})
-
 (defn failed-to-place-customer-on-hold-err [interaction-id data]
   {:code 7011
    :context :voice
@@ -948,38 +980,6 @@
           :api-response data}
    :level "error"
    :message "Failed to remove the resource from the interaction."})
-
-(defn failed-to-transfer-to-queue-err [transfer-body data]
-  {:code 7015
-   :context :voice
-   :data {:requested-transfer transfer-body
-          :api-response data}
-   :level "error"
-   :message "Failed to transfer customer to queue."})
-
-(defn failed-to-cancel-queue-transfer-err [transfer-body data]
-  {:code 7016
-   :context :voice
-   :data {:requested-transfer transfer-body
-          :api-response data}
-   :level "error"
-   :message "Failed to cancel pending transfer to queue."})
-
-(defn failed-to-transfer-to-extension-err [transfer-body data]
-  {:code 7017
-   :context :voice
-   :data {:requested-transfer transfer-body
-          :api-response data}
-   :level "error"
-   :message "Failed to transfer customer to extension."})
-
-(defn failed-to-cancel-extension-transfer-err [transfer-body data]
-  {:code 7018
-   :context :voice
-   :data {:requested-transfer transfer-body
-          :api-response data}
-   :level "error"
-   :message "Failed to cancel pending transfer to extension."})
 
 (defn failed-to-perform-outbound-dial-err [phone-number data]
   {:code 7019
