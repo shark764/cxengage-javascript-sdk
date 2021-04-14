@@ -577,7 +577,7 @@
   Cold transfer type will immediately remove the current agent from the conference.  
 
   ```javascript
-  CxEngage.interactions.transferToExtension({
+  CxEngage.interactions.transferToQueue({
     interactionId: '{{uuid}}',
     queueId: '{{uuid}}',
     transferType: '{{warm or cold}}'
@@ -728,7 +728,7 @@
   Note: only warm transfers can be cancelled.
 
   ```javascript
-  CxEngage.interactions.cancelQueueTransfer({
+  CxEngage.interactions.cancelExtensionTransfer({
     interactionId: '{{uuid}}',
     transferExtension: {type: '{pstn or sip or webrtc}', value: '+15055555555'}
   });
