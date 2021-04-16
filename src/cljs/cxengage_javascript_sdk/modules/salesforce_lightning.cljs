@@ -301,22 +301,23 @@
     (ih/publish {:topics topic
                  :error error})
     (let [state (:state (ih/extract-params response))
-         reason (:reason (ih/extract-params response))]
-    (log :debug "state change response" response)
-      (when (= state "notready")
-        (js/sforce.console.setCustomConsoleComponentPopoutable false)
-        (try
-          (js/sforce.opencti.disableClickToDial)
-          (catch js/Object e
-            (ih/publish (clj->js {:topics topic
-                                  :error e})))))
-      (when (= state "ready")
-        (js/sforce.console.setCustomConsoleComponentPopuptable false)
-        (try
-          (js/sforce.opencti.enableClickToDial)
-          (catch js/Object e
-            (ih/publish (clj->js {:topics topic
-                                  :error e}))))))))
+          reason (:reason (ih/extract-params response))]
+     (when (= state "notready")
+       (try
+         (js/sforce.opencti.disableClickToDial)
+         (catch js/Object e
+           (ih/publish (clj->js {:topics topic
+                                 :error e})))))
+     (when (= state "ready")
+       (try
+         (js/sforce.opencti.enableClickToDial)
+         (catch js/Object e
+           (ih/publish (clj->js {:topics topic
+                                 :error e}))))))))
+
+(defn- handle-session-started [error topic response]
+  (log :debug "Session started. Disabling popout button.")
+  (js/sforce.console.setCustomConsoleComponentPopoutable false))
 
 (defn- handle-focus-change [response]
   (let [active-tab (get-active-tab)
@@ -453,8 +454,8 @@
 
 (defn- sfl-ready? []
   (and (aget js/window "sforce")
-  (aget js/window "sforce" "opencti")
-  (aget js/window "sforce" "console")))
+   (aget js/window "sforce" "opencti")
+   (aget js/window "sforce" "console")))
 
 (defn- sfl-init
   [interaction opencti]
@@ -467,6 +468,7 @@
   (go-loop []
     (if (sfl-ready?)
       (do
+        (js/sforce.opencti.disableClickToDial)
         (js/sforce.console.setCustomConsoleComponentPopoutable true)
         (js/sforce.opencti.onNavigationChange (clj->js {:listener handle-focus-change}))
         (js/sforce.opencti.runApex (clj->js {:apexClass "net_cxengage.CxLookup"
@@ -510,6 +512,7 @@
                                                               :dump-state dump-state}}
                                  :module-name module-name}))
           (ih/subscribe (topics/get-topic :presence-state-change-request-acknowledged) handle-state-change)
+          (ih/subscribe (topics/get-topic :session-started) handle-session-started)
           (ih/subscribe (topics/get-topic :work-offer-received) handle-work-offer)
           (ih/subscribe (topics/get-topic :work-ended-received) handle-work-ended)
           (ih/subscribe (topics/get-topic :generic-screen-pop-received) handle-screen-pop)
