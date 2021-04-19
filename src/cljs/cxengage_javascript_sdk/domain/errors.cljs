@@ -432,7 +432,7 @@
    :data {:interaction-id interaction-id
           :api-response data
           :flow-message message}
-   :level "error"
+   :level "warn"
    :message "Failed to acknowledge action."})
 
 (defn failed-to-end-interaction-err
@@ -3254,4 +3254,3 @@
           :api-response data}
    :level "error"
    :message "Failed to assign item. The API returned an error."})
-
