@@ -45,9 +45,17 @@
   (state/set-twilio-state "cancel"))
 
 (defn- on-twilio-offline [device]
-  (log :debug "Twilio offline. Device:" device)
+  (log :warn "Twilio offline. Device:" device)
   (state/set-twilio-device device)
-  (state/set-twilio-state "offline"))
+  (state/set-twilio-state "offline")
+  (log :warn (str "Attempting to reset offline Twilio Device. Will try resetting twice and wait 4 seconds after each attempt."))
+  (go-loop [failed-attempts 1]
+    (when (and (< failed-attempts 3)
+               (= "offline" (state/get-twilio-state)))
+      (log :warn (str "Resetting offline Twilio Device. Attempt: " failed-attempts))
+      (reset-twilio-device)
+      (a/<! (a/timeout 3500))
+      (recur (inc failed-attempts)))))
 
 (defn- on-twilio-disconnect [connection]
   (log :debug "Twilio disconnect. Connection:" connection)
@@ -183,6 +191,51 @@
                       :error (e/failed-to-change-twilio-active-output-speaker-devices-err err)
                       :callback callback}))))))
 
+(s/def ::reset-twilio-device-params
+  (s/keys :req-un []
+          :opt-un [::specs/callback]))
+
+(def-sdk-fn reset-twilio-device
+  "``` javascript
+  CxEngage.twilio.resetTwilioDevice();
+  ```
+  
+  Resets `Twilio.Device`, in case it unexpectedly goes offline.
+
+  Topic: cxengage/twilio/reset-twilio-device
+
+  Possible Errors:
+
+  - [Voice: 7023] (/cxengage-javascript-sdk.domain.errors.html#var-failed-to-init-twilio-err)"
+  {:validation ::reset-twilio-device-params
+   :topic-key :twilio-reset-device}
+  [params]
+  (let [{:keys [topic callback]} params
+        twilio-integration (state/get-integration-by-type "twilio")
+        {:keys [credentials regions]} twilio-integration
+        region (or (first regions) "gll")
+        {:keys [token]} credentials
+        debug-twilio? (= (keyword (ih/get-log-level)) :debug)]
+    (try
+      (state/set-twilio-device
+       (js/Twilio.Device.setup token #js {"debug" debug-twilio?
+                                          "closeProtection" true
+                                          "warnings" true
+                                          "region" region}))
+      (catch js/Object e
+        (handle-twilio-error e)))
+    (js/Twilio.Device.incoming on-twilio-incoming)
+    (js/Twilio.Device.connect on-twilio-connect)
+    (js/Twilio.Device.ready on-twilio-ready)
+    (js/Twilio.Device.cancel on-twilio-cancel)
+    (js/Twilio.Device.offline on-twilio-offline)
+    (js/Twilio.Device.disconnect on-twilio-disconnect)
+    (js/Twilio.Device.error handle-twilio-error)
+    (log :info "[Twilio] Twilio Device was reset")
+    (p/publish {:topics topic
+                :response {}
+                :callback callback})))
+
 (defn- twilio-init
   [config]
   (let [audio-params (ih/camelify {"audio" true})
@@ -204,6 +257,7 @@
                         (go-loop []
                           (if (ih/twilio-ready?)
                             (do
+                              (log :debug "Calling setup on Twilio.Device with token:" token)
                               (try
                                 (state/set-twilio-device
                                  (js/Twilio.Device.setup token #js {"debug" debug-twilio?
@@ -232,6 +286,7 @@
                               (.on
                                 (aget js/Twilio.Device "audio")
                                 "deviceChange" handle-device-change)
+                              (log :debug "[Twilio] Twilio initialized")
                               (ih/publish {:topics (topics/get-topic :twilio-initialization)
                                                       ;; False if the browser does not support setSinkId or enumerateDevices and Twilio
                                                       ;; can not facilitate output selection functionality.
@@ -268,7 +323,8 @@
             (ih/register {:api
                             {:twilio
                               {:set-active-output-ringtone-devices set-active-output-ringtone-devices
-                               :set-active-output-speaker-devices set-active-output-speaker-devices}}
+                               :set-active-output-speaker-devices set-active-output-speaker-devices
+                               :reset-twilio-device reset-twilio-device}}
                           :module-name module-name})
             (ih/send-core-message {:type :module-registration-status
                                    :status :success
