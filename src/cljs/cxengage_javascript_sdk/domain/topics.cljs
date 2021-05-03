@@ -311,7 +311,6 @@
                  :twilio-device-ready "cxengage/twilio/device-ready"
                  :twilio-output-devices-changed "cxengage/twilio/output-devices-changed"
                  :twilio-active-output-devices-changed "cxengage/twilio/active-output-devices-changed"
-                 :twilio-reset-device "cxengage/twilio/reset-device"
 
                  ;; Messaging Interaction Topics
                  :transcript-response "cxengage/interactions/messaging/transcript-received"
