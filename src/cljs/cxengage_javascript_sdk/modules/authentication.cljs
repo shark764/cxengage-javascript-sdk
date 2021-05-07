@@ -116,7 +116,7 @@
             (state/set-token! (:token api-response))
             (if-not no-state-reset
               (let [resp (a/<! (rest/login-request))
-                  {:keys [status api-response]} resp]
+                    {:keys [status api-response]} resp]
                 (if (not (= status 200))
                   (p/publish {:topics topic
                               :callback callback
@@ -130,9 +130,9 @@
                                 :response (merge user-identity
                                                 {:auth "username"})
                                 :callback callback}))))
-                (p/publish {:topics (topics/get-topic :get-new-token-response)
-                            :response api-response
-                            :callback callback}))))))))
+              (p/publish {:topics (topics/get-topic :get-new-token-response)
+                          :response api-response
+                          :callback callback}))))))))
 
 (s/def ::auth-info-spec
   (s/or
@@ -199,15 +199,22 @@
                   :response api-response}))))
 
 (defn- post-message-handler [event]
-  (let [token (aget event "data" "token")
+  (let [identity-url (if (= env "prod")
+                         "https://identity.cxengage.net"
+                         "https://identity.cxengagelabs.net")
+        event-origin (aget event "origin")
+        token (aget event "data" "token")
         error (aget event "data" "error")]
-    (if error
-      (p/publish {:topics (topics/get-topic :cognito-auth-response)
-                  :error (e/failed-cognito-auth-err error)})
-      (do
-        (state/set-token! token)
+    (when (= event-origin identity-url)
+      (if error
         (p/publish {:topics (topics/get-topic :cognito-auth-response)
-                    :response token})))))
+                    :error (e/failed-cognito-auth-err error)})
+        (do
+          (state/set-token! token)
+          (p/publish {:topics (topics/get-topic :cognito-auth-response)
+                      :response token})))
+      (js/window.removeEventListener "message" post-message-handler))))
+      
 
 (s/def ::identity-window-spec
   (s/keys :req-un []
@@ -240,8 +247,8 @@
         url (if (= env "prod")
               "https://identity.cxengage.net"
               "https://identity.cxengagelabs.net")
-        window (js/window.open (str url "?env=" api "&domain=" domain "&clientid=" client) "cxengageSsoWindow" "width=500,height=500")
-        _ (js/window.addEventListener "message" post-message-handler (clj->js {:once true}))]
+        window (js/window.open (str url "?env=" api "&domain=" domain "&clientid=" client) "cxengageSsoWindow" "width=500,height=500")]
+    (js/window.addEventListener "message" post-message-handler)
     (go-loop []
       (if (= (.-closed window) false)
         (do

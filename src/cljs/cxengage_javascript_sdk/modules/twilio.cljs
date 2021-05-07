@@ -45,9 +45,17 @@
   (state/set-twilio-state "cancel"))
 
 (defn- on-twilio-offline [device]
-  (log :debug "Twilio offline. Device:" device)
+  (log :warn "Twilio offline. Device:" device)
   (state/set-twilio-device device)
-  (state/set-twilio-state "offline"))
+  (state/set-twilio-state "offline")
+  (log :warn (str "Attempting to reset offline Twilio Device. Will try resetting twice and wait 3.5 seconds after each attempt."))
+  (go-loop [failed-attempts 1]
+    (when (and (< failed-attempts 3)
+               (= "offline" (state/get-twilio-state)))
+      (log :warn (str "Resetting offline Twilio Device. Attempt: " failed-attempts))
+      (twilio-device-init)
+      (a/<! (a/timeout 3500))
+      (recur (inc failed-attempts)))))
 
 (defn- on-twilio-disconnect [connection]
   (log :debug "Twilio disconnect. Connection:" connection)
@@ -183,16 +191,51 @@
                       :error (e/failed-to-change-twilio-active-output-speaker-devices-err err)
                       :callback callback}))))))
 
+(defn- twilio-device-init
+  []
+  (let [twilio-integration (state/get-integration-by-type "twilio")
+        {:keys [credentials regions]} twilio-integration
+        region (or (first regions) "gll")
+        {:keys [token]} credentials
+        debug-twilio? (= (keyword (ih/get-log-level)) :debug)]
+    (log :debug "Calling setup on Twilio.Device with token:" token)
+    (try
+      (state/set-twilio-device
+       (js/Twilio.Device.setup token #js {"debug" debug-twilio?
+                                          "closeProtection" true
+                                          "warnings" true
+                                          "region" region}))
+      (catch js/Object e
+        (handle-twilio-error e)))
+    ;; Twilio Client is moving toward the standard EventEmitter interface,
+    ;; meaning events should be managed with .on(eventName, handler) and .removeListener(eventName, handler),
+    ;; replacing our legacy handlers (such as .accept(handler), .error(handler), etc...).
+    ;; https://www.twilio.com/docs/voice/client/javascript/device#deprecated-methods
+    (js/Twilio.Device.incoming on-twilio-incoming)
+    (js/Twilio.Device.connect on-twilio-connect)
+    (js/Twilio.Device.ready on-twilio-ready)
+    (js/Twilio.Device.cancel on-twilio-cancel)
+    (js/Twilio.Device.offline on-twilio-offline)
+    (js/Twilio.Device.disconnect on-twilio-disconnect)
+    (js/Twilio.Device.error handle-twilio-error)
+    ;; Register a handler that will be fired whenever a new audio device is found,
+    ;; an existing audio device is lost or the label of an existing device is changed.
+    ;; This typically happens when the user plugs in or unplugs an audio device, like a headset or a microphone.
+    ;; This will also trigger after the customer has given access to user media via getUserMedia for the first time,
+    ;; as the labels will become populated.
+    ;; https://www.twilio.com/docs/voice/client/javascript/device#event-twiliodeviceaudiodevicechange
+    (.on
+      (aget js/Twilio.Device "audio")
+      "deviceChange" handle-device-change)
+    (log :info "Twilio Device was initialized")))
+
 (defn- twilio-init
   [config]
   (let [audio-params (ih/camelify {"audio" true})
         script-init (fn [& args]
-                      (let [{:keys [js-api-url credentials regions]} config
-                            region (or (first regions) "gll")
-                            {:keys [token]} credentials
+                      (let [{:keys [js-api-url]} config
                             script (js/document.createElement "script")
-                            body (.-body js/document)
-                            debug-twilio? (= (keyword (ih/get-log-level)) :debug)]
+                            body (.-body js/document)]
                         (.setAttribute script "type" "text/javascript")
                         (.setAttribute script "src" js-api-url)
                         (.appendChild body script)
@@ -204,34 +247,7 @@
                         (go-loop []
                           (if (ih/twilio-ready?)
                             (do
-                              (try
-                                (state/set-twilio-device
-                                 (js/Twilio.Device.setup token #js {"debug" debug-twilio?
-                                                                    "closeProtection" true
-                                                                    "warnings" true
-                                                                    "region" region}))
-                                (catch js/Object e
-                                  (handle-twilio-error e)))
-                              ;; Twilio Client is moving toward the standard EventEmitter interface,
-                              ;; meaning events should be managed with .on(eventName, handler) and .removeListener(eventName, handler),
-                              ;; replacing our legacy handlers (such as .accept(handler), .error(handler), etc...).
-                              ;; https://www.twilio.com/docs/voice/client/javascript/device#deprecated-methods
-                              (js/Twilio.Device.incoming on-twilio-incoming)
-                              (js/Twilio.Device.connect on-twilio-connect)
-                              (js/Twilio.Device.ready on-twilio-ready)
-                              (js/Twilio.Device.cancel on-twilio-cancel)
-                              (js/Twilio.Device.offline on-twilio-offline)
-                              (js/Twilio.Device.disconnect on-twilio-disconnect)
-                              (js/Twilio.Device.error handle-twilio-error)
-                              ;; Register a handler that will be fired whenever a new audio device is found,
-                              ;; an existing audio device is lost or the label of an existing device is changed.
-                              ;; This typically happens when the user plugs in or unplugs an audio device, like a headset or a microphone.
-                              ;; This will also trigger after the customer has given access to user media via getUserMedia for the first time,
-                              ;; as the labels will become populated.
-                              ;; https://www.twilio.com/docs/voice/client/javascript/device#event-twiliodeviceaudiodevicechange
-                              (.on
-                                (aget js/Twilio.Device "audio")
-                                "deviceChange" handle-device-change)
+                              (twilio-device-init)
                               (ih/publish {:topics (topics/get-topic :twilio-initialization)
                                                       ;; False if the browser does not support setSinkId or enumerateDevices and Twilio
                                                       ;; can not facilitate output selection functionality.
@@ -268,7 +284,8 @@
             (ih/register {:api
                             {:twilio
                               {:set-active-output-ringtone-devices set-active-output-ringtone-devices
-                               :set-active-output-speaker-devices set-active-output-speaker-devices}}
+                               :set-active-output-speaker-devices set-active-output-speaker-devices
+                               :reset-twilio-device reset-twilio-device}}
                           :module-name module-name})
             (ih/send-core-message {:type :module-registration-status
                                    :status :success
