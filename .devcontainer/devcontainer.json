@@ -1,0 +1,11 @@
+{
+	"name": "Clojure",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"extensions": [
+		"avli.clojure"
+	],
+	"runArgs": ["--net", "host","--privileged"],
+	"forwardPorts": [ 3449 ],
+}
