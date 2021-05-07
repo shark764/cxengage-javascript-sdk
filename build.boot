@@ -34,11 +34,11 @@
                  [weasel "0.7.0" :scope "test"]]
 
  :repositories #(apply conj %
-                       [["releases" {:url "http://nexus.cxengagelabs.net/content/repositories/releases/"
+                       [["releases" {:url "https://nexus.cxengagelabs.net/content/repositories/releases/"
                                      :snapshots false}]
-                        ["snapshots" {:url "http://nexus.cxengagelabs.net/content/repositories/snapshots/"
+                        ["snapshots" {:url "https://nexus.cxengagelabs.net/content/repositories/snapshots/"
                                       :update :always}]
-                        ["thirdparty" {:url "http://nexus.cxengagelabs.net/content/repositories/thirdparty/"
+                        ["thirdparty" {:url "https://nexus.cxengagelabs.net/content/repositories/thirdparty/"
                                        :snapshots false}]]))
 
 (require

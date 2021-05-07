@@ -9,7 +9,7 @@ https://github.com/boot-clj/boot/wiki/JVM-Options
 
 ## Development
 
-To run the project:
+To run the project: (see below for alternative option)
 
 `boot dev`
 
@@ -132,3 +132,20 @@ combination.
 with a valid identity provider, and that the SAML provider is configured
 correctly.
 ```
+
+## To run the project using vs code remote containers.
+These instructions will allow you to set up a local development environment without having to configure any of the local hosts dependencies (IE Java, Clojure, NodeJS, Boot, ect)
+
+Install Docker for your OS.
+https://docs.docker.com/get-docker/
+
+Get the Container-Remote vscode extension
+https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
+
+After those , press F1 in VSCODE to open the menu.
+Type `>Remote-Containers: Reopen in Container`
+
+The first time setting up may take a few min or so but subsequent opens will not.
+
+Or in the very bottom left corner of vs code there is a >< square shortcut button you can use to open the menu.
+Run `boot dev` in the terminal and http://localhost:3449 is forwarded automatically for you to access on your local machine.
