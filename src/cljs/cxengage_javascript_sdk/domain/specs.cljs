@@ -75,7 +75,7 @@
               :empty (s/and vector? empty?)
               :recipient (s/coll-of ::recipient)))
 (s/def ::blast-sqs-output boolean?)
-(s/def ::body (s/or :body map? :body string?))
+(s/def ::body any?)
 (s/def ::callback (s/or :callback fn? :callback nil?))
 (s/def ::cc (s/or
              :empty (s/and vector? empty?)

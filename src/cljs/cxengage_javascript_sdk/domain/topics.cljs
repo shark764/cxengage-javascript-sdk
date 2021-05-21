@@ -52,6 +52,7 @@
 
                  ;; CRUD-topics
                  :create-response "cxengage/api/create-response"
+                 :create-file-response "cxengage/api/create-file-response"
                  :read-response "cxengage/api/read-response"
                  :update-response "cxengage/api/update-response"
                  :delete-response "cxengage/api/delete-response"

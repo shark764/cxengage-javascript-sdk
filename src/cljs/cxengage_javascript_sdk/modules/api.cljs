@@ -10,7 +10,9 @@
             [cxengage-javascript-sdk.domain.specs :as specs]
             [cxengage-javascript-sdk.domain.rest-requests :as rest]
             [cxengage-javascript-sdk.domain.topics :as topics]
-            [cxengage-javascript-sdk.domain.interop-helpers :as ih]))
+            [cxengage-javascript-sdk.domain.interop-helpers :as ih]
+            [cxengage-javascript-sdk.internal-utils :as iu]
+            [cxengage-javascript-sdk.state :as state]))
 
 (s/def ::create-params
   (s/keys :req-un [::specs/path ::specs/body]
@@ -40,6 +42,38 @@
         {:keys [status api-response] :as entity-response} (a/<! (rest/api-create-request (into [] path) body api-version))
         topic (or custom-topic topic)
         error (if-not (= status 200) (e/failed-to-create-err api-response))]
+      (p/publish {:topics topic
+                  :response api-response
+                  :error error
+                  :preserve-casing? (ih/is-entity-request-and-response-preserve-casing (first path))
+                  :callback callback})))
+
+(def-sdk-fn create-file
+  "CRUD api create request that uses a file in the body of the request.
+  ``` javascript
+  CxEngage.api.createFile({
+    path: {{array}} (required) Example Array ['groups', '0000-0000-0000-0000', 'outboundIdentifierLists']
+    body: {{object}} (required)
+    customTopic: {{string}} (optional)
+    apiVersion: {{string}} (optional) (If this attribute is passed, it will be able to override the default api version used to make the
+                                       requests, set up when initializing the SDK, to any existing version on the platform.
+                                       E.g., 'v2', 'v3'. etc)
+  });
+  ```
+  A generic method for creating a file api entity.
+
+  Possible Errors:
+
+  - [Api: 11144](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-create-file-err)"
+  {:validation ::create-params
+   :topic-key :create-file-response}
+  [params]
+  (let [{:keys [path body is-file callback topic custom-topic api-version]} params
+        {:keys [status api-response] :as entity-response} (a/<! (rest/file-api-request {:method :post
+                                                                                        :url (iu/construct-api-url (into ["tenants" (state/get-active-tenant-id)] path))
+                                                                                        :body (doto (js/FormData.) (.append "file" body))}))
+        topic (or custom-topic topic)
+        error (if-not (= status 200) (e/failed-to-create-file-err api-response))]
       (p/publish {:topics topic
                   :response api-response
                   :error error
@@ -158,6 +192,7 @@
   (start [this]
     (let [module-name :api]
       (ih/register {:api {module-name {:create create
+                                       :create-file create-file
                                        :read read
                                        :update update
                                        :delete delete}}

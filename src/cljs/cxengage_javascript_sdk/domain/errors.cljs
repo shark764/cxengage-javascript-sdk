@@ -2922,6 +2922,21 @@
     :level "error"
     :message "Failed to invite user."})
 
+(defn failed-to-create-file-err
+  "**Error Code:** 11144
+   Message: Failed to create file api endpoint / entity.
+
+   This error is usually due to an unexpected status code returned from the API.
+   Validate that the value passed into the sdk function was correct.
+
+   **Solution:** Check your browsers dev tools console for additional error information"
+  [data]
+  {:code 11144
+   :context :api
+   :data {:api-response data}
+   :level "error"
+   :message "Failed to create file api endpoint."})
+
 ;;hygen-insert-before-11000s
 
 (defn reporting-batch-request-failed-err [batch-body api-response]
