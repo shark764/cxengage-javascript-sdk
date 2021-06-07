@@ -199,7 +199,8 @@
                   :response api-response}))))
 
 (defn- post-message-handler [event]
-  (let [identity-url (if (= env "prod")
+  (let [env (name (state/get-env))
+        identity-url (if (= env "prod")
                          "https://identity.cxengage.net"
                          "https://identity.cxengagelabs.net")
         event-origin (aget event "origin")
