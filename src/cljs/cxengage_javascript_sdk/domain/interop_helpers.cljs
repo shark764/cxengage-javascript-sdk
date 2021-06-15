@@ -85,6 +85,14 @@
                    (into r {(keyword k) v})) {} %)
           %))))
 
+(defn kebabify-surface-level-keys [m]
+  (-> m
+      js->clj
+      (#(if (map? %)
+        (reduce (fn [acc [key value]]
+                  (into acc {(camel/->kebab-case (keyword key)) value})) {} %)
+        %))))
+
 (defn is-entity-request-and-response-preserve-casing [entity]
   (some #(= entity %) ["contacts/layouts", "contacts/attributes"]))
 
@@ -96,7 +104,9 @@
   ([params preserve-casing? stringify-keys?]
    (let [{:strs [path]} (js->clj params)]
     (if (or preserve-casing? (is-entity-request-and-response-preserve-casing (first path)))
-      (js->clj params :keywordize-keys true)
+      (if (= preserve-casing? "inner-keys")
+        (kebabify-surface-level-keys params)
+        (js->clj params :keywordize-keys true))
       (if stringify-keys?
         (keywordize-surface-level-keys params)
         (kebabify (js->clj params :keywordize-keys true)))))))

@@ -1442,7 +1442,8 @@
     (p/publish {:topics topic
                 :response api-response
                 :error response-error
-                :callback callback})))
+                :callback callback
+                :preserve-casing? true})))
 
 (s/def ::get-integration-params
   (s/keys :req-un [::specs/integration-id]
@@ -1485,7 +1486,8 @@
     (p/publish {:topics topic
                 :response response
                 :error response-error
-                :callback callback})))
+                :callback callback
+                :preserve-casing? true})))
 
 (s/def ::get-integration-listeners-params
   (s/keys :req-un [::specs/integration-id]
@@ -3023,7 +3025,8 @@
   
   - [Entities: 11111](/cxengage-javascript-sdk.domain.errors.html#var-failed-to-update-integration-err)"
   {:validation ::update-integration-params
-    :topic-key :update-integration-response}
+    :topic-key :update-integration-response
+    :preserve-casing? "inner-keys"}
   [params]
   (let [{:keys [integration-id name description active properties callback topic]} params
         {:keys [status api-response] :as entity-response} (a/<! (rest/update-integration-request integration-id name description active properties))
@@ -3031,7 +3034,8 @@
     (p/publish {:topics topic
                 :response api-response
                 :error response-error
-                :callback callback})))
+                :callback callback
+                :preserve-casing? true})))
 
 (s/def ::update-integration-listener-params
   (s/keys :req-un [::specs/integration-id ::specs/listener-id]

@@ -496,6 +496,7 @@
 (defn update-integration-request [integration-id name description active properties]
   (let [tenant-id (state/get-active-tenant-id)
         update-integration-request (cond-> {:method :put
+                                            :preserve-casing? true
                                             :url (iu/api-url "tenants/:tenant-id/integrations/:integration-id"
                                                     {:tenant-id tenant-id :integration-id integration-id})}
                                       (not (nil? name))         (assoc-in [:body :name] name)
@@ -624,7 +625,10 @@
    (let [tenant-id-param (first (filterv (fn [k] (:tenant-id k)) entity-map))
          tenant-id (or (:tenant-id tenant-id-param) (state/get-active-tenant-id))
          url (iu/construct-api-url (into ["tenants" tenant-id] (remove (fn [k] (map? k)) entity-map)))
-         get-request {:method :get :url url}]
+         get-request {
+               :method :get
+               :url url
+               :preserve-casing? (= (first entity-map) "integrations")}]
      (api/api-request (merge get-request options-map)))))
 
 (defn crud-url
