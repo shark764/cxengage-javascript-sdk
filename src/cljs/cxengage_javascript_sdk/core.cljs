@@ -35,7 +35,7 @@
             [cxengage-javascript-sdk.modules.salesforce-lightning :as sfl]
             [cxengage-javascript-sdk.modules.testing :as testing]))
 
-(def *SDK-VERSION* "10.1.3")
+(def *SDK-VERSION* "10.1.4")
 
 (defn register-module
   "Registers a module & its API functions to the CxEngage global. Performs a deep-merge on the existing global with the values provided."

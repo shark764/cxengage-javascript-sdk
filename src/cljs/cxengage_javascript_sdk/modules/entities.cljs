@@ -3434,10 +3434,10 @@
    :topic-key :update-users-capacity-rule-response}
   [params]
   (let [{:keys [callback topic user-id capacity-rule-id effective-capacity-rule]} params
-        updated (and (not= capacity-rule-id nil) (a/<! (rest/update-users-capacity-request user-id capacity-rule-id)))
-        updated-response (:api-response updated)
         deleted (and effective-capacity-rule (a/<! (rest/delete-users-capacity-request user-id effective-capacity-rule)))
         deleted-response (and deleted (:api-response deleted))
+        updated (and (not= capacity-rule-id nil) (a/<! (rest/update-users-capacity-request user-id capacity-rule-id)))
+        updated-response (:api-response updated)
         response (if-not (nil? capacity-rule-id) updated-response deleted-response)
         deleted-error (if (and (not (nil? deleted-response)) (not (= (:status deleted) 200)))
                           (e/failed-to-update-users-capacity-rule-err deleted-response))
