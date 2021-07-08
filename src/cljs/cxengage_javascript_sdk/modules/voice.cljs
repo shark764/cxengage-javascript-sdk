@@ -323,12 +323,14 @@
         resource-id (state/get-active-user-id)
         session-id (state/get-session-id)
         outbound-integration-type (state/get-outbound-integration-type)
+        interaction-id (str (id/make-random-squuid))
         dial-body {:channel-type "voice"
                    :contact-point (if outbound-ani
                                     outbound-ani
                                     "click to call")
                    :customer phone-number
                    :direction (or direction "agent-initiated")
+                   :id interaction-id
                    :interaction (merge {:resource-id resource-id
                                         :session-id session-id
                                         :pop-uri pop-uri
