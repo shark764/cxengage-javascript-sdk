@@ -1189,12 +1189,6 @@
                 :body {:capacity-rule-id id}}]
     (api/api-request update)))
 
-(defn delete-users-capacity-request [user-id effective-capacity-rule]
-  (let [tenant-id (state/get-active-tenant-id)
-        delete {:method :delete
-                :url (iu/construct-api-url (into ["tenants" tenant-id] ["users" user-id "capacity-rules" effective-capacity-rule]))}]
-    (api/api-request delete)))
-
 (defn associate-request [origin-entity destination-entity]
   (let [tenant-id (state/get-active-tenant-id)
         url (iu/construct-api-url (into ["tenants" tenant-id] [(:name origin-entity) (:id origin-entity) (:name destination-entity)]))

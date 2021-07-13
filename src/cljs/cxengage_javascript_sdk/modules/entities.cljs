@@ -3412,15 +3412,13 @@
                :callback callback})))
 
 (s/def ::update-users-capacity-rule-params
-  (s/keys :req-un [::specs/user-id ::specs/capacity-rule-id]
-          :opt-un [::specs/callback ::specs/effective-capacity-rule]))
+  (s/keys :req-un [::specs/user-id ::specs/capacity-rule-id]))
 
 (def-sdk-fn update-users-capacity-rule
   "``` javascript
   CxEngage.entities.updateUsersCapacityRule({
     userId: {{uuid}}, (required)
     capacityRuleId: {{uuid or null}}, (optional)
-    effectiveCapacityRule: {{uuid or null}}, (optional)
   });
   ```
   Updates the users effective capacity rule.
@@ -3433,19 +3431,14 @@
   {:validation ::update-users-capacity-rule-params
    :topic-key :update-users-capacity-rule-response}
   [params]
-  (let [{:keys [callback topic user-id capacity-rule-id effective-capacity-rule]} params
-        deleted (and effective-capacity-rule (a/<! (rest/delete-users-capacity-request user-id effective-capacity-rule)))
-        deleted-response (and deleted (:api-response deleted))
+  (let [{:keys [callback topic user-id capacity-rule-id]} params
         updated (and (not= capacity-rule-id nil) (a/<! (rest/update-users-capacity-request user-id capacity-rule-id)))
         updated-response (:api-response updated)
-        response (if-not (nil? capacity-rule-id) updated-response deleted-response)
-        deleted-error (if (and (not (nil? deleted-response)) (not (= (:status deleted) 200)))
-                          (e/failed-to-update-users-capacity-rule-err deleted-response))
-        updated-error (if-not (= (:status updated) 200) (e/failed-to-update-users-capacity-rule-err updated-response))
-        response-error (or updated-error deleted-error nil)]
+        response (when-not (nil? capacity-rule-id) updated-response)
+        updated-error (if-not (= (:status updated) 200) (e/failed-to-update-users-capacity-rule-err updated-response))]
    (p/publish {:topics topic
                :response response
-               :error response-error
+               :error updated-error
                :callback callback})))
 
 ;; -------------------------------------------------------------------------- ;;
