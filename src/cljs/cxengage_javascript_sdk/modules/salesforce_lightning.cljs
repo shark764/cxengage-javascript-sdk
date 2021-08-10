@@ -80,8 +80,11 @@
         (js/sforce.opencti.setSoftphonePanelHeight (clj->js {:heightPX height}))
         (js/sforce.opencti.getCallCenterSettings
          (clj->js {:callback  (fn [response]
-                                (let [sfHeight (aget response "returnValue" "/reqGeneralInfo/reqSoftphoneHeight")]
-                                  (js/sforce.opencti.setSoftphonePanelHeight (clj->js {:heightPX sfHeight}))))})))
+                                  (if (true? (aget response "success"))
+                                    (let [sfHeight (aget response "returnValue" "/reqGeneralInfo/reqSoftphoneHeight")]
+                                      (js/sforce.opencti.setSoftphonePanelHeight (clj->js {:heightPX sfHeight})))
+                                    (log :error "An error occured getting the call center settings. Unable to use them to set toolbar height. Errors: " (aget response "errors")))
+                                  )})))
       (js/sforce.opencti.setSoftphonePanelWidth (clj->js {:widthPX width}))
       (ih/publish (clj->js {:topics topic
                             :response true
