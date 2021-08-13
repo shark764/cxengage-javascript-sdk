@@ -80,12 +80,14 @@
         (js/sforce.interaction.cti.setSoftphoneHeight height)
         (js/sforce.interaction.cti.getCallCenterSettings
          (fn [response]
-           (let [sfHeight (-> response
-                              (aget "result")
-                              (js/JSON.parse)
-                              (aget "/reqGeneralInfo/reqSoftphoneHeight"))
-                 height (if (string/blank? sfHeight) 800 sfHeight)]
-             (js/sforce.interaction.cti.setSoftphoneHeight height)))))
+           (if (aget response "result")
+              (let [sfHeight (-> response
+                                 (aget "result")
+                                 (js/JSON.parse)
+                                 (aget "/reqGeneralInfo/reqSoftphoneHeight"))
+                    height (if (string/blank? sfHeight) 800 sfHeight)]
+                (js/sforce.interaction.cti.setSoftphoneHeight height))
+              (log :error "An error occured getting the call center settings. Unable to use them to set toolbar height. Errors: " (aget response "error"))))))
       (catch js/Object e
         (ih/publish (clj->js {:topics topic
                               :error e
